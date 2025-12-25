@@ -21,11 +21,8 @@ This is the official repository for my Final Year Project. The system integrates
    git clone [https://github.com/你的用户名/Mixed-Type-Anomaly-Detection.git](https://github.com/你的用户名/Mixed-Type-Anomaly-Detection.git)
 2. Install dependencies:
 
-Bash
-
 pip install -r requirements.txt
-Run the app:
 
-3. Bash
+3. Run the app:
 
 streamlit run app.py
