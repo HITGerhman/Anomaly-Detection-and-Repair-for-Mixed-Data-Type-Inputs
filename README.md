@@ -9,6 +9,7 @@ This is the official repository for my Final Year Project. The system integrates
 
 ## 📸 System Screenshot
 <img width="2484" height="1412" alt="image" src="https://github.com/user-attachments/assets/d39ceccb-20de-4a69-ad5e-bada5e0eb59f" />
+<img width="2458" height="1410" alt="image" src="https://github.com/user-attachments/assets/6c7ae171-d723-482e-b7b1-736b9ce7b5de" />
 
 
 ## 🛠️ Tech Stack
