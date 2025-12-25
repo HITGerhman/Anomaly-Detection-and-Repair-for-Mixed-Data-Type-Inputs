@@ -8,7 +8,8 @@ This is the official repository for my Final Year Project. The system integrates
 - **Interactive UI:** Built with Streamlit for real-time anomaly simulation.
 
 ## 📸 System Screenshot
-![System UI](这里填你截图的链接)
+<img width="2484" height="1412" alt="image" src="https://github.com/user-attachments/assets/d39ceccb-20de-4a69-ad5e-bada5e0eb59f" />
+
 
 ## 🛠️ Tech Stack
 - **Core:** Python 3.9
