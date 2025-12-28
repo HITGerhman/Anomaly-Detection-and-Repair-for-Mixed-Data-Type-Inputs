@@ -19,7 +19,7 @@ st.markdown("---")
 # 2. 加载资源 (模型、数据、图片)
 # ==========================================
 # 这里的路径对应你刚才保存的位置，如果在同一文件夹下不用改
-base_dir = r"D:\code\pythoncode"
+base_dir = r"D:\code\pythoncode\Anomaly Detection and Repair for Mixed Data Type Inputs"
 
 @st.cache_resource  # 缓存机制，让网页加载更快
 def load_resources():
