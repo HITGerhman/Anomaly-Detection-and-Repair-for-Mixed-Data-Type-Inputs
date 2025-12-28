@@ -2,89 +2,127 @@ import streamlit as st
 import pandas as pd
 import joblib
 import os
-import matplotlib.pyplot as plt
+import shap
+import numpy as np
 from PIL import Image
+from repair_module import AnomalyRepairer  # 导入我们刚才写的修复模块
 
 # ==========================================
-# 1. 页面基础设置
+# 1. 页面配置
 # ==========================================
 st.set_page_config(page_title="Anomaly Detection System", layout="wide")
-
-# 标题和介绍
 st.title("🔍 Mixed-Type Data Anomaly Detection System")
-st.markdown("**Core Framework:** LightGBM + SHAP | **Status:** Prototype v1.0")
+st.markdown("**Core Framework:** LightGBM + SHAP + KNN-Repair | **Status:** v2.0 Integrated")
 st.markdown("---")
 
 # ==========================================
-# 2. 加载资源 (模型、数据、图片)
+# 2. 加载资源
 # ==========================================
-# 这里的路径对应你刚才保存的位置，如果在同一文件夹下不用改
-base_dir = r"D:\code\pythoncode\Anomaly Detection and Repair for Mixed Data Type Inputs"
+base_dir = r"D:\code\pythoncode"
 
-@st.cache_resource  # 缓存机制，让网页加载更快
+@st.cache_resource
 def load_resources():
     model = joblib.load(os.path.join(base_dir, "model_lgb.pkl"))
     data = joblib.load(os.path.join(base_dir, "test_data.pkl"))
-    return model, data
+    normal_data = joblib.load(os.path.join(base_dir, "normal_data.pkl")) # 加载正常样本库
+    return model, data, normal_data
 
 try:
-    model, X_test = load_resources()
-    st.sidebar.success("✅ System Online: Model Loaded")
+    model, X_test, normal_data = load_resources()
+    # 初始化修复器 (只做一次)
+    if 'repairer' not in st.session_state:
+        st.session_state.repairer = AnomalyRepairer(normal_data)
+    st.sidebar.success(f"✅ System Online. Reference DB: {len(normal_data)} samples")
 except Exception as e:
     st.error(f"Error loading resources: {e}")
     st.stop()
 
 # ==========================================
-# 3. 侧边栏控制区
+# 3. 侧边栏与样本选择
 # ==========================================
 st.sidebar.header("Control Panel")
-st.sidebar.info("Select a sample from the test dataset to simulate real-time detection.")
-
-# 让用户选择一个样本进行检测
-sample_id = st.sidebar.slider("Select Sample ID", 0, 100, 0)
+# 为了方便演示，我把几个必定异常的 ID 列在这里，省得你找
+st.sidebar.info("Hint: Try Sample ID 4, 11, or 82 to see anomalies.")
+sample_id = st.sidebar.number_input("Select Sample ID", min_value=0, max_value=len(X_test)-1, value=4)
 sample_data = X_test.iloc[[sample_id]]
 
 # ==========================================
-# 4. 主界面：展示数据与检测结果
+# 4. 主界面
 # ==========================================
-
-# 分两列展示
 col1, col2 = st.columns([1, 2])
 
 with col1:
-    st.subheader("1. Incoming Data Stream")
-    st.write("Current sample features:")
-    # 转置显示，看起来更像“个人档案”
-    st.dataframe(sample_data.T, height=400)
+    st.subheader("1. Incoming Data")
+    st.dataframe(sample_data.T, height=300)
 
 with col2:
-    st.subheader("2. Detection Result")
+    st.subheader("2. Detection & Diagnosis")
     
-    if st.button("🚀 Run Anomaly Detection"):
-        # 预测
+    if st.button("🚀 Run Analysis"):
+        # --- A. 检测 (Detection) ---
         prediction = model.predict(sample_data)[0]
         prob = model.predict_proba(sample_data)[0][1]
         
-        # 模拟进度条
+        # 模拟计算进度
         import time
         my_bar = st.progress(0)
-        for percent_complete in range(100):
+        for p in range(50):
             time.sleep(0.01)
-            my_bar.progress(percent_complete + 1)
+            my_bar.progress(p + 1)
             
-        # 显示结果
-        if prediction == 1: # 假设 1 是高收入/异常
-            st.error(f"🚨 ALERT: Anomaly Detected! (Score: {prob:.4f})")
+        if prediction == 0:
+            my_bar.progress(100)
+            st.success(f"✅ Normal Sample (Anomaly Score: {prob:.4f})")
+            st.info("No repair needed.")
         else:
-            st.success(f"✅ Normal: Data is within safe range. (Score: {prob:.4f})")
+            # 异常情况！
+            my_bar.progress(100)
+            st.error(f"🚨 ANOMALY DETECTED (Score: {prob:.4f})")
             
-        st.subheader("3. Model Explanation (Global)")
-        st.write("Top contributing features based on SHAP values:")
-        
-        # 显示我们之前生成的静态图片
-        img_path = os.path.join(base_dir, "result_shap_importance.png")
-        if os.path.exists(img_path):
-            image = Image.open(img_path)
-            st.image(image, caption="Feature Importance (Global Interpretation)", use_container_width=True)
-        else:
-            st.warning("Analysis chart not found.")
+            # --- B. 诊断 (SHAP Explanation) ---
+            st.write("---")
+            st.subheader("3. Root Cause & Repair Suggestions")
+            st.write("Analyzing contributing factors...")
+            
+            # 1. 现场计算 SHAP 值 (找出是谁导致了异常)
+            explainer = shap.TreeExplainer(model)
+            shap_values = explainer.shap_values(sample_data)
+            
+            # 兼容处理：LightGBM Binary分类有时返回list，有时返回array
+            if isinstance(shap_values, list):
+                # 如果是列表，取索引1 (Positive class/Anomaly)
+                vals = shap_values[1][0]
+            else:
+                vals = shap_values[0]
+            
+            # 2. 找出影响最大的 3 个特征 (SHAP值越大，说明越推高异常分)
+            feature_names = sample_data.columns
+            # argsort 从小到大排，[::-1] 反转变成从大到小
+            top_indices = np.argsort(vals)[::-1]
+            
+            # 3. 逐个生成修复建议
+            repair_cols = st.columns(3)
+            count = 0
+            
+            for idx in top_indices:
+                if count >= 3: break # 只显示前3个主要原因
+                
+                # 只关心正向贡献的特征 (真正导致异常的)
+                if vals[idx] > 0:
+                    feature_name = feature_names[idx]
+                    
+                    # --- C. 修复 (Repair) ---
+                    # 调用我们写的 repair_module
+                    report, _ = st.session_state.repairer.generate_repair_suggestion(sample_data, feature_name)
+                    
+                    with repair_cols[count]:
+                        st.markdown(f"**🔴 Issue: {feature_name}**")
+                        st.caption(f"Contribution: +{vals[idx]:.2f}")
+                        
+                        st.markdown("---")
+                        st.markdown("**🛠️ Suggestion:**")
+                        # 重点高亮建议值
+                        st.success(f"{report['Suggested Value']}")
+                        st.caption(f"Ref: 5 similar normal profiles")
+                    
+                    count += 1

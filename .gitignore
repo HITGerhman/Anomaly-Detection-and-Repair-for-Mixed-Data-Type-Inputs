@@ -2,7 +2,11 @@ __pycache__/
 *.pyc
 .DS_Store
 .vscode/
-.idea/
-.答辩.md
-# 如果你的模型文件特别大超过100M，Github传不上去，需要在这里加 *.pkl
-# 但你的模型应该很小，所以暂时不用加
+
+# 忽略巨大的数据集
+*.csv
+*.xlsx
+
+# 忽略巨大的模型文件
+*.pkl
+*.joblib
