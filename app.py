@@ -5,18 +5,15 @@ import os
 import shap
 import numpy as np
 from PIL import Image
-from repair_module import AnomalyRepairer  # 导入我们刚才写的修复模块
+from repair_module import AnomalyRepairer
 
 # ==========================================
-# 1. 页面配置
+# 1. 基础页面设置
 # ==========================================
-st.set_page_config(page_title="Anomaly Detection System", layout="wide")
-st.title("🔍 Mixed-Type Data Anomaly Detection System")
-st.markdown("**Core Framework:** LightGBM + SHAP + KNN-Repair | **Status:** v2.0 Integrated")
-st.markdown("---")
+st.set_page_config(page_title="Intelligent Anomaly Detection", layout="wide")
 
 # ==========================================
-# 2. 加载资源
+# 2. 加载资源与配置
 # ==========================================
 base_dir = r"D:\code\pythoncode"
 
@@ -24,105 +21,128 @@ base_dir = r"D:\code\pythoncode"
 def load_resources():
     model = joblib.load(os.path.join(base_dir, "model_lgb.pkl"))
     data = joblib.load(os.path.join(base_dir, "test_data.pkl"))
-    normal_data = joblib.load(os.path.join(base_dir, "normal_data.pkl")) # 加载正常样本库
-    return model, data, normal_data
+    normal_data = joblib.load(os.path.join(base_dir, "normal_data.pkl"))
+    # 读取配置文件
+    config = joblib.load(os.path.join(base_dir, "config.pkl"))
+    return model, data, normal_data, config
 
 try:
-    model, X_test, normal_data = load_resources()
-    # 初始化修复器 (只做一次)
+    model, X_test, normal_data, config = load_resources()
+    
+    # 初始化修复器
     if 'repairer' not in st.session_state:
         st.session_state.repairer = AnomalyRepairer(normal_data)
-    st.sidebar.success(f"✅ System Online. Reference DB: {len(normal_data)} samples")
+        
+    dataset_name = config.get("dataset_name", "unknown")
+    
 except Exception as e:
-    st.error(f"Error loading resources: {e}")
+    st.error(f"System Error: {e}")
     st.stop()
 
 # ==========================================
-# 3. 侧边栏与样本选择
+# 3. 动态标题与侧边栏 (自适应切换)
+# ==========================================
+
+# 根据数据集名称，显示不同的标题
+if dataset_name == "stroke":
+    st.title("🏥 AI Stroke Risk Prediction System")
+    st.markdown("**Dataset:** Real-world Healthcare Data | **Model:** LightGBM + SHAP")
+    st.sidebar.success("Mode: Medical / Stroke Analysis")
+    # 医疗数据的异常提示
+    anomaly_msg = "⚠️ HIGH STROKE RISK DETECTED"
+    normal_msg = "✅ Low Risk / Healthy Profile"
+    
+elif dataset_name == "adult":
+    st.title("💰 Census Income Anomaly Detection")
+    st.markdown("**Dataset:** Adult Census Data | **Model:** LightGBM + SHAP")
+    st.sidebar.success("Mode: Financial / Census Analysis")
+    # 收入数据的异常提示
+    anomaly_msg = "🚨 ANOMALY DETECTED (High Income)"
+    normal_msg = "✅ Normal Profile"
+    
+else:
+    st.title("🔍 Anomaly Detection System")
+    st.sidebar.warning("Unknown Dataset Mode")
+    anomaly_msg = "🚨 ANOMALY DETECTED"
+    normal_msg = "✅ Normal"
+
+st.markdown("---")
+
+# ==========================================
+# 4. 控制面板
 # ==========================================
 st.sidebar.header("Control Panel")
-# 为了方便演示，我把几个必定异常的 ID 列在这里，省得你找
-st.sidebar.info("Hint: Try Sample ID 4, 11, or 82 to see anomalies.")
-sample_id = st.sidebar.number_input("Select Sample ID", min_value=0, max_value=len(X_test)-1, value=4)
+# 动态获取样本总数
+max_idx = len(X_test) - 1
+st.sidebar.info(f"Test Set Size: {len(X_test)} samples")
+
+sample_id = st.sidebar.number_input(f"Select Sample ID (0-{max_idx})", min_value=0, max_value=max_idx, value=0)
 sample_data = X_test.iloc[[sample_id]]
 
 # ==========================================
-# 4. 主界面
+# 5. 主界面逻辑 (通用)
 # ==========================================
 col1, col2 = st.columns([1, 2])
 
 with col1:
-    st.subheader("1. Incoming Data")
-    st.dataframe(sample_data.T, height=300)
+    st.subheader("1. Patient / User Profile")
+    st.dataframe(sample_data.T, height=400)
 
 with col2:
-    st.subheader("2. Detection & Diagnosis")
+    st.subheader("2. AI Diagnosis")
     
     if st.button("🚀 Run Analysis"):
-        # --- A. 检测 (Detection) ---
+        # A. 预测
         prediction = model.predict(sample_data)[0]
         prob = model.predict_proba(sample_data)[0][1]
         
-        # 模拟计算进度
+        # 进度条
         import time
         my_bar = st.progress(0)
         for p in range(50):
             time.sleep(0.01)
             my_bar.progress(p + 1)
+        my_bar.progress(100)
             
+        # B. 结果显示 (使用上面的动态文案)
         if prediction == 0:
-            my_bar.progress(100)
-            st.success(f"✅ Normal Sample (Anomaly Score: {prob:.4f})")
-            st.info("No repair needed.")
+            st.success(f"{normal_msg} (Score: {prob:.4f})")
         else:
-            # 异常情况！
-            my_bar.progress(100)
-            st.error(f"🚨 ANOMALY DETECTED (Score: {prob:.4f})")
+            st.error(f"{anomaly_msg} (Score: {prob:.4f})")
             
-            # --- B. 诊断 (SHAP Explanation) ---
+            # C. 解释与修复
             st.write("---")
-            st.subheader("3. Root Cause & Repair Suggestions")
-            st.write("Analyzing contributing factors...")
+            st.subheader("3. Risk Factors & Suggestions")
             
-            # 1. 现场计算 SHAP 值 (找出是谁导致了异常)
             explainer = shap.TreeExplainer(model)
             shap_values = explainer.shap_values(sample_data)
             
-            # 兼容处理：LightGBM Binary分类有时返回list，有时返回array
             if isinstance(shap_values, list):
-                # 如果是列表，取索引1 (Positive class/Anomaly)
                 vals = shap_values[1][0]
             else:
                 vals = shap_values[0]
             
-            # 2. 找出影响最大的 3 个特征 (SHAP值越大，说明越推高异常分)
             feature_names = sample_data.columns
-            # argsort 从小到大排，[::-1] 反转变成从大到小
             top_indices = np.argsort(vals)[::-1]
             
-            # 3. 逐个生成修复建议
+            # 显示修复建议卡片
             repair_cols = st.columns(3)
             count = 0
             
             for idx in top_indices:
-                if count >= 3: break # 只显示前3个主要原因
-                
-                # 只关心正向贡献的特征 (真正导致异常的)
-                if vals[idx] > 0:
-                    feature_name = feature_names[idx]
+                if count >= 3: break
+                if vals[idx] > 0: # 只关注推高风险的因素
+                    feat_name = feature_names[idx]
                     
-                    # --- C. 修复 (Repair) ---
-                    # 调用我们写的 repair_module
-                    report, _ = st.session_state.repairer.generate_repair_suggestion(sample_data, feature_name)
+                    # 调用修复模块
+                    report, _ = st.session_state.repairer.generate_repair_suggestion(sample_data, feat_name)
                     
                     with repair_cols[count]:
-                        st.markdown(f"**🔴 Issue: {feature_name}**")
-                        st.caption(f"Contribution: +{vals[idx]:.2f}")
-                        
+                        st.markdown(f"**🔴 Factor: {feat_name}**")
+                        st.caption(f"Impact: +{vals[idx]:.2f}")
                         st.markdown("---")
-                        st.markdown("**🛠️ Suggestion:**")
-                        # 重点高亮建议值
+                        st.markdown("**🩺 Advice:**")
                         st.success(f"{report['Suggested Value']}")
-                        st.caption(f"Ref: 5 similar normal profiles")
+                        st.caption("Based on similar healthy profiles")
                     
                     count += 1
