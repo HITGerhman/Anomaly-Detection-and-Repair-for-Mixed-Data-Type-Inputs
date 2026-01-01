@@ -4,11 +4,19 @@ import joblib
 import os
 import shap
 import numpy as np
+import matplotlib.pyplot as plt
+import matplotlib
+matplotlib.use('Agg')  # 非交互式后端
 
 # 导入配置和核心模块
 from config import PATHS, FILES
 from src.repair_module import AnomalyRepairer
 from src.utils import process_and_train, save_system_state, load_system_state
+
+# 设置 matplotlib 样式
+plt.style.use('seaborn-v0_8-whitegrid')
+plt.rcParams['figure.facecolor'] = 'white'
+plt.rcParams['axes.facecolor'] = 'white'
 
 # ==========================================
 # 1. 页面配置与状态初始化
@@ -167,12 +175,152 @@ if page == "1. Data & Model Training":
 
     # 4. 显示训练结果 (即使刷新页面，只要 session_state 里有，就显示)
     if st.session_state.is_trained and st.session_state.train_metrics is not None:
+        metrics = st.session_state.train_metrics
+        
         st.markdown("---")
         st.subheader("📊 Model Performance")
-        col_m1, col_m2 = st.columns(2)
-        col_m1.metric("F1-Score", f"{st.session_state.train_metrics['f1']:.4f}")
-        col_m2.metric("AUC-ROC", f"{st.session_state.train_metrics['auc']:.4f}")
         
+        # 指标卡片 - 5个核心指标
+        col_m1, col_m2, col_m3, col_m4, col_m5 = st.columns(5)
+        col_m1.metric("Accuracy", f"{metrics.get('accuracy', 0):.4f}")
+        col_m2.metric("Precision", f"{metrics.get('precision', 0):.4f}")
+        col_m3.metric("Recall", f"{metrics.get('recall', 0):.4f}")
+        col_m4.metric("F1-Score", f"{metrics['f1']:.4f}")
+        col_m5.metric("AUC-ROC", f"{metrics['auc']:.4f}")
+        
+        st.markdown("---")
+        
+        # =========================================================
+        # 📈 可视化图表区域
+        # =========================================================
+        st.subheader("📈 Visual Analytics")
+        
+        viz_tab1, viz_tab2, viz_tab3 = st.tabs(["🎯 ROC Curve", "📊 Confusion Matrix", "⭐ Feature Importance"])
+        
+        # ---------------------------------------------------------
+        # ROC 曲线
+        # ---------------------------------------------------------
+        with viz_tab1:
+            if "roc_curve" in metrics:
+                fig_roc, ax_roc = plt.subplots(figsize=(8, 6))
+                
+                fpr = metrics["roc_curve"]["fpr"]
+                tpr = metrics["roc_curve"]["tpr"]
+                auc_score = metrics["auc"]
+                
+                # 绘制 ROC 曲线
+                ax_roc.plot(fpr, tpr, color='#3498db', lw=2.5, 
+                           label=f'ROC Curve (AUC = {auc_score:.4f})')
+                ax_roc.plot([0, 1], [0, 1], color='#95a5a6', lw=1.5, 
+                           linestyle='--', label='Random Classifier')
+                
+                # 填充 AUC 区域
+                ax_roc.fill_between(fpr, tpr, alpha=0.2, color='#3498db')
+                
+                ax_roc.set_xlim([0.0, 1.0])
+                ax_roc.set_ylim([0.0, 1.05])
+                ax_roc.set_xlabel('False Positive Rate', fontsize=12)
+                ax_roc.set_ylabel('True Positive Rate', fontsize=12)
+                ax_roc.set_title('Receiver Operating Characteristic (ROC) Curve', fontsize=14, fontweight='bold')
+                ax_roc.legend(loc='lower right', fontsize=10)
+                ax_roc.grid(True, alpha=0.3)
+                
+                plt.tight_layout()
+                st.pyplot(fig_roc)
+                plt.close(fig_roc)
+            else:
+                st.info("ROC curve is only available for binary classification.")
+        
+        # ---------------------------------------------------------
+        # 混淆矩阵
+        # ---------------------------------------------------------
+        with viz_tab2:
+            if "confusion_matrix" in metrics:
+                cm = metrics["confusion_matrix"]
+                
+                fig_cm, ax_cm = plt.subplots(figsize=(8, 6))
+                
+                # 使用 imshow 绘制热力图
+                im = ax_cm.imshow(cm, interpolation='nearest', cmap='Blues')
+                
+                # 添加颜色条
+                cbar = ax_cm.figure.colorbar(im, ax=ax_cm)
+                cbar.ax.set_ylabel('Count', rotation=-90, va="bottom", fontsize=11)
+                
+                # 设置标签
+                classes = ['Normal (0)', 'Anomaly (1)']
+                ax_cm.set(xticks=np.arange(cm.shape[1]),
+                         yticks=np.arange(cm.shape[0]),
+                         xticklabels=classes, yticklabels=classes,
+                         ylabel='Actual Label',
+                         xlabel='Predicted Label')
+                
+                ax_cm.set_title('Confusion Matrix', fontsize=14, fontweight='bold')
+                
+                # 在每个格子中显示数值
+                thresh = cm.max() / 2.
+                for i in range(cm.shape[0]):
+                    for j in range(cm.shape[1]):
+                        ax_cm.text(j, i, format(cm[i, j], 'd'),
+                                  ha="center", va="center",
+                                  color="white" if cm[i, j] > thresh else "black",
+                                  fontsize=20, fontweight='bold')
+                
+                plt.tight_layout()
+                st.pyplot(fig_cm)
+                plt.close(fig_cm)
+                
+                # 显示混淆矩阵解读
+                tn, fp, fn, tp = cm.ravel()
+                col_cm1, col_cm2, col_cm3, col_cm4 = st.columns(4)
+                col_cm1.metric("True Negative", tn, help="Correctly predicted as Normal")
+                col_cm2.metric("False Positive", fp, help="Normal misclassified as Anomaly")
+                col_cm3.metric("False Negative", fn, help="Anomaly misclassified as Normal")
+                col_cm4.metric("True Positive", tp, help="Correctly predicted as Anomaly")
+        
+        # ---------------------------------------------------------
+        # 特征重要性
+        # ---------------------------------------------------------
+        with viz_tab3:
+            if "feature_importance" in metrics:
+                importance = metrics["feature_importance"]
+                
+                # 排序
+                sorted_importance = dict(sorted(importance.items(), 
+                                                key=lambda x: x[1], reverse=True))
+                
+                fig_fi, ax_fi = plt.subplots(figsize=(10, max(6, len(importance) * 0.4)))
+                
+                features = list(sorted_importance.keys())
+                values = list(sorted_importance.values())
+                
+                # 使用渐变色
+                colors = plt.cm.Blues(np.linspace(0.4, 0.9, len(features)))[::-1]
+                
+                bars = ax_fi.barh(features[::-1], values[::-1], color=colors)
+                
+                ax_fi.set_xlabel('Importance Score', fontsize=12)
+                ax_fi.set_title('Feature Importance (LightGBM)', fontsize=14, fontweight='bold')
+                ax_fi.grid(True, axis='x', alpha=0.3)
+                
+                # 在条形上显示数值
+                for bar, val in zip(bars, values[::-1]):
+                    ax_fi.text(bar.get_width() + max(values) * 0.01, bar.get_y() + bar.get_height()/2,
+                              f'{val:.0f}', va='center', fontsize=9)
+                
+                plt.tight_layout()
+                st.pyplot(fig_fi)
+                plt.close(fig_fi)
+                
+                # 显示 Top 5 特征
+                st.markdown("#### 🏆 Top 5 Most Important Features")
+                top5 = list(sorted_importance.items())[:5]
+                top5_df = pd.DataFrame(top5, columns=['Feature', 'Importance'])
+                top5_df['Rank'] = range(1, len(top5_df) + 1)
+                top5_df = top5_df[['Rank', 'Feature', 'Importance']]
+                st.dataframe(top5_df, use_container_width=True, hide_index=True)
+        
+        st.markdown("---")
         st.markdown("👉 **Now go to '2. Detection & Repair' page to test the system.**")
 
 # =========================================================

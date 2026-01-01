@@ -20,23 +20,27 @@ from config import FILES, PATHS, MODEL_CONFIG
 def process_and_train(df, target_col):
     """
     接收用户上传的DataFrame，进行清洗、编码、训练，并返回模型和评估指标
+    
+    Returns:
+        model: 训练好的模型
+        X_test: 测试特征数据
+        normal_data: 正常样本库
+        metrics: 评估指标字典（包含可视化所需数据）
+        feature_names: 特征名列表
     """
     # 1. 数据预处理
-    # 自动识别类型
     X = df.drop(columns=[target_col])
     y = df[target_col]
     
-    # 简单的标签编码 (针对文字列) - 为了通用性，这里用 LabelEncoder 简化处理
+    # 简单的标签编码 (针对文字列)
     encoders = {}
     X_encoded = X.copy()
     cat_cols = X.select_dtypes(include=['object', 'category']).columns
     
     for col in cat_cols:
         le = LabelEncoder()
-        # 强制转字符串处理缺失值
         X_encoded[col] = le.fit_transform(X[col].astype(str))
         encoders[col] = le
-        # 记得把列类型转为 category 给 LightGBM 用 (虽然上面encoded了，但LGBM喜欢category类型)
         X_encoded[col] = X_encoded[col].astype('category')
 
     # 2. 划分训练集
@@ -50,13 +54,29 @@ def process_and_train(df, target_col):
     y_pred = model.predict(X_test)
     y_prob = model.predict_proba(X_test)[:, 1] if hasattr(model, "predict_proba") else y_pred
     
+    # 计算各项指标
+    from sklearn.metrics import confusion_matrix, roc_curve, precision_score, recall_score, accuracy_score
+    
     metrics = {
-        "f1": f1_score(y_test, y_pred, average='weighted'), # weighted 兼容多分类或不平衡
-        "auc": roc_auc_score(y_test, y_prob) if len(np.unique(y_test)) == 2 else 0.0 # 只有二分类才算AUC
+        "f1": f1_score(y_test, y_pred, average='weighted'),
+        "auc": roc_auc_score(y_test, y_prob) if len(np.unique(y_test)) == 2 else 0.0,
+        "accuracy": accuracy_score(y_test, y_pred),
+        "precision": precision_score(y_test, y_pred, zero_division=0),
+        "recall": recall_score(y_test, y_pred, zero_division=0),
+        # 可视化所需数据
+        "y_test": y_test.values,
+        "y_pred": y_pred,
+        "y_prob": y_prob,
+        "confusion_matrix": confusion_matrix(y_test, y_pred),
+        "feature_importance": dict(zip(X.columns.tolist(), model.feature_importances_)),
     }
     
+    # ROC 曲线数据
+    if len(np.unique(y_test)) == 2:
+        fpr, tpr, thresholds = roc_curve(y_test, y_prob)
+        metrics["roc_curve"] = {"fpr": fpr, "tpr": tpr}
+    
     # 5. 保存正常样本库 (给 KNN 修复用)
-    # 假设标签 0 是正常
     normal_data = X_train[y_train == 0].copy()
     
     return model, X_test, normal_data, metrics, X.columns.tolist()
