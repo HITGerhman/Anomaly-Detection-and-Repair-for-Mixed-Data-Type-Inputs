@@ -57,9 +57,97 @@ if page == "1. Data & Model Training":
         st.success(f"Dataset Loaded: {df.shape[0]} rows, {df.shape[1]} columns")
         st.dataframe(df.head())
         
+        # =========================================================
+        # 📊 数据统计面板
+        # =========================================================
+        with st.expander("📊 Data Statistics & Quality Report", expanded=False):
+            # --- 基础信息 ---
+            st.markdown("#### 📋 Basic Information")
+            col1, col2, col3, col4 = st.columns(4)
+            col1.metric("Total Rows", f"{df.shape[0]:,}")
+            col2.metric("Total Columns", df.shape[1])
+            col3.metric("Missing Values", f"{df.isnull().sum().sum():,}")
+            col4.metric("Memory Usage", f"{df.memory_usage(deep=True).sum() / 1024:.1f} KB")
+            
+            st.markdown("---")
+            
+            # --- 数据类型分布 ---
+            st.markdown("#### 🏷️ Data Types Distribution")
+            dtype_counts = df.dtypes.astype(str).value_counts()
+            col_type1, col_type2 = st.columns(2)
+            
+            with col_type1:
+                # 数值型列
+                numeric_cols = df.select_dtypes(include=['int64', 'float64']).columns.tolist()
+                st.markdown(f"**Numeric Columns** ({len(numeric_cols)})")
+                if numeric_cols:
+                    st.write(", ".join(numeric_cols))
+                else:
+                    st.write("None")
+            
+            with col_type2:
+                # 分类型列
+                cat_cols = df.select_dtypes(include=['object', 'category']).columns.tolist()
+                st.markdown(f"**Categorical Columns** ({len(cat_cols)})")
+                if cat_cols:
+                    st.write(", ".join(cat_cols))
+                else:
+                    st.write("None")
+            
+            st.markdown("---")
+            
+            # --- 缺失值分析 ---
+            st.markdown("#### ❓ Missing Values Analysis")
+            missing_data = df.isnull().sum()
+            missing_data = missing_data[missing_data > 0].sort_values(ascending=False)
+            
+            if len(missing_data) > 0:
+                missing_df = pd.DataFrame({
+                    'Column': missing_data.index,
+                    'Missing Count': missing_data.values,
+                    'Missing %': (missing_data.values / len(df) * 100).round(2)
+                })
+                st.dataframe(missing_df, use_container_width=True, hide_index=True)
+            else:
+                st.success("✅ No missing values found!")
+            
+            st.markdown("---")
+            
+            # --- 数值特征统计 ---
+            if numeric_cols:
+                st.markdown("#### 📈 Numeric Features Statistics")
+                st.dataframe(df[numeric_cols].describe().T.round(2), use_container_width=True)
+            
+            # --- 分类特征分布 ---
+            if cat_cols:
+                st.markdown("#### 📊 Categorical Features Distribution")
+                selected_cat = st.selectbox("Select a categorical column to view distribution:", cat_cols)
+                if selected_cat:
+                    value_counts = df[selected_cat].value_counts()
+                    dist_df = pd.DataFrame({
+                        'Value': value_counts.index,
+                        'Count': value_counts.values,
+                        'Percentage': (value_counts.values / len(df) * 100).round(2)
+                    })
+                    st.dataframe(dist_df, use_container_width=True, hide_index=True)
+        
         # 选择目标列
         target_col = st.selectbox("Select the Target Column (Label)", df.columns, index=len(df.columns)-1)
-        st.info(f"The system will learn to detect anomalies based on '{target_col}'. (0=Normal, 1=Anomaly)")
+        
+        # --- 目标列分布预览 ---
+        if target_col:
+            target_counts = df[target_col].value_counts()
+            col_t1, col_t2, col_t3 = st.columns(3)
+            
+            total = len(df)
+            normal_count = target_counts.get(0, 0)
+            anomaly_count = target_counts.get(1, 0)
+            
+            col_t1.metric("Normal (0)", f"{normal_count:,}", f"{normal_count/total*100:.1f}%")
+            col_t2.metric("Anomaly (1)", f"{anomaly_count:,}", f"{anomaly_count/total*100:.1f}%")
+            col_t3.metric("Imbalance Ratio", f"1:{normal_count//max(anomaly_count,1)}" if anomaly_count > 0 else "N/A")
+            
+            st.info(f"The system will learn to detect anomalies based on '{target_col}'. (0=Normal, 1=Anomaly)")
         
         # 3. 训练按钮
         if st.button("🚀 Start Training Model"):
