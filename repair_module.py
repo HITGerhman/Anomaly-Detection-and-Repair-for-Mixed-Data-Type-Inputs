@@ -1,109 +1,76 @@
 import pandas as pd
 import numpy as np
-import gower  # 专门计算混合数据距离的库
-from scipy.stats import mode
+import gower
 
 class AnomalyRepairer:
-    def __init__(self, normal_data):
+    def __init__(self, normal_data, feature_weights=None):
         """
         初始化修复器
-        :param normal_data: 这里的输入必须是【只包含正常样本】的 DataFrame
+        :param normal_data: 正常的样本库 (DataFrame)
+        :param feature_weights: 特征权重数组
         """
-        self.normal_data = normal_data.reset_index(drop=True)
-        print(f"🔧 修复模块已初始化 | 参考库大小: {len(self.normal_data)} 条正常数据")
+        # 1. 自动识别哪些列是"分类" (Category)
+        # 我们检查每一列的类型，如果是 'category' 或者 'object'，就标记为 True
+        self.cat_features = [
+            (pd.api.types.is_categorical_dtype(dtype) or pd.api.types.is_object_dtype(dtype))
+            for dtype in normal_data.dtypes
+        ]
+        
+        # 2. 制作一个"干净版"的数据矩阵给 Gower 用
+        # Gower 不喜欢 pandas 的 Category 类型，所以我们把它们转成纯数字编码 (.cat.codes)
+        self.normal_data_matrix = normal_data.copy()
+        for col in self.normal_data_matrix.columns:
+            if pd.api.types.is_categorical_dtype(self.normal_data_matrix[col]):
+                self.normal_data_matrix[col] = self.normal_data_matrix[col].cat.codes
+        
+        # 3. 保存原始数据 (为了最后给建议时能取到真实的值)
+        self.normal_data = normal_data
+        self.feature_weights = feature_weights
 
-    def find_neighbors(self, anomaly_sample, k=5):
+    def generate_repair_suggestion(self, anomaly_sample, feature_to_fix, k=5):
         """
-        计算 Gower 距离并找到最近的 k 个邻居
+        基于加权 KNN + Gower 距离生成修复建议
         """
-        # 1. 计算 Gower 距离矩阵
-        # gower.gower_matrix 会自动识别数字列和文字列
-        # 返回的是一个矩阵，我们只需要第一行（因为只有一个异常样本）
-        distances = gower.gower_matrix(anomaly_sample, self.normal_data)[0]
+        # 1. 同样处理异常样本：把 Category 类型转成纯数字编码
+        anomaly_sample_matrix = anomaly_sample.copy()
+        for col in anomaly_sample_matrix.columns:
+            if pd.api.types.is_categorical_dtype(anomaly_sample_matrix[col]):
+                anomaly_sample_matrix[col] = anomaly_sample_matrix[col].cat.codes
         
-        # 2. 找到距离最小的 k 个索引 (argsort 从小到大排序)
-        # 注意：Gower 距离 0 表示完全一样，1 表示完全不同
-        nearest_indices = np.argsort(distances)[:k]
+        # 2. 计算距离 (使用处理过的矩阵)
+        # 关键点：我们传入了 cat_features，告诉 Gower 哪些列是分类特征
+        # 这样 Gower 就会用 Dice 距离(0或1)而不是曼哈顿距离
+        distances = gower.gower_matrix(
+            anomaly_sample_matrix, 
+            self.normal_data_matrix, 
+            weight=self.feature_weights,
+            cat_features=self.cat_features # 【核心修复】显式指定分类列
+        )[0]
         
-        # 3. 提取这 k 个邻居的数据
+        # 3. 找到最近的 K 个邻居的索引
+        nearest_indices = distances.argsort()[:k]
+        
+        # 4. 从【原始数据】(self.normal_data) 中取出邻居
+        # 注意：这里必须用原始数据，因为我们需要拿到原始的分类标签(比如 'Private')，而不是数字编码
         neighbors = self.normal_data.iloc[nearest_indices]
-        return neighbors, distances[nearest_indices]
-
-    def generate_repair_suggestion(self, anomaly_sample, target_feature, k=5):
-        """
-        针对某个特定特征（target_feature）生成修复建议
-        """
-        # 1. 找邻居
-        neighbors, dists = self.find_neighbors(anomaly_sample, k)
         
-        # 2. 获取邻居在该特征上的值
-        neighbor_values = neighbors[target_feature]
+        # 5. 计算建议值
+        target_col_values = neighbors[feature_to_fix]
         
-        # 3. 判断特征类型（是数字还是文字？）
-        # pandas 的 api: api.types.is_numeric_dtype
-        is_numeric = pd.api.types.is_numeric_dtype(neighbor_values)
-        
-        current_value = anomaly_sample[target_feature].values[0]
-        
-        if is_numeric:
-            # 如果是数字，算平均值 (Mean)
-            suggested_value = neighbor_values.mean()
-            # 格式化一下，保留2位小数
-            suggestion_text = f"{suggested_value:.2f} (Mean of neighbors)"
-            repair_value = suggested_value
+        if pd.api.types.is_numeric_dtype(target_col_values):
+            suggested_value = target_col_values.median()
+            if suggested_value.is_integer():
+                suggested_value = int(suggested_value)
+            else:
+                suggested_value = round(suggested_value, 2)
         else:
-            # 如果是文字，算众数 (Mode) - 也就是出现次数最多的
-            # mode result 返回 (array([值]), array([次数]))
-            mode_res = mode(neighbor_values, keepdims=True)
-            suggested_value = mode_res.mode[0]
-            count = mode_res.count[0]
-            suggestion_text = f"'{suggested_value}' (Mode, appeared {count}/{k} times)"
-            repair_value = suggested_value
-
-        # 4. 生成最终报告
-        report = {
-            "Feature": target_feature,
-            "Current Value": current_value,
-            "Suggested Value": suggestion_text,
-            "Repair Logic": f"Based on {k} most similar normal samples (Avg Gower Dist: {dists.mean():.4f})",
-            "Raw_Repair_Value": repair_value # 用于程序后续自动替换
-        }
+            # 类别型取众数
+            suggested_value = target_col_values.mode()[0]
+            
+        repair_logic = f"Found {k} nearest healthy neighbors (weighted by SHAP importance)."
         
-        return report, neighbors
-
-# ==========================================
-# 下面是测试代码 (Test Block)
-# ==========================================
-if __name__ == "__main__":
-    import shap
-    from sklearn.model_selection import train_test_split
-
-    print("--- 开始测试修复模块 ---")
-    
-    # 1. 准备数据 (还是用 Adult 数据集)
-    X, y = shap.datasets.adult()
-    # 假设标签为 False (0) 是正常人，True (1) 是异常/高收入
-    # 我们只用"正常人"作为参考库
-    normal_data_pool = X[y == False].sample(1000, random_state=42) # 取1000个做演示，太大数据算得慢
-    
-    # 找一个"异常"样本 (假设 y==True 的是异常)
-    anomaly_sample = X[y == True].iloc[[0]] 
-    
-    # 2. 实例化修复器
-    repairer = AnomalyRepairer(normal_data_pool)
-    
-    # 3. 假设 SHAP 告诉我们要修复 "Age" 和 "Relationship"
-    target_features = ["Age", "Relationship"]
-    
-    print(f"\n当前异常样本:\n{anomaly_sample.iloc[0][target_features].to_dict()}")
-    print("-" * 50)
-    
-    for feature in target_features:
-        print(f"正在计算 {feature} 的修复建议...")
-        report, neighbors = repairer.generate_repair_suggestion(anomaly_sample, feature, k=5)
-        
-        print(f"✅ 针对 [{feature}] 的修复建议:")
-        print(f"   - 原值: {report['Current Value']}")
-        print(f"   - 建议修改为: {report['Suggested Value']}")
-        print(f"   - 依据: {report['Repair Logic']}")
-        print("-" * 50)
+        return {
+            "Suggested Value": suggested_value,
+            "Repair Logic": repair_logic,
+            "Neighbors": neighbors
+        }, neighbors
