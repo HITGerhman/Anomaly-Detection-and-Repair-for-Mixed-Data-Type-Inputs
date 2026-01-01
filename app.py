@@ -257,17 +257,111 @@ elif page == "2. Detection & Repair":
                         
                         st.markdown("### 🛠️ Smart Repair Suggestions")
                         
+                        # 收集修复建议
+                        repair_suggestions = {}
                         for idx in top_indices:
                             if vals[idx] > 0:
                                 fname = feat_names[idx]
                                 report, _ = st.session_state.repairer.generate_repair_suggestion(sample_data, fname)
+                                repair_suggestions[fname] = {
+                                    'current': sample_data[fname].values[0],
+                                    'suggested': report['Suggested Value'],
+                                    'impact': vals[idx],
+                                    'logic': report['Repair Logic']
+                                }
                                 
                                 with st.expander(f"🔴 Issue: {fname} (Impact: +{vals[idx]:.2f})", expanded=True):
                                     st.write(f"**Current:** {sample_data[fname].values[0]}")
                                     st.success(f"**Suggested:** {report['Suggested Value']}")
                                     st.caption(f"Reasoning: {report['Repair Logic']}")
+                        
+                        # 保存原始数据和修复建议到 session_state
+                        st.session_state.current_sample = sample_data.copy()
+                        st.session_state.repair_suggestions = repair_suggestions
+                        st.session_state.original_prob = prob
+                        
                     else:
                         st.success(f"✅ Normal Profile (Risk Score: {prob:.4f})")
+                        # 清除之前的修复状态
+                        if 'repair_suggestions' in st.session_state:
+                            del st.session_state.repair_suggestions
+                
+                # =========================================================
+                # 🔄 修复验证功能
+                # =========================================================
+                if 'repair_suggestions' in st.session_state and st.session_state.repair_suggestions:
+                    st.markdown("---")
+                    st.markdown("### 🔄 Repair Verification")
+                    st.info("Apply the suggested repairs and verify if the sample becomes normal.")
+                    
+                    if st.button("✨ Apply All Repairs & Verify", key="apply_repairs", type="primary"):
+                        # 创建修复后的数据副本
+                        repaired_data = st.session_state.current_sample.copy()
+                        
+                        # 应用所有修复建议
+                        for fname, repair_info in st.session_state.repair_suggestions.items():
+                            repaired_data[fname] = repair_info['suggested']
+                        
+                        # 重新预测
+                        new_pred = model.predict(repaired_data)[0]
+                        new_prob = model.predict_proba(repaired_data)[0][1]
+                        original_prob = st.session_state.original_prob
+                        
+                        # 显示修复前后对比
+                        st.markdown("#### 📊 Before vs After Comparison")
+                        
+                        comparison_data = []
+                        for fname, repair_info in st.session_state.repair_suggestions.items():
+                            comparison_data.append({
+                                'Feature': fname,
+                                'Before': repair_info['current'],
+                                'After': repair_info['suggested'],
+                                'Impact': f"+{repair_info['impact']:.2f}"
+                            })
+                        
+                        comparison_df = pd.DataFrame(comparison_data)
+                        st.dataframe(comparison_df, use_container_width=True, hide_index=True)
+                        
+                        # 显示预测结果对比
+                        st.markdown("#### 🎯 Prediction Result")
+                        col_before, col_after, col_change = st.columns(3)
+                        
+                        with col_before:
+                            st.metric(
+                                "Before Repair",
+                                "🚨 Anomaly",
+                                f"Risk: {original_prob:.4f}"
+                            )
+                        
+                        with col_after:
+                            if new_pred == 0:
+                                st.metric(
+                                    "After Repair",
+                                    "✅ Normal",
+                                    f"Risk: {new_prob:.4f}"
+                                )
+                            else:
+                                st.metric(
+                                    "After Repair",
+                                    "🚨 Still Anomaly",
+                                    f"Risk: {new_prob:.4f}"
+                                )
+                        
+                        with col_change:
+                            risk_change = new_prob - original_prob
+                            st.metric(
+                                "Risk Change",
+                                f"{risk_change:+.4f}",
+                                f"{risk_change/original_prob*100:+.1f}%" if original_prob > 0 else "N/A",
+                                delta_color="inverse"
+                            )
+                        
+                        # 验证结果
+                        if new_pred == 0:
+                            st.success("🎉 **Repair Successful!** The sample is now classified as Normal.")
+                            st.balloons()
+                        else:
+                            st.warning("⚠️ **Partial Improvement.** The sample is still classified as Anomaly, but risk score decreased. Consider additional repairs.")
         except Exception as e:
             st.error(f"Error analyzing sample: {e}")
     
