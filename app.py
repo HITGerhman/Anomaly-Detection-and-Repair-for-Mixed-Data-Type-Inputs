@@ -4,14 +4,16 @@ import joblib
 import os
 import shap
 import numpy as np
-from repair_module import AnomalyRepairer
-from utils import process_and_train, save_system_state
+
+# 导入配置和核心模块
+from config import PATHS, FILES
+from src.repair_module import AnomalyRepairer
+from src.utils import process_and_train, save_system_state, load_system_state
 
 # ==========================================
 # 1. 页面配置与状态初始化
 # ==========================================
 st.set_page_config(page_title="Mixed-Type Anomaly Detection System", layout="wide")
-base_dir = r"D:\code\pythoncode\Anomaly Detection and Repair for Mixed Data Type Inputs"
 
 # --- 【关键修改】初始化 Session State (记忆模块) ---
 # 如果系统第一次启动，先在内存里建几个"空抽屉"来放数据
@@ -65,8 +67,8 @@ if page == "1. Data & Model Training":
                 # 调用 utils
                 model, X_test, normal_data, metrics, feats = process_and_train(df, target_col)
                 
-                # 保存到硬盘
-                save_system_state(model, X_test, normal_data, feats, base_dir)
+                # 保存到硬盘（使用配置中的路径）
+                save_system_state(model, X_test, normal_data, feats)
                 
                 # 【存入记忆】
                 st.session_state.train_metrics = metrics
@@ -92,17 +94,14 @@ elif page == "2. Detection & Repair":
     st.title("🔍 Interactive Detection & Repair")
     
     # 检查硬盘上有没有模型文件 (这是为了防止用户直接跳到这一页)
-    if not os.path.exists(os.path.join(base_dir, "model_lgb.pkl")):
+    if not os.path.exists(FILES["model"]):
         st.warning("⚠️ No model found. Please go to 'Data & Model Training' page first.")
         st.stop()
         
     # 加载模型 (使用 cache_resource 避免重复加载)
     @st.cache_resource
     def load_model_resources():
-        m = joblib.load(os.path.join(base_dir, "model_lgb.pkl"))
-        d = joblib.load(os.path.join(base_dir, "test_data.pkl"))
-        n = joblib.load(os.path.join(base_dir, "normal_data.pkl"))
-        return m, d, n
+        return load_system_state()
 
     model, X_test, normal_data = load_model_resources()
     
@@ -117,11 +116,6 @@ elif page == "2. Detection & Repair":
     max_len = len(X_test) - 1
     if max_len < 0: max_len = 0
     
-    #sample_id = st.sidebar.slider("Select Test Sample ID", 0, max_len, 0)
-    # --- 原来的代码 (删掉或注释掉) ---
-    # sample_id = st.sidebar.slider("Select Test Sample ID", 0, max_len, 0)
-    
-    # --- 新的代码 (复制这个) ---
     sample_id = st.sidebar.number_input(
         "Enter Test Sample ID", 
         min_value=0, 
@@ -174,5 +168,3 @@ elif page == "2. Detection & Repair":
                     st.success(f"✅ Normal Profile (Risk Score: {prob:.4f})")
     except Exception as e:
         st.error(f"Error analyzing sample: {e}")
-
-#py -3.9 -m streamlit run app.py

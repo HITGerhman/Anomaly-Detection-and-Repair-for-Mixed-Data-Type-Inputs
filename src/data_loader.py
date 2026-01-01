@@ -1,10 +1,30 @@
+"""
+数据加载模块
+支持加载和预处理各种数据集
+"""
 import pandas as pd
 import numpy as np
+import os
+import sys
 
-def load_stroke_data(filepath="healthcare-dataset-stroke-data.csv"):
+# 导入配置
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from config import FILES
+
+
+def load_stroke_data(filepath=None):
     """
     加载并清洗中风预测数据集
+    
+    Args:
+        filepath: 数据文件路径（默认使用配置文件中的路径）
+    
+    Returns:
+        tuple: (X, y) 特征和标签
     """
+    if filepath is None:
+        filepath = FILES["stroke_data"]
+    
     print(f"正在加载真实数据集: {filepath} ...")
     
     # 1. 读取 CSV
