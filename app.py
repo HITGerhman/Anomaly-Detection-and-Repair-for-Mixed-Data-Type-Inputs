@@ -193,66 +193,201 @@ elif page == "2. Detection & Repair":
 
     model, X_test, normal_data = load_model_resources()
     
+    # ⚡ SHAP Explainer 缓存（性能优化）
+    # TreeExplainer 创建开销大，缓存后只创建一次
+    @st.cache_resource
+    def get_shap_explainer(_model):
+        """缓存 SHAP explainer，避免重复创建"""
+        return shap.TreeExplainer(_model)
+    
+    explainer = get_shap_explainer(model)
+    
     # 初始化修复器
     if 'repairer' not in st.session_state:
         st.session_state.repairer = AnomalyRepairer(normal_data)
         
-    st.sidebar.markdown("---")
-    st.sidebar.header("Test Console")
-    
-    # 防止滑块报错 (如果新数据比旧数据小)
+    # 防止索引报错
     max_len = len(X_test) - 1
     if max_len < 0: max_len = 0
     
-    sample_id = st.sidebar.number_input(
-        "Enter Test Sample ID", 
-        min_value=0, 
-        max_value=max_len, 
-        value=0, 
-        step=1,
-        help=f"Valid range: 0 to {max_len}" # 鼠标悬停会提示范围
-    )
+    # =========================================================
+    # 使用 Tabs 区分单条检测和批量检测
+    # =========================================================
+    tab1, tab2 = st.tabs(["🔬 Single Detection", "📊 Batch Detection & Export"])
     
-    # --- 检测逻辑 ---
-    try:
-        sample_data = X_test.iloc[[sample_id]]
+    # ---------------------------------------------------------
+    # Tab 1: 单条检测
+    # ---------------------------------------------------------
+    with tab1:
+        st.sidebar.markdown("---")
+        st.sidebar.header("🔬 Single Detection")
         
-        c1, c2 = st.columns([1, 2])
-        with c1:
-            st.subheader("Target Profile")
-            st.dataframe(sample_data.T, height=400)
+        sample_id = st.sidebar.number_input(
+            "Enter Test Sample ID", 
+            min_value=0, 
+            max_value=max_len, 
+            value=0, 
+            step=1,
+            help=f"Valid range: 0 to {max_len}"
+        )
+        
+        try:
+            sample_data = X_test.iloc[[sample_id]]
             
-        with c2:
-            st.subheader("Analysis Result")
-            # 自动运行或者手动运行，这里用按钮更清晰
-            if st.button("Run Diagnosis", key="run_diag"):
-                pred = model.predict(sample_data)[0]
-                prob = model.predict_proba(sample_data)[0][1]
+            c1, c2 = st.columns([1, 2])
+            with c1:
+                st.subheader("Target Profile")
+                st.dataframe(sample_data.T, height=400)
                 
-                if pred == 1: # 异常
-                    st.error(f"🚨 ANOMALY DETECTED (Risk Score: {prob:.4f})")
+            with c2:
+                st.subheader("Analysis Result")
+                if st.button("Run Diagnosis", key="run_diag"):
+                    pred = model.predict(sample_data)[0]
+                    prob = model.predict_proba(sample_data)[0][1]
                     
-                    # SHAP
-                    explainer = shap.TreeExplainer(model)
-                    shap_values = explainer.shap_values(sample_data)
-                    vals = shap_values[1][0] if isinstance(shap_values, list) else shap_values[0]
-                    
-                    top_indices = np.argsort(vals)[::-1][:3]
-                    feat_names = sample_data.columns
-                    
-                    st.markdown("### 🛠️ Smart Repair Suggestions")
-                    
-                    for idx in top_indices:
-                        if vals[idx] > 0:
-                            fname = feat_names[idx]
-                            report, _ = st.session_state.repairer.generate_repair_suggestion(sample_data, fname)
-                            
-                            with st.expander(f"🔴 Issue: {fname} (Impact: +{vals[idx]:.2f})", expanded=True):
-                                st.write(f"**Current:** {sample_data[fname].values[0]}")
-                                st.success(f"**Suggested:** {report['Suggested Value']}")
-                                st.caption(f"Reasoning: {report['Repair Logic']}")
+                    if pred == 1:
+                        st.error(f"🚨 ANOMALY DETECTED (Risk Score: {prob:.4f})")
+                        
+                        # SHAP 解释（使用缓存的 explainer）
+                        shap_values = explainer.shap_values(sample_data)
+                        vals = shap_values[1][0] if isinstance(shap_values, list) else shap_values[0]
+                        
+                        top_indices = np.argsort(vals)[::-1][:3]
+                        feat_names = sample_data.columns
+                        
+                        st.markdown("### 🛠️ Smart Repair Suggestions")
+                        
+                        for idx in top_indices:
+                            if vals[idx] > 0:
+                                fname = feat_names[idx]
+                                report, _ = st.session_state.repairer.generate_repair_suggestion(sample_data, fname)
                                 
+                                with st.expander(f"🔴 Issue: {fname} (Impact: +{vals[idx]:.2f})", expanded=True):
+                                    st.write(f"**Current:** {sample_data[fname].values[0]}")
+                                    st.success(f"**Suggested:** {report['Suggested Value']}")
+                                    st.caption(f"Reasoning: {report['Repair Logic']}")
+                    else:
+                        st.success(f"✅ Normal Profile (Risk Score: {prob:.4f})")
+        except Exception as e:
+            st.error(f"Error analyzing sample: {e}")
+    
+    # ---------------------------------------------------------
+    # Tab 2: 批量检测 + 导出
+    # ---------------------------------------------------------
+    with tab2:
+        st.markdown("### 📊 Batch Anomaly Detection")
+        st.markdown("Scan multiple samples at once and export results to CSV.")
+        
+        # 选择检测范围
+        col_range1, col_range2 = st.columns(2)
+        with col_range1:
+            detection_mode = st.radio(
+                "Detection Scope",
+                ["All Test Samples", "Custom Range"],
+                horizontal=True
+            )
+        
+        if detection_mode == "Custom Range":
+            with col_range2:
+                range_start = st.number_input("Start Index", min_value=0, max_value=max_len, value=0)
+                range_end = st.number_input("End Index", min_value=0, max_value=max_len, value=min(100, max_len))
+        else:
+            range_start, range_end = 0, max_len
+        
+        # 批量检测按钮
+        if st.button("🚀 Run Batch Detection", key="batch_detect", type="primary"):
+            with st.spinner(f"Scanning samples {range_start} to {range_end}..."):
+                # 获取指定范围的数据
+                batch_data = X_test.iloc[range_start:range_end+1]
+                
+                # 批量预测
+                predictions = model.predict(batch_data)
+                probabilities = model.predict_proba(batch_data)[:, 1]
+                
+                # 构建结果 DataFrame
+                results_df = batch_data.copy()
+                results_df.insert(0, 'Sample_ID', range(range_start, range_end+1))
+                results_df['Prediction'] = predictions
+                results_df['Risk_Score'] = probabilities.round(4)
+                results_df['Status'] = np.where(predictions == 1, '🚨 Anomaly', '✅ Normal')
+                
+                # 保存到 session_state
+                st.session_state.batch_results = results_df
+                st.session_state.batch_stats = {
+                    'total': len(results_df),
+                    'anomalies': int((predictions == 1).sum()),
+                    'normals': int((predictions == 0).sum())
+                }
+            
+            st.success("✅ Batch detection complete!")
+        
+        # 显示结果
+        if 'batch_results' in st.session_state and st.session_state.batch_results is not None:
+            stats = st.session_state.batch_stats
+            results_df = st.session_state.batch_results
+            
+            # 统计指标
+            st.markdown("---")
+            st.markdown("### 📈 Detection Summary")
+            col_s1, col_s2, col_s3, col_s4 = st.columns(4)
+            col_s1.metric("Total Scanned", f"{stats['total']:,}")
+            col_s2.metric("Anomalies Found", f"{stats['anomalies']:,}", 
+                         delta=f"{stats['anomalies']/stats['total']*100:.1f}%", delta_color="inverse")
+            col_s3.metric("Normal Samples", f"{stats['normals']:,}")
+            col_s4.metric("Anomaly Rate", f"{stats['anomalies']/stats['total']*100:.2f}%")
+            
+            st.markdown("---")
+            
+            # 筛选选项
+            filter_option = st.radio(
+                "Filter Results",
+                ["All", "Anomalies Only", "Normal Only"],
+                horizontal=True
+            )
+            
+            if filter_option == "Anomalies Only":
+                display_df = results_df[results_df['Prediction'] == 1]
+            elif filter_option == "Normal Only":
+                display_df = results_df[results_df['Prediction'] == 0]
+            else:
+                display_df = results_df
+            
+            # 显示结果表格
+            st.markdown(f"### 📋 Results ({len(display_df)} samples)")
+            st.dataframe(
+                display_df[['Sample_ID', 'Status', 'Risk_Score'] + list(X_test.columns)],
+                use_container_width=True,
+                height=400
+            )
+            
+            st.markdown("---")
+            
+            # 导出功能
+            st.markdown("### 📥 Export Results")
+            col_exp1, col_exp2 = st.columns(2)
+            
+            with col_exp1:
+                # 导出全部结果
+                csv_all = results_df.to_csv(index=False).encode('utf-8')
+                st.download_button(
+                    label="📥 Download All Results (CSV)",
+                    data=csv_all,
+                    file_name="batch_detection_all.csv",
+                    mime="text/csv",
+                    key="download_all"
+                )
+            
+            with col_exp2:
+                # 只导出异常
+                anomalies_df = results_df[results_df['Prediction'] == 1]
+                if len(anomalies_df) > 0:
+                    csv_anomalies = anomalies_df.to_csv(index=False).encode('utf-8')
+                    st.download_button(
+                        label="🚨 Download Anomalies Only (CSV)",
+                        data=csv_anomalies,
+                        file_name="batch_detection_anomalies.csv",
+                        mime="text/csv",
+                        key="download_anomalies"
+                    )
                 else:
-                    st.success(f"✅ Normal Profile (Risk Score: {prob:.4f})")
-    except Exception as e:
-        st.error(f"Error analyzing sample: {e}")
+                    st.info("No anomalies found to export.")
