@@ -1,10 +1,72 @@
-"""JSON protocol models for the Python engine."""
+"""JSON protocol and domain errors for the Python engine."""
 
 from __future__ import annotations
 
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from typing import Any
+
+
+class ErrorCode:
+    INVALID_JSON = "INVALID_JSON"
+    INVALID_INPUT = "INVALID_INPUT"
+    UNKNOWN_ACTION = "UNKNOWN_ACTION"
+    FILE_NOT_FOUND = "FILE_NOT_FOUND"
+    CSV_READ_FAILED = "CSV_READ_FAILED"
+    INVALID_TARGET_COLUMN = "INVALID_TARGET_COLUMN"
+    MISSING_DEPENDENCY = "MISSING_DEPENDENCY"
+    TRAINING_MODULE_IMPORT_FAILED = "TRAINING_MODULE_IMPORT_FAILED"
+    TRAINING_FAILED = "TRAINING_FAILED"
+    INTERNAL_ERROR = "INTERNAL_ERROR"
+
+    @classmethod
+    def all(cls) -> set[str]:
+        return {
+            cls.INVALID_JSON,
+            cls.INVALID_INPUT,
+            cls.UNKNOWN_ACTION,
+            cls.FILE_NOT_FOUND,
+            cls.CSV_READ_FAILED,
+            cls.INVALID_TARGET_COLUMN,
+            cls.MISSING_DEPENDENCY,
+            cls.TRAINING_MODULE_IMPORT_FAILED,
+            cls.TRAINING_FAILED,
+            cls.INTERNAL_ERROR,
+        }
+
+
+@dataclass(frozen=True)
+class EngineRequest:
+    task_id: str
+    action: str
+    payload: dict[str, Any]
+
+    @classmethod
+    def from_dict(cls, raw: dict[str, Any]) -> "EngineRequest":
+        if not isinstance(raw, dict):
+            raise KnownEngineError(
+                code=ErrorCode.INVALID_INPUT,
+                message="Request body must be a JSON object",
+            )
+
+        task_id = str(raw.get("task_id") or "no-task-id").strip()
+        action = str(raw.get("action") or "").strip()
+        payload = raw.get("payload", {})
+
+        if not action:
+            raise KnownEngineError(
+                code=ErrorCode.INVALID_INPUT,
+                message="Missing required field: action",
+                details={"field": "action"},
+            )
+        if not isinstance(payload, dict):
+            raise KnownEngineError(
+                code=ErrorCode.INVALID_INPUT,
+                message="Field payload must be an object",
+                details={"field": "payload"},
+            )
+
+        return cls(task_id=task_id, action=action, payload=payload)
 
 
 @dataclass
@@ -41,10 +103,12 @@ class EngineResponse:
 
 
 class KnownEngineError(Exception):
-    """Domain-level error that should be returned as structured JSON."""
+    """Domain-level error returned as structured JSON."""
 
     def __init__(self, code: str, message: str, details: dict[str, Any] | None = None):
-        self.code = code
+        normalized_code = code if code in ErrorCode.all() else ErrorCode.INTERNAL_ERROR
+        self.code = normalized_code
         self.message = message
         self.details = details or {}
         super().__init__(message)
+

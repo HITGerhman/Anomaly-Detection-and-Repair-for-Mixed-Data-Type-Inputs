@@ -1,6 +1,17 @@
 # Python Engine
 
-This engine wraps the current algorithm modules behind a stable JSON protocol.
+This engine wraps the algorithm layer behind a stable JSON protocol.
+
+## Layer split
+
+- Algorithm layer: `src/training_core.py` and `engine_core.py`
+- Service routing: `engine_service.py`
+- CLI/transport layer: `engine_main.py`
+
+## Protocol files
+
+- Input template: `appshell/core/python_engine/input.json`
+- Output template: `appshell/core/python_engine/output.json`
 
 ## Request shape
 
@@ -29,15 +40,33 @@ This engine wraps the current algorithm modules behind a stable JSON protocol.
 }
 ```
 
+## Error codes
+
+- `INVALID_JSON`
+- `INVALID_INPUT`
+- `UNKNOWN_ACTION`
+- `FILE_NOT_FOUND`
+- `CSV_READ_FAILED`
+- `INVALID_TARGET_COLUMN`
+- `MISSING_DEPENDENCY`
+- `TRAINING_MODULE_IMPORT_FAILED`
+- `TRAINING_FAILED`
+- `INTERNAL_ERROR`
+
+## Logging
+
+- Structured JSON logs are written to `stderr`.
+- Optional file logging: set env `ENGINE_LOG_FILE=/path/to/engine.log`.
+
 ## Actions
 
 - `health`: returns engine metadata.
-- `train`: trains model via `src/utils.py` and saves artifacts.
+- `train`: trains model and saves artifacts.
 
 ## Run
 
 ```bash
-echo '{"task_id":"h1","action":"health","payload":{}}' | python3 appshell/core/python_engine/engine_main.py
-pip install -r appshell/core/python_engine/requirements.txt
-python3 appshell/core/python_engine/engine_main.py --input appshell/core/python_engine/sample_train_request.json
+echo '{"task_id":"h1","action":"health","payload":{}}' | python appshell/core/python_engine/engine_main.py
+python appshell/core/python_engine/engine_main.py --input appshell/core/python_engine/input.json --output appshell/core/python_engine/output.json
 ```
+

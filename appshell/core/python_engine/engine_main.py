@@ -14,24 +14,44 @@ import time
 from pathlib import Path
 from typing import Any
 
-from engine_protocol import EngineError, EngineResponse, KnownEngineError
+from engine_logging import log_event
+from engine_protocol import (
+    EngineError,
+    EngineRequest,
+    EngineResponse,
+    ErrorCode,
+    KnownEngineError,
+)
 from engine_service import handle_action
 
 
 def _read_request(input_file: str | None) -> dict[str, Any]:
-    if input_file:
-        content = Path(input_file).read_text(encoding="utf-8")
-    else:
-        content = sys.stdin.read()
+    try:
+        if input_file:
+            content = Path(input_file).read_text(encoding="utf-8")
+        else:
+            content = sys.stdin.read()
+    except FileNotFoundError as exc:
+        raise KnownEngineError(
+            code=ErrorCode.FILE_NOT_FOUND,
+            message=f"Input file not found: {input_file}",
+            details={"input_file": input_file},
+        ) from exc
+    except OSError as exc:
+        raise KnownEngineError(
+            code=ErrorCode.INVALID_INPUT,
+            message="Failed to read input payload",
+            details={"reason": str(exc)},
+        ) from exc
 
     if not content.strip():
-        raise KnownEngineError("INVALID_INPUT", "Empty request payload")
+        raise KnownEngineError(ErrorCode.INVALID_INPUT, "Empty request payload")
 
     try:
         return json.loads(content)
     except json.JSONDecodeError as exc:
         raise KnownEngineError(
-            code="INVALID_JSON",
+            code=ErrorCode.INVALID_JSON,
             message="Request is not valid JSON",
             details={"reason": str(exc)},
         ) from exc
@@ -54,34 +74,48 @@ def main() -> int:
 
     started = time.time()
     task_id = "unknown"
+    action = "unknown"
 
     try:
-        req = _read_request(args.input)
-        task_id = str(req.get("task_id") or "no-task-id")
-        action = str(req.get("action") or "").strip()
-        payload = req.get("payload") or {}
-        if not action:
-            raise KnownEngineError("INVALID_INPUT", "Missing required field: action")
-        if not isinstance(payload, dict):
-            raise KnownEngineError("INVALID_INPUT", "Field payload must be an object")
+        req = EngineRequest.from_dict(_read_request(args.input))
+        task_id = req.task_id
+        action = req.action
+        log_event("info", "engine_request_received", task_id=task_id, action=action)
 
-        result = handle_action(action, payload)
+        result = handle_action(req.action, req.payload)
         resp = EngineResponse(task_id=task_id, status="ok", result=result)
+        log_event("info", "engine_request_succeeded", task_id=task_id, action=action)
     except KnownEngineError as exc:
         resp = EngineResponse(
             task_id=task_id,
             status="error",
             error=EngineError(code=exc.code, message=exc.message, details=exc.details),
         )
+        log_event(
+            "warning",
+            "engine_request_failed",
+            task_id=task_id,
+            action=action,
+            error_code=exc.code,
+            error_message=exc.message,
+        )
     except Exception as exc:  # pragma: no cover - emergency guard
         resp = EngineResponse(
             task_id=task_id,
             status="error",
             error=EngineError(
-                code="INTERNAL_ERROR",
+                code=ErrorCode.INTERNAL_ERROR,
                 message="Unhandled engine exception",
                 details={"reason": str(exc)},
             ),
+        )
+        log_event(
+            "error",
+            "engine_request_crashed",
+            task_id=task_id,
+            action=action,
+            error_code=ErrorCode.INTERNAL_ERROR,
+            error_message=str(exc),
         )
 
     resp.duration_ms = int((time.time() - started) * 1000)
@@ -93,3 +127,4 @@ def main() -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
+
