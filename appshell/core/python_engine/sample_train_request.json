@@ -1,0 +1,9 @@
+{
+  "task_id": "train-001",
+  "action": "train",
+  "payload": {
+    "csv_path": "data/raw/healthcare-dataset-stroke-data.csv",
+    "target_col": "stroke",
+    "output_dir": "outputs/results/template_train"
+  }
+}

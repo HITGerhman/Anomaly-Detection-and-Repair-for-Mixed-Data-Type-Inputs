@@ -1,12 +1,58 @@
+﻿# ------------------------------
+# Python
+# ------------------------------
 __pycache__/
-*.pyc
-.DS_Store
+*.py[cod]
+*$py.class
+.Python
+.python-version
+.venv/
+.venv*/
+venv/
+env/
+ENV/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.ipynb_checkpoints/
+build/
+dist/
+*.egg-info/
+pip-wheel-metadata/
+
+# ------------------------------
+# Go
+# ------------------------------
+.gocache/
+**/.gocache/
+*.test
+*.prof
+coverage.out
+
+# ------------------------------
+# IDE / Editor
+# ------------------------------
 .vscode/
+.idea/
+*.swp
+*.swo
 
-# 忽略巨大的数据集
-*.csv
-*.xlsx
+# ------------------------------
+# OS junk
+# ------------------------------
+.DS_Store
+Thumbs.db
 
-# 忽略巨大的模型文件
+# ------------------------------
+# Project outputs / generated artifacts
+# ------------------------------
+outputs/
+data/processed/
 *.pkl
 *.joblib
+
+# ------------------------------
+# Optional large datasets
+# ------------------------------
+*.csv
+*.xlsx

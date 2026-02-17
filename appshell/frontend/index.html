@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Anomaly AppShell</title>
+    <link rel="stylesheet" href="./src/style.css" />
+  </head>
+  <body>
+    <main class="layout">
+      <header>
+        <h1>Anomaly Detection AppShell</h1>
+        <p>Wails frontend template for train-task flow.</p>
+      </header>
+
+      <section class="card">
+        <form id="train-form">
+          <label>
+            CSV Path
+            <input id="csv-path" type="text" value="data/raw/healthcare-dataset-stroke-data.csv" required />
+          </label>
+
+          <label>
+            Target Column
+            <input id="target-col" type="text" value="stroke" required />
+          </label>
+
+          <label>
+            Output Directory
+            <input id="output-dir" type="text" value="outputs/results/template_train" />
+          </label>
+
+          <button id="run-btn" type="submit">Run Train Task</button>
+        </form>
+      </section>
+
+      <section class="card">
+        <h2>Status</h2>
+        <pre id="status-box">idle</pre>
+      </section>
+
+      <section class="card">
+        <h2>Result</h2>
+        <pre id="result-box">{}</pre>
+      </section>
+    </main>
+
+    <script type="module" src="./src/main.js"></script>
+  </body>
+</html>
