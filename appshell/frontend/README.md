@@ -1,24 +1,26 @@
-# Frontend Template (Wails)
+# Frontend MVP (Wails Phase 3)
 
-This folder is a UI template for phase 3.
+This frontend provides the minimal usable flow:
 
-## Expected Go binding
+1. Configure parameters (`csv_path`, `target_col`, `output_dir`, `timeout_ms`)
+2. Select CSV/output directory
+3. Start task
+4. Poll and display progress
+5. Show result and errors
+6. Export task result (`JSON` and metrics `CSV`)
 
-The JS calls `window.go.main.App.RunTrainTask(payload)` when available.
+## Expected Go bindings
 
-Recommended Go method signature:
+When running in Wails runtime, JS calls:
 
-```go
-func (a *App) RunTrainTask(payload map[string]any) (map[string]any, error)
-```
+- `window.go.main.App.RunTask(payload)`
+- `window.go.main.App.GetTaskStatus(taskID)`
+- `window.go.main.App.CancelTask(taskID)`
+- `window.go.main.App.SelectCSV()`
+- `window.go.main.App.SelectOutputDir()`
 
-It should internally call backend task service and return a snapshot containing:
+## Fallback mode
 
-- task id
-- status
-- response payload (from Python engine)
-- error (if failed)
+Open `index.html` directly to preview UI. In browser mode, file/dir pickers and task
+execution use local mock logic.
 
-## Local preview
-
-You can open `index.html` directly to preview layout and mock flow.

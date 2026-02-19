@@ -1,0 +1,54 @@
+@startuml
+title 桌面应用架构（Wails UI + Go 编排 + Python 引擎）
+
+skinparam shadowing false
+skinparam componentStyle rectangle
+skinparam ArrowColor #444
+skinparam DefaultFontName Microsoft YaHei
+
+package "Desktop App (Wails)" {
+  [Wails UI\n(Frontend)] as UI
+  [Go Backend\n(Wails bindings)] as API
+  [Task Service\nQueue + Worker Pool + Status] as TS
+  [Engine Runner\nspawn/monitor process\ncollect stdout/stderr] as RUN
+  [Task Registry\n(in-memory state)] as REG
+  [Task Queue] as Q
+}
+
+package "Python Engine (CLI)" {
+  [engine_main.py\nCLI I/O] as PM
+  [engine_service.py\naction router] as PS
+  [engine_core.py / training_core.py\nalgorithm] as PC
+}
+
+package "Filesystem" {
+  [Input CSV/XLSX] as IN
+  [Job Workspace\n(output_dir)] as OUT
+  [Artifacts\nresult.csv summary.json plots.json] as ART
+  [Logs\n(optional)] as LOG
+}
+
+UI --> API : RunTask/GetTaskStatus/CancelTask\n(select file/dir)
+API --> TS : validate request\ncreate task_id
+TS --> REG : create/update status
+TS --> Q : enqueue task
+TS --> RUN : dispatch (worker)
+Q --> RUN : take task
+
+RUN --> PM : request JSON (stdin/file)
+PM --> PS
+PS --> PC
+PC --> ART : write artifacts
+ART --> OUT
+PM --> RUN : response JSON (stdout)
+PM --> RUN : logs/progress (stderr)
+RUN --> TS : parsed result/error\nupdate status
+
+UI --> API : polling GetTaskStatus
+API --> REG : read status/progress
+REG --> API
+API --> UI : status + latest logs + artifacts
+
+RUN --> IN : read input file
+RUN --> OUT : create workspace
+@enduml

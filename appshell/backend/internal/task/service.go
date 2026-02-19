@@ -2,8 +2,10 @@ package task
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"appshell/backend/internal/engine"
@@ -15,6 +17,7 @@ const (
 	StatusSucceeded = "succeeded"
 	StatusFailed    = "failed"
 	StatusCanceled  = "canceled"
+	StatusTimedOut  = "timed_out"
 )
 
 type Task struct {
@@ -26,141 +29,331 @@ type Task struct {
 	CreatedAt time.Time       `json:"created_at"`
 	StartedAt time.Time       `json:"started_at"`
 	EndedAt   time.Time       `json:"ended_at"`
+	TimeoutMS int64           `json:"timeout_ms"`
 }
 
-type Service struct {
-	runner  *engine.Runner
-	mu      sync.RWMutex
-	tasks   map[string]*Task
-	cancels map[string]context.CancelFunc
+type Runner interface {
+	Run(ctx context.Context, req engine.Request) (engine.Response, error)
 }
 
-func NewService(runner *engine.Runner) *Service {
-	return &Service{
-		runner:  runner,
-		tasks:   make(map[string]*Task),
-		cancels: make(map[string]context.CancelFunc),
+type Config struct {
+	MaxConcurrency int
+	QueueSize      int
+}
+
+func defaultConfig() Config {
+	return Config{
+		MaxConcurrency: 3,
+		QueueSize:      128,
 	}
 }
 
-func (s *Service) Start(req engine.Request, timeout time.Duration) (string, error) {
+type runtimeInfo struct {
+	ctx    context.Context
+	cancel context.CancelFunc
+}
+
+type Service struct {
+	runner Runner
+	cfg    Config
+
+	mu      sync.RWMutex
+	tasks   map[string]*Task
+	runtime map[string]runtimeInfo
+
+	queue  chan string
+	stopCh chan struct{}
+	wg     sync.WaitGroup
+	once   sync.Once
+	seq    uint64
+}
+
+func NewService(runner Runner) *Service {
+	return NewServiceWithConfig(runner, Config{})
+}
+
+func NewServiceWithConfig(runner Runner, cfg Config) *Service {
+	def := defaultConfig()
+	if cfg.MaxConcurrency <= 0 {
+		cfg.MaxConcurrency = def.MaxConcurrency
+	}
+	if cfg.QueueSize <= 0 {
+		cfg.QueueSize = def.QueueSize
+	}
+
+	s := &Service{
+		runner:  runner,
+		cfg:     cfg,
+		tasks:   make(map[string]*Task),
+		runtime: make(map[string]runtimeInfo),
+		queue:   make(chan string, cfg.QueueSize),
+		stopCh:  make(chan struct{}),
+	}
+
+	for i := 0; i < cfg.MaxConcurrency; i++ {
+		s.wg.Add(1)
+		go s.worker()
+	}
+
+	return s
+}
+
+func (s *Service) Close() {
+	s.once.Do(func() {
+		close(s.stopCh)
+		s.wg.Wait()
+
+		s.mu.Lock()
+		defer s.mu.Unlock()
+		for id, rt := range s.runtime {
+			rt.cancel()
+			delete(s.runtime, id)
+		}
+	})
+}
+
+func (s *Service) worker() {
+	defer s.wg.Done()
+	for {
+		select {
+		case <-s.stopCh:
+			return
+		case taskID := <-s.queue:
+			s.execute(taskID)
+		}
+	}
+}
+
+func createTaskContext(timeout time.Duration) (context.Context, context.CancelFunc) {
+	baseCtx, cancelBase := context.WithCancel(context.Background())
+	ctx := baseCtx
+	cancelTimeout := func() {}
+
+	if timeout > 0 {
+		var timeoutCancel context.CancelFunc
+		ctx, timeoutCancel = context.WithTimeout(baseCtx, timeout)
+		cancelTimeout = timeoutCancel
+	}
+
+	return ctx, func() {
+		cancelTimeout()
+		cancelBase()
+	}
+}
+
+func isTerminalStatus(status string) bool {
+	switch status {
+	case StatusSucceeded, StatusFailed, StatusCanceled, StatusTimedOut:
+		return true
+	default:
+		return false
+	}
+}
+
+func (s *Service) RunTask(req engine.Request, timeout time.Duration) (string, error) {
 	if s.runner == nil {
 		return "", fmt.Errorf("runner is nil")
 	}
 
 	taskID := req.TaskID
 	if taskID == "" {
-		taskID = fmt.Sprintf("task-%d", time.Now().UnixNano())
+		taskID = s.nextTaskID()
 		req.TaskID = taskID
 	}
 
-	ctx := context.Background()
-	var cancel context.CancelFunc
-	if timeout > 0 {
-		ctx, cancel = context.WithTimeout(ctx, timeout)
-	} else {
-		ctx, cancel = context.WithCancel(ctx)
-	}
-
-	t := &Task{
+	ctx, cancel := createTaskContext(timeout)
+	now := time.Now()
+	task := &Task{
 		ID:        taskID,
 		Status:    StatusPending,
 		Request:   req,
-		CreatedAt: time.Now(),
+		CreatedAt: now,
+		TimeoutMS: int64(timeout / time.Millisecond),
 	}
 
 	s.mu.Lock()
-	s.tasks[taskID] = t
-	s.cancels[taskID] = cancel
+	if _, exists := s.tasks[taskID]; exists {
+		s.mu.Unlock()
+		cancel()
+		return "", fmt.Errorf("task id already exists: %s", taskID)
+	}
+	s.tasks[taskID] = task
+	s.runtime[taskID] = runtimeInfo{
+		ctx:    ctx,
+		cancel: cancel,
+	}
 	s.mu.Unlock()
 
-	go func() {
-		s.setRunning(taskID)
-		resp, err := s.runner.Run(ctx, req)
-		endedAt := time.Now()
-
+	select {
+	case s.queue <- taskID:
+		return taskID, nil
+	default:
 		s.mu.Lock()
-		defer s.mu.Unlock()
-		defer delete(s.cancels, taskID)
-
-		stored := s.tasks[taskID]
-		if stored == nil {
-			cancel()
-			return
-		}
-		stored.EndedAt = endedAt
-
-		if ctx.Err() != nil {
-			if ctx.Err() == context.DeadlineExceeded {
-				stored.Status = StatusFailed
-				stored.Error = "timeout"
-			} else {
-				stored.Status = StatusCanceled
-				stored.Error = "canceled"
-			}
-			cancel()
-			return
-		}
-
-		if err != nil {
-			stored.Status = StatusFailed
-			stored.Error = err.Error()
-			cancel()
-			return
-		}
-
-		stored.Response = resp
-		if resp.Status == "ok" {
-			stored.Status = StatusSucceeded
-		} else {
-			stored.Status = StatusFailed
-			if resp.Error != nil {
-				stored.Error = resp.Error.Code + ": " + resp.Error.Message
-			}
-		}
+		delete(s.tasks, taskID)
+		delete(s.runtime, taskID)
+		s.mu.Unlock()
 		cancel()
-	}()
-
-	return taskID, nil
-}
-
-func (s *Service) setRunning(taskID string) {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	if t := s.tasks[taskID]; t != nil {
-		t.Status = StatusRunning
-		t.StartedAt = time.Now()
+		return "", fmt.Errorf("task queue is full")
 	}
 }
 
-func (s *Service) Cancel(taskID string) bool {
+func (s *Service) nextTaskID() string {
+	seq := atomic.AddUint64(&s.seq, 1)
+	return fmt.Sprintf("task-%d-%d", time.Now().UnixNano(), seq)
+}
+
+func (s *Service) execute(taskID string) {
+	s.mu.Lock()
+	task := s.tasks[taskID]
+	rt, ok := s.runtime[taskID]
+	if task == nil || !ok {
+		s.mu.Unlock()
+		return
+	}
+	if task.Status == StatusCanceled {
+		s.cleanupRuntimeLocked(taskID)
+		s.mu.Unlock()
+		return
+	}
+	task.Status = StatusRunning
+	task.StartedAt = time.Now()
+	req := task.Request
+	ctx := rt.ctx
+	s.mu.Unlock()
+
+	resp, err := s.runner.Run(ctx, req)
+	endedAt := time.Now()
+
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	cancel, ok := s.cancels[taskID]
+
+	stored := s.tasks[taskID]
+	if stored == nil {
+		s.cleanupRuntimeLocked(taskID)
+		return
+	}
+	if isTerminalStatus(stored.Status) {
+		if stored.EndedAt.IsZero() {
+			stored.EndedAt = endedAt
+		}
+		s.cleanupRuntimeLocked(taskID)
+		return
+	}
+
+	stored.EndedAt = endedAt
+
+	switch {
+	case errors.Is(ctx.Err(), context.Canceled) || errors.Is(err, context.Canceled):
+		stored.Status = StatusCanceled
+		if stored.Error == "" {
+			stored.Error = "canceled"
+		}
+		s.cleanupRuntimeLocked(taskID)
+		return
+	case errors.Is(ctx.Err(), context.DeadlineExceeded) || errors.Is(err, context.DeadlineExceeded):
+		stored.Status = StatusTimedOut
+		if stored.Error == "" {
+			stored.Error = "timeout"
+		}
+		s.cleanupRuntimeLocked(taskID)
+		return
+	case err != nil:
+		stored.Status = StatusFailed
+		stored.Error = err.Error()
+		s.cleanupRuntimeLocked(taskID)
+		return
+	}
+
+	stored.Response = resp
+	if resp.Status == "ok" {
+		stored.Status = StatusSucceeded
+	} else {
+		stored.Status = StatusFailed
+		if resp.Error != nil {
+			stored.Error = resp.Error.Code + ": " + resp.Error.Message
+		}
+	}
+	s.cleanupRuntimeLocked(taskID)
+}
+
+func (s *Service) cleanupRuntimeLocked(taskID string) {
+	rt, ok := s.runtime[taskID]
+	if !ok {
+		return
+	}
+	delete(s.runtime, taskID)
+	rt.cancel()
+}
+
+func (s *Service) CancelTask(taskID string) bool {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	task, ok := s.tasks[taskID]
 	if !ok {
 		return false
 	}
-	cancel()
+	if isTerminalStatus(task.Status) {
+		return false
+	}
+
+	rt, ok := s.runtime[taskID]
+	if !ok {
+		return false
+	}
+
+	switch task.Status {
+	case StatusPending:
+		task.Status = StatusCanceled
+		task.Error = "canceled"
+		task.EndedAt = time.Now()
+		delete(s.runtime, taskID)
+		rt.cancel()
+	case StatusRunning:
+		task.Error = "canceled"
+		rt.cancel()
+	default:
+		return false
+	}
+
 	return true
 }
 
-func (s *Service) Get(taskID string) (*Task, bool) {
+func (s *Service) GetTaskStatus(taskID string) (*Task, bool) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
-	t, ok := s.tasks[taskID]
+
+	task, ok := s.tasks[taskID]
 	if !ok {
 		return nil, false
 	}
-	cpy := *t
-	return &cpy, true
+
+	copyTask := *task
+	return &copyTask, true
 }
 
 func (s *Service) List() []Task {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
+
 	out := make([]Task, 0, len(s.tasks))
-	for _, t := range s.tasks {
-		out = append(out, *t)
+	for _, task := range s.tasks {
+		out = append(out, *task)
 	}
 	return out
+}
+
+// Start is kept for backward compatibility.
+func (s *Service) Start(req engine.Request, timeout time.Duration) (string, error) {
+	return s.RunTask(req, timeout)
+}
+
+// Cancel is kept for backward compatibility.
+func (s *Service) Cancel(taskID string) bool {
+	return s.CancelTask(taskID)
+}
+
+// Get is kept for backward compatibility.
+func (s *Service) Get(taskID string) (*Task, bool) {
+	return s.GetTaskStatus(taskID)
 }

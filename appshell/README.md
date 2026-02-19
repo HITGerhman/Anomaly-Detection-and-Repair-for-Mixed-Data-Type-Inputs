@@ -22,6 +22,8 @@ appshell/
   backend/
     go.mod
     cmd/demo/main.go
+    cmd/wails/main.go
+    cmd/wails/app.go
     internal/engine/*.go
     internal/task/service.go
   frontend/
@@ -56,13 +58,20 @@ cd appshell/backend
 go run ./cmd/demo -action train -csv ../../data/raw/healthcare-dataset-stroke-data.csv -target stroke
 ```
 
-4. Frontend template preview (static):
+4. Wails desktop MVP:
 
-Open `appshell/frontend/index.html` in a browser. In a real Wails app, bind JS to Go methods with the same payload shape.
+```bash
+cd appshell/backend
+go run ./cmd/wails -engine ../core/python_engine/engine_main.py
+```
+
+5. Frontend template preview (static):
+
+Open `appshell/frontend/index.html` in a browser. In Wails runtime, JS calls `window.go.main.App.*` bindings.
 
 ## Notes
 
 - Protocol uses JSON only, suitable for local process calls.
 - For large data, pass file paths (CSV/output dir), not huge JSON blobs.
-- Current template focuses on phase 0/1/2 execution path and includes a frontend contract for phase 3.
+- Current template now includes phase 3 MVP UI path (`configure -> run -> inspect -> export`).
 - Full milestones and acceptance checks are in `appshell/PHASES_ACCEPTANCE.md`.
