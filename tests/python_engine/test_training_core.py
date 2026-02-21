@@ -5,7 +5,7 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-from src.training_core import load_system_state, save_system_state, train_model
+from src.training_core import load_system_state, predict_with_threshold, save_system_state, train_model
 
 
 def _make_dataset(rows: int = 160) -> pd.DataFrame:
@@ -49,6 +49,7 @@ def _bundle_signature(bundle: object) -> dict[str, object]:
         "accuracy": round(float(metrics["accuracy"]), 12),
         "precision": round(float(metrics["precision"]), 12),
         "recall": round(float(metrics["recall"]), 12),
+        "decision_threshold": round(float(metrics["decision_threshold"]), 12),
         "confusion_matrix": metrics["confusion_matrix"].tolist(),
         "feature_importance": {k: int(v) for k, v in metrics["feature_importance"].items()},
     }
@@ -101,5 +102,31 @@ def test_save_and_load_system_state_round_trip(tmp_path: Path) -> None:
     assert loaded_normal_data.equals(bundle.normal_data)
 
     sample = bundle.x_test.iloc[[0]]
-    assert np.array_equal(loaded_model.predict(sample), bundle.model.predict(sample))
+    loaded_pred, loaded_prob = predict_with_threshold(loaded_model, sample)
+    bundle_pred, bundle_prob = predict_with_threshold(bundle.model, sample)
+    assert np.array_equal(loaded_pred, bundle_pred)
+    assert np.allclose(loaded_prob, bundle_prob)
 
+
+def test_train_model_reports_threshold_and_anomaly_metrics() -> None:
+    df = _make_dataset()
+    bundle = train_model(df, "stroke")
+    metrics = bundle.metrics
+
+    for key in (
+        "decision_threshold",
+        "f1_anomaly",
+        "precision_anomaly",
+        "recall_anomaly",
+        "f1_weighted",
+        "precision_weighted",
+        "recall_weighted",
+    ):
+        assert key in metrics
+
+    threshold = float(metrics["decision_threshold"])
+    assert 0.0 <= threshold <= 1.0
+
+    pred, prob = predict_with_threshold(bundle.model, bundle.x_test)
+    assert np.array_equal(pred, metrics["y_pred"])
+    assert np.allclose(prob, metrics["y_prob"])

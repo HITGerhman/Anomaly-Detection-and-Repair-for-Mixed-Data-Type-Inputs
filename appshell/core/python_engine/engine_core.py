@@ -80,21 +80,100 @@ def _to_builtin(value: Any) -> Any:
 
 
 def _metric_summary(metrics: dict[str, Any]) -> dict[str, Any]:
-    summary = {
-        "f1": metrics.get("f1", 0.0),
-        "auc": metrics.get("auc", 0.0),
-        "accuracy": metrics.get("accuracy", 0.0),
-        "precision": metrics.get("precision", 0.0),
-        "recall": metrics.get("recall", 0.0),
-        "confusion_matrix": metrics.get("confusion_matrix"),
-        "feature_importance": metrics.get("feature_importance", {}),
-    }
+    summary: dict[str, Any] = {}
+    for key in (
+        "f1",
+        "auc",
+        "accuracy",
+        "precision",
+        "recall",
+        "f1_weighted",
+        "precision_weighted",
+        "recall_weighted",
+        "f1_anomaly",
+        "precision_anomaly",
+        "recall_anomaly",
+        "decision_threshold",
+        "threshold_optimization",
+    ):
+        if key in metrics:
+            summary[key] = metrics[key]
+
+    summary["confusion_matrix"] = metrics.get("confusion_matrix")
+    summary["feature_importance"] = metrics.get("feature_importance", {})
     if "roc_curve" in metrics:
         summary["roc_curve"] = {
             "fpr": metrics["roc_curve"].get("fpr"),
             "tpr": metrics["roc_curve"].get("tpr"),
         }
     return _to_builtin(summary)
+
+
+def _validate_train_target(df: Any, target_col: str, train_pd: Any) -> None:
+    target = df[target_col]
+    missing_count = int(target.isna().sum())
+    non_null_target = target.dropna()
+    non_null_rows = int(non_null_target.shape[0])
+    unique_count = int(non_null_target.nunique(dropna=True))
+
+    is_numeric = bool(train_pd.api.types.is_numeric_dtype(non_null_target))
+    is_float_target = bool(train_pd.api.types.is_float_dtype(non_null_target))
+    unique_ratio = float(unique_count) / float(non_null_rows) if non_null_rows else 0.0
+    looks_continuous = (is_float_target and unique_count > 20) or (
+        is_numeric and unique_count > 20 and unique_ratio > 0.2
+    )
+    if looks_continuous:
+        raise KnownEngineError(
+            code=ErrorCode.UNSUPPORTED_TARGET_TYPE,
+            message=f"Target column appears continuous and is unsupported: {target_col}",
+            details={
+                "target_col": target_col,
+                "unique_count": unique_count,
+                "row_count": non_null_rows,
+                "unique_ratio": round(unique_ratio, 6),
+                "missing_count": missing_count,
+                "reason": "continuous numeric targets are not supported by the current classification pipeline",
+                "suggestion": "Choose a categorical label (for example: stroke, heart_disease) or switch to a regression workflow.",
+            },
+        )
+
+    if missing_count > 0:
+        raise KnownEngineError(
+            code=ErrorCode.INVALID_INPUT,
+            message=f"Target column contains missing values: {target_col}",
+            details={
+                "target_col": target_col,
+                "missing_count": missing_count,
+                "row_count": int(df.shape[0]),
+                "reason": "target column has NaN values",
+                "suggestion": "Fill or drop rows with missing target values before training.",
+            },
+        )
+
+    if unique_count < 2:
+        raise KnownEngineError(
+            code=ErrorCode.INVALID_INPUT,
+            message=f"Target column must contain at least 2 classes: {target_col}",
+            details={
+                "target_col": target_col,
+                "unique_count": unique_count,
+                "reason": "target has fewer than two distinct classes",
+            },
+        )
+
+    class_counts = non_null_target.value_counts(dropna=False)
+    min_class_count = int(class_counts.min()) if not class_counts.empty else 0
+    if min_class_count < 2:
+        raise KnownEngineError(
+            code=ErrorCode.INVALID_INPUT,
+            message=f"Target column has classes with fewer than 2 rows: {target_col}",
+            details={
+                "target_col": target_col,
+                "min_class_count": min_class_count,
+                "reason": "stratified split requires at least 2 samples per class",
+                "suggestion": "Merge rare classes or provide more rows for low-frequency classes.",
+            },
+        )
 
 
 def _load_training_modules() -> tuple[Any, Any, Any]:
@@ -133,7 +212,7 @@ def action_train(payload: dict[str, Any]) -> dict[str, Any]:
     train_pd, process_and_train, save_system_state = _load_training_modules()
 
     csv_path = _require(payload, "csv_path")
-    target_col = _require(payload, "target_col")
+    target_col = str(_require(payload, "target_col"))
     output_dir = _resolve_output_dir(payload.get("output_dir"))
 
     csv_file = _resolve_input_csv(str(csv_path))
@@ -160,8 +239,10 @@ def action_train(payload: dict[str, Any]) -> dict[str, Any]:
             details={"available_columns": list(df.columns)},
         )
 
+    _validate_train_target(df, target_col, train_pd)
+
     try:
-        model, x_test, normal_data, metrics, feature_names = process_and_train(df, str(target_col))
+        model, x_test, normal_data, metrics, feature_names = process_and_train(df, target_col)
         os.makedirs(output_dir, exist_ok=True)
         save_system_state(model, x_test, normal_data, feature_names, save_dir=output_dir)
     except KnownEngineError:
@@ -184,8 +265,7 @@ def action_train(payload: dict[str, Any]) -> dict[str, Any]:
         "data_profile": {
             "rows": int(df.shape[0]),
             "columns": int(df.shape[1]),
-            "target_col": str(target_col),
+            "target_col": target_col,
         },
         "metrics": _metric_summary(metrics),
     }
-

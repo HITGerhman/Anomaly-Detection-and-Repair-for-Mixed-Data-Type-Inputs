@@ -63,3 +63,51 @@ def test_invalid_target_returns_invalid_target_column_code(tmp_path: Path) -> No
     assert resp["status"] == "error"
     assert resp["error"]["code"] == "INVALID_TARGET_COLUMN"
 
+
+def test_continuous_numeric_target_returns_unsupported_target_type(tmp_path: Path) -> None:
+    rows = 40
+    csv_path = tmp_path / "continuous.csv"
+    pd.DataFrame(
+        {
+            "feature_a": list(range(rows)),
+            "bmi": [18.5 + i * 0.1 for i in range(rows)],
+        }
+    ).to_csv(csv_path, index=False)
+
+    payload = {
+        "task_id": "t-4",
+        "action": "train",
+        "payload": {
+            "csv_path": str(csv_path),
+            "target_col": "bmi",
+            "output_dir": str(tmp_path / "out"),
+        },
+    }
+    resp = _run_engine(json.dumps(payload))
+    assert resp["status"] == "error"
+    assert resp["error"]["code"] == "UNSUPPORTED_TARGET_TYPE"
+    assert "continuous" in resp["error"]["message"].lower()
+
+
+def test_target_with_missing_values_returns_invalid_input(tmp_path: Path) -> None:
+    csv_path = tmp_path / "target_nan.csv"
+    pd.DataFrame(
+        {
+            "feature_a": [1, 2, 3, 4, 5],
+            "stroke": [0, 1, None, 0, 1],
+        }
+    ).to_csv(csv_path, index=False)
+
+    payload = {
+        "task_id": "t-5",
+        "action": "train",
+        "payload": {
+            "csv_path": str(csv_path),
+            "target_col": "stroke",
+            "output_dir": str(tmp_path / "out"),
+        },
+    }
+    resp = _run_engine(json.dumps(payload))
+    assert resp["status"] == "error"
+    assert resp["error"]["code"] == "INVALID_INPUT"
+    assert resp["error"]["details"]["missing_count"] == 1

@@ -1,7 +1,16 @@
+﻿const wizardCard = document.getElementById("wizard-card");
+const wizardInner = document.getElementById("wizard-inner");
+const frontKicker = document.getElementById("front-kicker");
+const frontTitle = document.getElementById("front-title");
+const frontSubtitle = document.getElementById("front-subtitle");
+const configView = document.getElementById("config-view");
+const resultView = document.getElementById("result-view");
+
 const form = document.getElementById("train-form");
 const runBtn = document.getElementById("run-btn");
 const cancelBtn = document.getElementById("cancel-btn");
 const retryBtn = document.getElementById("retry-btn");
+const newTaskBtn = document.getElementById("new-task-btn");
 const chooseCsvBtn = document.getElementById("choose-csv-btn");
 const chooseOutputBtn = document.getElementById("choose-output-btn");
 const csvInput = document.getElementById("csv-path");
@@ -25,6 +34,17 @@ const metricsTableBody = document.getElementById("metrics-table-body");
 const resultBox = document.getElementById("result-box");
 const exportJsonBtn = document.getElementById("export-json-btn");
 const exportCsvBtn = document.getElementById("export-csv-btn");
+const copyJsonBtn = document.getElementById("copy-json-btn");
+
+const STEP_CONFIG = "config";
+const STEP_PROGRESS = "progress";
+const STEP_RESULT = "result";
+
+const STEP_ROTATE_DEG = {
+  [STEP_CONFIG]: 0,
+  [STEP_PROGRESS]: 180,
+  [STEP_RESULT]: 360,
+};
 
 const STATUS_PROGRESS = {
   idle: 0,
@@ -39,15 +59,47 @@ const STATUS_PROGRESS = {
 const TERMINAL_STATUSES = new Set(["succeeded", "failed", "canceled", "timed_out"]);
 
 const state = {
+  currentStep: STEP_CONFIG,
   currentTaskId: "",
   currentTask: null,
   lastPayload: null,
+  availableColumns: [],
   pollingToken: 0,
   mockTasks: new Map(),
 };
 
 function hasBinding(methodName) {
   return Boolean(window?.go?.main?.App?.[methodName]);
+}
+
+function setWizardStep(step) {
+  const normalized = STEP_ROTATE_DEG[step] === undefined ? STEP_CONFIG : step;
+  state.currentStep = normalized;
+
+  if (wizardCard) {
+    wizardCard.dataset.step = normalized;
+  }
+  if (wizardInner) {
+    wizardInner.style.transform = `rotateY(${STEP_ROTATE_DEG[normalized]}deg)`;
+  }
+
+  const isResult = normalized === STEP_RESULT;
+  if (configView) {
+    configView.classList.toggle("hidden", isResult);
+  }
+  if (resultView) {
+    resultView.classList.toggle("hidden", !isResult);
+  }
+
+  if (normalized === STEP_CONFIG) {
+    frontKicker.textContent = "STEP 1";
+    frontTitle.textContent = "Parameter Setup";
+    frontSubtitle.textContent = "Configure training parameters and start the task.";
+  } else if (normalized === STEP_RESULT) {
+    frontKicker.textContent = "STEP 3";
+    frontTitle.textContent = "Result Review & Export";
+    frontSubtitle.textContent = "Task finished. Review results and export artifacts.";
+  }
 }
 
 function emitFrontendLog(message, taskId = "") {
@@ -60,12 +112,15 @@ function emitFrontendLog(message, taskId = "") {
   };
   try {
     console.info(JSON.stringify(payload));
-  } catch (err) {
+  } catch {
     console.info("frontend ui_event", payload);
   }
 }
 
 function addEvent(message, taskId = state.currentTaskId) {
+  if (!eventLog) {
+    return;
+  }
   const li = document.createElement("li");
   const time = new Date();
   const hh = String(time.getHours()).padStart(2, "0");
@@ -82,47 +137,63 @@ function setStatus(status, message) {
   const normalized = (status || "idle").toLowerCase();
   const progress = STATUS_PROGRESS[normalized] ?? 0;
 
-  statusPill.className = `status-pill ${normalized}`;
-  statusPill.textContent = normalized;
-  statusMessage.textContent = message || normalized;
-
-  progressFill.className = `progress-fill ${normalized === "running" ? "running" : normalized}`;
-  progressFill.style.width = `${progress}%`;
+  if (statusPill) {
+    statusPill.className = `status-pill ${normalized}`;
+    statusPill.textContent = normalized;
+  }
+  if (statusMessage) {
+    statusMessage.textContent = message || normalized;
+  }
+  if (progressFill) {
+    progressFill.className = `progress-fill ${normalized === "running" ? "running" : normalized}`;
+    progressFill.style.width = `${progress}%`;
+  }
 }
 
 function setTaskId(taskId) {
-  taskIdLabel.textContent = `Task: ${taskId || "-"}`;
+  if (taskIdLabel) {
+    taskIdLabel.textContent = `Task: ${taskId || "-"}`;
+  }
 }
 
 function setRunningUi(isRunning) {
-  runBtn.disabled = isRunning;
-  cancelBtn.disabled = !isRunning || !state.currentTaskId;
-  chooseCsvBtn.disabled = isRunning;
-  chooseOutputBtn.disabled = isRunning;
-  retryBtn.disabled = isRunning || !state.lastPayload;
+  if (runBtn) runBtn.disabled = isRunning;
+  if (cancelBtn) cancelBtn.disabled = !isRunning || !state.currentTaskId;
+  if (chooseCsvBtn) chooseCsvBtn.disabled = isRunning;
+  if (chooseOutputBtn) chooseOutputBtn.disabled = isRunning;
+  if (retryBtn) retryBtn.disabled = isRunning || !state.lastPayload;
+  if (csvInput) csvInput.disabled = isRunning;
+  if (targetInput) targetInput.disabled = isRunning;
+  if (outputInput) outputInput.disabled = isRunning;
+  if (timeoutInput) timeoutInput.disabled = isRunning;
+  if (newTaskBtn) newTaskBtn.disabled = isRunning;
 }
 
-function showError(message, hint = "请检查参数或环境后重试。") {
-  errorPanel.classList.remove("hidden");
-  errorMessage.textContent = message;
-  errorHint.textContent = hint;
+function showError(message, hint = "Please check parameters/environment and retry.") {
+  if (errorPanel) errorPanel.classList.remove("hidden");
+  if (errorMessage) errorMessage.textContent = message;
+  if (errorHint) errorHint.textContent = hint;
 }
 
 function clearError() {
-  errorPanel.classList.add("hidden");
-  errorMessage.textContent = "-";
-  errorHint.textContent = "可修复后点击“重试上次参数”。";
+  if (errorPanel) errorPanel.classList.add("hidden");
+  if (errorMessage) errorMessage.textContent = "-";
+  if (errorHint) errorHint.textContent = "Fix issues and click 'Retry Last Task'.";
 }
 
 function resetResultView() {
-  resultSummary.innerHTML = "";
-  metricsTableBody.innerHTML = "";
-  resultBox.textContent = "{}";
-  exportJsonBtn.disabled = true;
-  exportCsvBtn.disabled = true;
+  if (resultSummary) resultSummary.innerHTML = "";
+  if (metricsTableBody) metricsTableBody.innerHTML = "";
+  if (resultBox) resultBox.textContent = "{}";
+  if (exportJsonBtn) exportJsonBtn.disabled = true;
+  if (exportCsvBtn) exportCsvBtn.disabled = true;
+  if (copyJsonBtn) copyJsonBtn.textContent = "Copy";
 }
 
 function renderSummary(task) {
+  if (!resultSummary) {
+    return;
+  }
   const response = task?.response || {};
   const result = response?.result || {};
   const profile = result?.data_profile || {};
@@ -137,12 +208,13 @@ function renderSummary(task) {
     ["Output Dir", artifacts?.output_dir ?? "-"],
   ];
 
-  resultSummary.innerHTML = rows
-    .map(([k, v]) => `<dt>${k}</dt><dd>${String(v)}</dd>`)
-    .join("");
+  resultSummary.innerHTML = rows.map(([k, v]) => `<dt>${k}</dt><dd>${String(v)}</dd>`).join("");
 }
 
 function renderMetrics(task) {
+  if (!metricsTableBody) {
+    return;
+  }
   const metrics = task?.response?.result?.metrics || {};
   const keys = ["accuracy", "precision", "recall", "f1", "auc"];
   const rows = [];
@@ -154,13 +226,11 @@ function renderMetrics(task) {
   }
 
   if (rows.length === 0) {
-    metricsTableBody.innerHTML = `<tr><td colspan="2">暂无指标</td></tr>`;
+    metricsTableBody.innerHTML = `<tr><td colspan="2">No metrics yet</td></tr>`;
     return;
   }
 
-  metricsTableBody.innerHTML = rows
-    .map(([k, v]) => `<tr><td>${k}</td><td>${v}</td></tr>`)
-    .join("");
+  metricsTableBody.innerHTML = rows.map(([k, v]) => `<tr><td>${k}</td><td>${v}</td></tr>`).join("");
 }
 
 function renderTask(task) {
@@ -168,60 +238,79 @@ function renderTask(task) {
   setTaskId(task?.id || "");
 
   const status = (task?.status || "idle").toLowerCase();
-  let message = `任务状态：${status}`;
+  let message = `Task status: ${status}`;
   if (task?.error) {
-    message += `（${task.error}）`;
+    message += ` (${task.error})`;
   }
   setStatus(status, message);
 
   renderSummary(task);
   renderMetrics(task);
-  resultBox.textContent = JSON.stringify(task || {}, null, 2);
+  if (resultBox) {
+    resultBox.textContent = JSON.stringify(task || {}, null, 2);
+  }
 
   if (task && TERMINAL_STATUSES.has(status)) {
-    exportJsonBtn.disabled = false;
-    exportCsvBtn.disabled = false;
+    if (exportJsonBtn) exportJsonBtn.disabled = false;
+    if (exportCsvBtn) exportCsvBtn.disabled = false;
   }
 }
 
 function collectPayload() {
   return {
     action: "train",
-    csv_path: csvInput.value.trim(),
-    target_col: targetInput.value.trim(),
-    output_dir: outputInput.value.trim(),
-    timeout_ms: Number(timeoutInput.value) || 90000,
+    csv_path: (csvInput?.value || "").trim(),
+    target_col: String(targetInput?.value || "").trim(),
+    output_dir: (outputInput?.value || "").trim(),
+    timeout_ms: Number(timeoutInput?.value) || 90000,
   };
 }
 
 function validatePayload(payload) {
   if (!payload.csv_path) {
-    return "CSV 文件路径不能为空";
+    return "CSV file path is required.";
   }
   if (!payload.target_col) {
-    return "目标列不能为空";
+    return "Target column is required.";
   }
   if (!Number.isFinite(payload.timeout_ms) || payload.timeout_ms < 1000) {
-    return "超时必须是 >= 1000 的数字（毫秒）";
+    return "Timeout must be a number >= 1000 (ms).";
   }
   return "";
 }
 
+function extractEngineErrorDetails(task) {
+  const details = task?.response?.error?.details;
+  if (!details || typeof details !== "object") {
+    return { reason: "", suggestion: "" };
+  }
+  const reason = typeof details.reason === "string" ? details.reason.trim() : "";
+  const suggestion = typeof details.suggestion === "string" ? details.suggestion.trim() : "";
+  return { reason, suggestion };
+}
+
 function toReadableError(task, err) {
   if (err) {
-    return `请求失败：${String(err)}`;
+    return `request failed: ${String(err)}`;
   }
   if (!task) {
-    return "任务未返回有效结果";
+    return "task returned empty result";
   }
+
   if (task?.response?.error?.message) {
     const code = task.response.error.code || "UNKNOWN";
-    return `引擎错误 [${code}] ${task.response.error.message}`;
+    const message = String(task.response.error.message || "").trim();
+    const details = extractEngineErrorDetails(task);
+    if (details.reason) {
+      return `Engine error [${code}] ${message}; reason: ${details.reason}`;
+    }
+    return `Engine error [${code}] ${message}`;
   }
+
   if (task.error) {
     return task.error;
   }
-  return `任务结束状态：${task.status}`;
+  return `task ended with status: ${task.status}`;
 }
 
 function saveFile(name, content, mime) {
@@ -234,6 +323,39 @@ function saveFile(name, content, mime) {
   link.click();
   document.body.removeChild(link);
   URL.revokeObjectURL(url);
+}
+
+async function copyResultJson() {
+  if (!state.currentTask) {
+    addEvent("No task result available to copy.");
+    return;
+  }
+
+  const text = `${JSON.stringify(state.currentTask, null, 2)}\n`;
+  try {
+    if (navigator?.clipboard?.writeText) {
+      await navigator.clipboard.writeText(text);
+    } else {
+      const temp = document.createElement("textarea");
+      temp.value = text;
+      temp.style.position = "fixed";
+      temp.style.opacity = "0";
+      document.body.appendChild(temp);
+      temp.focus();
+      temp.select();
+      document.execCommand("copy");
+      document.body.removeChild(temp);
+    }
+    if (copyJsonBtn) {
+      copyJsonBtn.textContent = "Copied";
+      setTimeout(() => {
+        copyJsonBtn.textContent = "Copy";
+      }, 1200);
+    }
+    addEvent("Copied full response JSON.");
+  } catch (err) {
+    addEvent(`Copy failed: ${String(err)}`);
+  }
 }
 
 function exportResultJson() {
@@ -258,11 +380,7 @@ function exportMetricsCsv() {
     const safe = String(value).replaceAll('"', '""');
     lines.push(`${k},"${safe}"`);
   }
-  saveFile(
-    `${state.currentTask?.id || "task"}-metrics.csv`,
-    `${lines.join("\n")}\n`,
-    "text/csv;charset=utf-8"
-  );
+  saveFile(`${state.currentTask?.id || "task"}-metrics.csv`, `${lines.join("\n")}\n`, "text/csv;charset=utf-8");
 }
 
 function delay(ms) {
@@ -311,6 +429,13 @@ async function apiListTaskHistory(limit = 20) {
   return [];
 }
 
+async function apiListCsvColumns(csvPath) {
+  if (hasBinding("ListCSVColumns")) {
+    return window.go.main.App.ListCSVColumns(csvPath);
+  }
+  return mockListCsvColumns(csvPath);
+}
+
 async function mockRunTask(payload) {
   const id = `mock-task-${Date.now()}`;
   const createdAt = Date.now();
@@ -321,6 +446,7 @@ async function mockRunTask(payload) {
     status: "pending",
     canceled: false,
   });
+
   return {
     id,
     status: "pending",
@@ -419,21 +545,88 @@ async function mockCancelTask(taskId) {
   return true;
 }
 
-async function loadRecentHistory() {
-  try {
-    const tasks = await apiListTaskHistory(10);
-    if (!Array.isArray(tasks) || tasks.length === 0) {
-      addEvent("未发现持久化历史任务。");
-      return;
-    }
+async function mockListCsvColumns() {
+  return [
+    "id",
+    "gender",
+    "age",
+    "hypertension",
+    "heart_disease",
+    "ever_married",
+    "work_type",
+    "Residence_type",
+    "avg_glucose_level",
+    "bmi",
+    "smoking_status",
+    "stroke",
+  ];
+}
 
-    const latest = tasks[0];
-    state.currentTaskId = latest?.id || "";
-    renderTask(latest);
-    setRunningUi(false);
-    addEvent(`已加载最近 ${tasks.length} 条历史任务。`, state.currentTaskId);
+function setTargetOptions(columns, preferred = "") {
+  const previous = String(preferred || targetInput?.value || "").trim();
+  const items = Array.isArray(columns)
+    ? columns.map((v) => String(v || "").trim()).filter((v) => v.length > 0)
+    : [];
+
+  const unique = [];
+  const seen = new Set();
+  for (const col of items) {
+    if (seen.has(col)) {
+      continue;
+    }
+    seen.add(col);
+    unique.push(col);
+  }
+
+  if (!targetInput) {
+    state.availableColumns = unique;
+    return;
+  }
+
+  targetInput.innerHTML = "";
+
+  if (unique.length === 0) {
+    const option = document.createElement("option");
+    option.value = "";
+    option.textContent = "No available columns";
+    targetInput.appendChild(option);
+    targetInput.value = "";
+    state.availableColumns = [];
+    return;
+  }
+
+  for (const col of unique) {
+    const option = document.createElement("option");
+    option.value = col;
+    option.textContent = col;
+    targetInput.appendChild(option);
+  }
+
+  let selected = unique[0];
+  if (previous && unique.includes(previous)) {
+    selected = previous;
+  } else if (unique.includes("stroke")) {
+    selected = "stroke";
+  }
+
+  targetInput.value = selected;
+  state.availableColumns = unique;
+}
+
+async function refreshColumnsForCsv(csvPath, source = "manual path input") {
+  const path = String(csvPath || "").trim();
+  if (!path) {
+    setTargetOptions([]);
+    return;
+  }
+
+  try {
+    const columns = await apiListCsvColumns(path);
+    setTargetOptions(columns);
+    addEvent(`Loaded ${state.availableColumns.length} selectable columns (${source}).`);
   } catch (err) {
-    addEvent(`加载历史任务失败：${String(err)}`);
+    setTargetOptions([]);
+    addEvent(`Failed to load columns: ${String(err)}`);
   }
 }
 
@@ -447,23 +640,27 @@ async function pollTask(taskId) {
       snapshot = await apiGetTaskStatus(taskId);
     } catch (err) {
       setRunningUi(false);
-      showError(`状态轮询失败：${String(err)}`, "请检查后端运行状态后点击重试。");
-      addEvent(`轮询异常：${String(err)}`);
+      showError(`Status polling failed: ${String(err)}`, "Please verify backend runtime and retry.");
+      addEvent(`Polling error: ${String(err)}`);
       return;
     }
 
     renderTask(snapshot);
     const status = (snapshot?.status || "").toLowerCase();
+
     if (TERMINAL_STATUSES.has(status)) {
       setRunningUi(false);
+      setWizardStep(STEP_RESULT);
 
       if (status === "succeeded") {
         clearError();
-        addEvent("任务成功完成，可导出结果。");
+        addEvent("Task completed successfully. You can export results now.");
       } else {
         const readable = toReadableError(snapshot);
-        showError(readable, "你可以修正参数后点击“重试上次参数”。");
-        addEvent(`任务结束（${status}）：${readable}`);
+        const details = extractEngineErrorDetails(snapshot);
+        const hint = details.suggestion || "Fix parameters and click 'Retry Last Task'.";
+        showError(readable, hint);
+        addEvent(`Task finished (${status}): ${readable}`);
       }
       return;
     }
@@ -475,119 +672,211 @@ async function pollTask(taskId) {
 async function startTask(payload) {
   const invalidReason = validatePayload(payload);
   if (invalidReason) {
-    showError(invalidReason, "请先完成参数配置。");
-    addEvent(`参数校验失败：${invalidReason}`);
+    showError(invalidReason, "Please complete required fields first.");
+    addEvent(`Payload validation failed: ${invalidReason}`);
     return;
   }
 
   state.lastPayload = payload;
+  state.currentTaskId = "";
   clearError();
   resetResultView();
+  setTaskId("");
+  setStatus("pending", "Task status: pending");
+  setWizardStep(STEP_PROGRESS);
 
   let submitted;
   try {
     submitted = await apiRunTask(payload);
   } catch (err) {
-    const msg = `启动任务失败：${String(err)}`;
-    showError(msg, "请检查 Python 引擎路径、CSV 路径和依赖状态。");
+    const msg = `Failed to start task: ${String(err)}`;
+    showError(msg, "Check Python engine path, CSV path, and dependencies.");
     addEvent(msg);
+    setWizardStep(STEP_CONFIG);
+    setRunningUi(false);
     return;
   }
 
   state.currentTaskId = submitted.id;
   setRunningUi(true);
-  addEvent(`任务已提交：${submitted.id}`);
+  addEvent(`Task submitted: ${submitted.id}`);
   renderTask(submitted);
   pollTask(submitted.id);
 }
 
-form.addEventListener("submit", async (event) => {
-  event.preventDefault();
-  await startTask(collectPayload());
-});
-
-cancelBtn.addEventListener("click", async () => {
-  if (!state.currentTaskId) {
-    return;
-  }
-
-  cancelBtn.disabled = true;
+async function loadRecentHistory() {
   try {
-    const ok = await apiCancelTask(state.currentTaskId);
-    addEvent(ok ? "已发送取消请求。" : "取消请求未生效（任务可能已结束）。");
+    const tasks = await apiListTaskHistory(10);
+    if (!Array.isArray(tasks) || tasks.length === 0) {
+      addEvent("No persisted task history found.");
+      return;
+    }
+
+    const latest = tasks[0];
+    state.currentTaskId = latest?.id || "";
+    renderTask(latest);
+
+    const status = (latest?.status || "").toLowerCase();
+    if (TERMINAL_STATUSES.has(status)) {
+      setWizardStep(STEP_RESULT);
+      setRunningUi(false);
+    } else if (latest?.id) {
+      setWizardStep(STEP_PROGRESS);
+      setRunningUi(true);
+      pollTask(latest.id);
+    }
+
+    addEvent(`Loaded ${tasks.length} history task(s).`, state.currentTaskId);
   } catch (err) {
-    showError(`取消任务失败：${String(err)}`, "请稍后重试。");
-    addEvent(`取消失败：${String(err)}`);
+    addEvent(`Failed to load task history: ${String(err)}`);
   }
-});
+}
 
-retryBtn.addEventListener("click", async () => {
-  if (!state.lastPayload) {
-    return;
-  }
-  addEvent("使用上次参数重试任务。");
-  await startTask({ ...state.lastPayload });
-});
+if (form) {
+  form.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    await startTask(collectPayload());
+  });
+}
 
-chooseCsvBtn.addEventListener("click", async () => {
-  const nativePicker = hasBinding("SelectCSV");
-  try {
-    const selected = await apiSelectCsv();
-    if (selected) {
-      csvInput.value = selected;
-      addEvent(`已选择 CSV：${selected}`);
+if (cancelBtn) {
+  cancelBtn.addEventListener("click", async () => {
+    if (!state.currentTaskId) {
       return;
     }
-    if (nativePicker) {
-      addEvent("已取消 CSV 选择。");
+
+    cancelBtn.disabled = true;
+    try {
+      const ok = await apiCancelTask(state.currentTaskId);
+      addEvent(ok ? "Cancel request sent." : "Cancel request had no effect (task may have ended).");
+    } catch (err) {
+      showError(`Failed to cancel task: ${String(err)}`, "Please retry shortly.");
+      addEvent(`Cancel failed: ${String(err)}`);
+    }
+  });
+}
+
+if (retryBtn) {
+  retryBtn.addEventListener("click", async () => {
+    if (!state.lastPayload) {
       return;
     }
-  } catch (err) {
-    addEvent(`系统文件选择器不可用：${String(err)}`);
-  }
+    addEvent("Retrying task with previous payload.");
+    await startTask({ ...state.lastPayload });
+  });
+}
 
-  csvFileInput.click();
-});
+if (newTaskBtn) {
+  newTaskBtn.addEventListener("click", () => {
+    state.currentTaskId = "";
+    state.currentTask = null;
+    setTaskId("");
+    setStatus("idle", "Waiting for task start");
+    clearError();
+    setRunningUi(false);
+    setWizardStep(STEP_CONFIG);
+    addEvent("Back to parameter step. Ready for a new task.");
+  });
+}
 
-csvFileInput.addEventListener("change", () => {
-  const file = csvFileInput.files?.[0];
-  if (!file) {
-    return;
-  }
-  csvInput.value = file.name;
-  addEvent(`浏览器模式已选择文件：${file.name}`);
-});
+if (chooseCsvBtn) {
+  chooseCsvBtn.addEventListener("click", async () => {
+    const nativePicker = hasBinding("SelectCSV");
+    try {
+      const selected = await apiSelectCsv();
+      if (selected) {
+        if (csvInput) {
+          csvInput.value = selected;
+        }
+        addEvent(`Selected CSV: ${selected}`);
+        await refreshColumnsForCsv(selected, "file picker");
+        return;
+      }
+      if (nativePicker) {
+        addEvent("CSV selection canceled.");
+        return;
+      }
+    } catch (err) {
+      addEvent(`System file picker unavailable: ${String(err)}`);
+    }
 
-chooseOutputBtn.addEventListener("click", async () => {
-  const nativePicker = hasBinding("SelectOutputDir");
-  try {
-    const selected = await apiSelectOutputDir();
-    if (selected) {
-      outputInput.value = selected;
-      addEvent(`已选择输出目录：${selected}`);
+    if (csvFileInput) {
+      csvFileInput.click();
+    }
+  });
+}
+
+if (csvFileInput) {
+  csvFileInput.addEventListener("change", () => {
+    const file = csvFileInput.files?.[0];
+    if (!file) {
       return;
     }
-    if (nativePicker) {
-      addEvent("已取消输出目录选择。");
-      return;
+    if (csvInput) {
+      csvInput.value = file.name;
     }
-  } catch (err) {
-    addEvent(`目录选择器不可用：${String(err)}`);
-  }
+    addEvent(`Browser-mode selected file: ${file.name}`);
+    refreshColumnsForCsv(file.name, "browser file picker");
+  });
+}
 
-  const manual = window.prompt("请输入输出目录", outputInput.value.trim());
-  if (manual && manual.trim()) {
-    outputInput.value = manual.trim();
-    addEvent(`手动设置输出目录：${manual.trim()}`);
-  }
-});
+if (csvInput) {
+  csvInput.addEventListener("change", () => {
+    refreshColumnsForCsv(csvInput.value, "path changed");
+  });
 
-exportJsonBtn.addEventListener("click", exportResultJson);
-exportCsvBtn.addEventListener("click", exportMetricsCsv);
+  csvInput.addEventListener("blur", () => {
+    refreshColumnsForCsv(csvInput.value, "path blur");
+  });
+}
 
-setStatus("idle", "等待任务开始");
+if (chooseOutputBtn) {
+  chooseOutputBtn.addEventListener("click", async () => {
+    const nativePicker = hasBinding("SelectOutputDir");
+    try {
+      const selected = await apiSelectOutputDir();
+      if (selected) {
+        if (outputInput) {
+          outputInput.value = selected;
+        }
+        addEvent(`Selected output directory: ${selected}`);
+        return;
+      }
+      if (nativePicker) {
+        addEvent("Output directory selection canceled.");
+        return;
+      }
+    } catch (err) {
+      addEvent(`Directory picker unavailable: ${String(err)}`);
+    }
+
+    const current = outputInput ? outputInput.value.trim() : "";
+    const manual = window.prompt("Enter output directory", current);
+    if (manual && manual.trim()) {
+      if (outputInput) {
+        outputInput.value = manual.trim();
+      }
+      addEvent(`Manually set output directory: ${manual.trim()}`);
+    }
+  });
+}
+
+if (exportJsonBtn) {
+  exportJsonBtn.addEventListener("click", exportResultJson);
+}
+if (exportCsvBtn) {
+  exportCsvBtn.addEventListener("click", exportMetricsCsv);
+}
+if (copyJsonBtn) {
+  copyJsonBtn.addEventListener("click", copyResultJson);
+}
+
+setWizardStep(STEP_CONFIG);
+setStatus("idle", "Waiting for task start");
 setTaskId("");
 setRunningUi(false);
 resetResultView();
-addEvent("前端已就绪。可配置参数并启动任务。");
+clearError();
+addEvent("Frontend ready. Configure parameters and run a task.");
+refreshColumnsForCsv(csvInput?.value || "", "initial load");
 loadRecentHistory();

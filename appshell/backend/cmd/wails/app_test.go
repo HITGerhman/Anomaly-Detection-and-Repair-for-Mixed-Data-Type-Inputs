@@ -1,6 +1,7 @@
 package main
 
 import (
+	"os"
 	"path/filepath"
 	"testing"
 	"time"
@@ -86,5 +87,71 @@ func TestResolveTaskDBPathUsesEnv(t *testing.T) {
 	}
 	if filepath.Base(got) != "tasks.sqlite" {
 		t.Fatalf("unexpected db file: %s", got)
+	}
+}
+
+func TestListCSVColumnsFromFile(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "sample.csv")
+	content := "id, name ,stroke,stroke,\n1,a,0,0,\n"
+	if err := os.WriteFile(path, []byte(content), 0o644); err != nil {
+		t.Fatalf("write csv failed: %v", err)
+	}
+
+	cols, err := listCSVColumnsFromFile(path)
+	if err != nil {
+		t.Fatalf("listCSVColumnsFromFile failed: %v", err)
+	}
+	if len(cols) != 4 {
+		t.Fatalf("expected 4 unique columns, got %d (%v)", len(cols), cols)
+	}
+	if cols[0] != "id" || cols[1] != "name" || cols[2] != "stroke" || cols[3] != "column_5" {
+		t.Fatalf("unexpected columns: %v", cols)
+	}
+}
+
+func TestListCSVColumnsFromFileEmpty(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "empty.csv")
+	if err := os.WriteFile(path, []byte(""), 0o644); err != nil {
+		t.Fatalf("write csv failed: %v", err)
+	}
+
+	if _, err := listCSVColumnsFromFile(path); err == nil {
+		t.Fatalf("expected error for empty csv")
+	}
+}
+
+func TestResolveExistingFilePathSupportsProjectRelativeCSVPath(t *testing.T) {
+	root := t.TempDir()
+	backendDir := filepath.Join(root, "appshell", "backend")
+	dataDir := filepath.Join(root, "data", "raw")
+	if err := os.MkdirAll(backendDir, 0o755); err != nil {
+		t.Fatalf("mkdir backend dir failed: %v", err)
+	}
+	if err := os.MkdirAll(dataDir, 0o755); err != nil {
+		t.Fatalf("mkdir data dir failed: %v", err)
+	}
+
+	csvPath := filepath.Join(dataDir, "demo.csv")
+	if err := os.WriteFile(csvPath, []byte("a,b,c\n1,2,3\n"), 0o644); err != nil {
+		t.Fatalf("write csv failed: %v", err)
+	}
+
+	prevWD, err := os.Getwd()
+	if err != nil {
+		t.Fatalf("getwd failed: %v", err)
+	}
+	if err := os.Chdir(backendDir); err != nil {
+		t.Fatalf("chdir failed: %v", err)
+	}
+	t.Cleanup(func() {
+		_ = os.Chdir(prevWD)
+	})
+
+	resolved, err := resolveExistingFilePath("data/raw/demo.csv")
+	if err != nil {
+		t.Fatalf("resolveExistingFilePath failed: %v", err)
+	}
+	if resolved != csvPath {
+		t.Fatalf("unexpected resolved path: got=%s want=%s", resolved, csvPath)
 	}
 }

@@ -48,6 +48,7 @@ This engine wraps the algorithm layer behind a stable JSON protocol.
 - `FILE_NOT_FOUND`
 - `CSV_READ_FAILED`
 - `INVALID_TARGET_COLUMN`
+- `UNSUPPORTED_TARGET_TYPE`
 - `MISSING_DEPENDENCY`
 - `TRAINING_MODULE_IMPORT_FAILED`
 - `TRAINING_FAILED`
@@ -69,4 +70,3 @@ This engine wraps the algorithm layer behind a stable JSON protocol.
 echo '{"task_id":"h1","action":"health","payload":{}}' | python appshell/core/python_engine/engine_main.py
 python appshell/core/python_engine/engine_main.py --input appshell/core/python_engine/input.json --output appshell/core/python_engine/output.json
 ```
-

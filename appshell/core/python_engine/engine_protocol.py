@@ -14,6 +14,7 @@ class ErrorCode:
     FILE_NOT_FOUND = "FILE_NOT_FOUND"
     CSV_READ_FAILED = "CSV_READ_FAILED"
     INVALID_TARGET_COLUMN = "INVALID_TARGET_COLUMN"
+    UNSUPPORTED_TARGET_TYPE = "UNSUPPORTED_TARGET_TYPE"
     MISSING_DEPENDENCY = "MISSING_DEPENDENCY"
     TRAINING_MODULE_IMPORT_FAILED = "TRAINING_MODULE_IMPORT_FAILED"
     TRAINING_FAILED = "TRAINING_FAILED"
@@ -28,6 +29,7 @@ class ErrorCode:
             cls.FILE_NOT_FOUND,
             cls.CSV_READ_FAILED,
             cls.INVALID_TARGET_COLUMN,
+            cls.UNSUPPORTED_TARGET_TYPE,
             cls.MISSING_DEPENDENCY,
             cls.TRAINING_MODULE_IMPORT_FAILED,
             cls.TRAINING_FAILED,
@@ -111,4 +113,3 @@ class KnownEngineError(Exception):
         self.message = message
         self.details = details or {}
         super().__init__(message)
-

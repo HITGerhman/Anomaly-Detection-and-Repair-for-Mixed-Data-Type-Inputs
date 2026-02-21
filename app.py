@@ -11,7 +11,12 @@ matplotlib.use('Agg')  # 非交互式后端
 # 导入配置和核心模块
 from config import PATHS, FILES
 from src.repair_module import AnomalyRepairer
-from src.utils import process_and_train, save_system_state, load_system_state
+from src.utils import (
+    load_system_state,
+    predict_with_threshold,
+    process_and_train,
+    save_system_state,
+)
 
 # 设置 matplotlib 样式
 plt.style.use('seaborn-v0_8-whitegrid')
@@ -390,8 +395,9 @@ elif page == "2. Detection & Repair":
             with c2:
                 st.subheader("Analysis Result")
                 if st.button("Run Diagnosis", key="run_diag"):
-                    pred = model.predict(sample_data)[0]
-                    prob = model.predict_proba(sample_data)[0][1]
+                    pred_arr, prob_arr = predict_with_threshold(model, sample_data)
+                    pred = int(pred_arr[0])
+                    prob = float(prob_arr[0])
                     
                     if pred == 1:
                         st.error(f"🚨 ANOMALY DETECTED (Risk Score: {prob:.4f})")
@@ -451,8 +457,9 @@ elif page == "2. Detection & Repair":
                             repaired_data[fname] = repair_info['suggested']
                         
                         # 重新预测
-                        new_pred = model.predict(repaired_data)[0]
-                        new_prob = model.predict_proba(repaired_data)[0][1]
+                        new_pred_arr, new_prob_arr = predict_with_threshold(model, repaired_data)
+                        new_pred = int(new_pred_arr[0])
+                        new_prob = float(new_prob_arr[0])
                         original_prob = st.session_state.original_prob
                         
                         # 显示修复前后对比
@@ -543,8 +550,7 @@ elif page == "2. Detection & Repair":
                 batch_data = X_test.iloc[range_start:range_end+1]
                 
                 # 批量预测
-                predictions = model.predict(batch_data)
-                probabilities = model.predict_proba(batch_data)[:, 1]
+                predictions, probabilities = predict_with_threshold(model, batch_data)
                 
                 # 构建结果 DataFrame
                 results_df = batch_data.copy()

@@ -3,109 +3,139 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Anomaly AppShell MVP</title>
+    <title>Anomaly AppShell Wizard</title>
     <link rel="stylesheet" href="./src/style.css" />
   </head>
   <body>
-    <main class="shell">
-      <header class="hero">
-        <p class="hero-kicker">Phase 3 / Wails Frontend MVP</p>
-        <h1>混合类型异常检测桌面端</h1>
-        <p class="hero-subtitle">完成参数配置、任务运行、进度跟踪、结果查看与导出。</p>
-      </header>
+    <main class="wizard-app">
+      <section class="wizard-stage">
+        <div id="wizard-card" class="wizard-card" data-step="config">
+          <div id="wizard-inner" class="wizard-inner">
+            <article class="wizard-face face-front">
+              <header class="face-head">
+                <p class="face-kicker" id="front-kicker">STEP 1</p>
+                <h1 id="front-title">参数配置</h1>
+                <p id="front-subtitle">设置训练参数并启动任务</p>
+              </header>
 
-      <section class="panel config-panel">
-        <h2>1. 参数配置</h2>
-        <form id="train-form">
-          <div class="field">
-            <label for="csv-path">CSV 文件路径</label>
-            <div class="row-input">
-              <input id="csv-path" type="text" value="data/raw/healthcare-dataset-stroke-data.csv" required />
-              <button id="choose-csv-btn" class="btn-secondary" type="button">选择文件</button>
-            </div>
-            <small>建议使用绝对路径。Wails 运行时会调用系统文件选择器。</small>
-          </div>
+              <section id="config-view" class="view-block">
+                <form id="train-form">
+                  <div class="field-row">
+                    <label for="csv-path">CSV 文件路径</label>
+                    <div class="field-control row-input">
+                      <input
+                        id="csv-path"
+                        type="text"
+                        value="data/raw/healthcare-dataset-stroke-data.csv"
+                        required
+                      />
+                      <button id="choose-csv-btn" class="btn-secondary" type="button">选择文件</button>
+                    </div>
+                  </div>
 
-          <div class="field-grid">
-            <div class="field">
-              <label for="target-col">目标列</label>
-              <input id="target-col" type="text" value="stroke" required />
-            </div>
-            <div class="field">
-              <label for="timeout-ms">超时 (毫秒)</label>
-              <input id="timeout-ms" type="number" value="90000" min="1000" step="1000" />
-            </div>
-          </div>
+                  <p class="field-note">建议使用绝对路径，Wails 会调用系统文件选择器。</p>
 
-          <div class="field">
-            <label for="output-dir">输出目录</label>
-            <div class="row-input">
-              <input id="output-dir" type="text" value="outputs/results/wails_mvp" />
-              <button id="choose-output-btn" class="btn-secondary" type="button">选择目录</button>
-            </div>
-          </div>
+                  <div class="group-list">
+                    <div class="field-row compact">
+                      <label for="target-col">目标列</label>
+                      <div class="field-control">
+                        <select id="target-col" required>
+                          <option value="stroke">stroke</option>
+                        </select>
+                      </div>
+                    </div>
+                    <div class="field-row compact">
+                      <label for="timeout-ms">超时 (毫秒)</label>
+                      <div class="field-control">
+                        <input id="timeout-ms" type="number" value="90000" min="1000" step="1000" />
+                      </div>
+                    </div>
+                  </div>
 
-          <div class="actions">
-            <button id="run-btn" class="btn-primary" type="submit">启动任务</button>
-            <button id="cancel-btn" class="btn-warning" type="button" disabled>取消任务</button>
-            <button id="retry-btn" class="btn-secondary" type="button" disabled>重试上次参数</button>
+                  <div class="field-row">
+                    <label for="output-dir">输出目录</label>
+                    <div class="field-control row-input">
+                      <input id="output-dir" type="text" value="outputs/results/wails_mvp" />
+                      <button id="choose-output-btn" class="btn-secondary" type="button">选择目录</button>
+                    </div>
+                  </div>
+
+                  <div class="actions">
+                    <button id="run-btn" class="btn-primary" type="submit">启动任务</button>
+                    <button id="retry-btn" class="btn-secondary" type="button" disabled>重试上次参数</button>
+                  </div>
+                </form>
+              </section>
+
+              <section id="result-view" class="view-block hidden">
+                <div class="result-header">
+                  <span id="status-pill" class="status-pill idle">idle</span>
+                  <span id="task-id-label">Task: -</span>
+                </div>
+
+                <div class="result-actions">
+                  <button id="new-task-btn" class="btn-secondary" type="button">新建任务</button>
+                  <button id="export-json-btn" class="btn-secondary" type="button" disabled>导出 JSON</button>
+                  <button id="export-csv-btn" class="btn-secondary" type="button" disabled>导出指标 CSV</button>
+                </div>
+
+                <div class="result-grid">
+                  <article class="result-card">
+                    <h2>结果摘要</h2>
+                    <dl id="result-summary"></dl>
+                  </article>
+                  <article class="result-card">
+                    <h2>关键指标</h2>
+                    <table class="metrics-table">
+                      <thead>
+                        <tr><th>Metric</th><th>Value</th></tr>
+                      </thead>
+                      <tbody id="metrics-table-body"></tbody>
+                    </table>
+                  </article>
+                </div>
+
+                <section class="response-shell">
+                  <div class="response-head">
+                    <h3>完整响应</h3>
+                    <button id="copy-json-btn" class="btn-ghost" type="button">复制</button>
+                  </div>
+                  <pre id="result-box">{}</pre>
+                </section>
+              </section>
+            </article>
+
+            <article class="wizard-face face-back">
+              <header class="face-head">
+                <p class="face-kicker">STEP 2</p>
+                <h1>进度状态</h1>
+                <p id="status-message">等待任务开始</p>
+              </header>
+
+              <section class="progress-panel">
+                <div class="progress-track">
+                  <div id="progress-fill" class="progress-fill idle"></div>
+                </div>
+                <ul id="event-log" class="event-log"></ul>
+              </section>
+
+              <section id="error-panel" class="error-panel hidden">
+                <h2>错误提示</h2>
+                <p id="error-message">-</p>
+                <p id="error-hint">可修复后点击“重试上次参数”。</p>
+              </section>
+
+              <div class="back-actions">
+                <button id="cancel-btn" class="btn-warning" type="button" disabled>取消任务</button>
+              </div>
+            </article>
           </div>
-        </form>
-        <input id="csv-file-input" type="file" accept=".csv,text/csv" hidden />
+        </div>
       </section>
 
-      <section class="panel progress-panel">
-        <h2>2. 进度状态</h2>
-        <div class="status-head">
-          <span id="status-pill" class="status-pill idle">idle</span>
-          <span id="task-id-label">Task: -</span>
-        </div>
-        <div class="progress-track">
-          <div id="progress-fill" class="progress-fill idle"></div>
-        </div>
-        <p id="status-message">等待任务开始</p>
-        <ul id="event-log" class="event-log"></ul>
-      </section>
-
-      <section id="error-panel" class="panel error-panel hidden">
-        <h2>错误提示</h2>
-        <p id="error-message">-</p>
-        <p id="error-hint">可修复后点击“重试上次参数”。</p>
-      </section>
-
-      <section class="panel result-panel">
-        <div class="result-header">
-          <h2>3. 结果查看与导出</h2>
-          <div class="result-actions">
-            <button id="export-json-btn" class="btn-secondary" type="button" disabled>导出 JSON</button>
-            <button id="export-csv-btn" class="btn-secondary" type="button" disabled>导出指标 CSV</button>
-          </div>
-        </div>
-
-        <div class="result-grid">
-          <article class="result-card">
-            <h3>结果摘要</h3>
-            <dl id="result-summary"></dl>
-          </article>
-          <article class="result-card">
-            <h3>关键指标</h3>
-            <table class="metrics-table">
-              <thead>
-                <tr><th>Metric</th><th>Value</th></tr>
-              </thead>
-              <tbody id="metrics-table-body"></tbody>
-            </table>
-          </article>
-        </div>
-
-        <details open>
-          <summary>完整响应</summary>
-          <pre id="result-box">{}</pre>
-        </details>
-      </section>
+      <input id="csv-file-input" type="file" accept=".csv,text/csv" hidden />
     </main>
 
     <script type="module" src="./src/main.js"></script>
   </body>
 </html>
-

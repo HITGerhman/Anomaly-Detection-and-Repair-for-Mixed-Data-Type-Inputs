@@ -2,7 +2,9 @@ package main
 
 import (
 	"context"
+	"encoding/csv"
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -279,4 +281,109 @@ func (a *App) SelectOutputDir() (string, error) {
 	}
 
 	return strings.TrimSpace(path), nil
+}
+
+func listCSVColumnsFromFile(csvPath string) ([]string, error) {
+	absPath, err := resolveExistingFilePath(csvPath)
+	if err != nil {
+		return nil, err
+	}
+
+	f, err := os.Open(absPath)
+	if err != nil {
+		return nil, fmt.Errorf("open csv failed: %w", err)
+	}
+	defer f.Close()
+
+	reader := csv.NewReader(f)
+	reader.FieldsPerRecord = -1
+
+	record, err := reader.Read()
+	if err == io.EOF {
+		return nil, fmt.Errorf("csv file is empty")
+	}
+	if err != nil {
+		return nil, fmt.Errorf("read csv header failed: %w", err)
+	}
+	if len(record) == 0 {
+		return nil, fmt.Errorf("csv header is empty")
+	}
+
+	columns := make([]string, 0, len(record))
+	seen := make(map[string]struct{}, len(record))
+
+	for i, raw := range record {
+		col := strings.TrimSpace(raw)
+		if i == 0 {
+			col = strings.TrimPrefix(col, "\ufeff")
+		}
+		if col == "" {
+			col = fmt.Sprintf("column_%d", i+1)
+		}
+		if _, ok := seen[col]; ok {
+			continue
+		}
+		seen[col] = struct{}{}
+		columns = append(columns, col)
+	}
+
+	if len(columns) == 0 {
+		return nil, fmt.Errorf("no available columns found in csv header")
+	}
+
+	return columns, nil
+}
+
+func (a *App) ListCSVColumns(csvPath string) ([]string, error) {
+	return listCSVColumnsFromFile(csvPath)
+}
+
+func resolveExistingFilePath(rawPath string) (string, error) {
+	clean := strings.TrimSpace(rawPath)
+	if clean == "" {
+		return "", fmt.Errorf("csv path is required")
+	}
+
+	candidates := make([]string, 0, 6)
+	seen := map[string]struct{}{}
+	pushCandidate := func(path string) {
+		path = strings.TrimSpace(path)
+		if path == "" {
+			return
+		}
+		normalized := filepath.Clean(path)
+		if _, ok := seen[normalized]; ok {
+			return
+		}
+		seen[normalized] = struct{}{}
+		candidates = append(candidates, normalized)
+	}
+
+	if filepath.IsAbs(clean) {
+		pushCandidate(clean)
+	} else {
+		pushCandidate(clean)
+		pushCandidate(filepath.Join("..", clean))
+		pushCandidate(filepath.Join("..", "..", clean))
+	}
+
+	if exePath, err := os.Executable(); err == nil {
+		exeDir := filepath.Dir(exePath)
+		pushCandidate(filepath.Join(exeDir, clean))
+		pushCandidate(filepath.Join(exeDir, "..", clean))
+		pushCandidate(filepath.Join(exeDir, "..", "..", clean))
+	}
+
+	for _, candidate := range candidates {
+		abs, err := filepath.Abs(candidate)
+		if err != nil {
+			continue
+		}
+		info, err := os.Stat(abs)
+		if err == nil && !info.IsDir() {
+			return abs, nil
+		}
+	}
+
+	return "", fmt.Errorf("csv file not found: %s", clean)
 }
