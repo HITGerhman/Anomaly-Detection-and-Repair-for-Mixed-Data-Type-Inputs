@@ -50,14 +50,32 @@ function hasBinding(methodName) {
   return Boolean(window?.go?.main?.App?.[methodName]);
 }
 
-function addEvent(message) {
+function emitFrontendLog(message, taskId = "") {
+  const payload = {
+    timestamp: new Date().toISOString(),
+    layer: "frontend",
+    event: "ui_event",
+    task_id: taskId || "",
+    message: String(message || ""),
+  };
+  try {
+    console.info(JSON.stringify(payload));
+  } catch (err) {
+    console.info("frontend ui_event", payload);
+  }
+}
+
+function addEvent(message, taskId = state.currentTaskId) {
   const li = document.createElement("li");
   const time = new Date();
   const hh = String(time.getHours()).padStart(2, "0");
   const mm = String(time.getMinutes()).padStart(2, "0");
   const ss = String(time.getSeconds()).padStart(2, "0");
-  li.innerHTML = `<span class="event-time">${hh}:${mm}:${ss}</span><span>${message}</span>`;
+  const normalizedTaskId = (taskId || "").trim();
+  const visibleMessage = normalizedTaskId ? `[${normalizedTaskId}] ${message}` : message;
+  li.innerHTML = `<span class="event-time">${hh}:${mm}:${ss}</span><span>${visibleMessage}</span>`;
   eventLog.prepend(li);
+  emitFrontendLog(message, normalizedTaskId);
 }
 
 function setStatus(status, message) {
@@ -286,6 +304,13 @@ async function apiSelectOutputDir() {
   return "";
 }
 
+async function apiListTaskHistory(limit = 20) {
+  if (hasBinding("ListTaskHistory")) {
+    return window.go.main.App.ListTaskHistory(limit);
+  }
+  return [];
+}
+
 async function mockRunTask(payload) {
   const id = `mock-task-${Date.now()}`;
   const createdAt = Date.now();
@@ -392,6 +417,24 @@ async function mockCancelTask(taskId) {
   }
   item.canceled = true;
   return true;
+}
+
+async function loadRecentHistory() {
+  try {
+    const tasks = await apiListTaskHistory(10);
+    if (!Array.isArray(tasks) || tasks.length === 0) {
+      addEvent("未发现持久化历史任务。");
+      return;
+    }
+
+    const latest = tasks[0];
+    state.currentTaskId = latest?.id || "";
+    renderTask(latest);
+    setRunningUi(false);
+    addEvent(`已加载最近 ${tasks.length} 条历史任务。`, state.currentTaskId);
+  } catch (err) {
+    addEvent(`加载历史任务失败：${String(err)}`);
+  }
 }
 
 async function pollTask(taskId) {
@@ -547,3 +590,4 @@ setTaskId("");
 setRunningUi(false);
 resetResultView();
 addEvent("前端已就绪。可配置参数并启动任务。");
+loadRecentHistory();

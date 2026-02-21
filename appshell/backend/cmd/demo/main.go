@@ -6,11 +6,24 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
 
 	"appshell/backend/internal/engine"
 	"appshell/backend/internal/task"
 )
+
+func ensureDefaultGoLogFile() {
+	if strings.TrimSpace(os.Getenv("APPSHELL_GO_LOG_FILE")) != "" {
+		return
+	}
+
+	abs, err := filepath.Abs(filepath.Join("..", "..", "outputs", "appshell", "go_backend.log"))
+	if err != nil {
+		return
+	}
+	_ = os.Setenv("APPSHELL_GO_LOG_FILE", abs)
+}
 
 func mustJSON(v any) string {
 	b, err := json.MarshalIndent(v, "", "  ")
@@ -46,11 +59,15 @@ func buildRequest(action, csv, target, outputDir string, index int, parallel int
 }
 
 func main() {
+	ensureDefaultGoLogFile()
+
 	action := flag.String("action", "health", "Action to run: health or train")
 	csv := flag.String("csv", "", "CSV path for train action")
 	target := flag.String("target", "", "Target column for train action")
 	outputDir := flag.String("output", "", "Base output directory for model artifacts")
 	engineScript := flag.String("engine", "../core/python_engine/engine_main.py", "Path to python engine script")
+	historyDB := flag.String("history-db", "../../outputs/appshell/task_history.sqlite", "Path to task history sqlite db")
+	historyKeep := flag.Int("history-keep", 100, "Keep only latest N history records (<=0 means no trim)")
 	timeout := flag.Duration("timeout", 90*time.Second, "Task timeout")
 	parallel := flag.Int("parallel", 1, "Number of tasks to submit")
 	cancelAfter := flag.Duration("cancel-after", 0, "Cancel the first task after this duration")
@@ -68,7 +85,19 @@ func main() {
 	}
 
 	runner := engine.NewRunner(absEngine)
-	svc := task.NewService(runner)
+	absHistoryDB, err := filepath.Abs(*historyDB)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "resolve history db path failed: %v\n", err)
+		os.Exit(1)
+	}
+	historyStore, err := task.NewSQLiteHistoryStore(absHistoryDB, *historyKeep)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "init history store failed: %v\n", err)
+		os.Exit(1)
+	}
+	svc := task.NewServiceWithConfig(runner, task.Config{
+		HistoryStore: historyStore,
+	})
 	defer svc.Close()
 
 	taskIDs := make([]string, 0, *parallel)

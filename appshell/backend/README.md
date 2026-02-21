@@ -6,7 +6,8 @@ lifecycle. Frontend should never call Python directly.
 ## Main pieces
 
 - `internal/engine`: request/response protocol + process runner
-- `internal/task`: in-memory orchestration with queue/timeout/cancel APIs
+- `internal/task`: orchestration + sqlite task history (recent N records)
+- `internal/observability`: structured JSON logs for Go runtime
 - `cmd/demo`: CLI demo used for phase acceptance tests
 - `cmd/wails`: desktop app entrypoint exposing Go bindings to frontend
 
@@ -15,6 +16,7 @@ lifecycle. Frontend should never call Python directly.
 - `RunTask(req, timeout)` submits a task into queue.
 - `CancelTask(taskID)` cancels pending/running task.
 - `GetTaskStatus(taskID)` returns current task snapshot.
+- `ListRecentTasks(limit)` returns persisted recent history.
 
 Status values:
 
@@ -64,3 +66,21 @@ Expose Go methods mirroring task service behavior:
 - `SelectOutputDir() (string, error)`
 
 Frontend keeps the same JSON request shape used by Python engine.
+
+Additional method for history:
+
+- `ListTaskHistory(limit int) ([]TaskSnapshot, error)`
+
+## Observability and history persistence
+
+- Go emits structured JSON logs to `stderr` (includes `task_id` for every task event).
+- Go emits structured JSON logs to `stderr` and defaults to `outputs/appshell/go_backend.log`.
+- Python engine logs are captured from `stderr` and re-emitted by Go with `task_id`.
+- Frontend emits JSON lines to browser console with `task_id` for UI events.
+- Task snapshots are persisted to sqlite and can be queried after restart.
+
+Environment variables:
+
+- `APPSHELL_TASK_DB`: sqlite file path for task history.
+- `APPSHELL_TASK_HISTORY_KEEP`: keep only latest N tasks (default `100`).
+- `APPSHELL_GO_LOG_FILE`: override Go JSON log file path (default is auto-set).

@@ -4,11 +4,13 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"sort"
 	"sync"
 	"sync/atomic"
 	"time"
 
 	"appshell/backend/internal/engine"
+	"appshell/backend/internal/observability"
 )
 
 const (
@@ -39,6 +41,7 @@ type Runner interface {
 type Config struct {
 	MaxConcurrency int
 	QueueSize      int
+	HistoryStore   HistoryStore
 }
 
 func defaultConfig() Config {
@@ -54,8 +57,9 @@ type runtimeInfo struct {
 }
 
 type Service struct {
-	runner Runner
-	cfg    Config
+	runner  Runner
+	cfg     Config
+	history HistoryStore
 
 	mu      sync.RWMutex
 	tasks   map[string]*Task
@@ -84,6 +88,7 @@ func NewServiceWithConfig(runner Runner, cfg Config) *Service {
 	s := &Service{
 		runner:  runner,
 		cfg:     cfg,
+		history: cfg.HistoryStore,
 		tasks:   make(map[string]*Task),
 		runtime: make(map[string]runtimeInfo),
 		queue:   make(chan string, cfg.QueueSize),
@@ -108,6 +113,14 @@ func (s *Service) Close() {
 		for id, rt := range s.runtime {
 			rt.cancel()
 			delete(s.runtime, id)
+		}
+
+		if s.history != nil {
+			if err := s.history.Close(); err != nil {
+				observability.Warn("task_history_close_failed", map[string]any{
+					"error": err.Error(),
+				})
+			}
 		}
 	})
 }
@@ -183,9 +196,17 @@ func (s *Service) RunTask(req engine.Request, timeout time.Duration) (string, er
 		cancel: cancel,
 	}
 	s.mu.Unlock()
+	submittedSnapshot := *task
 
 	select {
 	case s.queue <- taskID:
+		s.persistTask(submittedSnapshot)
+		observability.Info("task_submitted", map[string]any{
+			"task_id":    taskID,
+			"action":     req.Action,
+			"status":     submittedSnapshot.Status,
+			"timeout_ms": submittedSnapshot.TimeoutMS,
+		})
 		return taskID, nil
 	default:
 		s.mu.Lock()
@@ -193,6 +214,11 @@ func (s *Service) RunTask(req engine.Request, timeout time.Duration) (string, er
 		delete(s.runtime, taskID)
 		s.mu.Unlock()
 		cancel()
+		observability.Warn("task_submit_failed", map[string]any{
+			"task_id": taskID,
+			"action":  req.Action,
+			"reason":  "task queue is full",
+		})
 		return "", fmt.Errorf("task queue is full")
 	}
 }
@@ -217,9 +243,16 @@ func (s *Service) execute(taskID string) {
 	}
 	task.Status = StatusRunning
 	task.StartedAt = time.Now()
+	runningSnapshot := *task
 	req := task.Request
 	ctx := rt.ctx
 	s.mu.Unlock()
+	s.persistTask(runningSnapshot)
+	observability.Info("task_started", map[string]any{
+		"task_id": taskID,
+		"action":  req.Action,
+		"status":  runningSnapshot.Status,
+	})
 
 	resp, err := s.runner.Run(ctx, req)
 	endedAt := time.Now()
@@ -248,6 +281,12 @@ func (s *Service) execute(taskID string) {
 		if stored.Error == "" {
 			stored.Error = "canceled"
 		}
+		s.persistTask(*stored)
+		observability.Warn("task_finished", map[string]any{
+			"task_id": taskID,
+			"status":  stored.Status,
+			"error":   stored.Error,
+		})
 		s.cleanupRuntimeLocked(taskID)
 		return
 	case errors.Is(ctx.Err(), context.DeadlineExceeded) || errors.Is(err, context.DeadlineExceeded):
@@ -255,11 +294,23 @@ func (s *Service) execute(taskID string) {
 		if stored.Error == "" {
 			stored.Error = "timeout"
 		}
+		s.persistTask(*stored)
+		observability.Warn("task_finished", map[string]any{
+			"task_id": taskID,
+			"status":  stored.Status,
+			"error":   stored.Error,
+		})
 		s.cleanupRuntimeLocked(taskID)
 		return
 	case err != nil:
 		stored.Status = StatusFailed
 		stored.Error = err.Error()
+		s.persistTask(*stored)
+		observability.Error("task_finished", map[string]any{
+			"task_id": taskID,
+			"status":  stored.Status,
+			"error":   stored.Error,
+		})
 		s.cleanupRuntimeLocked(taskID)
 		return
 	}
@@ -273,6 +324,12 @@ func (s *Service) execute(taskID string) {
 			stored.Error = resp.Error.Code + ": " + resp.Error.Message
 		}
 	}
+	s.persistTask(*stored)
+	observability.Info("task_finished", map[string]any{
+		"task_id": taskID,
+		"status":  stored.Status,
+		"error":   stored.Error,
+	})
 	s.cleanupRuntimeLocked(taskID)
 }
 
@@ -309,9 +366,18 @@ func (s *Service) CancelTask(taskID string) bool {
 		task.EndedAt = time.Now()
 		delete(s.runtime, taskID)
 		rt.cancel()
+		s.persistTask(*task)
+		observability.Warn("task_canceled", map[string]any{
+			"task_id": taskID,
+			"status":  task.Status,
+		})
 	case StatusRunning:
 		task.Error = "canceled"
 		rt.cancel()
+		observability.Warn("task_cancel_requested", map[string]any{
+			"task_id": taskID,
+			"status":  task.Status,
+		})
 	default:
 		return false
 	}
@@ -321,15 +387,26 @@ func (s *Service) CancelTask(taskID string) bool {
 
 func (s *Service) GetTaskStatus(taskID string) (*Task, bool) {
 	s.mu.RLock()
-	defer s.mu.RUnlock()
-
 	task, ok := s.tasks[taskID]
-	if !ok {
+	if ok {
+		copyTask := *task
+		s.mu.RUnlock()
+		return &copyTask, true
+	}
+	s.mu.RUnlock()
+
+	if s.history == nil {
 		return nil, false
 	}
-
-	copyTask := *task
-	return &copyTask, true
+	hTask, ok, err := s.history.GetTask(context.Background(), taskID)
+	if err != nil {
+		observability.Warn("task_history_lookup_failed", map[string]any{
+			"task_id": taskID,
+			"error":   err.Error(),
+		})
+		return nil, false
+	}
+	return hTask, ok
 }
 
 func (s *Service) List() []Task {
@@ -340,7 +417,35 @@ func (s *Service) List() []Task {
 	for _, task := range s.tasks {
 		out = append(out, *task)
 	}
+	sort.Slice(out, func(i, j int) bool {
+		return out[i].CreatedAt.After(out[j].CreatedAt)
+	})
 	return out
+}
+
+func (s *Service) ListRecentTasks(limit int) ([]Task, error) {
+	if s.history != nil {
+		return s.history.ListRecentTasks(context.Background(), limit)
+	}
+
+	items := s.List()
+	if limit <= 0 || limit >= len(items) {
+		return items, nil
+	}
+	return items[:limit], nil
+}
+
+func (s *Service) persistTask(task Task) {
+	if s.history == nil {
+		return
+	}
+	if err := s.history.SaveTask(context.Background(), task); err != nil {
+		observability.Warn("task_history_save_failed", map[string]any{
+			"task_id": task.ID,
+			"status":  task.Status,
+			"error":   err.Error(),
+		})
+	}
 }
 
 // Start is kept for backward compatibility.

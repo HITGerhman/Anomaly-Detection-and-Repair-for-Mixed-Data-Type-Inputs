@@ -2,6 +2,7 @@ package task
 
 import (
 	"context"
+	"path/filepath"
 	"sync/atomic"
 	"testing"
 	"time"
@@ -155,4 +156,94 @@ func TestTimedOutTaskTransitionsToTimedOutAndCanBeRecycled(t *testing.T) {
 		t.Fatalf("RunTask after timeout failed: %v", err)
 	}
 	waitForStatus(t, svc, nextTaskID, 2*time.Second, StatusSucceeded)
+}
+
+func TestTaskHistoryCanBeLoadedAfterServiceRestart(t *testing.T) {
+	dbPath := filepath.Join(t.TempDir(), "task_history.sqlite")
+
+	history1, err := NewSQLiteHistoryStore(dbPath, 100)
+	if err != nil {
+		t.Fatalf("create history store failed: %v", err)
+	}
+	svc1 := NewServiceWithConfig(&fakeRunner{}, Config{
+		MaxConcurrency: 1,
+		QueueSize:      8,
+		HistoryStore:   history1,
+	})
+
+	taskID, err := svc1.RunTask(engine.Request{
+		Action:  "health",
+		Payload: map[string]any{},
+	}, 2*time.Second)
+	if err != nil {
+		t.Fatalf("RunTask failed: %v", err)
+	}
+	waitForStatus(t, svc1, taskID, 2*time.Second, StatusSucceeded)
+	svc1.Close()
+
+	history2, err := NewSQLiteHistoryStore(dbPath, 100)
+	if err != nil {
+		t.Fatalf("reopen history store failed: %v", err)
+	}
+	svc2 := NewServiceWithConfig(&fakeRunner{}, Config{
+		MaxConcurrency: 1,
+		QueueSize:      8,
+		HistoryStore:   history2,
+	})
+	defer svc2.Close()
+
+	taskSnapshot, ok := svc2.GetTaskStatus(taskID)
+	if !ok {
+		t.Fatalf("expected task %s to be found in persisted history", taskID)
+	}
+	if taskSnapshot.Status != StatusSucceeded {
+		t.Fatalf("expected persisted status=%s got=%s", StatusSucceeded, taskSnapshot.Status)
+	}
+}
+
+func TestTaskHistoryKeepsOnlyRecentNRecords(t *testing.T) {
+	dbPath := filepath.Join(t.TempDir(), "task_history.sqlite")
+	history, err := NewSQLiteHistoryStore(dbPath, 2)
+	if err != nil {
+		t.Fatalf("create history store failed: %v", err)
+	}
+
+	svc := NewServiceWithConfig(&fakeRunner{}, Config{
+		MaxConcurrency: 1,
+		QueueSize:      8,
+		HistoryStore:   history,
+	})
+	defer svc.Close()
+
+	taskIDs := make([]string, 0, 3)
+	for i := 0; i < 3; i++ {
+		taskID, err := svc.RunTask(engine.Request{
+			Action:  "health",
+			Payload: map[string]any{"index": i},
+		}, 2*time.Second)
+		if err != nil {
+			t.Fatalf("RunTask failed: %v", err)
+		}
+		taskIDs = append(taskIDs, taskID)
+		waitForStatus(t, svc, taskID, 2*time.Second, StatusSucceeded)
+	}
+
+	items, err := svc.ListRecentTasks(10)
+	if err != nil {
+		t.Fatalf("ListRecentTasks failed: %v", err)
+	}
+	if len(items) != 2 {
+		t.Fatalf("expected 2 records after trim, got %d", len(items))
+	}
+
+	got := map[string]bool{}
+	for _, item := range items {
+		got[item.ID] = true
+	}
+	if got[taskIDs[0]] {
+		t.Fatalf("oldest task should have been trimmed: %s", taskIDs[0])
+	}
+	if !got[taskIDs[1]] || !got[taskIDs[2]] {
+		t.Fatalf("newest tasks should remain after trim")
+	}
 }

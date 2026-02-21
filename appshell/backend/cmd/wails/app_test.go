@@ -1,6 +1,7 @@
 package main
 
 import (
+	"path/filepath"
 	"testing"
 	"time"
 )
@@ -62,5 +63,28 @@ func TestNormalizeRequestUsesNestedPayload(t *testing.T) {
 	}
 	if timeout != 3*time.Second {
 		t.Fatalf("unexpected timeout: %s", timeout)
+	}
+}
+
+func TestHistoryKeepFromEnv(t *testing.T) {
+	t.Setenv("APPSHELL_TASK_HISTORY_KEEP", "25")
+	if got := historyKeepFromEnv(100); got != 25 {
+		t.Fatalf("expected 25, got %d", got)
+	}
+
+	t.Setenv("APPSHELL_TASK_HISTORY_KEEP", "invalid")
+	if got := historyKeepFromEnv(100); got != 100 {
+		t.Fatalf("invalid value should fallback, got %d", got)
+	}
+}
+
+func TestResolveTaskDBPathUsesEnv(t *testing.T) {
+	t.Setenv("APPSHELL_TASK_DB", "outputs/custom/tasks.sqlite")
+	got, err := resolveTaskDBPath()
+	if err != nil {
+		t.Fatalf("resolveTaskDBPath failed: %v", err)
+	}
+	if filepath.Base(got) != "tasks.sqlite" {
+		t.Fatalf("unexpected db file: %s", got)
 	}
 }

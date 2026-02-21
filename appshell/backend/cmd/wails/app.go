@@ -3,7 +3,9 @@ package main
 import (
 	"context"
 	"fmt"
+	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"time"
 
@@ -25,7 +27,17 @@ func NewApp(engineScript string) (*App, error) {
 	}
 
 	runner := engine.NewRunner(absEngine)
-	service := task.NewService(runner)
+	dbPath, err := resolveTaskDBPath()
+	if err != nil {
+		return nil, err
+	}
+	historyStore, err := task.NewSQLiteHistoryStore(dbPath, historyKeepFromEnv(100))
+	if err != nil {
+		return nil, fmt.Errorf("init task history store failed: %w", err)
+	}
+	service := task.NewServiceWithConfig(runner, task.Config{
+		HistoryStore: historyStore,
+	})
 	return &App{
 		service: service,
 	}, nil
@@ -53,6 +65,34 @@ func asString(v any) string {
 	default:
 		return strings.TrimSpace(fmt.Sprint(v))
 	}
+}
+
+func resolveTaskDBPath() (string, error) {
+	if raw := strings.TrimSpace(os.Getenv("APPSHELL_TASK_DB")); raw != "" {
+		abs, err := filepath.Abs(raw)
+		if err != nil {
+			return "", fmt.Errorf("resolve APPSHELL_TASK_DB failed: %w", err)
+		}
+		return abs, nil
+	}
+
+	abs, err := filepath.Abs(filepath.Join("..", "..", "outputs", "appshell", "task_history.sqlite"))
+	if err != nil {
+		return "", fmt.Errorf("resolve default task history path failed: %w", err)
+	}
+	return abs, nil
+}
+
+func historyKeepFromEnv(fallback int) int {
+	raw := strings.TrimSpace(os.Getenv("APPSHELL_TASK_HISTORY_KEEP"))
+	if raw == "" {
+		return fallback
+	}
+	n, err := strconv.Atoi(raw)
+	if err != nil || n <= 0 {
+		return fallback
+	}
+	return n
 }
 
 func timeoutFromPayload(payload map[string]any, fallback time.Duration) time.Duration {
@@ -184,6 +224,16 @@ func (a *App) CancelTask(taskID string) (bool, error) {
 		return false, fmt.Errorf("task id is required")
 	}
 	return a.service.CancelTask(id), nil
+}
+
+func (a *App) ListTaskHistory(limit int) ([]task.Task, error) {
+	if a.service == nil {
+		return nil, fmt.Errorf("task service is not initialized")
+	}
+	if limit <= 0 {
+		limit = 20
+	}
+	return a.service.ListRecentTasks(limit)
 }
 
 // Backward-compatible alias used by previous frontend template.

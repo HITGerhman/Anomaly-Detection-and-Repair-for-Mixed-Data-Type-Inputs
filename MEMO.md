@@ -1,6 +1,6 @@
 ﻿# MEMO
 
-Last updated: 2026-02-17
+Last updated: 2026-02-21 17:57:58
 
 ## 1. 已完成内容
 
@@ -59,6 +59,31 @@ Last updated: 2026-02-17
   - 前端能力覆盖：参数配置、文件选择、任务启动、轮询进度、结果展示、错误提示、重试、JSON/CSV 导出
   - 新增 Wails 绑定参数测试：
     - `appshell/backend/cmd/wails/app_test.go`
+- 已完成阶段4：数据与可观测性（可排查、可追溯）
+  - Go 结构化日志：
+    - 新增 `appshell/backend/internal/observability/logger.go`
+    - `service.go` / `runner.go` 输出 JSON 日志并贯穿 `task_id`
+    - `runner.go` 转发 Python `stderr` JSON 日志到 Go 日志流（保留 `task_id`）
+    - `cmd/demo` / `cmd/wails` 默认落盘到 `outputs/appshell/go_backend.log`（可用环境变量覆盖）
+  - 任务历史本地持久化（sqlite）：
+    - 新增 `appshell/backend/internal/task/history_store.go`
+    - 新增 `appshell/backend/internal/task/history_sqlite.go`
+    - `service.go` 接入历史存储：任务提交/状态变更/结束都会持久化
+    - `service.go` 新增历史回查与列表能力：`GetTaskStatus` 回退历史、`ListRecentTasks`
+    - 支持仅保留最近 N 条（`APPSHELL_TASK_HISTORY_KEEP`）
+  - Wails 侧历史能力：
+    - `cmd/wails/app.go` 初始化 sqlite 历史库（`APPSHELL_TASK_DB`）
+    - 新增绑定方法：`ListTaskHistory(limit)`
+    - 前端 `main.js` 启动时加载最近历史，应用重启可直接看到最近结果
+    - 前端事件日志增加 task_id 标记，并输出前端结构化日志到浏览器控制台
+  - Demo 与文档同步：
+    - `cmd/demo/main.go` 新增 `-history-db` / `-history-keep`
+    - `appshell/backend/README.md` 新增可观测性与历史持久化说明
+  - 阶段4测试补齐：
+    - `service_test.go` 新增：
+      - 重启后历史可回查
+      - 最近 N 条裁剪
+    - `app_test.go` 新增环境配置解析测试
 
 ## 2. 已验证结果
 
@@ -82,6 +107,16 @@ Last updated: 2026-02-17
   - 运行期间通过异步轮询更新状态（前端不阻塞）
   - 错误可读且可重试（错误面板 + `重试上次参数`）
   - Wails 入口编译通过：`go run ./cmd/wails -h`
+- 阶段4验收已达成：
+  - 给定任务 ID 可联查三层日志：
+    - 前端：事件行含 `[task_id]`，并在 console 输出 JSON（`layer=frontend`）
+    - Go：`service/runner` JSON 日志均包含 `task_id`（默认落盘 `outputs/appshell/go_backend.log`）
+    - Python：`engine_main.py` 结构化日志含 `task_id`，且被 Go 转发
+  - 应用重启后可查看历史任务结果：
+    - sqlite 落盘：`outputs/appshell/task_history.sqlite`
+    - `GetTaskStatus` 可回退查询历史
+    - 前端启动自动加载最近历史任务
+- 当前后端测试结果：`go test ./...` 通过（含新增 sqlite 历史测试）。
 
 ## 3. 当前环境与限制
 
@@ -126,20 +161,60 @@ GOCACHE=./.gocache go run ./cmd/demo -action train -csv ../../data/raw/healthcar
 go run ./cmd/wails -engine ../core/python_engine/engine_main.py
 # (快速编译校验)
 go run ./cmd/wails -h
+
+# 阶段4：可观测性与历史持久化
+go run ./cmd/demo -action health -history-db ../../outputs/appshell/task_history.sqlite -history-keep 100
+go run ./cmd/wails -engine ../core/python_engine/engine_main.py
+# (可选) 指定历史与日志路径
+$env:APPSHELL_TASK_DB="D:\\code\\pythoncode\\Anomaly Detection and Repair for Mixed Data Type Inputs\\outputs\\appshell\\task_history.sqlite"
+$env:APPSHELL_TASK_HISTORY_KEEP="100"
+$env:APPSHELL_GO_LOG_FILE="D:\\code\\pythoncode\\Anomaly Detection and Repair for Mixed Data Type Inputs\\outputs\\appshell\\go_backend.log"
 ```
 
 ## 5. 下一步建议（优先顺序）
 
-1. 阶段4：Windows 打包落地（Python 引擎可执行化 + Wails 资源打包 + 安装包出品）。
-2. 阶段4补充：补齐安装器行为（桌面快捷方式、卸载入口、版本号与升级策略）。
-3. 工程化收尾：统一 Python 依赖锁定与虚拟环境策略，避免跨解释器污染。
-4. 质量收尾：补充 UI E2E 用例与关键路径冒烟脚本。
+1. 阶段5：Windows 打包落地（Python 引擎可执行化 + Wails 资源打包 + 安装包出品）。
+2. 阶段5补充：补齐安装器行为（桌面快捷方式、卸载入口、版本号与升级策略）。
+3. 质量收尾：补充 UI E2E 与历史任务恢复场景测试（含重启回放）。
+4. 工程化收尾：统一 Python 依赖锁定与虚拟环境策略，避免跨解释器污染。
 
 ## 6. 新对话续接提示词（可直接粘贴）
 
 ```text
-请基于项目根目录的 MEMO.md 继续推进任务，开始阶段4：
+请基于项目根目录的 MEMO.md 继续推进任务，开始阶段5：
 1) 完善 appshell/build/windows/build.ps1，串联 Python 引擎打包 + Wails 打包 + 安装器产物输出。
 2) 明确安装目录结构与运行时资源查找规则（engine 可执行文件、模型输出目录）。
 3) 给出可执行打包命令、验收标准和常见失败排查清单。
 ```
+
+## 7. 本次改动记录（阶段4）
+
+- 改动日期：2026-02-21 17:57:58
+- 改动内容简述：
+  - 最终目标：实现“问题可排查、结果可追溯”的阶段4能力，确保任务 ID 可贯穿三层日志，且任务历史可在重启后回查。
+  - 采取方法：在 Go 后端新增统一结构化日志与 sqlite 历史存储，把任务生命周期快照持续落盘；在 Wails/前端补齐历史读取与 task_id 事件标记。
+  - 当前已完成步骤：Go/Python/前端 task_id 联查链路已打通；sqlite 历史持久化已接入服务层；重启回查与最近 N 条策略已通过测试。
+- 相关模块/文件：
+  - `appshell/backend/internal/observability/logger.go`
+  - `appshell/backend/internal/task/history_store.go`
+  - `appshell/backend/internal/task/history_sqlite.go`
+  - `appshell/backend/internal/task/service.go`
+  - `appshell/backend/internal/engine/runner.go`
+  - `appshell/backend/cmd/wails/app.go`
+  - `appshell/backend/cmd/demo/main.go`
+  - `appshell/backend/internal/task/service_test.go`
+  - `appshell/backend/cmd/wails/app_test.go`
+  - `appshell/frontend/src/main.js`
+  - `appshell/backend/README.md`
+  - `appshell/backend/go.mod`
+  - `appshell/backend/go.sum`
+- 已解决的问题/新增功能：
+  - 新增 Go 结构化日志（JSON）并在任务关键节点打点，日志含 `task_id`。
+  - 新增 Python `stderr` 日志转发到 Go 日志流，方便按 `task_id` 跨层联查。
+  - 新增任务历史 sqlite 持久化，支持重启后按任务 ID 回查。
+  - 新增“保留最近 N 条历史”策略，防止历史无限增长。
+  - 新增 Wails 绑定 `ListTaskHistory(limit)`，前端启动时可加载最近历史任务。
+- 待处理事项：
+  - 增加历史任务列表筛选（按状态/时间/task_id）与点击查看详情能力（当前默认加载最近记录）。
+  - 将 Go 结构化日志默认落盘策略进一步产品化（例如统一日志目录与轮转策略）。
+  - 在阶段5打包中纳入 sqlite 与日志目录初始化逻辑，并补充安装后排障手册。

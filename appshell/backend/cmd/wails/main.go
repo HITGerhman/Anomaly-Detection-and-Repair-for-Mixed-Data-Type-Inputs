@@ -39,7 +39,21 @@ func resolveFrontendDir() (string, error) {
 	return "", fmt.Errorf("frontend directory not found, set APPSHELL_FRONTEND_DIR")
 }
 
+func ensureDefaultGoLogFile() {
+	if strings.TrimSpace(os.Getenv("APPSHELL_GO_LOG_FILE")) != "" {
+		return
+	}
+
+	abs, err := filepath.Abs(filepath.Join("..", "..", "outputs", "appshell", "go_backend.log"))
+	if err != nil {
+		return
+	}
+	_ = os.Setenv("APPSHELL_GO_LOG_FILE", abs)
+}
+
 func main() {
+	ensureDefaultGoLogFile()
+
 	engineScript := flag.String("engine", "../core/python_engine/engine_main.py", "Path to python engine script")
 	title := flag.String("title", "Anomaly AppShell", "Window title")
 	flag.Parse()
