@@ -35,6 +35,7 @@ From this folder:
 # single task
 go run ./cmd/demo -action health
 go run ./cmd/demo -action train -csv ../../data/raw/healthcare-dataset-stroke-data.csv -target stroke
+go run ./cmd/demo -action repair -model-dir ../../outputs/results/wails_mvp -sample-index 0 -max-changes 3
 
 # run 3 tasks concurrently
 go run ./cmd/demo -action train -csv ../../data/raw/healthcare-dataset-stroke-data.csv -target stroke -parallel 3 -output ../../outputs/results/parallel
@@ -66,6 +67,7 @@ Expose Go methods mirroring task service behavior:
 - `SelectOutputDir() (string, error)`
 
 Frontend keeps the same JSON request shape used by Python engine.
+Current MVP actions are `train` and `repair` (plus `health` for diagnostics).
 
 Additional method for history:
 

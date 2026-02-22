@@ -1,139 +1,188 @@
-<!doctype html>
+﻿<!doctype html>
 <html lang="zh-CN">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Anomaly AppShell Wizard</title>
+    <title>Anomaly Repair Wizard</title>
     <link rel="stylesheet" href="./src/style.css" />
   </head>
   <body>
     <main class="wizard-app">
       <section class="wizard-stage">
-        <div id="wizard-card" class="wizard-card" data-step="config">
-          <div id="wizard-inner" class="wizard-inner">
-            <article class="wizard-face face-front">
-              <header class="face-head">
-                <p class="face-kicker" id="front-kicker">STEP 1</p>
-                <h1 id="front-title">参数配置</h1>
-                <p id="front-subtitle">设置训练参数并启动任务</p>
+        <header class="stage-header">
+          <div class="stage-track">
+            <div id="stage-fill" class="stage-fill"></div>
+          </div>
+          <ol id="stage-steps" class="stage-steps">
+            <li data-step="config">1. 参数</li>
+            <li data-step="progress">2. 运行</li>
+            <li data-step="result">3. 检测</li>
+            <li data-step="repair">4. 修复</li>
+          </ol>
+        </header>
+
+        <div class="wheel-frame">
+          <div id="wheel-orbit" class="wheel-orbit">
+            <article id="wizard-card" class="wizard-card">
+              <header class="card-head">
+                <p id="card-kicker" class="card-kicker">STEP 1</p>
+                <h1 id="card-title">检测参数配置</h1>
+                <p id="card-subtitle">选择模型目录和样本，先进行异常检测。</p>
               </header>
 
-              <section id="config-view" class="view-block">
-                <form id="train-form">
+              <section id="step-config" class="card-step">
+                <form id="detect-form">
                   <div class="field-row">
-                    <label for="csv-path">CSV 文件路径</label>
+                    <label for="csv-path">CSV 文件</label>
                     <div class="field-control row-input">
-                      <input
-                        id="csv-path"
-                        type="text"
-                        value="data/raw/healthcare-dataset-stroke-data.csv"
-                        required
-                      />
+                      <input id="csv-path" type="text" value="data/raw/healthcare-dataset-stroke-data.csv" />
                       <button id="choose-csv-btn" class="btn-secondary" type="button">选择文件</button>
                     </div>
                   </div>
 
-                  <p class="field-note">建议使用绝对路径，Wails 会调用系统文件选择器。</p>
+                  <div class="field-row">
+                    <label for="model-dir">模型目录</label>
+                    <div class="field-control row-input">
+                      <input id="model-dir" type="text" value="outputs/results/wails_mvp" required />
+                      <button id="choose-model-btn" class="btn-secondary" type="button">选择目录</button>
+                    </div>
+                  </div>
+
+                  <div class="field-row">
+                    <label for="target-col">目标列</label>
+                    <div class="field-control">
+                      <select id="target-col"></select>
+                    </div>
+                  </div>
+
+                  <div class="field-row">
+                    <label for="retrain-model">检测前重训</label>
+                    <div class="field-control inline-check">
+                      <label class="toggle-row">
+                        <input id="retrain-model" type="checkbox" checked />
+                        <span>使用上面的 CSV + 目标列先训练模型</span>
+                      </label>
+                    </div>
+                  </div>
 
                   <div class="group-list">
                     <div class="field-row compact">
-                      <label for="target-col">目标列</label>
+                      <label for="sample-index">样本索引</label>
                       <div class="field-control">
-                        <select id="target-col" required>
-                          <option value="stroke">stroke</option>
-                        </select>
+                        <input id="sample-index" type="number" value="0" min="0" step="1" required />
                       </div>
                     </div>
                     <div class="field-row compact">
-                      <label for="timeout-ms">超时 (毫秒)</label>
+                      <label for="timeout-ms">超时 (ms)</label>
                       <div class="field-control">
-                        <input id="timeout-ms" type="number" value="90000" min="1000" step="1000" />
+                        <input id="timeout-ms" type="number" value="90000" min="1000" step="1000" required />
                       </div>
                     </div>
                   </div>
 
                   <div class="field-row">
-                    <label for="output-dir">输出目录</label>
+                    <label for="output-dir">输出目录 (可选)</label>
                     <div class="field-control row-input">
-                      <input id="output-dir" type="text" value="outputs/results/wails_mvp" />
+                      <input id="output-dir" type="text" value="outputs/results/wails_repair" />
                       <button id="choose-output-btn" class="btn-secondary" type="button">选择目录</button>
                     </div>
                   </div>
 
                   <div class="actions">
-                    <button id="run-btn" class="btn-primary" type="submit">启动任务</button>
-                    <button id="retry-btn" class="btn-secondary" type="button" disabled>重试上次参数</button>
+                    <button id="run-detect-btn" class="btn-primary" type="submit">开始检测</button>
+                    <button id="retry-detect-btn" class="btn-secondary" type="button" disabled>重试检测</button>
                   </div>
                 </form>
+                <input id="csv-file-input" class="hidden" type="file" accept=".csv,text/csv" />
               </section>
 
-              <section id="result-view" class="view-block hidden">
-                <div class="result-header">
+              <section id="step-progress" class="card-step hidden">
+                <div class="status-row">
                   <span id="status-pill" class="status-pill idle">idle</span>
                   <span id="task-id-label">Task: -</span>
                 </div>
 
-                <div class="result-actions">
-                  <button id="new-task-btn" class="btn-secondary" type="button">新建任务</button>
-                  <button id="export-json-btn" class="btn-secondary" type="button" disabled>导出 JSON</button>
-                  <button id="export-csv-btn" class="btn-secondary" type="button" disabled>导出指标 CSV</button>
-                </div>
+                <p id="status-message" class="status-message">等待任务开始</p>
 
-                <div class="result-grid">
-                  <article class="result-card">
-                    <h2>结果摘要</h2>
-                    <dl id="result-summary"></dl>
-                  </article>
-                  <article class="result-card">
-                    <h2>关键指标</h2>
-                    <table class="metrics-table">
-                      <thead>
-                        <tr><th>Metric</th><th>Value</th></tr>
-                      </thead>
-                      <tbody id="metrics-table-body"></tbody>
-                    </table>
-                  </article>
-                </div>
-
-                <section class="response-shell">
-                  <div class="response-head">
-                    <h3>完整响应</h3>
-                    <button id="copy-json-btn" class="btn-ghost" type="button">复制</button>
-                  </div>
-                  <pre id="result-box">{}</pre>
-                </section>
-              </section>
-            </article>
-
-            <article class="wizard-face face-back">
-              <header class="face-head">
-                <p class="face-kicker">STEP 2</p>
-                <h1>进度状态</h1>
-                <p id="status-message">等待任务开始</p>
-              </header>
-
-              <section class="progress-panel">
                 <div class="progress-track">
                   <div id="progress-fill" class="progress-fill idle"></div>
                 </div>
+
                 <ul id="event-log" class="event-log"></ul>
+
+                <section id="error-panel" class="error-panel hidden">
+                  <h2>错误提示</h2>
+                  <p id="error-message">-</p>
+                  <p id="error-hint">修正后可重试。</p>
+                </section>
+
+                <div class="back-actions">
+                  <button id="cancel-btn" class="btn-warning" type="button" disabled>取消任务</button>
+                </div>
               </section>
 
-              <section id="error-panel" class="error-panel hidden">
-                <h2>错误提示</h2>
-                <p id="error-message">-</p>
-                <p id="error-hint">可修复后点击“重试上次参数”。</p>
+              <section id="step-result" class="card-step hidden">
+                <div class="result-grid">
+                  <article class="result-card">
+                    <h2>检测摘要</h2>
+                    <dl id="detection-summary"></dl>
+                  </article>
+                  <article class="result-card">
+                    <h2>结果判断</h2>
+                    <p id="detection-message" class="detection-message">-</p>
+                    <div class="actions block-actions">
+                      <button id="goto-repair-btn" class="btn-primary hidden" type="button">进入修复界面</button>
+                      <button id="new-detect-btn" class="btn-secondary" type="button">重新检测</button>
+                    </div>
+                  </article>
+                </div>
               </section>
 
-              <div class="back-actions">
-                <button id="cancel-btn" class="btn-warning" type="button" disabled>取消任务</button>
-              </div>
+              <section id="step-repair" class="card-step hidden">
+                <div class="result-grid repair-layout">
+                  <article class="result-card">
+                    <h2>修复参数</h2>
+                    <form id="repair-form">
+                      <div class="field-row compact">
+                        <label for="max-changes">最多修改字段</label>
+                        <div class="field-control">
+                          <input id="max-changes" type="number" value="3" min="1" max="20" step="1" required />
+                        </div>
+                      </div>
+                      <div class="field-row compact">
+                        <label for="k-neighbors">邻居数量</label>
+                        <div class="field-control">
+                          <input id="k-neighbors" type="number" value="9" min="3" max="200" step="1" required />
+                        </div>
+                      </div>
+                      <div class="actions">
+                        <button id="run-repair-btn" class="btn-primary" type="submit">执行修复</button>
+                        <button id="back-result-btn" class="btn-secondary" type="button">返回检测结果</button>
+                      </div>
+                    </form>
+                  </article>
+                  <article class="result-card">
+                    <h2>修复摘要</h2>
+                    <dl id="repair-summary"></dl>
+                  </article>
+                </div>
+              </section>
+
+              <section id="response-shell" class="response-shell hidden">
+                <div class="response-head">
+                  <h3>完整响应</h3>
+                  <div class="response-actions">
+                    <button id="copy-json-btn" class="btn-ghost" type="button">复制</button>
+                    <button id="export-json-btn" class="btn-secondary" type="button" disabled>导出 JSON</button>
+                    <button id="export-csv-btn" class="btn-secondary" type="button" disabled>导出 CSV</button>
+                  </div>
+                </div>
+                <pre id="result-box">{}</pre>
+              </section>
             </article>
           </div>
         </div>
       </section>
-
-      <input id="csv-file-input" type="file" accept=".csv,text/csv" hidden />
     </main>
 
     <script type="module" src="./src/main.js"></script>

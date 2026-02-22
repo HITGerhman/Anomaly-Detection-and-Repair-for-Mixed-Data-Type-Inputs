@@ -45,6 +45,52 @@ func TestNormalizeRequestMissingTrainFields(t *testing.T) {
 	}
 }
 
+func TestNormalizeRequestForRepairPayload(t *testing.T) {
+	req, timeout, err := normalizeRequest(map[string]any{
+		"action":       "repair",
+		"model_dir":    "outputs/results/wails_mvp",
+		"sample_index": 7,
+		"dry_run":      true,
+		"max_changes":  4,
+		"k_neighbors":  12,
+		"timeout_ms":   15000,
+	})
+	if err != nil {
+		t.Fatalf("normalizeRequest failed: %v", err)
+	}
+
+	if req.Action != "repair" {
+		t.Fatalf("unexpected action: %s", req.Action)
+	}
+	if req.Payload["model_dir"] != "outputs/results/wails_mvp" {
+		t.Fatalf("unexpected model_dir: %v", req.Payload["model_dir"])
+	}
+	if req.Payload["sample_index"] != 7 {
+		t.Fatalf("unexpected sample_index: %v", req.Payload["sample_index"])
+	}
+	if req.Payload["dry_run"] != true {
+		t.Fatalf("unexpected dry_run: %v", req.Payload["dry_run"])
+	}
+	if req.Payload["max_changes"] != 4 {
+		t.Fatalf("unexpected max_changes: %v", req.Payload["max_changes"])
+	}
+	if req.Payload["k_neighbors"] != 12 {
+		t.Fatalf("unexpected k_neighbors: %v", req.Payload["k_neighbors"])
+	}
+	if timeout != 15*time.Second {
+		t.Fatalf("unexpected timeout: %s", timeout)
+	}
+}
+
+func TestNormalizeRequestMissingRepairModelDir(t *testing.T) {
+	_, _, err := normalizeRequest(map[string]any{
+		"action": "repair",
+	})
+	if err == nil {
+		t.Fatalf("expected error for missing model_dir")
+	}
+}
+
 func TestNormalizeRequestUsesNestedPayload(t *testing.T) {
 	req, timeout, err := normalizeRequest(map[string]any{
 		"action": "health",

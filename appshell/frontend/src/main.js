@@ -1,22 +1,44 @@
-﻿const wizardCard = document.getElementById("wizard-card");
-const wizardInner = document.getElementById("wizard-inner");
-const frontKicker = document.getElementById("front-kicker");
-const frontTitle = document.getElementById("front-title");
-const frontSubtitle = document.getElementById("front-subtitle");
-const configView = document.getElementById("config-view");
-const resultView = document.getElementById("result-view");
+﻿const wheelOrbit = document.getElementById("wheel-orbit");
+const wizardCard = document.getElementById("wizard-card");
 
-const form = document.getElementById("train-form");
-const runBtn = document.getElementById("run-btn");
+const cardKicker = document.getElementById("card-kicker");
+const cardTitle = document.getElementById("card-title");
+const cardSubtitle = document.getElementById("card-subtitle");
+
+const stageFill = document.getElementById("stage-fill");
+const stageSteps = document.getElementById("stage-steps");
+
+const stepConfig = document.getElementById("step-config");
+const stepProgress = document.getElementById("step-progress");
+const stepResult = document.getElementById("step-result");
+const stepRepair = document.getElementById("step-repair");
+const responseShell = document.getElementById("response-shell");
+
+const detectForm = document.getElementById("detect-form");
+const repairForm = document.getElementById("repair-form");
+
+const runDetectBtn = document.getElementById("run-detect-btn");
+const retryDetectBtn = document.getElementById("retry-detect-btn");
 const cancelBtn = document.getElementById("cancel-btn");
-const retryBtn = document.getElementById("retry-btn");
-const newTaskBtn = document.getElementById("new-task-btn");
+
 const chooseCsvBtn = document.getElementById("choose-csv-btn");
+const chooseModelBtn = document.getElementById("choose-model-btn");
 const chooseOutputBtn = document.getElementById("choose-output-btn");
-const csvInput = document.getElementById("csv-path");
-const targetInput = document.getElementById("target-col");
-const outputInput = document.getElementById("output-dir");
+
+const gotoRepairBtn = document.getElementById("goto-repair-btn");
+const newDetectBtn = document.getElementById("new-detect-btn");
+const backResultBtn = document.getElementById("back-result-btn");
+const runRepairBtn = document.getElementById("run-repair-btn");
+
+const csvPathInput = document.getElementById("csv-path");
+const modelDirInput = document.getElementById("model-dir");
+const targetColInput = document.getElementById("target-col");
+const retrainModelInput = document.getElementById("retrain-model");
+const sampleIndexInput = document.getElementById("sample-index");
 const timeoutInput = document.getElementById("timeout-ms");
+const outputInput = document.getElementById("output-dir");
+const maxChangesInput = document.getElementById("max-changes");
+const kNeighborsInput = document.getElementById("k-neighbors");
 const csvFileInput = document.getElementById("csv-file-input");
 
 const statusPill = document.getElementById("status-pill");
@@ -29,27 +51,52 @@ const errorPanel = document.getElementById("error-panel");
 const errorMessage = document.getElementById("error-message");
 const errorHint = document.getElementById("error-hint");
 
-const resultSummary = document.getElementById("result-summary");
-const metricsTableBody = document.getElementById("metrics-table-body");
+const detectionSummary = document.getElementById("detection-summary");
+const detectionMessage = document.getElementById("detection-message");
+const repairSummary = document.getElementById("repair-summary");
+
 const resultBox = document.getElementById("result-box");
+const copyJsonBtn = document.getElementById("copy-json-btn");
 const exportJsonBtn = document.getElementById("export-json-btn");
 const exportCsvBtn = document.getElementById("export-csv-btn");
-const copyJsonBtn = document.getElementById("copy-json-btn");
 
 const STEP_CONFIG = "config";
 const STEP_PROGRESS = "progress";
 const STEP_RESULT = "result";
+const STEP_REPAIR = "repair";
 
-const STEP_ROTATE_DEG = {
-  [STEP_CONFIG]: 0,
-  [STEP_PROGRESS]: 180,
-  [STEP_RESULT]: 360,
+const STEP_ORDER = [STEP_CONFIG, STEP_PROGRESS, STEP_RESULT, STEP_REPAIR];
+
+const STEP_META = {
+  [STEP_CONFIG]: {
+    kicker: "STEP 1",
+    title: "检测参数配置",
+    subtitle: "选择模型目录和样本，先进行异常检测。",
+  },
+  [STEP_PROGRESS]: {
+    kicker: "STEP 2",
+    title: "任务执行中",
+    subtitle: "任务正在运行，请稍候。",
+  },
+  [STEP_RESULT]: {
+    kicker: "STEP 3",
+    title: "检测结果",
+    subtitle: "若样本为异常，可继续进入修复阶段。",
+  },
+  [STEP_REPAIR]: {
+    kicker: "STEP 4",
+    title: "修复界面",
+    subtitle: "设置修复策略并执行修复。",
+  },
 };
+
+const WHEEL_SPIN_DEG = 34;
+const WHEEL_SPIN_DURATION_MS = 720;
 
 const STATUS_PROGRESS = {
   idle: 0,
-  pending: 16,
-  running: 72,
+  pending: 14,
+  running: 68,
   succeeded: 100,
   failed: 100,
   canceled: 100,
@@ -62,9 +109,14 @@ const state = {
   currentStep: STEP_CONFIG,
   currentTaskId: "",
   currentTask: null,
-  lastPayload: null,
-  availableColumns: [],
+  pendingIntent: "",
   pollingToken: 0,
+  stepAnimating: false,
+  queuedStep: "",
+  detectionResult: null,
+  lastDetectPayload: null,
+  lastRepairPayload: null,
+  availableColumns: [],
   mockTasks: new Map(),
 };
 
@@ -72,33 +124,34 @@ function hasBinding(methodName) {
   return Boolean(window?.go?.main?.App?.[methodName]);
 }
 
-function setWizardStep(step) {
-  const normalized = STEP_ROTATE_DEG[step] === undefined ? STEP_CONFIG : step;
-  state.currentStep = normalized;
+function formatNumber(value) {
+  const n = Number(value);
+  if (!Number.isFinite(n)) {
+    return String(value ?? "-");
+  }
+  return n.toFixed(6);
+}
 
-  if (wizardCard) {
-    wizardCard.dataset.step = normalized;
+function setTaskId(taskId) {
+  if (taskIdLabel) {
+    taskIdLabel.textContent = `Task: ${taskId || "-"}`;
   }
-  if (wizardInner) {
-    wizardInner.style.transform = `rotateY(${STEP_ROTATE_DEG[normalized]}deg)`;
-  }
+}
 
-  const isResult = normalized === STEP_RESULT;
-  if (configView) {
-    configView.classList.toggle("hidden", isResult);
-  }
-  if (resultView) {
-    resultView.classList.toggle("hidden", !isResult);
-  }
+function setStatus(status, message) {
+  const normalized = String(status || "idle").toLowerCase();
+  const progress = STATUS_PROGRESS[normalized] ?? 0;
 
-  if (normalized === STEP_CONFIG) {
-    frontKicker.textContent = "STEP 1";
-    frontTitle.textContent = "Parameter Setup";
-    frontSubtitle.textContent = "Configure training parameters and start the task.";
-  } else if (normalized === STEP_RESULT) {
-    frontKicker.textContent = "STEP 3";
-    frontTitle.textContent = "Result Review & Export";
-    frontSubtitle.textContent = "Task finished. Review results and export artifacts.";
+  if (statusPill) {
+    statusPill.className = `status-pill ${normalized}`;
+    statusPill.textContent = normalized;
+  }
+  if (statusMessage) {
+    statusMessage.textContent = message || normalized;
+  }
+  if (progressFill) {
+    progressFill.className = `progress-fill ${normalized === "running" ? "running" : normalized}`;
+    progressFill.style.width = `${progress}%`;
   }
 }
 
@@ -122,54 +175,18 @@ function addEvent(message, taskId = state.currentTaskId) {
     return;
   }
   const li = document.createElement("li");
-  const time = new Date();
-  const hh = String(time.getHours()).padStart(2, "0");
-  const mm = String(time.getMinutes()).padStart(2, "0");
-  const ss = String(time.getSeconds()).padStart(2, "0");
-  const normalizedTaskId = (taskId || "").trim();
-  const visibleMessage = normalizedTaskId ? `[${normalizedTaskId}] ${message}` : message;
-  li.innerHTML = `<span class="event-time">${hh}:${mm}:${ss}</span><span>${visibleMessage}</span>`;
+  const now = new Date();
+  const hh = String(now.getHours()).padStart(2, "0");
+  const mm = String(now.getMinutes()).padStart(2, "0");
+  const ss = String(now.getSeconds()).padStart(2, "0");
+  const tid = String(taskId || "").trim();
+  const visible = tid ? `[${tid}] ${message}` : message;
+  li.innerHTML = `<span class="event-time">${hh}:${mm}:${ss}</span><span>${visible}</span>`;
   eventLog.prepend(li);
-  emitFrontendLog(message, normalizedTaskId);
+  emitFrontendLog(message, tid);
 }
 
-function setStatus(status, message) {
-  const normalized = (status || "idle").toLowerCase();
-  const progress = STATUS_PROGRESS[normalized] ?? 0;
-
-  if (statusPill) {
-    statusPill.className = `status-pill ${normalized}`;
-    statusPill.textContent = normalized;
-  }
-  if (statusMessage) {
-    statusMessage.textContent = message || normalized;
-  }
-  if (progressFill) {
-    progressFill.className = `progress-fill ${normalized === "running" ? "running" : normalized}`;
-    progressFill.style.width = `${progress}%`;
-  }
-}
-
-function setTaskId(taskId) {
-  if (taskIdLabel) {
-    taskIdLabel.textContent = `Task: ${taskId || "-"}`;
-  }
-}
-
-function setRunningUi(isRunning) {
-  if (runBtn) runBtn.disabled = isRunning;
-  if (cancelBtn) cancelBtn.disabled = !isRunning || !state.currentTaskId;
-  if (chooseCsvBtn) chooseCsvBtn.disabled = isRunning;
-  if (chooseOutputBtn) chooseOutputBtn.disabled = isRunning;
-  if (retryBtn) retryBtn.disabled = isRunning || !state.lastPayload;
-  if (csvInput) csvInput.disabled = isRunning;
-  if (targetInput) targetInput.disabled = isRunning;
-  if (outputInput) outputInput.disabled = isRunning;
-  if (timeoutInput) timeoutInput.disabled = isRunning;
-  if (newTaskBtn) newTaskBtn.disabled = isRunning;
-}
-
-function showError(message, hint = "Please check parameters/environment and retry.") {
+function showError(message, hint = "请检查参数后重试。") {
   if (errorPanel) errorPanel.classList.remove("hidden");
   if (errorMessage) errorMessage.textContent = message;
   if (errorHint) errorHint.textContent = hint;
@@ -178,139 +195,203 @@ function showError(message, hint = "Please check parameters/environment and retr
 function clearError() {
   if (errorPanel) errorPanel.classList.add("hidden");
   if (errorMessage) errorMessage.textContent = "-";
-  if (errorHint) errorHint.textContent = "Fix issues and click 'Retry Last Task'.";
+  if (errorHint) errorHint.textContent = "修正后可重试。";
 }
 
-function resetResultView() {
-  if (resultSummary) resultSummary.innerHTML = "";
-  if (metricsTableBody) metricsTableBody.innerHTML = "";
+function setRunningUi(isRunning) {
+  if (runDetectBtn) runDetectBtn.disabled = isRunning;
+  if (retryDetectBtn) retryDetectBtn.disabled = isRunning || !state.lastDetectPayload;
+  if (cancelBtn) cancelBtn.disabled = !isRunning || !state.currentTaskId;
+  if (chooseCsvBtn) chooseCsvBtn.disabled = isRunning;
+  if (chooseModelBtn) chooseModelBtn.disabled = isRunning;
+  if (chooseOutputBtn) chooseOutputBtn.disabled = isRunning;
+
+  if (csvPathInput) csvPathInput.disabled = isRunning;
+  if (modelDirInput) modelDirInput.disabled = isRunning;
+  if (targetColInput) targetColInput.disabled = isRunning;
+  if (retrainModelInput) retrainModelInput.disabled = isRunning;
+  if (sampleIndexInput) sampleIndexInput.disabled = isRunning;
+  if (timeoutInput) timeoutInput.disabled = isRunning;
+  if (outputInput) outputInput.disabled = isRunning;
+
+  if (runRepairBtn) runRepairBtn.disabled = isRunning;
+  if (maxChangesInput) maxChangesInput.disabled = isRunning;
+  if (kNeighborsInput) kNeighborsInput.disabled = isRunning;
+  if (gotoRepairBtn) gotoRepairBtn.disabled = isRunning;
+  if (newDetectBtn) newDetectBtn.disabled = isRunning;
+  if (backResultBtn) backResultBtn.disabled = isRunning;
+}
+
+function setStepVisibility(step) {
+  const visibleMap = {
+    [STEP_CONFIG]: stepConfig,
+    [STEP_PROGRESS]: stepProgress,
+    [STEP_RESULT]: stepResult,
+    [STEP_REPAIR]: stepRepair,
+  };
+  for (const [key, el] of Object.entries(visibleMap)) {
+    if (!el) continue;
+    el.classList.toggle("hidden", key !== step);
+  }
+  if (responseShell) {
+    responseShell.classList.toggle("hidden", !(step === STEP_RESULT || step === STEP_REPAIR));
+  }
+}
+
+function setStageProgress(step) {
+  const idx = STEP_ORDER.indexOf(step);
+  const ratio = idx <= 0 ? 0 : idx / (STEP_ORDER.length - 1);
+  if (stageFill) {
+    stageFill.style.width = `${Math.max(0, Math.min(100, ratio * 100))}%`;
+  }
+  if (!stageSteps) {
+    return;
+  }
+  const items = Array.from(stageSteps.querySelectorAll("li"));
+  items.forEach((item, i) => {
+    item.classList.remove("active", "completed");
+    if (i < idx) {
+      item.classList.add("completed");
+    } else if (i === idx) {
+      item.classList.add("active");
+    }
+  });
+}
+
+function applyStepNow(step) {
+  const normalized = STEP_META[step] ? step : STEP_CONFIG;
+  state.currentStep = normalized;
+  const meta = STEP_META[normalized];
+  if (cardKicker) cardKicker.textContent = meta.kicker;
+  if (cardTitle) cardTitle.textContent = meta.title;
+  if (cardSubtitle) cardSubtitle.textContent = meta.subtitle;
+  setStageProgress(normalized);
+  setStepVisibility(normalized);
+}
+
+function clearWheelPose() {
+  if (wheelOrbit) {
+    wheelOrbit.style.transform = "rotate(0deg)";
+    wheelOrbit.style.opacity = "1";
+  }
+}
+
+function cancelWheelAnimations() {
+  if (!wheelOrbit || typeof wheelOrbit.getAnimations !== "function") {
+    return;
+  }
+  for (const animation of wheelOrbit.getAnimations()) {
+    animation.cancel();
+  }
+}
+
+function animateOrbitTransform(fromDeg, toDeg, fromOpacity, toOpacity, durationMs) {
+  if (!wheelOrbit || typeof wheelOrbit.animate !== "function") {
+    if (wheelOrbit) {
+      wheelOrbit.style.transform = `rotate(${toDeg}deg)`;
+      wheelOrbit.style.opacity = String(toOpacity);
+    }
+    return Promise.resolve();
+  }
+
+  const animation = wheelOrbit.animate(
+    [
+      { transform: `rotate(${fromDeg}deg)`, opacity: fromOpacity },
+      { transform: `rotate(${toDeg}deg)`, opacity: toOpacity },
+    ],
+    {
+      duration: durationMs,
+      easing: "cubic-bezier(0.175, 0.885, 0.32, 1.275)",
+      fill: "forwards",
+    }
+  );
+
+  return animation.finished
+    .catch(() => {})
+    .then(() => {
+      if (!wheelOrbit) {
+        return;
+      }
+      wheelOrbit.style.transform = `rotate(${toDeg}deg)`;
+      wheelOrbit.style.opacity = String(toOpacity);
+    });
+}
+
+function stepIndex(step) {
+  const idx = STEP_ORDER.indexOf(step);
+  return idx >= 0 ? idx : 0;
+}
+
+function stepDirection(fromStep, toStep) {
+  const fromIdx = stepIndex(fromStep);
+  const toIdx = stepIndex(toStep);
+  if (toIdx === fromIdx) {
+    return -1;
+  }
+  // Forward transitions rotate left; backward transitions rotate right.
+  return toIdx > fromIdx ? -1 : 1;
+}
+
+async function transitionWizardStep(step, immediate = false) {
+  const normalized = STEP_META[step] ? step : STEP_CONFIG;
+  if (immediate || !wizardCard || !wheelOrbit) {
+    cancelWheelAnimations();
+    applyStepNow(normalized);
+    clearWheelPose();
+    if (wizardCard) {
+      wizardCard.classList.remove("is-animating");
+      wizardCard.style.pointerEvents = "";
+    }
+    state.stepAnimating = false;
+    state.queuedStep = "";
+    return;
+  }
+  if (state.stepAnimating) {
+    state.queuedStep = normalized;
+    return;
+  }
+  if (state.currentStep === normalized) {
+    applyStepNow(normalized);
+    return;
+  }
+
+  state.stepAnimating = true;
+  state.queuedStep = "";
+  wizardCard.classList.add("is-animating");
+  wizardCard.style.pointerEvents = "none";
+
+  const halfDuration = Math.round(WHEEL_SPIN_DURATION_MS / 2);
+  const direction = stepDirection(state.currentStep, normalized);
+  await animateOrbitTransform(0, direction * WHEEL_SPIN_DEG, 1, 0.03, halfDuration);
+  applyStepNow(normalized);
+  await animateOrbitTransform(-direction * WHEEL_SPIN_DEG, 0, 0.03, 1, halfDuration);
+
+  wizardCard.classList.remove("is-animating");
+  wizardCard.style.pointerEvents = "";
+  state.stepAnimating = false;
+  clearWheelPose();
+
+  if (state.queuedStep && state.queuedStep !== state.currentStep) {
+    const queued = state.queuedStep;
+    state.queuedStep = "";
+    await transitionWizardStep(queued, false);
+  }
+}
+
+function setWizardStep(step, options = {}) {
+  const immediate = Boolean(options?.immediate);
+  void transitionWizardStep(step, immediate);
+}
+
+function resetResultPanels() {
+  if (detectionSummary) detectionSummary.innerHTML = "";
+  if (repairSummary) repairSummary.innerHTML = "";
+  if (detectionMessage) detectionMessage.textContent = "-";
+  if (gotoRepairBtn) gotoRepairBtn.classList.add("hidden");
   if (resultBox) resultBox.textContent = "{}";
+  if (copyJsonBtn) copyJsonBtn.textContent = "复制";
   if (exportJsonBtn) exportJsonBtn.disabled = true;
   if (exportCsvBtn) exportCsvBtn.disabled = true;
-  if (copyJsonBtn) copyJsonBtn.textContent = "Copy";
-}
-
-function renderSummary(task) {
-  if (!resultSummary) {
-    return;
-  }
-  const response = task?.response || {};
-  const result = response?.result || {};
-  const profile = result?.data_profile || {};
-  const artifacts = result?.artifacts || {};
-
-  const rows = [
-    ["Task ID", task?.id || "-"],
-    ["Status", task?.status || "-"],
-    ["Rows", profile?.rows ?? "-"],
-    ["Columns", profile?.columns ?? "-"],
-    ["Target", profile?.target_col ?? "-"],
-    ["Output Dir", artifacts?.output_dir ?? "-"],
-  ];
-
-  resultSummary.innerHTML = rows.map(([k, v]) => `<dt>${k}</dt><dd>${String(v)}</dd>`).join("");
-}
-
-function renderMetrics(task) {
-  if (!metricsTableBody) {
-    return;
-  }
-  const metrics = task?.response?.result?.metrics || {};
-  const keys = ["accuracy", "precision", "recall", "f1", "auc"];
-  const rows = [];
-
-  for (const key of keys) {
-    if (metrics[key] !== undefined) {
-      rows.push([key, Number(metrics[key]).toFixed(6)]);
-    }
-  }
-
-  if (rows.length === 0) {
-    metricsTableBody.innerHTML = `<tr><td colspan="2">No metrics yet</td></tr>`;
-    return;
-  }
-
-  metricsTableBody.innerHTML = rows.map(([k, v]) => `<tr><td>${k}</td><td>${v}</td></tr>`).join("");
-}
-
-function renderTask(task) {
-  state.currentTask = task;
-  setTaskId(task?.id || "");
-
-  const status = (task?.status || "idle").toLowerCase();
-  let message = `Task status: ${status}`;
-  if (task?.error) {
-    message += ` (${task.error})`;
-  }
-  setStatus(status, message);
-
-  renderSummary(task);
-  renderMetrics(task);
-  if (resultBox) {
-    resultBox.textContent = JSON.stringify(task || {}, null, 2);
-  }
-
-  if (task && TERMINAL_STATUSES.has(status)) {
-    if (exportJsonBtn) exportJsonBtn.disabled = false;
-    if (exportCsvBtn) exportCsvBtn.disabled = false;
-  }
-}
-
-function collectPayload() {
-  return {
-    action: "train",
-    csv_path: (csvInput?.value || "").trim(),
-    target_col: String(targetInput?.value || "").trim(),
-    output_dir: (outputInput?.value || "").trim(),
-    timeout_ms: Number(timeoutInput?.value) || 90000,
-  };
-}
-
-function validatePayload(payload) {
-  if (!payload.csv_path) {
-    return "CSV file path is required.";
-  }
-  if (!payload.target_col) {
-    return "Target column is required.";
-  }
-  if (!Number.isFinite(payload.timeout_ms) || payload.timeout_ms < 1000) {
-    return "Timeout must be a number >= 1000 (ms).";
-  }
-  return "";
-}
-
-function extractEngineErrorDetails(task) {
-  const details = task?.response?.error?.details;
-  if (!details || typeof details !== "object") {
-    return { reason: "", suggestion: "" };
-  }
-  const reason = typeof details.reason === "string" ? details.reason.trim() : "";
-  const suggestion = typeof details.suggestion === "string" ? details.suggestion.trim() : "";
-  return { reason, suggestion };
-}
-
-function toReadableError(task, err) {
-  if (err) {
-    return `request failed: ${String(err)}`;
-  }
-  if (!task) {
-    return "task returned empty result";
-  }
-
-  if (task?.response?.error?.message) {
-    const code = task.response.error.code || "UNKNOWN";
-    const message = String(task.response.error.message || "").trim();
-    const details = extractEngineErrorDetails(task);
-    if (details.reason) {
-      return `Engine error [${code}] ${message}; reason: ${details.reason}`;
-    }
-    return `Engine error [${code}] ${message}`;
-  }
-
-  if (task.error) {
-    return task.error;
-  }
-  return `task ended with status: ${task.status}`;
 }
 
 function saveFile(name, content, mime) {
@@ -327,10 +408,9 @@ function saveFile(name, content, mime) {
 
 async function copyResultJson() {
   if (!state.currentTask) {
-    addEvent("No task result available to copy.");
+    addEvent("没有可复制的任务结果。");
     return;
   }
-
   const text = `${JSON.stringify(state.currentTask, null, 2)}\n`;
   try {
     if (navigator?.clipboard?.writeText) {
@@ -347,14 +427,14 @@ async function copyResultJson() {
       document.body.removeChild(temp);
     }
     if (copyJsonBtn) {
-      copyJsonBtn.textContent = "Copied";
+      copyJsonBtn.textContent = "已复制";
       setTimeout(() => {
-        copyJsonBtn.textContent = "Copy";
+        copyJsonBtn.textContent = "复制";
       }, 1200);
     }
-    addEvent("Copied full response JSON.");
+    addEvent("已复制完整响应 JSON。", state.currentTask?.id || "");
   } catch (err) {
-    addEvent(`Copy failed: ${String(err)}`);
+    addEvent(`复制失败: ${String(err)}`);
   }
 }
 
@@ -369,18 +449,260 @@ function exportResultJson() {
   );
 }
 
-function exportMetricsCsv() {
-  const metrics = state.currentTask?.response?.result?.metrics || {};
-  const lines = ["metric,value"];
-  for (const [k, v] of Object.entries(metrics)) {
-    let value = v;
-    if (typeof value === "object") {
-      value = JSON.stringify(value);
-    }
-    const safe = String(value).replaceAll('"', '""');
+function exportResultCsv() {
+  const result = state.currentTask?.response?.result || {};
+  const summary = result?.repair_summary || {};
+  const lines = ["key,value"];
+  for (const [k, v] of Object.entries(summary)) {
+    const safe = String(v).replaceAll('"', '""');
     lines.push(`${k},"${safe}"`);
   }
-  saveFile(`${state.currentTask?.id || "task"}-metrics.csv`, `${lines.join("\n")}\n`, "text/csv;charset=utf-8");
+  if (Array.isArray(result?.repair_changes)) {
+    lines.push("");
+    lines.push("feature,before,after,score_delta");
+    for (const item of result.repair_changes) {
+      const feature = String(item?.feature ?? "").replaceAll('"', '""');
+      const before = String(item?.before ?? "").replaceAll('"', '""');
+      const after = String(item?.after ?? "").replaceAll('"', '""');
+      const delta = String(item?.score_delta ?? "").replaceAll('"', '""');
+      lines.push(`"${feature}","${before}","${after}","${delta}"`);
+    }
+  }
+  saveFile(`${state.currentTask?.id || "task"}-repair.csv`, `${lines.join("\n")}\n`, "text/csv;charset=utf-8");
+}
+
+function toReadableError(task, err) {
+  if (err) {
+    return `request failed: ${String(err)}`;
+  }
+  if (!task) {
+    return "task returned empty result";
+  }
+  if (task?.response?.error?.message) {
+    const code = task.response.error.code || "UNKNOWN";
+    return `Engine error [${code}] ${String(task.response.error.message)}`;
+  }
+  if (task.error) {
+    return String(task.error);
+  }
+  return `task ended with status: ${task.status}`;
+}
+
+function isRepairTask(task) {
+  return String(task?.request?.action || "").toLowerCase() === "repair";
+}
+
+function isDryRunTask(task) {
+  return Boolean(task?.request?.payload?.dry_run);
+}
+
+function renderDetectionResult(result) {
+  const summary = result?.repair_summary || {};
+  const rows = [
+    ["sample_index", result?.sample_index ?? "-"],
+    ["status", summary?.status ?? "-"],
+    ["before_pred", summary?.before_pred ?? "-"],
+    ["before_score", formatNumber(summary?.before_score ?? "-")],
+    ["dry_run", String(summary?.dry_run ?? result?.dry_run ?? true)],
+  ];
+  if (detectionSummary) {
+    detectionSummary.innerHTML = rows.map(([k, v]) => `<dt>${k}</dt><dd>${String(v)}</dd>`).join("");
+  }
+
+  const hasAnomaly = Number(summary?.before_pred) === 1;
+  if (hasAnomaly) {
+    if (detectionMessage) {
+      detectionMessage.textContent = "检测到异常样本，可进入修复阶段。";
+    }
+    if (gotoRepairBtn) {
+      gotoRepairBtn.classList.remove("hidden");
+      gotoRepairBtn.disabled = false;
+    }
+  } else {
+    if (detectionMessage) {
+      detectionMessage.textContent = "该样本未检测到异常，无需修复。";
+    }
+    if (gotoRepairBtn) {
+      gotoRepairBtn.classList.add("hidden");
+    }
+  }
+}
+
+function renderDetectionFailure(reason, task = null, phase = "检测") {
+  const taskId = String(task?.id || state.currentTaskId || "-");
+  const status = String(task?.status || "failed").toLowerCase();
+  const errorCode = String(task?.response?.error?.code || "-");
+  const suggestion = String(task?.response?.error?.details?.suggestion || "").trim();
+  const rows = [
+    ["phase", phase],
+    ["task_id", taskId],
+    ["status", status],
+    ["error_code", errorCode],
+    ["can_repair", "false"],
+  ];
+  if (detectionSummary) {
+    detectionSummary.innerHTML = rows.map(([k, v]) => `<dt>${k}</dt><dd>${String(v)}</dd>`).join("");
+  }
+
+  let message = `${phase}失败：${String(reason || "未知错误")}。当前无法判断是否可修复。`;
+  if (suggestion) {
+    message += ` 建议：${suggestion}`;
+  }
+  if (detectionMessage) {
+    detectionMessage.textContent = message;
+  }
+  if (gotoRepairBtn) {
+    gotoRepairBtn.classList.add("hidden");
+    gotoRepairBtn.disabled = true;
+  }
+}
+
+function renderRepairResult(result) {
+  const summary = result?.repair_summary || {};
+  const rows = [
+    ["status", summary?.status ?? "-"],
+    ["success", String(summary?.success ?? "-")],
+    ["before_pred", summary?.before_pred ?? "-"],
+    ["after_pred", summary?.after_pred ?? "-"],
+    ["before_score", formatNumber(summary?.before_score ?? "-")],
+    ["after_score", formatNumber(summary?.after_score ?? "-")],
+    ["score_reduction", formatNumber(summary?.score_reduction ?? "-")],
+    ["applied_changes", summary?.applied_changes ?? "-"],
+  ];
+  if (repairSummary) {
+    repairSummary.innerHTML = rows.map(([k, v]) => `<dt>${k}</dt><dd>${String(v)}</dd>`).join("");
+  }
+}
+
+function renderTask(task) {
+  state.currentTask = task;
+  setTaskId(task?.id || "");
+
+  const status = String(task?.status || "idle").toLowerCase();
+  let message = `任务状态: ${status}`;
+  if (task?.error) {
+    message += ` (${task.error})`;
+  }
+  setStatus(status, message);
+
+  if (resultBox) {
+    resultBox.textContent = JSON.stringify(task || {}, null, 2);
+  }
+
+  if (task && TERMINAL_STATUSES.has(status)) {
+    if (exportJsonBtn) exportJsonBtn.disabled = false;
+    if (exportCsvBtn) exportCsvBtn.disabled = false;
+  }
+
+  if (!isRepairTask(task)) {
+    return;
+  }
+
+  const result = task?.response?.result || {};
+  if (isDryRunTask(task)) {
+    if (status === "succeeded") {
+      renderDetectionResult(result);
+      state.detectionResult = result;
+    } else if (TERMINAL_STATUSES.has(status)) {
+      const readable = toReadableError(task);
+      renderDetectionFailure(readable, task, "检测");
+      state.detectionResult = null;
+    }
+  } else {
+    renderRepairResult(result);
+  }
+}
+
+function collectDetectPayload() {
+  const retrainBeforeDetect = Boolean(retrainModelInput?.checked);
+  return {
+    action: "repair",
+    csv_path: String(csvPathInput?.value || "").trim(),
+    target_col: String(targetColInput?.value || "").trim(),
+    model_dir: String(modelDirInput?.value || "").trim(),
+    sample_index: Math.trunc(Number(sampleIndexInput?.value) || 0),
+    output_dir: String(outputInput?.value || "").trim(),
+    timeout_ms: Math.trunc(Number(timeoutInput?.value) || 90000),
+    retrain_before_detect: retrainBeforeDetect,
+    dry_run: true,
+    max_changes: 0,
+    k_neighbors: 9,
+  };
+}
+
+function collectRepairPayload() {
+  const sampleIndex = Math.trunc(Number(sampleIndexInput?.value) || 0);
+  return {
+    action: "repair",
+    model_dir: String(modelDirInput?.value || "").trim(),
+    sample_index: sampleIndex,
+    output_dir: String(outputInput?.value || "").trim(),
+    timeout_ms: Math.trunc(Number(timeoutInput?.value) || 90000),
+    dry_run: false,
+    max_changes: Math.trunc(Number(maxChangesInput?.value) || 3),
+    k_neighbors: Math.trunc(Number(kNeighborsInput?.value) || 9),
+  };
+}
+
+function validateDetectPayload(payload) {
+  if (!payload.model_dir) {
+    return "模型目录不能为空。";
+  }
+  if (!Number.isInteger(payload.sample_index) || payload.sample_index < 0) {
+    return "样本索引必须是 >= 0 的整数。";
+  }
+  if (!Number.isInteger(payload.timeout_ms) || payload.timeout_ms < 1000) {
+    return "超时必须是 >= 1000 的整数(ms)。";
+  }
+  if (payload.retrain_before_detect) {
+    if (!String(payload.csv_path || "").trim()) {
+      return "启用检测前重训时，CSV 文件路径不能为空。";
+    }
+    if (!String(payload.target_col || "").trim()) {
+      return "启用检测前重训时，请选择目标列。";
+    }
+  }
+  return "";
+}
+
+function collectTrainPayloadFromDetect(detectPayload) {
+  return {
+    action: "train",
+    csv_path: String(detectPayload?.csv_path || "").trim(),
+    target_col: String(detectPayload?.target_col || "").trim(),
+    output_dir: String(detectPayload?.model_dir || "").trim(),
+    timeout_ms: Math.trunc(Number(detectPayload?.timeout_ms) || 90000),
+  };
+}
+
+function validateTrainPayload(payload) {
+  if (!String(payload?.csv_path || "").trim()) {
+    return "CSV 文件路径不能为空。";
+  }
+  if (!String(payload?.target_col || "").trim()) {
+    return "目标列不能为空。";
+  }
+  if (!String(payload?.output_dir || "").trim()) {
+    return "模型目录不能为空。";
+  }
+  if (!Number.isInteger(payload.timeout_ms) || payload.timeout_ms < 1000) {
+    return "超时必须是 >= 1000 的整数(ms)。";
+  }
+  return "";
+}
+
+function validateRepairPayload(payload) {
+  const base = validateDetectPayload(payload);
+  if (base) {
+    return base;
+  }
+  if (!Number.isInteger(payload.max_changes) || payload.max_changes < 1) {
+    return "最多修改字段必须是 >= 1 的整数。";
+  }
+  if (!Number.isInteger(payload.k_neighbors) || payload.k_neighbors < 3) {
+    return "邻居数量必须是 >= 3 的整数。";
+  }
+  return "";
 }
 
 function delay(ms) {
@@ -422,13 +744,6 @@ async function apiSelectOutputDir() {
   return "";
 }
 
-async function apiListTaskHistory(limit = 20) {
-  if (hasBinding("ListTaskHistory")) {
-    return window.go.main.App.ListTaskHistory(limit);
-  }
-  return [];
-}
-
 async function apiListCsvColumns(csvPath) {
   if (hasBinding("ListCSVColumns")) {
     return window.go.main.App.ListCSVColumns(csvPath);
@@ -436,14 +751,19 @@ async function apiListCsvColumns(csvPath) {
   return mockListCsvColumns(csvPath);
 }
 
+async function apiListTaskHistory(limit = 20) {
+  if (hasBinding("ListTaskHistory")) {
+    return window.go.main.App.ListTaskHistory(limit);
+  }
+  return [];
+}
+
 async function mockRunTask(payload) {
   const id = `mock-task-${Date.now()}`;
-  const createdAt = Date.now();
   state.mockTasks.set(id, {
     id,
     payload,
-    createdAt,
-    status: "pending",
+    createdAt: Date.now(),
     canceled: false,
   });
 
@@ -451,7 +771,7 @@ async function mockRunTask(payload) {
     id,
     status: "pending",
     request: {
-      action: "train",
+      action: payload.action,
       payload,
     },
     response: {},
@@ -467,36 +787,67 @@ async function mockGetTaskStatus(taskId) {
 
   const elapsed = Date.now() - item.createdAt;
   if (item.canceled) {
-    item.status = "canceled";
     return {
       id: taskId,
       status: "canceled",
-      request: {
-        action: "train",
-        payload: item.payload,
-      },
+      request: { action: "repair", payload: item.payload },
       response: {},
       error: "canceled",
     };
   }
 
   if (elapsed < 700) {
-    item.status = "pending";
-  } else if (elapsed < 2600) {
-    item.status = "running";
-  } else {
-    item.status = "succeeded";
-  }
-
-  if (item.status !== "succeeded") {
     return {
       id: taskId,
-      status: item.status,
-      request: {
-        action: "train",
-        payload: item.payload,
-      },
+      status: "pending",
+      request: { action: "repair", payload: item.payload },
       response: {},
+      error: "",
+    };
+  }
+
+  if (elapsed < 2600) {
+    return {
+      id: taskId,
+      status: "running",
+      request: { action: "repair", payload: item.payload },
+      response: {},
+      error: "",
+    };
+  }
+
+  const sampleIndex = Math.trunc(Number(item.payload.sample_index) || 0);
+  const isDryRun = Boolean(item.payload.dry_run);
+
+  if (isDryRun) {
+    const isAnomaly = sampleIndex % 2 === 1;
+    return {
+      id: taskId,
+      status: "succeeded",
+      request: { action: "repair", payload: item.payload },
+      response: {
+        task_id: taskId,
+        status: "ok",
+        result: {
+          dry_run: true,
+          sample_index: sampleIndex,
+          repair_summary: {
+            status: isAnomaly ? "anomaly_detected" : "already_normal",
+            success: !isAnomaly,
+            before_pred: isAnomaly ? 1 : 0,
+            after_pred: isAnomaly ? 1 : 0,
+            before_score: isAnomaly ? 0.892431 : 0.082312,
+            after_score: isAnomaly ? 0.892431 : 0.082312,
+            score_reduction: 0,
+            applied_changes: 0,
+            dry_run: true,
+          },
+          repair_changes: [],
+        },
+        error: null,
+        timestamp: new Date().toISOString(),
+        duration_ms: 2100,
+      },
       error: "",
     };
   }
@@ -504,33 +855,42 @@ async function mockGetTaskStatus(taskId) {
   return {
     id: taskId,
     status: "succeeded",
-    request: {
-      action: "train",
-      payload: item.payload,
-    },
+    request: { action: "repair", payload: item.payload },
     response: {
       task_id: taskId,
       status: "ok",
       result: {
-        data_profile: {
-          rows: 5110,
-          columns: 12,
-          target_col: item.payload.target_col,
+        dry_run: false,
+        sample_index: sampleIndex,
+        repair_summary: {
+          status: "repaired",
+          success: true,
+          before_pred: 1,
+          after_pred: 0,
+          before_score: 0.892431,
+          after_score: 0.461202,
+          score_reduction: 0.431229,
+          applied_changes: 2,
+          dry_run: false,
         },
-        metrics: {
-          accuracy: 0.949119,
-          precision: 0.333333,
-          recall: 0.04,
-          f1: 0.929694,
-          auc: 0.811708,
-        },
-        artifacts: {
-          output_dir: item.payload.output_dir || "outputs/results/wails_mvp",
-        },
+        repair_changes: [
+          {
+            feature: "avg_glucose_level",
+            before: 193.44,
+            after: 124.31,
+            score_delta: 0.286901,
+          },
+          {
+            feature: "heart_disease",
+            before: 1,
+            after: 0,
+            score_delta: 0.144328,
+          },
+        ],
       },
       error: null,
       timestamp: new Date().toISOString(),
-      duration_ms: 3600,
+      duration_ms: 3300,
     },
     error: "",
   };
@@ -563,54 +923,46 @@ async function mockListCsvColumns() {
 }
 
 function setTargetOptions(columns, preferred = "") {
-  const previous = String(preferred || targetInput?.value || "").trim();
-  const items = Array.isArray(columns)
+  if (!targetColInput) {
+    state.availableColumns = Array.isArray(columns) ? [...columns] : [];
+    return;
+  }
+
+  const clean = Array.isArray(columns)
     ? columns.map((v) => String(v || "").trim()).filter((v) => v.length > 0)
     : [];
-
-  const unique = [];
+  const uniq = [];
   const seen = new Set();
-  for (const col of items) {
-    if (seen.has(col)) {
-      continue;
-    }
+  for (const col of clean) {
+    if (seen.has(col)) continue;
     seen.add(col);
-    unique.push(col);
+    uniq.push(col);
   }
+  state.availableColumns = uniq;
 
-  if (!targetInput) {
-    state.availableColumns = unique;
+  targetColInput.innerHTML = "";
+
+  if (uniq.length === 0) {
+    const placeholder = document.createElement("option");
+    placeholder.value = "";
+    placeholder.textContent = "无可用列";
+    targetColInput.appendChild(placeholder);
+    targetColInput.value = "";
     return;
   }
 
-  targetInput.innerHTML = "";
-
-  if (unique.length === 0) {
-    const option = document.createElement("option");
-    option.value = "";
-    option.textContent = "No available columns";
-    targetInput.appendChild(option);
-    targetInput.value = "";
-    state.availableColumns = [];
-    return;
-  }
-
-  for (const col of unique) {
+  for (const col of uniq) {
     const option = document.createElement("option");
     option.value = col;
     option.textContent = col;
-    targetInput.appendChild(option);
+    targetColInput.appendChild(option);
   }
 
-  let selected = unique[0];
-  if (previous && unique.includes(previous)) {
-    selected = previous;
-  } else if (unique.includes("stroke")) {
-    selected = "stroke";
+  let selected = String(preferred || targetColInput.value || "").trim();
+  if (!selected || !uniq.includes(selected)) {
+    selected = uniq.includes("stroke") ? "stroke" : uniq[0];
   }
-
-  targetInput.value = selected;
-  state.availableColumns = unique;
+  targetColInput.value = selected;
 }
 
 async function refreshColumnsForCsv(csvPath, source = "manual path input") {
@@ -622,15 +974,38 @@ async function refreshColumnsForCsv(csvPath, source = "manual path input") {
 
   try {
     const columns = await apiListCsvColumns(path);
-    setTargetOptions(columns);
-    addEvent(`Loaded ${state.availableColumns.length} selectable columns (${source}).`);
+    const before = targetColInput ? targetColInput.value : "";
+    setTargetOptions(columns, before);
+    addEvent(`已加载 ${state.availableColumns.length} 个目标列(${source})。`);
   } catch (err) {
     setTargetOptions([]);
-    addEvent(`Failed to load columns: ${String(err)}`);
+    addEvent(`读取列失败: ${String(err)}`);
   }
 }
 
-async function pollTask(taskId) {
+function successStepForIntent(intent) {
+  if (intent === "repair") {
+    return STEP_REPAIR;
+  }
+  if (intent === "detect") {
+    return STEP_RESULT;
+  }
+  return "";
+}
+
+function successMessageForIntent(intent) {
+  if (intent === "repair") {
+    return "修复任务完成。";
+  }
+  if (intent === "train") {
+    return "训练任务完成。";
+  }
+  return "检测任务完成。";
+}
+
+async function pollTask(taskId, intent, options = {}) {
+  const successStep = options.successStep === undefined ? successStepForIntent(intent) : options.successStep;
+  const failureStep = options.failureStep === undefined ? successStepForIntent(intent) : options.failureStep;
   const token = Date.now();
   state.pollingToken = token;
 
@@ -640,102 +1015,249 @@ async function pollTask(taskId) {
       snapshot = await apiGetTaskStatus(taskId);
     } catch (err) {
       setRunningUi(false);
-      showError(`Status polling failed: ${String(err)}`, "Please verify backend runtime and retry.");
-      addEvent(`Polling error: ${String(err)}`);
-      return;
+      const msg = `状态轮询失败: ${String(err)}`;
+      showError(msg, "请检查后端连接后重试。");
+      if (intent === "detect" || intent === "train") {
+        renderDetectionFailure(msg, null, intent === "train" ? "训练" : "检测");
+        if (failureStep) {
+          setWizardStep(failureStep);
+        }
+      }
+      addEvent(msg);
+      return null;
     }
 
     renderTask(snapshot);
-    const status = (snapshot?.status || "").toLowerCase();
+    const status = String(snapshot?.status || "").toLowerCase();
 
     if (TERMINAL_STATUSES.has(status)) {
-      setRunningUi(false);
-      setWizardStep(STEP_RESULT);
+      if (!options.keepRunningUi) {
+        setRunningUi(false);
+      }
 
       if (status === "succeeded") {
         clearError();
-        addEvent("Task completed successfully. You can export results now.");
+        if (successStep) {
+          setWizardStep(successStep);
+        }
+        if (!options.suppressSuccessEvent) {
+          addEvent(successMessageForIntent(intent), taskId);
+        }
       } else {
         const readable = toReadableError(snapshot);
-        const details = extractEngineErrorDetails(snapshot);
-        const hint = details.suggestion || "Fix parameters and click 'Retry Last Task'.";
-        showError(readable, hint);
-        addEvent(`Task finished (${status}): ${readable}`);
+        showError(readable, "请调整参数后重试。");
+        if (intent === "detect" || intent === "train") {
+          renderDetectionFailure(readable, snapshot, intent === "train" ? "训练" : "检测");
+        }
+        if (failureStep) {
+          setWizardStep(failureStep);
+        }
+        if (!options.suppressFailureEvent) {
+          addEvent(`任务结束(${status}): ${readable}`, taskId);
+        }
       }
-      return;
+      return snapshot;
     }
 
     await delay(450);
   }
+
+  return null;
 }
 
-async function startTask(payload) {
-  const invalidReason = validatePayload(payload);
+async function startTask(payload, intent, options = {}) {
+  let invalidReason = "";
+  if (intent === "repair") {
+    invalidReason = validateRepairPayload(payload);
+  } else if (intent === "train") {
+    invalidReason = validateTrainPayload(payload);
+  } else {
+    invalidReason = validateDetectPayload(payload);
+  }
   if (invalidReason) {
-    showError(invalidReason, "Please complete required fields first.");
-    addEvent(`Payload validation failed: ${invalidReason}`);
-    return;
+    showError(invalidReason, "请先修正参数。");
+    if (intent === "detect" || intent === "train") {
+      renderDetectionFailure(invalidReason, null, intent === "train" ? "训练" : "检测");
+      setWizardStep(STEP_RESULT);
+    }
+    addEvent(`参数校验失败: ${invalidReason}`);
+    return null;
   }
 
-  state.lastPayload = payload;
-  state.currentTaskId = "";
   clearError();
-  resetResultView();
   setTaskId("");
-  setStatus("pending", "Task status: pending");
-  setWizardStep(STEP_PROGRESS);
+  setStatus("pending", "任务状态: pending");
+  if (!options.skipProgressStep) {
+    setWizardStep(STEP_PROGRESS);
+  }
+
+  if (intent === "detect") {
+    state.lastDetectPayload = payload;
+    state.detectionResult = null;
+    if (gotoRepairBtn) gotoRepairBtn.classList.add("hidden");
+  } else if (intent === "repair") {
+    state.lastRepairPayload = payload;
+  }
 
   let submitted;
   try {
     submitted = await apiRunTask(payload);
   } catch (err) {
-    const msg = `Failed to start task: ${String(err)}`;
-    showError(msg, "Check Python engine path, CSV path, and dependencies.");
+    const msg = `任务启动失败: ${String(err)}`;
+    showError(msg, "请检查引擎路径与参数。",);
+    if (intent === "detect" || intent === "train") {
+      renderDetectionFailure(msg, null, intent === "train" ? "训练" : "检测");
+    }
     addEvent(msg);
-    setWizardStep(STEP_CONFIG);
+    const fallbackStep =
+      options.fallbackStep === undefined
+        ? (intent === "repair" ? STEP_REPAIR : (intent === "detect" || intent === "train" ? STEP_RESULT : STEP_CONFIG))
+        : options.fallbackStep;
+    if (fallbackStep) {
+      setWizardStep(fallbackStep);
+    }
     setRunningUi(false);
-    return;
+    return null;
   }
 
   state.currentTaskId = submitted.id;
+  state.pendingIntent = intent;
   setRunningUi(true);
-  addEvent(`Task submitted: ${submitted.id}`);
+  addEvent(`任务已提交(${intent}): ${submitted.id}`);
   renderTask(submitted);
-  pollTask(submitted.id);
+  return pollTask(submitted.id, intent, options.pollOptions || {});
+}
+
+async function startDetectWorkflow(rawPayload) {
+  const detectPayload = { ...rawPayload };
+
+  if (detectPayload.retrain_before_detect) {
+    const trainPayload = collectTrainPayloadFromDetect(detectPayload);
+    const trainInvalid = validateTrainPayload(trainPayload);
+    if (trainInvalid) {
+      showError(trainInvalid, "请先修正参数。");
+      renderDetectionFailure(trainInvalid, null, "训练");
+      setWizardStep(STEP_RESULT);
+      addEvent(`训练参数校验失败: ${trainInvalid}`);
+      return;
+    }
+
+    addEvent(`检测前重训已启用，目标列: ${trainPayload.target_col || "-"}`);
+    const trainTask = await startTask(trainPayload, "train", {
+      fallbackStep: STEP_RESULT,
+      pollOptions: {
+        successStep: "",
+        failureStep: STEP_RESULT,
+      },
+    });
+    const trainStatus = String(trainTask?.status || "").toLowerCase();
+    if (trainStatus !== "succeeded") {
+      return;
+    }
+    addEvent("重训完成，开始异常检测。", trainTask?.id || "");
+  }
+
+  const taskPayload = {
+    ...detectPayload,
+    action: "repair",
+    dry_run: true,
+    max_changes: 0,
+    k_neighbors: 9,
+  };
+  await startTask(taskPayload, "detect", {
+    fallbackStep: STEP_RESULT,
+    pollOptions: {
+      successStep: STEP_RESULT,
+      failureStep: STEP_RESULT,
+    },
+  });
+}
+
+async function chooseDirectory(targetInput, promptText, eventText) {
+  const nativePicker = hasBinding("SelectOutputDir");
+  try {
+    const selected = await apiSelectOutputDir();
+    if (selected) {
+      if (targetInput) {
+        targetInput.value = selected;
+      }
+      addEvent(`${eventText}: ${selected}`);
+      return;
+    }
+    if (nativePicker) {
+      addEvent(`${eventText}已取消。`);
+      return;
+    }
+  } catch (err) {
+    addEvent(`目录选择器不可用: ${String(err)}`);
+  }
+
+  const current = targetInput ? targetInput.value.trim() : "";
+  const manual = window.prompt(promptText, current);
+  if (manual && manual.trim()) {
+    if (targetInput) {
+      targetInput.value = manual.trim();
+    }
+    addEvent(`${eventText}(手动): ${manual.trim()}`);
+  }
 }
 
 async function loadRecentHistory() {
   try {
     const tasks = await apiListTaskHistory(10);
     if (!Array.isArray(tasks) || tasks.length === 0) {
-      addEvent("No persisted task history found.");
+      addEvent("未找到历史任务。");
       return;
     }
 
     const latest = tasks[0];
-    state.currentTaskId = latest?.id || "";
-    renderTask(latest);
-
-    const status = (latest?.status || "").toLowerCase();
-    if (TERMINAL_STATUSES.has(status)) {
-      setWizardStep(STEP_RESULT);
-      setRunningUi(false);
-    } else if (latest?.id) {
-      setWizardStep(STEP_PROGRESS);
-      setRunningUi(true);
-      pollTask(latest.id);
+    if (!isRepairTask(latest)) {
+      addEvent("最新历史任务不是 repair 类型，已忽略回放。", latest?.id || "");
+      return;
     }
 
-    addEvent(`Loaded ${tasks.length} history task(s).`, state.currentTaskId);
+    state.currentTaskId = latest?.id || "";
+    renderTask(latest);
+    const status = String(latest?.status || "").toLowerCase();
+    const intent = isDryRunTask(latest) ? "detect" : "repair";
+
+    if (TERMINAL_STATUSES.has(status)) {
+      setRunningUi(false);
+      setWizardStep(intent === "repair" ? STEP_REPAIR : STEP_RESULT);
+    } else if (latest?.id) {
+      setRunningUi(true);
+      setWizardStep(STEP_PROGRESS);
+      pollTask(latest.id, intent);
+    }
+
+    addEvent(`已加载 ${tasks.length} 条历史任务。`, state.currentTaskId);
   } catch (err) {
-    addEvent(`Failed to load task history: ${String(err)}`);
+    addEvent(`加载历史任务失败: ${String(err)}`);
   }
 }
 
-if (form) {
-  form.addEventListener("submit", async (event) => {
+if (detectForm) {
+  detectForm.addEventListener("submit", async (event) => {
     event.preventDefault();
-    await startTask(collectPayload());
+    resetResultPanels();
+    await startDetectWorkflow(collectDetectPayload());
+  });
+}
+
+if (repairForm) {
+  repairForm.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    await startTask(collectRepairPayload(), "repair");
+  });
+}
+
+if (retryDetectBtn) {
+  retryDetectBtn.addEventListener("click", async () => {
+    if (!state.lastDetectPayload) {
+      return;
+    }
+    addEvent("使用上次参数重试检测。", state.currentTaskId);
+    await startDetectWorkflow({ ...state.lastDetectPayload });
   });
 }
 
@@ -744,38 +1266,49 @@ if (cancelBtn) {
     if (!state.currentTaskId) {
       return;
     }
-
     cancelBtn.disabled = true;
     try {
       const ok = await apiCancelTask(state.currentTaskId);
-      addEvent(ok ? "Cancel request sent." : "Cancel request had no effect (task may have ended).");
+      addEvent(ok ? "取消请求已发送。" : "取消无效（任务可能已结束）。", state.currentTaskId);
     } catch (err) {
-      showError(`Failed to cancel task: ${String(err)}`, "Please retry shortly.");
-      addEvent(`Cancel failed: ${String(err)}`);
+      showError(`取消失败: ${String(err)}`);
+      addEvent(`取消失败: ${String(err)}`, state.currentTaskId);
     }
   });
 }
 
-if (retryBtn) {
-  retryBtn.addEventListener("click", async () => {
-    if (!state.lastPayload) {
-      return;
-    }
-    addEvent("Retrying task with previous payload.");
-    await startTask({ ...state.lastPayload });
+if (gotoRepairBtn) {
+  gotoRepairBtn.addEventListener("click", () => {
+    setWizardStep(STEP_REPAIR);
+    addEvent("进入修复界面。", state.currentTaskId);
   });
 }
 
-if (newTaskBtn) {
-  newTaskBtn.addEventListener("click", () => {
+if (backResultBtn) {
+  backResultBtn.addEventListener("click", () => {
+    setWizardStep(STEP_RESULT);
+  });
+}
+
+if (newDetectBtn) {
+  newDetectBtn.addEventListener("click", () => {
     state.currentTaskId = "";
     state.currentTask = null;
+    state.pendingIntent = "";
+    state.detectionResult = null;
     setTaskId("");
-    setStatus("idle", "Waiting for task start");
+    setStatus("idle", "等待任务开始");
     clearError();
     setRunningUi(false);
+    resetResultPanels();
     setWizardStep(STEP_CONFIG);
-    addEvent("Back to parameter step. Ready for a new task.");
+    addEvent("已返回参数配置，可开始新检测。");
+  });
+}
+
+if (chooseModelBtn) {
+  chooseModelBtn.addEventListener("click", async () => {
+    await chooseDirectory(modelDirInput, "输入模型目录", "已选择模型目录");
   });
 }
 
@@ -785,19 +1318,19 @@ if (chooseCsvBtn) {
     try {
       const selected = await apiSelectCsv();
       if (selected) {
-        if (csvInput) {
-          csvInput.value = selected;
+        if (csvPathInput) {
+          csvPathInput.value = selected;
         }
-        addEvent(`Selected CSV: ${selected}`);
-        await refreshColumnsForCsv(selected, "file picker");
+        addEvent(`已选择 CSV 文件: ${selected}`);
+        await refreshColumnsForCsv(selected, "文件选择器");
         return;
       }
       if (nativePicker) {
-        addEvent("CSV selection canceled.");
+        addEvent("CSV 选择已取消。");
         return;
       }
     } catch (err) {
-      addEvent(`System file picker unavailable: ${String(err)}`);
+      addEvent(`CSV 选择器不可用: ${String(err)}`);
     }
 
     if (csvFileInput) {
@@ -807,76 +1340,50 @@ if (chooseCsvBtn) {
 }
 
 if (csvFileInput) {
-  csvFileInput.addEventListener("change", () => {
+  csvFileInput.addEventListener("change", async () => {
     const file = csvFileInput.files?.[0];
     if (!file) {
       return;
     }
-    if (csvInput) {
-      csvInput.value = file.name;
+    if (csvPathInput) {
+      csvPathInput.value = file.name;
     }
-    addEvent(`Browser-mode selected file: ${file.name}`);
-    refreshColumnsForCsv(file.name, "browser file picker");
+    addEvent(`浏览器模式选择文件: ${file.name}`);
+    await refreshColumnsForCsv(file.name, "浏览器文件选择");
   });
 }
 
-if (csvInput) {
-  csvInput.addEventListener("change", () => {
-    refreshColumnsForCsv(csvInput.value, "path changed");
+if (csvPathInput) {
+  csvPathInput.addEventListener("change", async () => {
+    await refreshColumnsForCsv(csvPathInput.value, "路径变更");
   });
-
-  csvInput.addEventListener("blur", () => {
-    refreshColumnsForCsv(csvInput.value, "path blur");
+  csvPathInput.addEventListener("blur", async () => {
+    await refreshColumnsForCsv(csvPathInput.value, "路径失焦");
   });
 }
 
 if (chooseOutputBtn) {
   chooseOutputBtn.addEventListener("click", async () => {
-    const nativePicker = hasBinding("SelectOutputDir");
-    try {
-      const selected = await apiSelectOutputDir();
-      if (selected) {
-        if (outputInput) {
-          outputInput.value = selected;
-        }
-        addEvent(`Selected output directory: ${selected}`);
-        return;
-      }
-      if (nativePicker) {
-        addEvent("Output directory selection canceled.");
-        return;
-      }
-    } catch (err) {
-      addEvent(`Directory picker unavailable: ${String(err)}`);
-    }
-
-    const current = outputInput ? outputInput.value.trim() : "";
-    const manual = window.prompt("Enter output directory", current);
-    if (manual && manual.trim()) {
-      if (outputInput) {
-        outputInput.value = manual.trim();
-      }
-      addEvent(`Manually set output directory: ${manual.trim()}`);
-    }
+    await chooseDirectory(outputInput, "输入输出目录", "已选择输出目录");
   });
 }
 
+if (copyJsonBtn) {
+  copyJsonBtn.addEventListener("click", copyResultJson);
+}
 if (exportJsonBtn) {
   exportJsonBtn.addEventListener("click", exportResultJson);
 }
 if (exportCsvBtn) {
-  exportCsvBtn.addEventListener("click", exportMetricsCsv);
-}
-if (copyJsonBtn) {
-  copyJsonBtn.addEventListener("click", copyResultJson);
+  exportCsvBtn.addEventListener("click", exportResultCsv);
 }
 
 setWizardStep(STEP_CONFIG);
-setStatus("idle", "Waiting for task start");
+setStatus("idle", "等待任务开始");
 setTaskId("");
 setRunningUi(false);
-resetResultView();
+resetResultPanels();
 clearError();
-addEvent("Frontend ready. Configure parameters and run a task.");
-refreshColumnsForCsv(csvInput?.value || "", "initial load");
+addEvent("前端已就绪，请先执行检测。");
+refreshColumnsForCsv(csvPathInput?.value || "", "初始加载");
 loadRecentHistory();

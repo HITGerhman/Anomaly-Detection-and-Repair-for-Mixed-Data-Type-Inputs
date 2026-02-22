@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 import os
 import platform
 import sys
@@ -55,6 +56,13 @@ def _resolve_output_dir(output_dir: str | None) -> Path:
         return (PROJECT_ROOT / "data" / "processed").resolve()
 
     raw = Path(output_dir).expanduser()
+    if raw.is_absolute():
+        return raw.resolve()
+    return (PROJECT_ROOT / raw).resolve()
+
+
+def _resolve_existing_dir(path_text: str) -> Path:
+    raw = Path(path_text).expanduser()
     if raw.is_absolute():
         return raw.resolve()
     return (PROJECT_ROOT / raw).resolve()
@@ -198,13 +206,78 @@ def _load_training_modules() -> tuple[Any, Any, Any]:
     return train_pd, process_and_train, save_system_state
 
 
+def _load_repair_modules() -> tuple[Any, Any, Any]:
+    try:
+        import pandas as repair_pd  # type: ignore
+    except Exception as exc:  # pragma: no cover - runtime dependency guard
+        raise KnownEngineError(
+            code=ErrorCode.MISSING_DEPENDENCY,
+            message="Repair dependency missing: pandas",
+            details={"reason": str(exc)},
+        ) from exc
+
+    try:
+        from src.repair_core import repair_anomaly_sample  # type: ignore
+        from src.training_core import load_system_state, predict_with_threshold  # type: ignore
+    except Exception as exc:  # pragma: no cover - runtime dependency guard
+        raise KnownEngineError(
+            code=ErrorCode.REPAIR_MODULE_IMPORT_FAILED,
+            message="Failed to import repair modules",
+            details={"reason": str(exc)},
+        ) from exc
+
+    return load_system_state, predict_with_threshold, repair_anomaly_sample
+
+
+def _to_positive_int(payload: dict[str, Any], key: str, default: int, minimum: int = 1, maximum: int = 1000) -> int:
+    raw = payload.get(key, default)
+    if raw is None:
+        return default
+    try:
+        value = int(raw)
+    except (TypeError, ValueError) as exc:
+        raise KnownEngineError(
+            code=ErrorCode.INVALID_INPUT,
+            message=f"Field {key} must be an integer",
+            details={"field": key, "value": raw},
+        ) from exc
+    if value < minimum or value > maximum:
+        raise KnownEngineError(
+            code=ErrorCode.INVALID_INPUT,
+            message=f"Field {key} must be between {minimum} and {maximum}",
+            details={"field": key, "value": value, "minimum": minimum, "maximum": maximum},
+        )
+    return value
+
+
+def _to_int(payload: dict[str, Any], key: str, default: int, minimum: int = 0, maximum: int = 10_000_000) -> int:
+    raw = payload.get(key, default)
+    if raw is None:
+        return default
+    try:
+        value = int(raw)
+    except (TypeError, ValueError) as exc:
+        raise KnownEngineError(
+            code=ErrorCode.INVALID_INPUT,
+            message=f"Field {key} must be an integer",
+            details={"field": key, "value": raw},
+        ) from exc
+    if value < minimum or value > maximum:
+        raise KnownEngineError(
+            code=ErrorCode.INVALID_INPUT,
+            message=f"Field {key} must be between {minimum} and {maximum}",
+            details={"field": key, "value": value, "minimum": minimum, "maximum": maximum},
+        )
+    return value
+
+
 def action_health(_: dict[str, Any]) -> dict[str, Any]:
     return {
         "engine": "python-anomaly-engine",
         "project_root": str(PROJECT_ROOT),
         "python": platform.python_version(),
         "platform": platform.platform(),
-        "actions": ["health", "train"],
+        "actions": ["health", "train", "repair"],
     }
 
 
@@ -269,3 +342,166 @@ def action_train(payload: dict[str, Any]) -> dict[str, Any]:
         },
         "metrics": _metric_summary(metrics),
     }
+
+
+def action_repair(payload: dict[str, Any]) -> dict[str, Any]:
+    load_system_state, predict_with_threshold, repair_anomaly_sample = _load_repair_modules()
+
+    model_dir_text = str(_require(payload, "model_dir"))
+    model_dir = _resolve_existing_dir(model_dir_text)
+    if not model_dir.exists() or not model_dir.is_dir():
+        raise KnownEngineError(
+            code=ErrorCode.FILE_NOT_FOUND,
+            message=f"Model directory does not exist: {model_dir}",
+            details={"model_dir": str(model_dir)},
+        )
+
+    required_files = ["model_lgb.pkl", "test_data.pkl", "normal_data.pkl"]
+    missing = [name for name in required_files if not (model_dir / name).exists()]
+    if missing:
+        raise KnownEngineError(
+            code=ErrorCode.FILE_NOT_FOUND,
+            message="Model directory is missing required artifacts",
+            details={"model_dir": str(model_dir), "missing_files": missing},
+        )
+
+    try:
+        model, x_test, normal_data = load_system_state(model_dir)
+    except Exception as exc:
+        raise KnownEngineError(
+            code=ErrorCode.MODEL_STATE_LOAD_FAILED,
+            message="Failed to load model state artifacts",
+            details={"model_dir": str(model_dir), "reason": str(exc)},
+        ) from exc
+
+    sample_index = _to_int(payload, "sample_index", default=0, minimum=0)
+    if sample_index >= int(x_test.shape[0]):
+        raise KnownEngineError(
+            code=ErrorCode.INVALID_INPUT,
+            message="sample_index is out of range",
+            details={
+                "sample_index": sample_index,
+                "min_index": 0,
+                "max_index": max(0, int(x_test.shape[0]) - 1),
+                "rows": int(x_test.shape[0]),
+            },
+        )
+
+    dry_run = bool(payload.get("dry_run", False))
+    if dry_run:
+        max_changes = 0
+    else:
+        max_changes = _to_int(payload, "max_changes", default=3, minimum=1, maximum=20)
+    k_neighbors = _to_positive_int(payload, "k_neighbors", default=9, minimum=3, maximum=200)
+
+    immutable_raw = payload.get("immutable_columns", [])
+    if immutable_raw is None:
+        immutable_columns: list[str] = []
+    elif isinstance(immutable_raw, (list, tuple, set)):
+        immutable_columns = [str(item).strip() for item in immutable_raw if str(item).strip()]
+    else:
+        raise KnownEngineError(
+            code=ErrorCode.INVALID_INPUT,
+            message="Field immutable_columns must be a string list",
+            details={"field": "immutable_columns"},
+        )
+
+    numeric_bounds_raw = payload.get("numeric_bounds", {})
+    if numeric_bounds_raw is None:
+        numeric_bounds: dict[str, dict[str, Any]] = {}
+    elif isinstance(numeric_bounds_raw, dict):
+        numeric_bounds = {}
+        for col, bound in numeric_bounds_raw.items():
+            if isinstance(bound, dict):
+                numeric_bounds[str(col)] = {
+                    "min": bound.get("min"),
+                    "max": bound.get("max"),
+                }
+    else:
+        raise KnownEngineError(
+            code=ErrorCode.INVALID_INPUT,
+            message="Field numeric_bounds must be an object",
+            details={"field": "numeric_bounds"},
+        )
+
+    sample = x_test.iloc[[sample_index]].copy()
+    before_pred_arr, before_prob_arr = predict_with_threshold(model, sample)
+    before_pred = int(before_pred_arr[0])
+    before_score = float(before_prob_arr[0])
+
+    try:
+        repair_bundle = repair_anomaly_sample(
+            model=model,
+            sample=sample,
+            normal_data=normal_data,
+            max_changes=max_changes,
+            k_neighbors=k_neighbors,
+            immutable_columns=immutable_columns,
+            numeric_bounds=numeric_bounds,
+        )
+    except KnownEngineError:
+        raise
+    except Exception as exc:
+        raise KnownEngineError(
+            code=ErrorCode.REPAIR_FAILED,
+            message="Repair search failed",
+            details={"reason": str(exc)},
+        ) from exc
+
+    after_pred_arr, after_prob_arr = predict_with_threshold(model, repair_bundle.repaired_sample)
+    after_pred = int(after_pred_arr[0])
+    after_score = float(after_prob_arr[0])
+
+    artifacts: dict[str, str] = {}
+    output_dir_raw = payload.get("output_dir")
+    if (not dry_run) and output_dir_raw is not None and str(output_dir_raw).strip():
+        output_dir = _resolve_output_dir(str(output_dir_raw))
+        os.makedirs(output_dir, exist_ok=True)
+        repaired_csv = output_dir / f"repair_sample_{sample_index}.csv"
+        report_json = output_dir / f"repair_sample_{sample_index}.json"
+        repair_bundle.repaired_sample.to_csv(repaired_csv, index=False)
+        report_json.write_text(
+            json.dumps(
+                {
+                    "sample_index": sample_index,
+                    "summary": _to_builtin(repair_bundle.summary),
+                    "changes": _to_builtin(repair_bundle.changes),
+                },
+                ensure_ascii=True,
+                indent=2,
+            )
+            + "\n",
+            encoding="utf-8",
+        )
+        artifacts = {
+            "output_dir": str(output_dir),
+            "repaired_sample_csv": str(repaired_csv),
+            "repair_report_json": str(report_json),
+        }
+
+    result: dict[str, Any] = {
+        "model_dir": str(model_dir),
+        "sample_index": sample_index,
+        "dry_run": dry_run,
+        "repair_summary": _to_builtin(repair_bundle.summary),
+        "repair_changes": _to_builtin(repair_bundle.changes),
+        "original_sample": _to_builtin(sample.iloc[0].to_dict()),
+        "repaired_sample": _to_builtin(repair_bundle.repaired_sample.iloc[0].to_dict()),
+        "before": {
+            "pred": before_pred,
+            "score": round(before_score, 12),
+        },
+        "after": {
+            "pred": after_pred,
+            "score": round(after_score, 12),
+        },
+        "data_profile": {
+            "rows": int(x_test.shape[0]),
+            "columns": int(x_test.shape[1]),
+            "sample_index": sample_index,
+        },
+    }
+    if artifacts:
+        result["artifacts"] = artifacts
+
+    return result

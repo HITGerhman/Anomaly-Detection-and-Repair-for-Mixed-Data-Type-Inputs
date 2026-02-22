@@ -33,7 +33,18 @@ func mustJSON(v any) string {
 	return string(b)
 }
 
-func buildRequest(action, csv, target, outputDir string, index int, parallel int) (engine.Request, error) {
+func buildRequest(
+	action string,
+	csv string,
+	target string,
+	outputDir string,
+	modelDir string,
+	sampleIndex int,
+	maxChanges int,
+	kNeighbors int,
+	index int,
+	parallel int,
+) (engine.Request, error) {
 	req := engine.Request{
 		Action:  action,
 		Payload: map[string]any{},
@@ -55,15 +66,40 @@ func buildRequest(action, csv, target, outputDir string, index int, parallel int
 		}
 	}
 
+	if action == "repair" {
+		if modelDir == "" {
+			return engine.Request{}, fmt.Errorf("for repair action, -model-dir is required")
+		}
+		req.Payload["model_dir"] = modelDir
+		req.Payload["sample_index"] = sampleIndex
+		if maxChanges > 0 {
+			req.Payload["max_changes"] = maxChanges
+		}
+		if kNeighbors > 0 {
+			req.Payload["k_neighbors"] = kNeighbors
+		}
+		if outputDir != "" {
+			if parallel > 1 {
+				req.Payload["output_dir"] = filepath.Join(outputDir, fmt.Sprintf("task-%d", index))
+			} else {
+				req.Payload["output_dir"] = outputDir
+			}
+		}
+	}
+
 	return req, nil
 }
 
 func main() {
 	ensureDefaultGoLogFile()
 
-	action := flag.String("action", "health", "Action to run: health or train")
+	action := flag.String("action", "health", "Action to run: health, train or repair")
 	csv := flag.String("csv", "", "CSV path for train action")
 	target := flag.String("target", "", "Target column for train action")
+	modelDir := flag.String("model-dir", "", "Model artifacts directory for repair action")
+	sampleIndex := flag.Int("sample-index", 0, "Sample index in test_data.pkl for repair action")
+	maxChanges := flag.Int("max-changes", 3, "Maximum number of feature edits for repair action")
+	kNeighbors := flag.Int("k-neighbors", 9, "Nearest healthy neighbors for repair action")
 	outputDir := flag.String("output", "", "Base output directory for model artifacts")
 	engineScript := flag.String("engine", "../core/python_engine/engine_main.py", "Path to python engine script")
 	historyDB := flag.String("history-db", "../../outputs/appshell/task_history.sqlite", "Path to task history sqlite db")
@@ -102,7 +138,18 @@ func main() {
 
 	taskIDs := make([]string, 0, *parallel)
 	for i := 0; i < *parallel; i++ {
-		req, err := buildRequest(*action, *csv, *target, *outputDir, i+1, *parallel)
+		req, err := buildRequest(
+			*action,
+			*csv,
+			*target,
+			*outputDir,
+			*modelDir,
+			*sampleIndex,
+			*maxChanges,
+			*kNeighbors,
+			i+1,
+			*parallel,
+		)
 		if err != nil {
 			fmt.Fprintln(os.Stderr, err.Error())
 			os.Exit(1)

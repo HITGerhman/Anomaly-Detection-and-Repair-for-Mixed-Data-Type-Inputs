@@ -47,12 +47,72 @@ func NewApp(engineScript string) (*App, error) {
 
 func (a *App) startup(ctx context.Context) {
 	a.ctx = ctx
+	a.autoAdjustWindowSize()
 }
 
 func (a *App) shutdown(context.Context) {
 	if a.service != nil {
 		a.service.Close()
 	}
+}
+
+func clampInt(v int, minValue int, maxValue int) int {
+	if v < minValue {
+		return minValue
+	}
+	if v > maxValue {
+		return maxValue
+	}
+	return v
+}
+
+func pickBestScreen(screens []runtime.Screen) runtime.Screen {
+	if len(screens) == 0 {
+		return runtime.Screen{}
+	}
+
+	for _, screen := range screens {
+		if screen.IsCurrent {
+			return screen
+		}
+	}
+	for _, screen := range screens {
+		if screen.IsPrimary {
+			return screen
+		}
+	}
+	return screens[0]
+}
+
+func (a *App) autoAdjustWindowSize() {
+	if a.ctx == nil {
+		return
+	}
+
+	screens, err := runtime.ScreenGetAll(a.ctx)
+	if err != nil || len(screens) == 0 {
+		return
+	}
+
+	screen := pickBestScreen(screens)
+	screenWidth := screen.Size.Width
+	screenHeight := screen.Size.Height
+	if screenWidth <= 0 {
+		screenWidth = screen.Width
+	}
+	if screenHeight <= 0 {
+		screenHeight = screen.Height
+	}
+	if screenWidth <= 0 || screenHeight <= 0 {
+		return
+	}
+
+	targetWidth := clampInt(int(float64(screenWidth)*0.72), 960, 1440)
+	targetHeight := clampInt(int(float64(screenHeight)*0.84), 700, 1040)
+
+	runtime.WindowSetMinSize(a.ctx, 900, 640)
+	runtime.WindowSetSize(a.ctx, targetWidth, targetHeight)
+	runtime.WindowCenter(a.ctx)
 }
 
 func asString(v any) string {
@@ -156,7 +216,7 @@ func normalizeRequest(payload map[string]any) (engine.Request, time.Duration, er
 		return req, timeout, nil
 	}
 
-	// MVP path: flatten train fields.
+	// MVP path: flatten action-specific fields.
 	if action == "train" {
 		csvPath := asString(payload["csv_path"])
 		targetCol := asString(payload["target_col"])
@@ -173,6 +233,43 @@ func normalizeRequest(payload map[string]any) (engine.Request, time.Duration, er
 		req.Payload["target_col"] = targetCol
 		if outputDir != "" {
 			req.Payload["output_dir"] = outputDir
+		}
+		return req, timeout, nil
+	}
+
+	if action == "repair" {
+		modelDir := asString(payload["model_dir"])
+		if modelDir == "" {
+			modelDir = asString(payload["output_dir"])
+		}
+		if modelDir == "" {
+			return engine.Request{}, 0, fmt.Errorf("missing required field: model_dir")
+		}
+
+		req.Payload["model_dir"] = modelDir
+
+		if sampleIndex, ok := payload["sample_index"]; ok {
+			req.Payload["sample_index"] = sampleIndex
+		} else {
+			req.Payload["sample_index"] = 0
+		}
+		if dryRun, ok := payload["dry_run"]; ok {
+			req.Payload["dry_run"] = dryRun
+		}
+		if maxChanges, ok := payload["max_changes"]; ok {
+			req.Payload["max_changes"] = maxChanges
+		}
+		if kNeighbors, ok := payload["k_neighbors"]; ok {
+			req.Payload["k_neighbors"] = kNeighbors
+		}
+		if outputDir := asString(payload["output_dir"]); outputDir != "" {
+			req.Payload["output_dir"] = outputDir
+		}
+		if immutableColumns, ok := payload["immutable_columns"]; ok {
+			req.Payload["immutable_columns"] = immutableColumns
+		}
+		if numericBounds, ok := payload["numeric_bounds"]; ok {
+			req.Payload["numeric_bounds"] = numericBounds
 		}
 	}
 

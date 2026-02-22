@@ -27,6 +27,22 @@ This engine wraps the algorithm layer behind a stable JSON protocol.
 }
 ```
 
+Repair request example:
+
+```json
+{
+  "task_id": "repair-001",
+  "action": "repair",
+  "payload": {
+    "model_dir": "outputs/results/wails_mvp",
+    "sample_index": 0,
+    "max_changes": 3,
+    "k_neighbors": 9,
+    "output_dir": "outputs/results/wails_repair"
+  }
+}
+```
+
 ## Response shape
 
 ```json
@@ -52,6 +68,9 @@ This engine wraps the algorithm layer behind a stable JSON protocol.
 - `MISSING_DEPENDENCY`
 - `TRAINING_MODULE_IMPORT_FAILED`
 - `TRAINING_FAILED`
+- `REPAIR_MODULE_IMPORT_FAILED`
+- `MODEL_STATE_LOAD_FAILED`
+- `REPAIR_FAILED`
 - `INTERNAL_ERROR`
 
 ## Logging
@@ -63,6 +82,7 @@ This engine wraps the algorithm layer behind a stable JSON protocol.
 
 - `health`: returns engine metadata.
 - `train`: trains model and saves artifacts.
+- `repair`: loads saved model artifacts and searches constrained minimal edits for one sample.
 
 ## Run
 

@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import Any, Callable
 
-from engine_core import action_health, action_train
+from engine_core import action_health, action_repair, action_train
 from engine_protocol import ErrorCode, KnownEngineError
 
 
@@ -13,6 +13,7 @@ ActionHandler = Callable[[dict[str, Any]], dict[str, Any]]
 
 _REGISTRY: dict[str, ActionHandler] = {
     "health": action_health,
+    "repair": action_repair,
     "train": action_train,
 }
 
@@ -30,4 +31,3 @@ def handle_action(action: str, payload: dict[str, Any]) -> dict[str, Any]:
             details={"supported_actions": supported_actions()},
         )
     return fn(payload)
-

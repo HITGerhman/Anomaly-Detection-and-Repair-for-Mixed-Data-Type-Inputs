@@ -5,7 +5,9 @@ import subprocess
 import sys
 from pathlib import Path
 
+import numpy as np
 import pandas as pd
+from src.training_core import load_system_state, predict_with_threshold
 
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
@@ -111,3 +113,56 @@ def test_target_with_missing_values_returns_invalid_input(tmp_path: Path) -> Non
     assert resp["status"] == "error"
     assert resp["error"]["code"] == "INVALID_INPUT"
     assert resp["error"]["details"]["missing_count"] == 1
+
+
+def test_repair_action_returns_repair_summary(tmp_path: Path) -> None:
+    rows = 160
+    csv_path = tmp_path / "repair_input.csv"
+    rng = np.random.default_rng(20260221)
+    df = pd.DataFrame(
+        {
+            "age": np.concatenate([rng.integers(18, 50, size=rows - 32), rng.integers(62, 85, size=32)]),
+            "avg_glucose_level": np.concatenate(
+                [rng.normal(95, 10, size=rows - 32), rng.normal(185, 12, size=32)]
+            ),
+            "hypertension": np.concatenate([rng.integers(0, 2, size=rows - 32), np.ones(32)]),
+            "stroke": np.concatenate([np.zeros(rows - 32, dtype=int), np.ones(32, dtype=int)]),
+        }
+    )
+    df.to_csv(csv_path, index=False)
+
+    model_dir = tmp_path / "model_out"
+    train_payload = {
+        "task_id": "repair-train",
+        "action": "train",
+        "payload": {
+            "csv_path": str(csv_path),
+            "target_col": "stroke",
+            "output_dir": str(model_dir),
+        },
+    }
+    train_resp = _run_engine(json.dumps(train_payload))
+    assert train_resp["status"] == "ok"
+
+    model, x_test, _ = load_system_state(model_dir)
+    pred, prob = predict_with_threshold(model, x_test)
+    anomaly_idx = np.where(pred == 1)[0]
+    sample_index = int(anomaly_idx[0]) if anomaly_idx.size > 0 else int(np.argmax(prob))
+
+    repair_payload = {
+        "task_id": "repair-run",
+        "action": "repair",
+        "payload": {
+            "model_dir": str(model_dir),
+            "sample_index": sample_index,
+            "max_changes": 3,
+            "k_neighbors": 9,
+        },
+    }
+    repair_resp = _run_engine(json.dumps(repair_payload))
+    assert repair_resp["status"] == "ok"
+    result = repair_resp["result"]
+    assert result["sample_index"] == sample_index
+    assert "repair_summary" in result
+    assert "repair_changes" in result
+    assert "repaired_sample" in result
