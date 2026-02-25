@@ -210,6 +210,14 @@ func normalizeRequest(payload map[string]any) (engine.Request, time.Duration, er
 		Payload: map[string]any{},
 	}
 
+	copyOptional := func(keys ...string) {
+		for _, key := range keys {
+			if value, ok := payload[key]; ok {
+				req.Payload[key] = value
+			}
+		}
+	}
+
 	// If caller already provides a nested payload object, use it directly.
 	if nested, ok := payload["payload"].(map[string]any); ok {
 		req.Payload = nested
@@ -221,6 +229,7 @@ func normalizeRequest(payload map[string]any) (engine.Request, time.Duration, er
 		csvPath := asString(payload["csv_path"])
 		targetCol := asString(payload["target_col"])
 		outputDir := asString(payload["output_dir"])
+		taskType := asString(payload["task_type"])
 
 		if csvPath == "" {
 			return engine.Request{}, 0, fmt.Errorf("missing required field: csv_path")
@@ -233,6 +242,9 @@ func normalizeRequest(payload map[string]any) (engine.Request, time.Duration, er
 		req.Payload["target_col"] = targetCol
 		if outputDir != "" {
 			req.Payload["output_dir"] = outputDir
+		}
+		if taskType != "" {
+			req.Payload["task_type"] = taskType
 		}
 		return req, timeout, nil
 	}
@@ -271,6 +283,105 @@ func normalizeRequest(payload map[string]any) (engine.Request, time.Duration, er
 		if numericBounds, ok := payload["numeric_bounds"]; ok {
 			req.Payload["numeric_bounds"] = numericBounds
 		}
+		return req, timeout, nil
+	}
+
+	if action == "scan_file" {
+		csvPath := asString(payload["csv_path"])
+		if csvPath == "" {
+			return engine.Request{}, 0, fmt.Errorf("missing required field: csv_path")
+		}
+		req.Payload["csv_path"] = csvPath
+		copyOptional(
+			"max_bins",
+			"max_issues",
+			"numeric_iqr_factor",
+			"robust_z_threshold",
+			"rare_ratio_threshold",
+			"rare_count_floor",
+			"min_numeric_samples",
+			"min_categorical_samples",
+			"preview_limit",
+			"enable_time_series_shift",
+			"time_series_z_threshold",
+			"time_series_min_points",
+			"enable_cross_column_consistency",
+			"consistency_rules",
+			"enable_duplicate_record",
+			"duplicate_subset",
+			"auto_pair_constraints",
+			"scan_config",
+		)
+		return req, timeout, nil
+	}
+
+	if action == "repair_batch" {
+		csvPath := asString(payload["csv_path"])
+		if csvPath == "" {
+			return engine.Request{}, 0, fmt.Errorf("missing required field: csv_path")
+		}
+		req.Payload["csv_path"] = csvPath
+
+		if issueIDs, ok := payload["issue_ids"]; ok {
+			req.Payload["issue_ids"] = issueIDs
+		} else {
+			req.Payload["issue_ids"] = []string{}
+		}
+		if outputCSV, ok := payload["output_csv"]; ok {
+			req.Payload["output_csv"] = outputCSV
+		}
+		if outputDir, ok := payload["output_dir"]; ok {
+			req.Payload["output_dir"] = outputDir
+		}
+		if writeOutput, ok := payload["write_output"]; ok {
+			req.Payload["write_output"] = writeOutput
+		}
+		if planOnly, ok := payload["plan_only"]; ok {
+			req.Payload["plan_only"] = planOnly
+		}
+		if enableRollback, ok := payload["enable_rollback"]; ok {
+			req.Payload["enable_rollback"] = enableRollback
+		}
+		if rollbackDir, ok := payload["rollback_dir"]; ok {
+			req.Payload["rollback_dir"] = rollbackDir
+		}
+		if repairStrategy, ok := payload["repair_strategy"]; ok {
+			req.Payload["repair_strategy"] = repairStrategy
+		}
+		if columnDependencies, ok := payload["column_dependencies"]; ok {
+			req.Payload["column_dependencies"] = columnDependencies
+		}
+		copyOptional(
+			"max_bins",
+			"max_issues",
+			"numeric_iqr_factor",
+			"robust_z_threshold",
+			"rare_ratio_threshold",
+			"rare_count_floor",
+			"min_numeric_samples",
+			"min_categorical_samples",
+			"preview_limit",
+			"enable_time_series_shift",
+			"time_series_z_threshold",
+			"time_series_min_points",
+			"enable_cross_column_consistency",
+			"consistency_rules",
+			"enable_duplicate_record",
+			"duplicate_subset",
+			"auto_pair_constraints",
+			"scan_config",
+		)
+		return req, timeout, nil
+	}
+
+	if action == "rollback_repair_batch" {
+		manifestPath := asString(payload["manifest_path"])
+		if manifestPath == "" {
+			return engine.Request{}, 0, fmt.Errorf("missing required field: manifest_path")
+		}
+		req.Payload["manifest_path"] = manifestPath
+		copyOptional("restore_target", "target_csv")
+		return req, timeout, nil
 	}
 
 	return req, timeout, nil

@@ -130,3 +130,24 @@ def test_train_model_reports_threshold_and_anomaly_metrics() -> None:
     pred, prob = predict_with_threshold(bundle.model, bundle.x_test)
     assert np.array_equal(pred, metrics["y_pred"])
     assert np.allclose(prob, metrics["y_prob"])
+
+
+def test_train_model_supports_regression_metrics() -> None:
+    df = _make_dataset()
+    bundle = train_model(df, "bmi")
+    metrics = bundle.metrics
+
+    assert metrics["task_type"] == "regression"
+    for key in (
+        "mae",
+        "rmse",
+        "r2",
+        "mape",
+        "prediction_confidence_mean",
+        "prediction_confidence_p10",
+        "prediction_confidence_p90",
+    ):
+        assert key in metrics
+
+    assert 0.0 <= float(metrics["prediction_confidence_mean"]) <= 1.0
+    assert getattr(bundle.model, "task_type", "") == "regression"

@@ -21,157 +21,355 @@
           </ol>
         </header>
 
-        <div class="wheel-frame">
+        <div id="wheel-frame" class="wheel-frame">
           <div id="wheel-orbit" class="wheel-orbit">
             <article id="wizard-card" class="wizard-card">
               <header class="card-head">
-                <p id="card-kicker" class="card-kicker">STEP 1</p>
+                <div class="card-head-top">
+                  <p id="card-kicker" class="card-kicker">STEP 1</p>
+                  <button id="advanced-toggle-btn" class="btn-secondary btn-compact" type="button">高级模式: 关</button>
+                </div>
                 <h1 id="card-title">检测参数配置</h1>
-                <p id="card-subtitle">选择模型目录和样本，先进行异常检测。</p>
+                <p id="card-subtitle">选择 CSV 并设置扫描参数，对全列执行异常检测。</p>
               </header>
 
               <section id="step-config" class="card-step">
-                <form id="detect-form">
-                  <div class="field-row">
-                    <label for="csv-path">CSV 文件</label>
-                    <div class="field-control row-input">
-                      <input id="csv-path" type="text" value="data/raw/healthcare-dataset-stroke-data.csv" />
-                      <button id="choose-csv-btn" class="btn-secondary" type="button">选择文件</button>
-                    </div>
-                  </div>
-
-                  <div class="field-row">
-                    <label for="model-dir">模型目录</label>
-                    <div class="field-control row-input">
-                      <input id="model-dir" type="text" value="outputs/results/wails_mvp" required />
-                      <button id="choose-model-btn" class="btn-secondary" type="button">选择目录</button>
-                    </div>
-                  </div>
-
-                  <div class="field-row">
-                    <label for="target-col">目标列</label>
-                    <div class="field-control">
-                      <select id="target-col"></select>
-                    </div>
-                  </div>
-
-                  <div class="field-row">
-                    <label for="retrain-model">检测前重训</label>
-                    <div class="field-control inline-check">
-                      <label class="toggle-row">
-                        <input id="retrain-model" type="checkbox" checked />
-                        <span>使用上面的 CSV + 目标列先训练模型</span>
-                      </label>
-                    </div>
-                  </div>
-
-                  <div class="group-list">
-                    <div class="field-row compact">
-                      <label for="sample-index">样本索引</label>
-                      <div class="field-control">
-                        <input id="sample-index" type="number" value="0" min="0" step="1" required />
+                <div class="step-grid config-grid">
+                  <div class="step-main">
+                    <form id="detect-form">
+                      <div class="field-row">
+                        <label for="csv-path">CSV 文件</label>
+                        <div class="field-control row-input">
+                          <input id="csv-path" type="text" value="data/raw/healthcare-dataset-stroke-data.csv" />
+                          <button id="choose-csv-btn" class="btn-secondary" type="button">选择文件</button>
+                        </div>
                       </div>
-                    </div>
-                    <div class="field-row compact">
-                      <label for="timeout-ms">超时 (ms)</label>
-                      <div class="field-control">
-                        <input id="timeout-ms" type="number" value="90000" min="1000" step="1000" required />
+
+                      <div id="target-col-row" class="field-row">
+                        <label for="target-col">目标列（可选）</label>
+                        <div class="field-control">
+                          <select id="target-col">
+                            <option value="">全部列</option>
+                          </select>
+                        </div>
                       </div>
-                    </div>
+
+                      <div class="field-row">
+                        <label for="auto-mode">全自动模式</label>
+                        <div class="field-control inline-check">
+                          <label class="toggle-row">
+                            <input id="auto-mode" type="checkbox" />
+                            <span>自动检测全部列，并在第3步支持一键修复所有问题列</span>
+                          </label>
+                        </div>
+                      </div>
+
+                      <p id="config-basic-note" class="config-basic-note">
+                        可启用全自动模式直接扫描全部列；开启高级模式可设置分桶、密度、问题上限与超时。
+                      </p>
+
+                      <div id="config-advanced" class="config-advanced hidden">
+                        <div class="group-list">
+                          <div class="field-row compact">
+                            <label for="max-bins">缩略图分桶</label>
+                            <div class="field-control">
+                              <input id="max-bins" type="number" value="120" min="20" max="360" step="1" required />
+                            </div>
+                          </div>
+                          <div class="field-row compact">
+                            <label for="matrix-density">矩阵密度</label>
+                            <div class="field-control">
+                              <div class="range-row">
+                                <input id="matrix-density" type="range" min="50" max="180" step="5" value="100" />
+                                <span id="matrix-density-value">100%</span>
+                              </div>
+                            </div>
+                          </div>
+                          <div class="field-row compact">
+                            <label for="max-issues">最多问题数</label>
+                            <div class="field-control">
+                              <input id="max-issues" type="number" value="1200" min="10" max="5000" step="10" required />
+                            </div>
+                          </div>
+                          <div class="field-row compact">
+                            <label for="timeout-ms">超时 (ms)</label>
+                            <div class="field-control">
+                              <input id="timeout-ms" type="number" value="90000" min="1000" step="1000" required />
+                            </div>
+                          </div>
+                        </div>
+
+                        <div class="field-row">
+                          <label for="output-dir">输出目录 (可选)</label>
+                          <div class="field-control row-input">
+                            <input id="output-dir" type="text" value="outputs/results/wails_repair" />
+                            <button id="choose-output-btn" class="btn-secondary" type="button">选择目录</button>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div class="actions">
+                        <button id="run-detect-btn" class="btn-primary" type="submit">开始检测</button>
+                        <button id="retry-detect-btn" class="btn-secondary" type="button" disabled>重试检测</button>
+                      </div>
+                    </form>
                   </div>
 
-                  <div class="field-row">
-                    <label for="output-dir">输出目录 (可选)</label>
-                    <div class="field-control row-input">
-                      <input id="output-dir" type="text" value="outputs/results/wails_repair" />
-                      <button id="choose-output-btn" class="btn-secondary" type="button">选择目录</button>
-                    </div>
-                  </div>
-
-                  <div class="actions">
-                    <button id="run-detect-btn" class="btn-primary" type="submit">开始检测</button>
-                    <button id="retry-detect-btn" class="btn-secondary" type="button" disabled>重试检测</button>
-                  </div>
-                </form>
+                  <aside class="step-side config-side">
+                    <article class="side-card flow-card">
+                      <h2>流程线</h2>
+                      <ol id="config-flowline" class="flowline">
+                        <li data-flow-step="upload">
+                          <span class="flow-icon">1</span>
+                          <div class="flow-text">
+                            <strong>上传</strong>
+                            <p>选择 CSV 文件并确认参数。</p>
+                          </div>
+                        </li>
+                        <li data-flow-step="detect">
+                          <span class="flow-icon">2</span>
+                          <div class="flow-text">
+                            <strong>检测</strong>
+                            <p>执行全列扫描并定位异常。</p>
+                          </div>
+                        </li>
+                        <li data-flow-step="repair">
+                          <span class="flow-icon">3</span>
+                          <div class="flow-text">
+                            <strong>修复</strong>
+                            <p>批量应用规则并导出结果。</p>
+                          </div>
+                        </li>
+                      </ol>
+                    </article>
+                    <article class="side-card">
+                      <h2>参数摘要</h2>
+                      <dl id="config-summary"></dl>
+                    </article>
+                    <article class="side-card">
+                      <h2>推荐配置</h2>
+                      <ul id="config-recommend" class="compact-list"></ul>
+                    </article>
+                    <article class="side-card">
+                      <h2>最近一次配置</h2>
+                      <dl id="config-last"></dl>
+                    </article>
+                  </aside>
+                </div>
                 <input id="csv-file-input" class="hidden" type="file" accept=".csv,text/csv" />
               </section>
 
               <section id="step-progress" class="card-step hidden">
-                <div class="status-row">
-                  <span id="status-pill" class="status-pill idle">idle</span>
-                  <span id="task-id-label">Task: -</span>
-                </div>
+                <div class="step-grid progress-grid">
+                  <div class="step-main">
+                    <div class="status-row">
+                      <div class="status-main">
+                        <span id="status-icon" class="status-icon idle" aria-hidden="true">•</span>
+                        <span id="status-pill" class="status-pill idle">idle</span>
+                      </div>
+                      <span id="task-id-label">Task: -</span>
+                    </div>
 
-                <p id="status-message" class="status-message">等待任务开始</p>
+                    <p id="status-message" class="status-message">等待任务开始</p>
 
-                <div class="progress-track">
-                  <div id="progress-fill" class="progress-fill idle"></div>
-                </div>
+                    <div class="progress-track">
+                      <div id="progress-fill" class="progress-fill idle"></div>
+                    </div>
 
-                <ul id="event-log" class="event-log"></ul>
+                    <ul id="phase-hints" class="phase-hints">
+                      <li>等待任务开始</li>
+                    </ul>
 
-                <section id="error-panel" class="error-panel hidden">
-                  <h2>错误提示</h2>
-                  <p id="error-message">-</p>
-                  <p id="error-hint">修正后可重试。</p>
-                </section>
+                    <details id="progress-advanced" class="advanced-drawer hidden">
+                      <summary>高级模式（运行日志）</summary>
+                      <div class="advanced-drawer-body">
+                        <ul id="event-log" class="event-log"></ul>
+                      </div>
+                    </details>
 
-                <div class="back-actions">
-                  <button id="cancel-btn" class="btn-warning" type="button" disabled>取消任务</button>
+                    <section id="error-panel" class="error-panel hidden">
+                      <h2>错误提示</h2>
+                      <p id="error-message">-</p>
+                      <p id="error-hint">修正后可重试。</p>
+                    </section>
+
+                    <div class="back-actions">
+                      <button id="cancel-btn" class="btn-warning" type="button" disabled>取消任务</button>
+                    </div>
+                  </div>
+
+                  <aside class="step-side progress-side">
+                    <article class="side-card">
+                      <h2>阶段时间线</h2>
+                      <ul id="progress-timeline" class="timeline-list">
+                        <li class="active">等待任务提交</li>
+                        <li>执行检测</li>
+                        <li>生成结果</li>
+                      </ul>
+                    </article>
+                    <article class="side-card">
+                      <h2>任务关键指标</h2>
+                      <dl id="progress-metrics"></dl>
+                    </article>
+                  </aside>
                 </div>
               </section>
 
               <section id="step-result" class="card-step hidden">
-                <div class="result-grid">
-                  <article class="result-card">
-                    <h2>检测摘要</h2>
-                    <dl id="detection-summary"></dl>
-                  </article>
-                  <article class="result-card">
-                    <h2>结果判断</h2>
-                    <p id="detection-message" class="detection-message">-</p>
-                    <div class="actions block-actions">
-                      <button id="goto-repair-btn" class="btn-primary hidden" type="button">进入修复界面</button>
-                      <button id="new-detect-btn" class="btn-secondary" type="button">重新检测</button>
+                <div class="scan-layout">
+                  <article class="result-card scan-overview">
+                    <h2>检测总览</h2>
+
+                    <div class="result-core-grid">
+                      <section class="core-block">
+                        <h3>结论</h3>
+                        <p id="detection-message" class="detection-message">-</p>
+                      </section>
+
+                      <section class="core-block">
+                        <h3>可修复项</h3>
+                        <ul id="repairable-overview" class="compact-list">
+                          <li>暂无可修复项</li>
+                        </ul>
+                      </section>
+
+                      <section class="core-block">
+                        <h3>下一步</h3>
+                        <p id="next-action-text" class="core-message">先运行检测。</p>
+                        <div class="issue-actions">
+                          <button id="new-detect-btn" class="btn-secondary" type="button">重新检测</button>
+                          <button id="run-auto-repair-btn" class="btn-primary" type="button">自动修复全部问题列</button>
+                          <button id="run-batch-repair-btn" class="btn-primary" type="button">执行修复</button>
+                          <span id="selected-issue-pill" class="selected-pill">已选 0 项</span>
+                        </div>
+                      </section>
                     </div>
+
+                    <details id="result-advanced" class="advanced-drawer hidden">
+                      <summary>高级模式（原始检测摘要）</summary>
+                      <div class="advanced-drawer-body">
+                        <dl id="detection-summary"></dl>
+                      </div>
+                    </details>
+                  </article>
+
+                  <article class="result-card issue-detail-card">
+                    <h2>问题详情</h2>
+                    <div id="issue-detail-empty" class="issue-detail-empty">将鼠标移到红色异常段查看详情。</div>
+                    <div id="issue-detail-content" class="issue-detail hidden">
+                      <dl id="issue-detail-summary"></dl>
+                      <p id="issue-detail-message" class="detection-message">-</p>
+
+                      <div class="issue-compare-block">
+                        <h3>修复前/后预览</h3>
+                        <table class="issue-compare-table">
+                          <thead>
+                            <tr>
+                              <th>行</th>
+                              <th>修复前</th>
+                              <th>修复后（预估）</th>
+                            </tr>
+                          </thead>
+                          <tbody id="issue-compare-body">
+                            <tr>
+                              <td>-</td>
+                              <td>-</td>
+                              <td>-</td>
+                            </tr>
+                          </tbody>
+                        </table>
+                        <p id="issue-compare-note" class="compare-note">预估值基于当前规则生成，最终结果以修复执行输出为准。</p>
+                      </div>
+
+                      <label class="toggle-row">
+                        <input id="issue-detail-checkbox" type="checkbox" />
+                        <span>勾选修复此异常</span>
+                      </label>
+                    </div>
+                  </article>
+
+                  <article class="result-card issue-map-card">
+                    <h2>列缩略图（绿色=正常，红色=异常）</h2>
+                    <div class="map-legend">
+                      <div class="legend-items">
+                        <span class="legend-item"><i class="legend-swatch normal"></i>正常</span>
+                        <span class="legend-item"><i class="legend-swatch low"></i>低风险</span>
+                        <span class="legend-item"><i class="legend-swatch medium"></i>中风险</span>
+                        <span class="legend-item"><i class="legend-swatch high"></i>高风险</span>
+                      </div>
+                      <p id="map-scale-note" class="legend-note">刻度说明：横轴为分桶列，纵轴标签为行范围。</p>
+                    </div>
+                    <div id="issue-map-list" class="issue-map-list"></div>
                   </article>
                 </div>
               </section>
 
               <section id="step-repair" class="card-step hidden">
-                <div class="result-grid repair-layout">
-                  <article class="result-card">
-                    <h2>修复参数</h2>
-                    <form id="repair-form">
-                      <div class="field-row compact">
-                        <label for="max-changes">最多修改字段</label>
-                        <div class="field-control">
-                          <input id="max-changes" type="number" value="3" min="1" max="20" step="1" required />
+                <div class="step-grid repair-grid">
+                  <div class="step-main">
+                    <div class="result-grid">
+                      <article class="result-card">
+                        <h2>修复摘要</h2>
+                        <div id="repair-kpi-strip" class="kpi-strip">
+                          <article class="kpi-badge">
+                            <p>修复数量</p>
+                            <strong id="kpi-applied-count">0</strong>
+                          </article>
+                          <article class="kpi-badge">
+                            <p>跳过数量</p>
+                            <strong id="kpi-skipped-count">0</strong>
+                          </article>
+                          <article class="kpi-badge">
+                            <p>修改单元格</p>
+                            <strong id="kpi-cells-count">0</strong>
+                          </article>
+                        </div>
+                        <dl id="repair-summary"></dl>
+                        <div class="actions block-actions">
+                          <button id="back-result-btn" class="btn-secondary" type="button">返回检测结果</button>
+                          <button id="new-repair-detect-btn" class="btn-secondary" type="button">重新检测</button>
+                        </div>
+                      </article>
+                      <article class="result-card">
+                        <h2>修复明细</h2>
+                        <ul id="repair-detail-list" class="batch-list"></ul>
+                      </article>
+                    </div>
+                  </div>
+
+                  <aside class="step-side repair-side">
+                    <article class="side-card">
+                      <h2>修复结果总览</h2>
+                      <div class="compare-chart">
+                        <div class="compare-row">
+                          <span>修复前</span>
+                          <div class="compare-track"><i id="repair-before-bar" class="compare-fill before"></i></div>
+                          <strong id="repair-before-value">0</strong>
+                        </div>
+                        <div class="compare-row">
+                          <span>修复后</span>
+                          <div class="compare-track"><i id="repair-after-bar" class="compare-fill after"></i></div>
+                          <strong id="repair-after-value">0</strong>
                         </div>
                       </div>
-                      <div class="field-row compact">
-                        <label for="k-neighbors">邻居数量</label>
-                        <div class="field-control">
-                          <input id="k-neighbors" type="number" value="9" min="3" max="200" step="1" required />
-                        </div>
-                      </div>
+                      <p id="repair-reduction-text" class="core-message">等待修复任务完成后生成对比。</p>
+                    </article>
+                    <article class="side-card">
+                      <h2>导出入口</h2>
                       <div class="actions">
-                        <button id="run-repair-btn" class="btn-primary" type="submit">执行修复</button>
-                        <button id="back-result-btn" class="btn-secondary" type="button">返回检测结果</button>
+                        <button id="export-json-side-btn" class="btn-secondary" type="button" disabled>导出 JSON</button>
+                        <button id="export-csv-side-btn" class="btn-secondary" type="button" disabled>导出 CSV</button>
                       </div>
-                    </form>
-                  </article>
-                  <article class="result-card">
-                    <h2>修复摘要</h2>
-                    <dl id="repair-summary"></dl>
-                  </article>
+                    </article>
+                  </aside>
                 </div>
               </section>
 
               <section id="response-shell" class="response-shell hidden">
                 <div class="response-head">
-                  <h3>完整响应</h3>
+                  <h3>原始响应（调试）</h3>
                   <div class="response-actions">
+                    <button id="toggle-response-btn" class="btn-ghost" type="button">展开原始响应</button>
                     <button id="copy-json-btn" class="btn-ghost" type="button">复制</button>
                     <button id="export-json-btn" class="btn-secondary" type="button" disabled>导出 JSON</button>
                     <button id="export-csv-btn" class="btn-secondary" type="button" disabled>导出 CSV</button>

@@ -3,9 +3,13 @@
 from __future__ import annotations
 
 import json
+import math
 import os
 import platform
+import shutil
 import sys
+import time
+import uuid
 from pathlib import Path
 from typing import Any
 
@@ -75,12 +79,17 @@ def _to_builtin(value: Any) -> Any:
     if isinstance(value, (list, tuple)):
         return [_to_builtin(v) for v in value]
     if np is not None and isinstance(value, np.ndarray):
-        return value.tolist()
+        return _to_builtin(value.tolist())
     if np is not None and isinstance(value, (np.integer,)):
         return int(value)
     if np is not None and isinstance(value, (np.floating,)):
-        return round(float(value), 12)
+        fv = float(value)
+        if not math.isfinite(fv):
+            return None
+        return round(fv, 12)
     if isinstance(value, float):
+        if not math.isfinite(value):
+            return None
         return round(value, 12)
     if pd is not None and isinstance(value, (pd.Timestamp,)):
         return value.isoformat()
@@ -90,6 +99,7 @@ def _to_builtin(value: Any) -> Any:
 def _metric_summary(metrics: dict[str, Any]) -> dict[str, Any]:
     summary: dict[str, Any] = {}
     for key in (
+        "task_type",
         "f1",
         "auc",
         "accuracy",
@@ -103,6 +113,13 @@ def _metric_summary(metrics: dict[str, Any]) -> dict[str, Any]:
         "recall_anomaly",
         "decision_threshold",
         "threshold_optimization",
+        "mae",
+        "rmse",
+        "r2",
+        "mape",
+        "prediction_confidence_mean",
+        "prediction_confidence_p10",
+        "prediction_confidence_p90",
     ):
         if key in metrics:
             summary[key] = metrics[key]
@@ -114,10 +131,28 @@ def _metric_summary(metrics: dict[str, Any]) -> dict[str, Any]:
             "fpr": metrics["roc_curve"].get("fpr"),
             "tpr": metrics["roc_curve"].get("tpr"),
         }
+    feature_importance = metrics.get("feature_importance", {})
+    if isinstance(feature_importance, dict):
+        top_features = sorted(
+            ((str(name), float(score)) for name, score in feature_importance.items()),
+            key=lambda item: item[1],
+            reverse=True,
+        )[:8]
+        summary["explain_features"] = [
+            {"feature": name, "importance": round(score, 6)} for name, score in top_features
+        ]
     return _to_builtin(summary)
 
 
-def _validate_train_target(df: Any, target_col: str, train_pd: Any) -> None:
+def _resolve_train_task_type(df: Any, target_col: str, train_pd: Any, requested_mode: str = "auto") -> str:
+    mode = str(requested_mode or "auto").strip().lower()
+    if mode not in {"auto", "classification", "regression"}:
+        raise KnownEngineError(
+            code=ErrorCode.INVALID_INPUT,
+            message="Field task_type must be auto/classification/regression",
+            details={"field": "task_type", "value": requested_mode},
+        )
+
     target = df[target_col]
     missing_count = int(target.isna().sum())
     non_null_target = target.dropna()
@@ -130,20 +165,6 @@ def _validate_train_target(df: Any, target_col: str, train_pd: Any) -> None:
     looks_continuous = (is_float_target and unique_count > 20) or (
         is_numeric and unique_count > 20 and unique_ratio > 0.2
     )
-    if looks_continuous:
-        raise KnownEngineError(
-            code=ErrorCode.UNSUPPORTED_TARGET_TYPE,
-            message=f"Target column appears continuous and is unsupported: {target_col}",
-            details={
-                "target_col": target_col,
-                "unique_count": unique_count,
-                "row_count": non_null_rows,
-                "unique_ratio": round(unique_ratio, 6),
-                "missing_count": missing_count,
-                "reason": "continuous numeric targets are not supported by the current classification pipeline",
-                "suggestion": "Choose a categorical label (for example: stroke, heart_disease) or switch to a regression workflow.",
-            },
-        )
 
     if missing_count > 0:
         raise KnownEngineError(
@@ -161,27 +182,59 @@ def _validate_train_target(df: Any, target_col: str, train_pd: Any) -> None:
     if unique_count < 2:
         raise KnownEngineError(
             code=ErrorCode.INVALID_INPUT,
-            message=f"Target column must contain at least 2 classes: {target_col}",
+            message=f"Target column must contain at least 2 distinct values: {target_col}",
             details={
                 "target_col": target_col,
                 "unique_count": unique_count,
-                "reason": "target has fewer than two distinct classes",
+                "reason": "target has fewer than two distinct values",
             },
         )
 
-    class_counts = non_null_target.value_counts(dropna=False)
-    min_class_count = int(class_counts.min()) if not class_counts.empty else 0
-    if min_class_count < 2:
+    resolved_mode = mode
+    if resolved_mode == "auto":
+        resolved_mode = "regression" if looks_continuous else "classification"
+
+    if resolved_mode == "classification" and looks_continuous:
         raise KnownEngineError(
-            code=ErrorCode.INVALID_INPUT,
-            message=f"Target column has classes with fewer than 2 rows: {target_col}",
+            code=ErrorCode.UNSUPPORTED_TARGET_TYPE,
+            message=f"Target column appears continuous and is unsupported for classification: {target_col}",
             details={
                 "target_col": target_col,
-                "min_class_count": min_class_count,
-                "reason": "stratified split requires at least 2 samples per class",
-                "suggestion": "Merge rare classes or provide more rows for low-frequency classes.",
+                "unique_count": unique_count,
+                "row_count": non_null_rows,
+                "unique_ratio": round(unique_ratio, 6),
+                "missing_count": missing_count,
+                "requested_task_type": "classification",
+                "suggestion": "Use task_type=regression for continuous targets.",
             },
         )
+
+    if resolved_mode == "classification":
+        class_counts = non_null_target.value_counts(dropna=False)
+        min_class_count = int(class_counts.min()) if not class_counts.empty else 0
+        if min_class_count < 2:
+            raise KnownEngineError(
+                code=ErrorCode.INVALID_INPUT,
+                message=f"Target column has classes with fewer than 2 rows: {target_col}",
+                details={
+                    "target_col": target_col,
+                    "min_class_count": min_class_count,
+                    "reason": "stratified split requires at least 2 samples per class",
+                    "suggestion": "Merge rare classes or provide more rows for low-frequency classes.",
+                },
+            )
+    return resolved_mode
+
+
+def _validate_train_target(df: Any, target_col: str, train_pd: Any, requested_mode: str = "auto") -> str:
+    resolved_mode = _resolve_train_task_type(df, target_col, train_pd, requested_mode=requested_mode)
+    if resolved_mode not in {"classification", "regression"}:
+        raise KnownEngineError(
+            code=ErrorCode.INVALID_INPUT,
+            message=f"Unsupported resolved task_type: {resolved_mode}",
+            details={"resolved_task_type": resolved_mode},
+        )
+    return resolved_mode
 
 
 def _load_training_modules() -> tuple[Any, Any, Any]:
@@ -271,14 +324,1481 @@ def _to_int(payload: dict[str, Any], key: str, default: int, minimum: int = 0, m
     return value
 
 
+def _to_bool(payload: dict[str, Any], key: str, default: bool = False) -> bool:
+    raw = payload.get(key, default)
+    if isinstance(raw, bool):
+        return raw
+    if isinstance(raw, (int, float)):
+        return bool(raw)
+    if isinstance(raw, str):
+        normalized = raw.strip().lower()
+        if normalized in {"1", "true", "yes", "y", "on"}:
+            return True
+        if normalized in {"0", "false", "no", "n", "off"}:
+            return False
+    raise KnownEngineError(
+        code=ErrorCode.INVALID_INPUT,
+        message=f"Field {key} must be a boolean",
+        details={"field": key, "value": raw},
+    )
+
+
+def _to_float(
+    payload: dict[str, Any],
+    key: str,
+    default: float,
+    minimum: float = 0.0,
+    maximum: float = 1_000_000.0,
+) -> float:
+    raw = payload.get(key, default)
+    if raw is None:
+        return default
+    try:
+        value = float(raw)
+    except (TypeError, ValueError) as exc:
+        raise KnownEngineError(
+            code=ErrorCode.INVALID_INPUT,
+            message=f"Field {key} must be a number",
+            details={"field": key, "value": raw},
+        ) from exc
+    if value < minimum or value > maximum:
+        raise KnownEngineError(
+            code=ErrorCode.INVALID_INPUT,
+            message=f"Field {key} must be between {minimum} and {maximum}",
+            details={"field": key, "value": value, "minimum": minimum, "maximum": maximum},
+        )
+    return value
+
+
+def _to_string_list(
+    payload: dict[str, Any],
+    key: str,
+    default: list[str] | None = None,
+    allow_empty: bool = True,
+) -> list[str]:
+    raw = payload.get(key, default if default is not None else [])
+    if raw is None:
+        return []
+
+    if isinstance(raw, str):
+        values = [raw]
+    elif isinstance(raw, (list, tuple, set)):
+        values = list(raw)
+    else:
+        raise KnownEngineError(
+            code=ErrorCode.INVALID_INPUT,
+            message=f"Field {key} must be a string list",
+            details={"field": key, "value": raw},
+        )
+
+    result: list[str] = []
+    for item in values:
+        text = str(item).strip()
+        if not text or text in result:
+            continue
+        result.append(text)
+
+    if (not allow_empty) and (not result):
+        raise KnownEngineError(
+            code=ErrorCode.INVALID_INPUT,
+            message=f"Field {key} must include at least one value",
+            details={"field": key},
+        )
+    return result
+
+
+def _normalize_consistency_rules(raw: Any) -> list[dict[str, Any]]:
+    if raw is None:
+        return []
+    if not isinstance(raw, (list, tuple)):
+        raise KnownEngineError(
+            code=ErrorCode.INVALID_INPUT,
+            message="Field consistency_rules must be a rule list",
+            details={"field": "consistency_rules", "value": raw},
+        )
+
+    rules: list[dict[str, Any]] = []
+    for idx, item in enumerate(raw):
+        if not isinstance(item, dict):
+            raise KnownEngineError(
+                code=ErrorCode.INVALID_INPUT,
+                message="Each consistency rule must be an object",
+                details={"field": "consistency_rules", "index": idx, "value": item},
+            )
+
+        rule_type = str(item.get("type", "lte")).strip().lower()
+        name = str(item.get("name") or f"rule_{idx + 1}").strip()
+        if not name:
+            name = f"rule_{idx + 1}"
+
+        if rule_type in {"lte", "gte", "eq"}:
+            left_col = str(item.get("left_col") or "").strip()
+            right_col = str(item.get("right_col") or "").strip()
+            if not left_col or not right_col:
+                raise KnownEngineError(
+                    code=ErrorCode.INVALID_INPUT,
+                    message="Consistency rule requires left_col and right_col",
+                    details={"field": "consistency_rules", "index": idx, "type": rule_type},
+                )
+            if rule_type == "gte":
+                left_col, right_col = right_col, left_col
+                rule_type = "lte"
+            rules.append(
+                {
+                    "name": name,
+                    "type": rule_type,
+                    "left_col": left_col,
+                    "right_col": right_col,
+                }
+            )
+            continue
+
+        if rule_type == "implies":
+            if_col = str(item.get("if_col") or "").strip()
+            then_col = str(item.get("then_col") or "").strip()
+            if not if_col or not then_col:
+                raise KnownEngineError(
+                    code=ErrorCode.INVALID_INPUT,
+                    message="Imply rule requires if_col and then_col",
+                    details={"field": "consistency_rules", "index": idx},
+                )
+            rule: dict[str, Any] = {
+                "name": name,
+                "type": "implies",
+                "if_col": if_col,
+                "if_equals": item.get("if_equals"),
+                "then_col": then_col,
+            }
+            if "then_in" in item:
+                rule["then_in"] = _to_string_list(item, "then_in", default=[], allow_empty=False)
+            else:
+                rule["then_equals"] = item.get("then_equals")
+            rules.append(rule)
+            continue
+
+        raise KnownEngineError(
+            code=ErrorCode.INVALID_INPUT,
+            message="Consistency rule type must be lte/gte/eq/implies",
+            details={"field": "consistency_rules", "index": idx, "type": rule_type},
+        )
+    return rules
+
+
+def _resolve_output_file(path_text: str) -> Path:
+    raw = Path(path_text).expanduser()
+    if raw.is_absolute():
+        return raw.resolve()
+    return (PROJECT_ROOT / raw).resolve()
+
+
+def _load_dataframe_module(action_label: str) -> Any:
+    if pd is not None:
+        return pd
+    try:
+        import pandas as runtime_pd  # type: ignore
+    except Exception as exc:
+        raise KnownEngineError(
+            code=ErrorCode.MISSING_DEPENDENCY,
+            message=f"{action_label} dependency missing: pandas",
+            details={"reason": str(exc)},
+        ) from exc
+    return runtime_pd
+
+
+def _scan_config_from_payload(payload: dict[str, Any]) -> dict[str, Any]:
+    nested_raw = payload.get("scan_config")
+    if nested_raw is None:
+        nested: dict[str, Any] = {}
+    elif isinstance(nested_raw, dict):
+        nested = nested_raw
+    else:
+        raise KnownEngineError(
+            code=ErrorCode.INVALID_INPUT,
+            message="Field scan_config must be an object",
+            details={"field": "scan_config", "value": nested_raw},
+        )
+
+    merged = dict(nested)
+    for key in (
+        "max_bins",
+        "max_issues",
+        "numeric_iqr_factor",
+        "robust_z_threshold",
+        "rare_ratio_threshold",
+        "rare_count_floor",
+        "min_numeric_samples",
+        "min_categorical_samples",
+        "preview_limit",
+        "enable_time_series_shift",
+        "time_series_z_threshold",
+        "time_series_min_points",
+        "enable_cross_column_consistency",
+        "consistency_rules",
+        "enable_duplicate_record",
+        "duplicate_subset",
+        "auto_pair_constraints",
+    ):
+        if key in payload:
+            merged[key] = payload[key]
+
+    return {
+        "max_bins": _to_positive_int(merged, "max_bins", default=120, minimum=20, maximum=360),
+        "max_issues": _to_positive_int(merged, "max_issues", default=1000, minimum=10, maximum=5000),
+        "numeric_iqr_factor": _to_float(merged, "numeric_iqr_factor", default=1.5, minimum=0.8, maximum=5.0),
+        "robust_z_threshold": _to_float(merged, "robust_z_threshold", default=3.5, minimum=1.5, maximum=8.0),
+        "rare_ratio_threshold": _to_float(merged, "rare_ratio_threshold", default=0.01, minimum=0.001, maximum=0.2),
+        "rare_count_floor": _to_positive_int(merged, "rare_count_floor", default=2, minimum=1, maximum=30),
+        "min_numeric_samples": _to_positive_int(merged, "min_numeric_samples", default=6, minimum=4, maximum=10000),
+        "min_categorical_samples": _to_positive_int(
+            merged, "min_categorical_samples", default=8, minimum=4, maximum=10000
+        ),
+        "preview_limit": _to_positive_int(merged, "preview_limit", default=5, minimum=1, maximum=20),
+        "enable_time_series_shift": _to_bool(merged, "enable_time_series_shift", default=True),
+        "time_series_z_threshold": _to_float(
+            merged, "time_series_z_threshold", default=4.0, minimum=1.5, maximum=12.0
+        ),
+        "time_series_min_points": _to_positive_int(
+            merged, "time_series_min_points", default=24, minimum=6, maximum=1_000_000
+        ),
+        "enable_cross_column_consistency": _to_bool(
+            merged, "enable_cross_column_consistency", default=True
+        ),
+        "consistency_rules": _normalize_consistency_rules(merged.get("consistency_rules")),
+        "enable_duplicate_record": _to_bool(merged, "enable_duplicate_record", default=True),
+        "duplicate_subset": _to_string_list(merged, "duplicate_subset", default=[]),
+        "auto_pair_constraints": _to_bool(merged, "auto_pair_constraints", default=True),
+    }
+
+
+def _severity_from_ratio(ratio: float) -> tuple[str, int]:
+    if ratio >= 0.15:
+        return "high", 0
+    if ratio >= 0.05:
+        return "medium", 1
+    return "low", 2
+
+
+def _severity_weight(severity: str) -> float:
+    if severity == "high":
+        return 1.25
+    if severity == "medium":
+        return 1.0
+    return 0.72
+
+
+def _issue_weight(issue_type: str) -> float:
+    if issue_type == "numeric_outlier":
+        return 1.2
+    if issue_type == "time_series_shift":
+        return 1.28
+    if issue_type == "cross_column_consistency":
+        return 1.18
+    if issue_type == "missing_values":
+        return 1.05
+    if issue_type == "rare_category":
+        return 0.9
+    if issue_type == "duplicate_record":
+        return 0.88
+    return 1.0
+
+
+def _issue_score(issue_type: str, ratio: float, severity: str) -> float:
+    score = float(ratio) * 100.0 * _issue_weight(issue_type) * _severity_weight(severity)
+    return round(score, 6)
+
+
+def _risk_level_from_score(score: float) -> str:
+    if score >= 65.0:
+        return "high"
+    if score >= 28.0:
+        return "medium"
+    if score > 0.0:
+        return "low"
+    return "none"
+
+
+def _index_to_builtin(index_value: Any) -> Any:
+    try:
+        return int(index_value)
+    except Exception:
+        return str(index_value)
+
+
+def _preview_hits(series: Any, mask: Any, limit: int) -> list[dict[str, Any]]:
+    hits = series.loc[mask]
+    previews: list[dict[str, Any]] = []
+    for idx, value in hits.head(limit).items():
+        previews.append({"row": _index_to_builtin(idx), "value": _to_builtin(value)})
+    return previews
+
+
+def _issue_confidence(ratio: float, severity: str, signal_strength: float = 1.0) -> float:
+    base = 0.35 + min(0.5, max(0.0, float(ratio) * 4.0))
+    if severity == "high":
+        base += 0.24
+    elif severity == "medium":
+        base += 0.12
+    else:
+        base += 0.05
+    scaled = base * max(0.55, min(1.45, float(signal_strength)))
+    return round(max(0.05, min(0.99, scaled)), 6)
+
+
+def _preview_shift_hits(series: Any, delta: Any, zscore: Any, mask: Any, limit: int) -> list[dict[str, Any]]:
+    previews: list[dict[str, Any]] = []
+    positions = [idx for idx, flag in enumerate(mask.tolist()) if bool(flag)]
+    for pos in positions[:limit]:
+        row_index = _index_to_builtin(series.index[pos])
+        current_value = series.iloc[pos]
+        prev_value = series.iloc[pos - 1] if pos > 0 else None
+        delta_value = delta.iloc[pos]
+        z_value = zscore.iloc[pos]
+        previews.append(
+            {
+                "row": row_index,
+                "previous": _to_builtin(prev_value),
+                "current": _to_builtin(current_value),
+                "delta": _to_builtin(delta_value),
+                "shift_z": _to_builtin(z_value),
+            }
+        )
+    return previews
+
+
+def _preview_consistency_hits(df: Any, mask: Any, columns: list[str], limit: int) -> list[dict[str, Any]]:
+    previews: list[dict[str, Any]] = []
+    positions = [idx for idx, flag in enumerate(mask.tolist()) if bool(flag)]
+    for pos in positions[:limit]:
+        row_values: dict[str, Any] = {}
+        for column in columns:
+            row_values[column] = _to_builtin(df[column].iloc[pos])
+        previews.append({"row": _index_to_builtin(df.index[pos]), "values": row_values})
+    return previews
+
+
+def _preview_duplicate_hits(df: Any, mask: Any, subset_columns: list[str], limit: int) -> list[dict[str, Any]]:
+    previews: list[dict[str, Any]] = []
+    positions = [idx for idx, flag in enumerate(mask.tolist()) if bool(flag)]
+    for pos in positions[:limit]:
+        row_values: dict[str, Any] = {}
+        for column in subset_columns:
+            row_values[column] = _to_builtin(df[column].iloc[pos])
+        previews.append({"row": _index_to_builtin(df.index[pos]), "signature": row_values})
+    return previews
+
+
+def _normalize_rule_name(value: str) -> str:
+    return "".join(ch if (ch.isalnum() or ch in {"_", "-"}) else "_" for ch in value).strip("_") or "rule"
+
+
+def _auto_pair_consistency_rules(columns: list[str]) -> list[dict[str, Any]]:
+    lower_map: dict[str, str] = {}
+    for col in columns:
+        key = str(col).strip().lower()
+        if key and key not in lower_map:
+            lower_map[key] = str(col)
+
+    pair_set: set[tuple[str, str, str]] = set()
+    for col in columns:
+        col_text = str(col)
+        lower = col_text.strip().lower()
+        candidates: list[tuple[str, str]] = []
+        if lower.endswith("_min"):
+            candidates.append((col_text, lower[:-4] + "_max"))
+        if lower.startswith("min_"):
+            candidates.append((col_text, "max_" + lower[4:]))
+        if lower.endswith("_start"):
+            candidates.append((col_text, lower[:-6] + "_end"))
+        if lower.startswith("start_"):
+            candidates.append((col_text, "end_" + lower[6:]))
+
+        for left_col, right_key in candidates:
+            right_col = lower_map.get(right_key)
+            if not right_col or right_col == left_col:
+                continue
+            pair_set.add((left_col, right_col, "lte"))
+
+    rules: list[dict[str, Any]] = []
+    for left_col, right_col, rule_type in sorted(pair_set):
+        rules.append(
+            {
+                "name": f"auto_{left_col}_lte_{right_col}",
+                "type": rule_type,
+                "left_col": left_col,
+                "right_col": right_col,
+            }
+        )
+    return rules
+
+
+def _build_consistency_rules(columns: list[str], scan_config: dict[str, Any]) -> list[dict[str, Any]]:
+    custom_rules = list(scan_config.get("consistency_rules", []))
+    auto_rules: list[dict[str, Any]] = []
+    if bool(scan_config.get("auto_pair_constraints", True)):
+        auto_rules = _auto_pair_consistency_rules(columns)
+
+    seen_keys: set[tuple[str, str, str, str]] = set()
+    merged_rules: list[dict[str, Any]] = []
+    for rule in custom_rules + auto_rules:
+        rule_type = str(rule.get("type", "")).strip().lower()
+        key = (
+            rule_type,
+            str(rule.get("left_col", "")).strip(),
+            str(rule.get("right_col", "")).strip(),
+            str(rule.get("name", "")).strip(),
+        )
+        if rule_type == "implies":
+            key = (
+                rule_type,
+                str(rule.get("if_col", "")).strip(),
+                str(rule.get("then_col", "")).strip(),
+                str(rule.get("name", "")).strip(),
+            )
+        if key in seen_keys:
+            continue
+        seen_keys.add(key)
+        merged_rules.append(rule)
+    return merged_rules
+
+
+def _evaluate_consistency_rule(df: Any, frame_pd: Any, rule: dict[str, Any]) -> tuple[Any, dict[str, Any], float, str] | None:
+    rule_type = str(rule.get("type", "")).strip().lower()
+    name = str(rule.get("name") or "rule").strip() or "rule"
+
+    if rule_type in {"lte", "eq"}:
+        left_col = str(rule.get("left_col") or "").strip()
+        right_col = str(rule.get("right_col") or "").strip()
+        if left_col not in df.columns or right_col not in df.columns:
+            return None
+
+        left_series = df[left_col]
+        right_series = df[right_col]
+        valid_mask = left_series.notna() & right_series.notna()
+
+        if rule_type == "lte":
+            left_num = frame_pd.to_numeric(left_series, errors="coerce")
+            right_num = frame_pd.to_numeric(right_series, errors="coerce")
+            valid_mask = valid_mask & left_num.notna() & right_num.notna()
+            violation_mask = valid_mask & (left_num > right_num)
+            margin_series = (left_num - right_num).where(violation_mask)
+            peak_margin = float(margin_series.max()) if int(violation_mask.sum()) > 0 else 0.0
+            signal_strength = 1.0
+            if peak_margin > 0:
+                baseline = float(abs(right_num[valid_mask]).median()) if int(valid_mask.sum()) > 0 else 0.0
+                signal_strength = 1.0 + min(0.45, peak_margin / max(1.0, baseline))
+            detail = {
+                "rule_name": name,
+                "rule_type": "lte",
+                "left_col": left_col,
+                "right_col": right_col,
+                "operator": "<=",
+                "valid_rows": int(valid_mask.sum()),
+                "peak_margin": round(peak_margin, 6),
+            }
+            return violation_mask, detail, signal_strength, left_col
+
+        violation_mask = valid_mask & (left_series != right_series)
+        detail = {
+            "rule_name": name,
+            "rule_type": "eq",
+            "left_col": left_col,
+            "right_col": right_col,
+            "operator": "==",
+            "valid_rows": int(valid_mask.sum()),
+        }
+        return violation_mask, detail, 1.0, left_col
+
+    if rule_type == "implies":
+        if_col = str(rule.get("if_col") or "").strip()
+        then_col = str(rule.get("then_col") or "").strip()
+        if if_col not in df.columns or then_col not in df.columns:
+            return None
+
+        if_series = df[if_col]
+        then_series = df[then_col]
+        if_value = rule.get("if_equals")
+        cond_mask = if_series.notna() if if_value is None else (if_series == if_value)
+
+        if "then_in" in rule:
+            allowed = {str(v) for v in list(rule.get("then_in", []))}
+            violation_mask = cond_mask & (~then_series.astype(str).isin(allowed))
+            detail = {
+                "rule_name": name,
+                "rule_type": "implies",
+                "if_col": if_col,
+                "if_equals": _to_builtin(if_value),
+                "then_col": then_col,
+                "then_in": sorted(list(allowed)),
+                "valid_rows": int(cond_mask.sum()),
+            }
+        else:
+            then_value = rule.get("then_equals")
+            violation_mask = cond_mask & (then_series != then_value)
+            detail = {
+                "rule_name": name,
+                "rule_type": "implies",
+                "if_col": if_col,
+                "if_equals": _to_builtin(if_value),
+                "then_col": then_col,
+                "then_equals": _to_builtin(then_value),
+                "valid_rows": int(cond_mask.sum()),
+            }
+        return violation_mask, detail, 1.0, then_col
+
+    return None
+
+
+def _build_bin_layout(row_count: int, max_bins: int) -> tuple[int, int]:
+    if row_count <= 0:
+        return 0, 1
+    bin_count = max(1, min(max_bins, row_count))
+    bin_size = int(math.ceil(float(row_count) / float(bin_count)))
+    return bin_count, max(1, bin_size)
+
+
+def _mask_to_bin_counts(mask: Any, row_count: int, max_bins: int) -> tuple[list[int], int]:
+    bin_count, bin_size = _build_bin_layout(row_count=row_count, max_bins=max_bins)
+    if bin_count <= 0:
+        return [], bin_size
+
+    counts: list[int] = []
+    for idx in range(bin_count):
+        start = idx * bin_size
+        if start >= row_count:
+            break
+        end = min(row_count, (idx + 1) * bin_size)
+        window = mask.iloc[start:end]
+        counts.append(int(window.sum()))
+    return counts, bin_size
+
+
+def _bin_counts_to_heat(bin_counts: list[int], bin_size: int) -> list[float]:
+    if bin_size <= 0:
+        return [0.0 for _ in bin_counts]
+    return [round(min(1.0, float(count) / float(bin_size)), 4) for count in bin_counts]
+
+
+def _bin_counts_to_segments(bin_counts: list[int], row_count: int, bin_size: int, max_segments: int = 24) -> list[dict[str, Any]]:
+    segments: list[dict[str, Any]] = []
+    idx = 0
+    while idx < len(bin_counts):
+        if bin_counts[idx] <= 0:
+            idx += 1
+            continue
+
+        segment_start = idx
+        segment_count = 0
+        segment_peak = 0
+        while idx < len(bin_counts) and bin_counts[idx] > 0:
+            value = int(bin_counts[idx])
+            segment_count += value
+            if value > segment_peak:
+                segment_peak = value
+            idx += 1
+
+        start_row = segment_start * bin_size
+        if start_row >= row_count:
+            break
+        end_row = min(row_count, idx * bin_size) - 1
+        span_rows = max(1, end_row - start_row + 1)
+        density = float(segment_count) / float(span_rows)
+        segments.append(
+            {
+                "bin_start": int(segment_start),
+                "bin_end": int(max(segment_start, idx - 1)),
+                "start_row": int(start_row),
+                "end_row": int(end_row),
+                "count": int(segment_count),
+                "peak_count_per_bin": int(segment_peak),
+                "density": round(density, 6),
+            }
+        )
+        if len(segments) >= max_segments:
+            break
+    return segments
+
+
+def _build_issue_id(base: str, used_ids: set[str]) -> str:
+    candidate = base
+    suffix = 2
+    while candidate in used_ids:
+        candidate = f"{base}#{suffix}"
+        suffix += 1
+    used_ids.add(candidate)
+    return candidate
+
+
+def _detect_issues_for_frame(df: Any, frame_pd: Any, scan_config: dict[str, Any]) -> list[dict[str, Any]]:
+    issues: list[dict[str, Any]] = []
+    used_ids: set[str] = set()
+    row_count = int(df.shape[0])
+    max_issues = int(scan_config["max_issues"])
+    min_numeric_samples = int(scan_config["min_numeric_samples"])
+    min_categorical_samples = int(scan_config["min_categorical_samples"])
+    preview_limit = int(scan_config["preview_limit"])
+    iqr_factor = float(scan_config["numeric_iqr_factor"])
+    robust_z_threshold = float(scan_config["robust_z_threshold"])
+    rare_ratio_threshold = float(scan_config["rare_ratio_threshold"])
+    rare_count_floor = int(scan_config["rare_count_floor"])
+    enable_time_series_shift = bool(scan_config.get("enable_time_series_shift", True))
+    time_series_z_threshold = float(scan_config.get("time_series_z_threshold", 4.0))
+    time_series_min_points = int(scan_config.get("time_series_min_points", 24))
+    enable_cross_column_consistency = bool(scan_config.get("enable_cross_column_consistency", True))
+    enable_duplicate_record = bool(scan_config.get("enable_duplicate_record", True))
+    duplicate_subset = [col for col in list(scan_config.get("duplicate_subset", [])) if str(col).strip()]
+
+    if row_count <= 0:
+        return issues
+
+    for raw_col in list(df.columns):
+        if len(issues) >= max_issues:
+            break
+        column = str(raw_col)
+        series = df[raw_col]
+        non_null = series.dropna()
+        non_null_count = int(non_null.shape[0])
+
+        missing_mask = series.isna()
+        missing_count = int(missing_mask.sum())
+        if missing_count > 0:
+            ratio = float(missing_count) / float(row_count)
+            severity, severity_rank = _severity_from_ratio(ratio)
+            issue_type = "missing_values"
+            score = _issue_score(issue_type=issue_type, ratio=ratio, severity=severity)
+            confidence = _issue_confidence(ratio=ratio, severity=severity)
+            issues.append(
+                {
+                    "issue_id": _build_issue_id(f"{column}::missing_values", used_ids),
+                    "column": column,
+                    "issue_type": issue_type,
+                    "count": missing_count,
+                    "ratio": ratio,
+                    "issue_score": score,
+                    "severity": severity,
+                    "severity_rank": severity_rank,
+                    "confidence": confidence,
+                    "explain_features": [
+                        {"name": "missing_ratio", "value": round(ratio, 6)},
+                        {"name": "missing_count", "value": missing_count},
+                    ],
+                    "mask": missing_mask,
+                    "detail": {
+                        "missing_count": missing_count,
+                        "row_count": row_count,
+                        "preview": _preview_hits(series, missing_mask, limit=preview_limit),
+                    },
+                    "repair_rule": {
+                        "strategy": "fill_missing",
+                    },
+                }
+            )
+
+        if len(issues) >= max_issues or non_null_count < min_numeric_samples:
+            continue
+
+        is_numeric = bool(frame_pd.api.types.is_numeric_dtype(series))
+        if is_numeric:
+            numeric_series = frame_pd.to_numeric(series, errors="coerce")
+            numeric_non_null = numeric_series.dropna()
+            q1 = float(numeric_non_null.quantile(0.25))
+            q3 = float(numeric_non_null.quantile(0.75))
+            iqr = float(q3 - q1)
+            iqr_mask = frame_pd.Series(False, index=series.index, dtype=bool)
+            robust_mask = frame_pd.Series(False, index=series.index, dtype=bool)
+            lower = float(q1)
+            upper = float(q3)
+
+            if iqr > 0.0:
+                lower = float(q1 - iqr_factor * iqr)
+                upper = float(q3 + iqr_factor * iqr)
+                iqr_mask = numeric_series.notna() & ((numeric_series < lower) | (numeric_series > upper))
+
+            median = float(numeric_non_null.median())
+            mad = float((numeric_non_null - median).abs().median())
+            if mad > 0.0:
+                robust_z = (numeric_series - median).abs() / (1.4826 * mad)
+                robust_mask = numeric_series.notna() & (robust_z > robust_z_threshold)
+                if iqr <= 0.0:
+                    lower = float(median - robust_z_threshold * 1.4826 * mad)
+                    upper = float(median + robust_z_threshold * 1.4826 * mad)
+
+            outlier_mask = iqr_mask | robust_mask
+
+            outlier_count = int(outlier_mask.sum())
+            if outlier_count > 0:
+                ratio = float(outlier_count) / float(row_count)
+                severity, severity_rank = _severity_from_ratio(ratio)
+                issue_type = "numeric_outlier"
+                score = _issue_score(issue_type=issue_type, ratio=ratio, severity=severity)
+                dominant_hits = max(int(iqr_mask.sum()), int(robust_mask.sum()))
+                signal_strength = 1.0 + min(0.35, float(dominant_hits) / max(1.0, float(outlier_count)))
+                confidence = _issue_confidence(ratio=ratio, severity=severity, signal_strength=signal_strength)
+                issues.append(
+                    {
+                        "issue_id": _build_issue_id(f"{column}::numeric_outlier", used_ids),
+                        "column": column,
+                        "issue_type": issue_type,
+                        "count": outlier_count,
+                        "ratio": ratio,
+                        "issue_score": score,
+                        "severity": severity,
+                        "severity_rank": severity_rank,
+                        "confidence": confidence,
+                        "explain_features": [
+                            {"name": "outlier_ratio", "value": round(ratio, 6)},
+                            {"name": "iqr_hits", "value": int(iqr_mask.sum())},
+                            {"name": "robust_hits", "value": int(robust_mask.sum())},
+                        ],
+                        "mask": outlier_mask,
+                        "detail": {
+                            "lower_bound": round(lower, 12),
+                            "upper_bound": round(upper, 12),
+                            "outlier_count": outlier_count,
+                            "iqr_factor": iqr_factor,
+                            "robust_z_threshold": robust_z_threshold,
+                            "iqr_hits": int(iqr_mask.sum()),
+                            "robust_hits": int(robust_mask.sum()),
+                            "preview": _preview_hits(series, outlier_mask, limit=preview_limit),
+                        },
+                        "repair_rule": {
+                            "strategy": "clip",
+                            "lower_bound": lower,
+                            "upper_bound": upper,
+                        },
+                    }
+                )
+            if (
+                enable_time_series_shift
+                and len(issues) < max_issues
+                and non_null_count >= time_series_min_points
+            ):
+                delta = numeric_series.diff()
+                valid_shift = numeric_series.notna() & numeric_series.shift(1).notna() & delta.notna()
+                delta_non_null = delta.loc[valid_shift]
+                if int(delta_non_null.shape[0]) >= max(4, time_series_min_points - 1):
+                    median_delta = float(delta_non_null.median())
+                    mad_delta = float((delta_non_null - median_delta).abs().median())
+                    if mad_delta > 0.0:
+                        shift_z = (delta - median_delta).abs() / (1.4826 * mad_delta)
+                    else:
+                        std_delta = float(delta_non_null.std(ddof=0))
+                        if std_delta > 0.0:
+                            shift_z = (delta - median_delta).abs() / std_delta
+                        else:
+                            shift_z = frame_pd.Series(0.0, index=series.index, dtype=float)
+                    shift_z = shift_z.fillna(0.0)
+                    shift_mask = valid_shift & (shift_z > time_series_z_threshold)
+                    shift_count = int(shift_mask.sum())
+                    if shift_count > 0:
+                        ratio = float(shift_count) / float(row_count)
+                        severity, severity_rank = _severity_from_ratio(ratio)
+                        issue_type = "time_series_shift"
+                        score = _issue_score(issue_type=issue_type, ratio=ratio, severity=severity)
+                        peak_shift_z = float(shift_z[shift_mask].max())
+                        signal_strength = 1.0 + min(
+                            0.45,
+                            max(0.0, peak_shift_z / max(1e-6, time_series_z_threshold) - 1.0),
+                        )
+                        confidence = _issue_confidence(
+                            ratio=ratio,
+                            severity=severity,
+                            signal_strength=signal_strength,
+                        )
+                        issues.append(
+                            {
+                                "issue_id": _build_issue_id(f"{column}::time_series_shift", used_ids),
+                                "column": column,
+                                "issue_type": issue_type,
+                                "count": shift_count,
+                                "ratio": ratio,
+                                "issue_score": score,
+                                "severity": severity,
+                                "severity_rank": severity_rank,
+                                "confidence": confidence,
+                                "explain_features": [
+                                    {"name": "shift_ratio", "value": round(ratio, 6)},
+                                    {"name": "peak_shift_z", "value": round(peak_shift_z, 6)},
+                                    {"name": "z_threshold", "value": round(time_series_z_threshold, 6)},
+                                ],
+                                "mask": shift_mask,
+                                "detail": {
+                                    "shift_count": shift_count,
+                                    "z_threshold": time_series_z_threshold,
+                                    "peak_shift_z": round(peak_shift_z, 6),
+                                    "median_delta": round(median_delta, 6),
+                                    "preview": _preview_shift_hits(
+                                        numeric_series,
+                                        delta,
+                                        shift_z,
+                                        shift_mask,
+                                        limit=preview_limit,
+                                    ),
+                                },
+                                "repair_rule": {
+                                    "strategy": "manual_review",
+                                },
+                            }
+                        )
+            continue
+
+        if non_null_count < min_categorical_samples:
+            continue
+        value_counts = non_null.value_counts(dropna=True)
+        distinct_count = int(value_counts.shape[0])
+        if distinct_count < 3:
+            continue
+
+        rare_threshold = max(rare_count_floor, int(math.ceil(non_null_count * rare_ratio_threshold)))
+        rare_values = [val for val, count in value_counts.items() if int(count) <= rare_threshold]
+        if not rare_values or len(rare_values) >= distinct_count:
+            continue
+
+        rare_mask = series.notna() & series.isin(rare_values)
+        rare_count = int(rare_mask.sum())
+        if rare_count <= 0:
+            continue
+
+        common_counts = value_counts[~value_counts.index.isin(rare_values)]
+        if common_counts.empty:
+            replacement = value_counts.index[0]
+        else:
+            replacement = common_counts.index[0]
+
+        ratio = float(rare_count) / float(row_count)
+        severity, severity_rank = _severity_from_ratio(ratio)
+        issue_type = "rare_category"
+        score = _issue_score(issue_type=issue_type, ratio=ratio, severity=severity)
+        confidence = _issue_confidence(ratio=ratio, severity=severity, signal_strength=0.95)
+        issues.append(
+            {
+                "issue_id": _build_issue_id(f"{column}::rare_category", used_ids),
+                "column": column,
+                "issue_type": issue_type,
+                "count": rare_count,
+                "ratio": ratio,
+                "issue_score": score,
+                "severity": severity,
+                "severity_rank": severity_rank,
+                "confidence": confidence,
+                "explain_features": [
+                    {"name": "rare_ratio", "value": round(ratio, 6)},
+                    {"name": "rare_threshold", "value": rare_threshold},
+                    {"name": "distinct_count", "value": distinct_count},
+                ],
+                "mask": rare_mask,
+                "detail": {
+                    "rare_count": rare_count,
+                    "rare_threshold": rare_threshold,
+                    "rare_values_preview": [str(v) for v in rare_values[:10]],
+                    "rare_ratio_threshold": rare_ratio_threshold,
+                    "preview": _preview_hits(series, rare_mask, limit=preview_limit),
+                },
+                "repair_rule": {
+                    "strategy": "replace_rare",
+                    "rare_values": list(rare_values),
+                    "replacement_value": replacement,
+                },
+            }
+        )
+
+    if enable_cross_column_consistency and len(issues) < max_issues:
+        consistency_rules = _build_consistency_rules([str(col) for col in list(df.columns)], scan_config)
+        for rule in consistency_rules:
+            if len(issues) >= max_issues:
+                break
+            evaluated = _evaluate_consistency_rule(df, frame_pd, rule)
+            if evaluated is None:
+                continue
+            violation_mask, rule_detail, signal_strength, primary_column = evaluated
+            violation_count = int(violation_mask.sum())
+            if violation_count <= 0:
+                continue
+
+            ratio = float(violation_count) / float(row_count)
+            severity, severity_rank = _severity_from_ratio(ratio)
+            issue_type = "cross_column_consistency"
+            score = _issue_score(issue_type=issue_type, ratio=ratio, severity=severity)
+            confidence = _issue_confidence(ratio=ratio, severity=severity, signal_strength=signal_strength)
+
+            rule_name = _normalize_rule_name(str(rule_detail.get("rule_name", "rule")))
+            preview_columns: list[str] = []
+            if "left_col" in rule_detail and "right_col" in rule_detail:
+                preview_columns = [str(rule_detail["left_col"]), str(rule_detail["right_col"])]
+            elif "if_col" in rule_detail and "then_col" in rule_detail:
+                preview_columns = [str(rule_detail["if_col"]), str(rule_detail["then_col"])]
+            rule_detail["violated_count"] = violation_count
+            rule_detail["row_count"] = row_count
+            rule_detail["preview"] = _preview_consistency_hits(df, violation_mask, preview_columns, limit=preview_limit)
+
+            issues.append(
+                {
+                    "issue_id": _build_issue_id(
+                        f"{primary_column}::cross_column_consistency::{rule_name}",
+                        used_ids,
+                    ),
+                    "column": primary_column,
+                    "issue_type": issue_type,
+                    "count": violation_count,
+                    "ratio": ratio,
+                    "issue_score": score,
+                    "severity": severity,
+                    "severity_rank": severity_rank,
+                    "confidence": confidence,
+                    "explain_features": [
+                        {"name": "rule", "value": str(rule_detail.get("rule_name", "rule"))},
+                        {"name": "violation_ratio", "value": round(ratio, 6)},
+                        {"name": "valid_rows", "value": int(rule_detail.get("valid_rows", 0))},
+                    ],
+                    "mask": violation_mask,
+                    "detail": rule_detail,
+                    "repair_rule": {
+                        "strategy": "manual_review",
+                        "rule_name": str(rule_detail.get("rule_name", "rule")),
+                    },
+                }
+            )
+
+    if enable_duplicate_record and len(issues) < max_issues:
+        subset_columns = [col for col in duplicate_subset if col in df.columns]
+        if not subset_columns:
+            subset_columns = [str(col) for col in list(df.columns)]
+        if subset_columns:
+            duplicate_mask = df.duplicated(subset=subset_columns, keep=False)
+            duplicate_count = int(duplicate_mask.sum())
+            if duplicate_count > 0:
+                duplicate_rows = df.loc[duplicate_mask, subset_columns]
+                group_sizes = duplicate_rows.value_counts(dropna=False) if not duplicate_rows.empty else frame_pd.Series(dtype=int)
+                duplicate_groups = int(group_sizes.shape[0]) if not group_sizes.empty else 0
+                largest_group = int(group_sizes.max()) if not group_sizes.empty else 0
+                ratio = float(duplicate_count) / float(row_count)
+                severity, severity_rank = _severity_from_ratio(ratio)
+                issue_type = "duplicate_record"
+                score = _issue_score(issue_type=issue_type, ratio=ratio, severity=severity)
+                signal_strength = 1.0 + min(0.4, float(max(0, largest_group - 1)) / 10.0)
+                confidence = _issue_confidence(ratio=ratio, severity=severity, signal_strength=signal_strength)
+                issues.append(
+                    {
+                        "issue_id": _build_issue_id("row::duplicate_record", used_ids),
+                        "column": subset_columns[0],
+                        "issue_type": issue_type,
+                        "count": duplicate_count,
+                        "ratio": ratio,
+                        "issue_score": score,
+                        "severity": severity,
+                        "severity_rank": severity_rank,
+                        "confidence": confidence,
+                        "explain_features": [
+                            {"name": "duplicate_ratio", "value": round(ratio, 6)},
+                            {"name": "duplicate_groups", "value": duplicate_groups},
+                            {"name": "largest_group_size", "value": largest_group},
+                        ],
+                        "mask": duplicate_mask,
+                        "detail": {
+                            "duplicate_count": duplicate_count,
+                            "duplicate_groups": duplicate_groups,
+                            "largest_group_size": largest_group,
+                            "subset_columns": subset_columns,
+                            "preview": _preview_duplicate_hits(
+                                df,
+                                duplicate_mask,
+                                subset_columns,
+                                limit=preview_limit,
+                            ),
+                        },
+                        "repair_rule": {
+                            "strategy": "manual_review",
+                        },
+                    }
+                )
+
+    issues.sort(
+        key=lambda item: (
+            -float(item.get("issue_score", 0.0)),
+            int(item["severity_rank"]),
+            -int(item["count"]),
+            str(item["issue_id"]),
+        )
+    )
+    return issues[:max_issues]
+
+
+def _repair_strategy_from_payload(payload: dict[str, Any]) -> dict[str, Any]:
+    raw = payload.get("repair_strategy")
+    if raw is None:
+        source: dict[str, Any] = {}
+    elif isinstance(raw, dict):
+        source = raw
+    else:
+        raise KnownEngineError(
+            code=ErrorCode.INVALID_INPUT,
+            message="Field repair_strategy must be an object",
+            details={"field": "repair_strategy", "value": raw},
+        )
+
+    conflict_policy = str(source.get("conflict_policy", "first_wins")).strip().lower()
+    if conflict_policy not in {"first_wins", "last_wins", "skip_conflict"}:
+        raise KnownEngineError(
+            code=ErrorCode.INVALID_INPUT,
+            message="Field repair_strategy.conflict_policy must be first_wins/last_wins/skip_conflict",
+            details={"field": "repair_strategy.conflict_policy", "value": conflict_policy},
+        )
+
+    issue_priority_raw = source.get("issue_priority", ["missing_values", "numeric_outlier", "rare_category"])
+    if not isinstance(issue_priority_raw, (list, tuple)):
+        raise KnownEngineError(
+            code=ErrorCode.INVALID_INPUT,
+            message="Field repair_strategy.issue_priority must be a list",
+            details={"field": "repair_strategy.issue_priority", "value": issue_priority_raw},
+        )
+    issue_priority: list[str] = []
+    for item in issue_priority_raw:
+        name = str(item).strip().lower()
+        if not name or name in issue_priority:
+            continue
+        issue_priority.append(name)
+    for fallback in ("missing_values", "numeric_outlier", "rare_category"):
+        if fallback not in issue_priority:
+            issue_priority.append(fallback)
+
+    missing_numeric = str(source.get("missing_numeric", "median")).strip().lower()
+    if missing_numeric not in {"median", "mean", "constant"}:
+        raise KnownEngineError(
+            code=ErrorCode.INVALID_INPUT,
+            message="Field repair_strategy.missing_numeric must be median/mean/constant",
+            details={"field": "repair_strategy.missing_numeric", "value": missing_numeric},
+        )
+    missing_categorical = str(source.get("missing_categorical", "mode")).strip().lower()
+    if missing_categorical not in {"mode", "constant"}:
+        raise KnownEngineError(
+            code=ErrorCode.INVALID_INPUT,
+            message="Field repair_strategy.missing_categorical must be mode/constant",
+            details={"field": "repair_strategy.missing_categorical", "value": missing_categorical},
+        )
+    outlier_strategy = str(source.get("outlier", "clip")).strip().lower()
+    if outlier_strategy not in {"clip", "skip"}:
+        raise KnownEngineError(
+            code=ErrorCode.INVALID_INPUT,
+            message="Field repair_strategy.outlier must be clip/skip",
+            details={"field": "repair_strategy.outlier", "value": outlier_strategy},
+        )
+    rare_strategy = str(source.get("rare_category", "mode")).strip().lower()
+    if rare_strategy not in {"mode", "constant"}:
+        raise KnownEngineError(
+            code=ErrorCode.INVALID_INPUT,
+            message="Field repair_strategy.rare_category must be mode/constant",
+            details={"field": "repair_strategy.rare_category", "value": rare_strategy},
+        )
+
+    return {
+        "conflict_policy": conflict_policy,
+        "issue_priority": issue_priority,
+        "missing_numeric": missing_numeric,
+        "missing_categorical": missing_categorical,
+        "missing_constant_value": source.get("missing_constant_value", "UNKNOWN"),
+        "outlier": outlier_strategy,
+        "rare_category": rare_strategy,
+        "rare_constant_value": source.get("rare_constant_value", "OTHER"),
+        "preview_limit": _to_positive_int(source, "preview_limit", default=5, minimum=1, maximum=50),
+    }
+
+
+def _column_dependencies_from_payload(payload: dict[str, Any]) -> dict[str, list[str]]:
+    raw = payload.get("column_dependencies")
+    if raw is None:
+        return {}
+
+    deps: dict[str, list[str]] = {}
+
+    def _normalize_dep_list(value: Any) -> list[str]:
+        if value is None:
+            return []
+        if isinstance(value, (list, tuple, set)):
+            result: list[str] = []
+            for item in value:
+                text = str(item).strip()
+                if text and text not in result:
+                    result.append(text)
+            return result
+        if isinstance(value, str):
+            text = value.strip()
+            return [text] if text else []
+        raise KnownEngineError(
+            code=ErrorCode.INVALID_INPUT,
+            message="column_dependencies must contain string list values",
+            details={"field": "column_dependencies", "value": value},
+        )
+
+    if isinstance(raw, dict):
+        for key, value in raw.items():
+            col = str(key).strip()
+            if not col:
+                continue
+            dep_list = [item for item in _normalize_dep_list(value) if item != col]
+            deps[col] = dep_list
+        return deps
+
+    if isinstance(raw, (list, tuple)):
+        for item in raw:
+            if not isinstance(item, dict):
+                raise KnownEngineError(
+                    code=ErrorCode.INVALID_INPUT,
+                    message="column_dependencies list items must be objects",
+                    details={"field": "column_dependencies", "value": item},
+                )
+            col = str(item.get("column") or "").strip()
+            if not col:
+                continue
+            dep_list = [name for name in _normalize_dep_list(item.get("depends_on")) if name != col]
+            deps[col] = dep_list
+        return deps
+
+    raise KnownEngineError(
+        code=ErrorCode.INVALID_INPUT,
+        message="Field column_dependencies must be an object or list",
+        details={"field": "column_dependencies", "value": raw},
+    )
+
+
+def _topological_column_order(columns: list[str], dependencies: dict[str, list[str]]) -> tuple[list[str], set[str]]:
+    selected = [col for col in columns if col]
+    selected_set = set(selected)
+    indegree: dict[str, int] = {}
+    graph: dict[str, list[str]] = {}
+
+    for col in selected:
+        if col in indegree:
+            continue
+        indegree[col] = 0
+        graph[col] = []
+
+    for col in selected:
+        for dep in dependencies.get(col, []):
+            if dep not in selected_set:
+                continue
+            graph.setdefault(dep, [])
+            graph[dep].append(col)
+            indegree[col] = indegree.get(col, 0) + 1
+
+    queue = [col for col in selected if indegree.get(col, 0) == 0]
+    ordered: list[str] = []
+    while queue:
+        current = queue.pop(0)
+        ordered.append(current)
+        for nxt in graph.get(current, []):
+            indegree[nxt] = indegree.get(nxt, 0) - 1
+            if indegree[nxt] == 0:
+                queue.append(nxt)
+
+    cycle_columns = {col for col in selected if col not in set(ordered)}
+    if cycle_columns:
+        for col in selected:
+            if col in cycle_columns:
+                ordered.append(col)
+    return ordered, cycle_columns
+
+
+def _issue_mask_from_rule(series: Any, issue_type: str, rule: dict[str, Any], frame_pd: Any) -> Any:
+    if issue_type == "missing_values":
+        return series.isna()
+    if issue_type == "numeric_outlier":
+        lower_raw = rule.get("lower_bound")
+        upper_raw = rule.get("upper_bound")
+        if lower_raw is None or upper_raw is None:
+            return frame_pd.Series(False, index=series.index, dtype=bool)
+        try:
+            lower = float(lower_raw)
+            upper = float(upper_raw)
+        except Exception:
+            return frame_pd.Series(False, index=series.index, dtype=bool)
+        return series.notna() & ((series < lower) | (series > upper))
+    if issue_type == "rare_category":
+        rare_values = list(rule.get("rare_values", []))
+        if not rare_values:
+            return frame_pd.Series(False, index=series.index, dtype=bool)
+        return series.notna() & series.isin(rare_values)
+    return frame_pd.Series(False, index=series.index, dtype=bool)
+
+
+def _mode_or_fallback(series: Any, fallback: Any) -> Any:
+    non_null = series.dropna()
+    if non_null.empty:
+        return fallback
+    mode_values = non_null.mode(dropna=True)
+    if mode_values.empty:
+        return non_null.iloc[0]
+    return mode_values.iloc[0]
+
+
+def _replacement_for_missing(series: Any, frame_pd: Any, strategy: dict[str, Any]) -> Any:
+    if frame_pd.api.types.is_numeric_dtype(series):
+        method = str(strategy.get("missing_numeric", "median"))
+        non_null = series.dropna()
+        if non_null.empty:
+            return strategy.get("missing_constant_value", 0.0)
+        if method == "mean":
+            return float(non_null.mean())
+        if method == "constant":
+            return strategy.get("missing_constant_value", 0.0)
+        return float(non_null.median())
+
+    method = str(strategy.get("missing_categorical", "mode"))
+    if method == "constant":
+        return strategy.get("missing_constant_value", "UNKNOWN")
+    return _mode_or_fallback(series, "UNKNOWN")
+
+
+def _replacement_for_rare(series: Any, rare_values: list[Any], strategy: dict[str, Any], rule: dict[str, Any]) -> Any:
+    method = str(strategy.get("rare_category", "mode"))
+    if method == "constant":
+        return strategy.get("rare_constant_value", "OTHER")
+
+    non_null = series.dropna()
+    if non_null.empty:
+        return strategy.get("rare_constant_value", "OTHER")
+    if rare_values:
+        filtered = non_null[~non_null.isin(list(rare_values))]
+    else:
+        filtered = non_null
+    if filtered.empty:
+        fallback = rule.get("replacement_value", strategy.get("rare_constant_value", "OTHER"))
+        return fallback
+    mode_values = filtered.mode(dropna=True)
+    if mode_values.empty:
+        return filtered.iloc[0]
+    return mode_values.iloc[0]
+
+
+def _issue_type_counter(issues: list[dict[str, Any]]) -> dict[str, int]:
+    counts: dict[str, int] = {}
+    for issue in issues:
+        issue_type = str(issue.get("issue_type", "unknown"))
+        counts[issue_type] = counts.get(issue_type, 0) + 1
+    return counts
+
+
+def _issue_counter_by_column(issues: list[dict[str, Any]]) -> dict[str, int]:
+    counts: dict[str, int] = {}
+    for issue in issues:
+        column = str(issue.get("column", ""))
+        if not column:
+            continue
+        counts[column] = counts.get(column, 0) + 1
+    return counts
+
+
+def _rollback_manifest_to_target(manifest: dict[str, Any], restore_target: str, custom_target: str | None = None) -> Path:
+    if restore_target == "source_csv":
+        return Path(str(manifest.get("source_csv") or "")).expanduser().resolve()
+    if restore_target == "output_csv":
+        output_csv = str(manifest.get("output_csv") or "").strip()
+        if not output_csv:
+            raise KnownEngineError(
+                code=ErrorCode.ROLLBACK_FAILED,
+                message="Rollback manifest does not contain output_csv",
+                details={"restore_target": "output_csv"},
+            )
+        return Path(output_csv).expanduser().resolve()
+    if restore_target == "custom":
+        if not custom_target:
+            raise KnownEngineError(
+                code=ErrorCode.INVALID_INPUT,
+                message="Field target_csv is required when restore_target=custom",
+                details={"field": "target_csv"},
+            )
+        return _resolve_output_file(custom_target)
+    raise KnownEngineError(
+        code=ErrorCode.INVALID_INPUT,
+        message="Field restore_target must be source_csv/output_csv/custom",
+        details={"field": "restore_target", "value": restore_target},
+    )
+
+
 def action_health(_: dict[str, Any]) -> dict[str, Any]:
     return {
         "engine": "python-anomaly-engine",
         "project_root": str(PROJECT_ROOT),
         "python": platform.python_version(),
         "platform": platform.platform(),
-        "actions": ["health", "train", "repair"],
+        "actions": ["health", "train", "repair", "scan_file", "repair_batch", "rollback_repair_batch"],
     }
+
+
+def action_scan_file(payload: dict[str, Any]) -> dict[str, Any]:
+    frame_pd = _load_dataframe_module("Scan")
+    csv_path = _require(payload, "csv_path")
+    scan_config = _scan_config_from_payload(payload)
+    max_bins = int(scan_config["max_bins"])
+
+    csv_file = _resolve_input_csv(str(csv_path))
+    if not csv_file.exists():
+        raise KnownEngineError(
+            code=ErrorCode.FILE_NOT_FOUND,
+            message=f"Input CSV does not exist: {csv_file}",
+            details={"csv_path": str(csv_file)},
+        )
+
+    try:
+        df = frame_pd.read_csv(csv_file)
+    except Exception as exc:
+        raise KnownEngineError(
+            code=ErrorCode.CSV_READ_FAILED,
+            message="Failed to read CSV",
+            details={"csv_path": str(csv_file), "reason": str(exc)},
+        ) from exc
+
+    try:
+        issues_internal = _detect_issues_for_frame(df, frame_pd, scan_config=scan_config)
+    except KnownEngineError:
+        raise
+    except Exception as exc:
+        raise KnownEngineError(
+            code=ErrorCode.SCAN_FAILED,
+            message="File scan failed",
+            details={"csv_path": str(csv_file), "reason": str(exc)},
+        ) from exc
+
+    row_count = int(df.shape[0])
+    issue_type_counts = _issue_type_counter(issues_internal)
+    column_names = [str(col) for col in list(df.columns)]
+    column_masks: dict[str, Any] = {col: frame_pd.Series(False, index=df.index, dtype=bool) for col in column_names}
+    issue_counts_by_column: dict[str, int] = {col: 0 for col in column_names}
+    issue_score_by_column: dict[str, float] = {col: 0.0 for col in column_names}
+    issue_types_by_column: dict[str, list[str]] = {col: [] for col in column_names}
+
+    issues: list[dict[str, Any]] = []
+    for issue in issues_internal:
+        column = str(issue["column"])
+        mask = issue["mask"]
+        if column not in column_masks:
+            column_masks[column] = frame_pd.Series(False, index=df.index, dtype=bool)
+        column_masks[column] = column_masks[column] | mask
+        issue_counts_by_column[column] = issue_counts_by_column.get(column, 0) + 1
+        issue_score_by_column[column] = float(issue_score_by_column.get(column, 0.0)) + float(issue["issue_score"])
+        issue_types_by_column.setdefault(column, [])
+        if issue["issue_type"] not in issue_types_by_column[column]:
+            issue_types_by_column[column].append(str(issue["issue_type"]))
+
+        bin_counts, bin_size = _mask_to_bin_counts(mask, row_count=row_count, max_bins=max_bins)
+        heat_bins = _bin_counts_to_heat(bin_counts, bin_size=bin_size)
+        segments = _bin_counts_to_segments(bin_counts, row_count=row_count, bin_size=bin_size, max_segments=24)
+        issues.append(
+            {
+                "issue_id": issue["issue_id"],
+                "column": column,
+                "issue_type": issue["issue_type"],
+                "severity": issue["severity"],
+                "issue_score": round(float(issue["issue_score"]), 6),
+                "confidence": round(float(issue.get("confidence", 0.0)), 6),
+                "count": int(issue["count"]),
+                "ratio": round(float(issue["ratio"]), 6),
+                "risk_level": _risk_level_from_score(float(issue["issue_score"])),
+                "explain_features": issue.get("explain_features", []),
+                "bins": [1 if count > 0 else 0 for count in bin_counts],
+                "heat_bins": heat_bins,
+                "segments": segments,
+                "detail": issue["detail"],
+                "repair_supported": True,
+            }
+        )
+
+    column_profiles: list[dict[str, Any]] = []
+    column_thumbnails: list[dict[str, Any]] = []
+    anomaly_columns: list[str] = []
+
+    for raw_col in list(df.columns):
+        column = str(raw_col)
+        series = df[raw_col]
+        missing_count = int(series.isna().sum())
+        missing_ratio = float(missing_count) / float(row_count) if row_count > 0 else 0.0
+        dtype_text = str(series.dtype)
+        is_numeric = bool(frame_pd.api.types.is_numeric_dtype(series))
+
+        column_profiles.append(
+            {
+                "column": column,
+                "dtype": dtype_text,
+                "is_numeric": is_numeric,
+                "missing_count": missing_count,
+                "missing_ratio": round(missing_ratio, 6),
+                "issue_count": issue_counts_by_column.get(column, 0),
+                "issue_types": list(issue_types_by_column.get(column, [])),
+            }
+        )
+
+        union_mask = column_masks[column]
+        anomaly_points = int(union_mask.sum())
+        bin_counts, bin_size = _mask_to_bin_counts(union_mask, row_count=row_count, max_bins=max_bins)
+        heat_bins = _bin_counts_to_heat(bin_counts, bin_size=bin_size)
+        binary_bins = [1 if count > 0 else 0 for count in bin_counts]
+        anomalous_bins = int(sum(binary_bins))
+        anomaly_ratio = float(anomaly_points) / float(row_count) if row_count > 0 else 0.0
+        risk_score = min(100.0, float(issue_score_by_column.get(column, 0.0)) + anomaly_ratio * 40.0)
+        risk_level = _risk_level_from_score(risk_score)
+        hot_segments = _bin_counts_to_segments(bin_counts, row_count=row_count, bin_size=bin_size, max_segments=16)
+        if anomaly_points > 0:
+            anomaly_columns.append(column)
+
+        if column_profiles:
+            column_profiles[-1]["anomaly_points"] = anomaly_points
+            column_profiles[-1]["anomaly_ratio"] = round(anomaly_ratio, 6)
+            column_profiles[-1]["risk_score"] = round(risk_score, 6)
+            column_profiles[-1]["risk_level"] = risk_level
+
+        column_thumbnails.append(
+            {
+                "column": column,
+                "dtype": dtype_text,
+                "issue_count": issue_counts_by_column.get(column, 0),
+                "anomaly_points": anomaly_points,
+                "anomaly_ratio": round(anomaly_ratio, 6),
+                "risk_score": round(risk_score, 6),
+                "risk_level": risk_level,
+                "total_bins": len(binary_bins),
+                "anomalous_bins": anomalous_bins,
+                "bins": binary_bins,
+                "heat_bins": heat_bins,
+                "hot_segments": hot_segments,
+            }
+        )
+
+    issues.sort(
+        key=lambda item: (
+            -float(item.get("issue_score", 0.0)),
+            str(item.get("column", "")),
+            str(item.get("issue_id", "")),
+        )
+    )
+    column_thumbnails.sort(
+        key=lambda item: (
+            -float(item.get("risk_score", 0.0)),
+            str(item.get("column", "")),
+        )
+    )
+
+    return _to_builtin(
+        {
+            "csv_path": str(csv_file),
+            "scan_config": scan_config,
+            "data_profile": {
+                "rows": row_count,
+                "columns": int(df.shape[1]),
+            },
+            "column_profiles": column_profiles,
+            "column_thumbnails": column_thumbnails,
+            "issues": issues,
+            "issue_count": len(issues),
+            "anomaly_columns": anomaly_columns,
+            "scan_summary": {
+                "anomaly_column_count": len(anomaly_columns),
+                "high_risk_columns": [item["column"] for item in column_thumbnails if item.get("risk_level") == "high"],
+                "medium_risk_columns": [
+                    item["column"] for item in column_thumbnails if item.get("risk_level") == "medium"
+                ],
+                "total_issues": len(issues),
+                "issue_type_counts": issue_type_counts,
+            },
+        }
+    )
 
 
 def action_train(payload: dict[str, Any]) -> dict[str, Any]:
@@ -286,6 +1806,7 @@ def action_train(payload: dict[str, Any]) -> dict[str, Any]:
 
     csv_path = _require(payload, "csv_path")
     target_col = str(_require(payload, "target_col"))
+    requested_task_type = str(payload.get("task_type", "auto") or "auto").strip().lower()
     output_dir = _resolve_output_dir(payload.get("output_dir"))
 
     csv_file = _resolve_input_csv(str(csv_path))
@@ -312,10 +1833,14 @@ def action_train(payload: dict[str, Any]) -> dict[str, Any]:
             details={"available_columns": list(df.columns)},
         )
 
-    _validate_train_target(df, target_col, train_pd)
+    resolved_task_type = _validate_train_target(df, target_col, train_pd, requested_mode=requested_task_type)
 
     try:
-        model, x_test, normal_data, metrics, feature_names = process_and_train(df, target_col)
+        model, x_test, normal_data, metrics, feature_names = process_and_train(
+            df,
+            target_col,
+            task_type=resolved_task_type,
+        )
         os.makedirs(output_dir, exist_ok=True)
         save_system_state(model, x_test, normal_data, feature_names, save_dir=output_dir)
     except KnownEngineError:
@@ -339,6 +1864,8 @@ def action_train(payload: dict[str, Any]) -> dict[str, Any]:
             "rows": int(df.shape[0]),
             "columns": int(df.shape[1]),
             "target_col": target_col,
+            "task_type": resolved_task_type,
+            "requested_task_type": requested_task_type,
         },
         "metrics": _metric_summary(metrics),
     }
@@ -373,6 +1900,18 @@ def action_repair(payload: dict[str, Any]) -> dict[str, Any]:
             message="Failed to load model state artifacts",
             details={"model_dir": str(model_dir), "reason": str(exc)},
         ) from exc
+
+    model_task_type = str(getattr(model, "task_type", "classification")).strip().lower()
+    if model_task_type != "classification":
+        raise KnownEngineError(
+            code=ErrorCode.UNSUPPORTED_TARGET_TYPE,
+            message=f"Repair action supports classification models only: {model_task_type}",
+            details={
+                "model_task_type": model_task_type,
+                "model_dir": str(model_dir),
+                "suggestion": "Use action=repair_batch for rule-based CSV repair or train with classification target.",
+            },
+        )
 
     sample_index = _to_int(payload, "sample_index", default=0, minimum=0)
     if sample_index >= int(x_test.shape[0]):
@@ -499,9 +2038,519 @@ def action_repair(payload: dict[str, Any]) -> dict[str, Any]:
             "rows": int(x_test.shape[0]),
             "columns": int(x_test.shape[1]),
             "sample_index": sample_index,
+            "task_type": model_task_type,
         },
     }
     if artifacts:
         result["artifacts"] = artifacts
 
     return result
+
+
+def action_repair_batch(payload: dict[str, Any]) -> dict[str, Any]:
+    frame_pd = _load_dataframe_module("Repair batch")
+    csv_path = _require(payload, "csv_path")
+    scan_config = _scan_config_from_payload(payload)
+    write_output_requested = _to_bool(payload, "write_output", default=True)
+    plan_only = _to_bool(payload, "plan_only", default=False)
+    write_output = write_output_requested and (not plan_only)
+    enable_rollback = _to_bool(payload, "enable_rollback", default=True)
+    repair_strategy = _repair_strategy_from_payload(payload)
+    column_dependencies = _column_dependencies_from_payload(payload)
+
+    raw_issue_ids = payload.get("issue_ids", [])
+    if raw_issue_ids is None:
+        raw_issue_ids = []
+    if not isinstance(raw_issue_ids, (list, tuple, set)):
+        raise KnownEngineError(
+            code=ErrorCode.INVALID_INPUT,
+            message="Field issue_ids must be a string list",
+            details={"field": "issue_ids", "value": raw_issue_ids},
+        )
+
+    selected_issue_ids: list[str] = []
+    seen_issue_ids: set[str] = set()
+    for raw in raw_issue_ids:
+        issue_id = str(raw).strip()
+        if not issue_id or issue_id in seen_issue_ids:
+            continue
+        seen_issue_ids.add(issue_id)
+        selected_issue_ids.append(issue_id)
+
+    csv_file = _resolve_input_csv(str(csv_path))
+    if not csv_file.exists():
+        raise KnownEngineError(
+            code=ErrorCode.FILE_NOT_FOUND,
+            message=f"Input CSV does not exist: {csv_file}",
+            details={"csv_path": str(csv_file)},
+        )
+
+    try:
+        df = frame_pd.read_csv(csv_file)
+    except Exception as exc:
+        raise KnownEngineError(
+            code=ErrorCode.CSV_READ_FAILED,
+            message="Failed to read CSV",
+            details={"csv_path": str(csv_file), "reason": str(exc)},
+        ) from exc
+
+    try:
+        issues_internal = _detect_issues_for_frame(df, frame_pd, scan_config=scan_config)
+        issue_map = {str(item["issue_id"]): item for item in issues_internal}
+
+        original_df = df.copy(deep=True)
+        repaired_df = df.copy(deep=True)
+        applied_repairs: list[dict[str, Any]] = []
+        skipped_issues: list[dict[str, Any]] = []
+        skipped_ids: set[str] = set()
+        issue_accept_rows: dict[str, set[int]] = {}
+        issue_conflict_rows: dict[str, set[int]] = {}
+        issue_replacement_preview: dict[str, Any] = {}
+        issue_raw_counts: dict[str, int] = {}
+        conflict_events: list[dict[str, Any]] = []
+
+        def add_skip(issue_id: str, reason: str, extra: dict[str, Any] | None = None) -> None:
+            if issue_id in skipped_ids:
+                return
+            row: dict[str, Any] = {"issue_id": issue_id, "reason": reason}
+            if extra:
+                row.update(extra)
+            skipped_issues.append(row)
+            skipped_ids.add(issue_id)
+
+        selected_issues: list[dict[str, Any]] = []
+        selected_columns: list[str] = []
+        selected_columns_seen: set[str] = set()
+
+        for issue_id in selected_issue_ids:
+            issue = issue_map.get(issue_id)
+            if issue is None:
+                add_skip(issue_id, "issue_not_found")
+                continue
+
+            column = str(issue["column"])
+            if column not in repaired_df.columns:
+                add_skip(issue_id, "column_not_found")
+                continue
+            selected_issues.append(issue)
+            if column not in selected_columns_seen:
+                selected_columns_seen.add(column)
+                selected_columns.append(column)
+
+        column_order, cycle_columns = _topological_column_order(selected_columns, column_dependencies)
+        column_rank = {col: idx for idx, col in enumerate(column_order)}
+        issue_priority = {name: idx for idx, name in enumerate(repair_strategy["issue_priority"])}
+        selected_issues.sort(
+            key=lambda item: (
+                int(column_rank.get(str(item["column"]), 10_000)),
+                int(issue_priority.get(str(item["issue_type"]), 10_000)),
+                -float(item.get("issue_score", 0.0)),
+                str(item.get("issue_id", "")),
+            )
+        )
+
+        remaining_by_column: dict[str, int] = {}
+        for issue in selected_issues:
+            col = str(issue["column"])
+            remaining_by_column[col] = remaining_by_column.get(col, 0) + 1
+        completed_columns: set[str] = set()
+
+        column_position = {str(col): idx for idx, col in enumerate(repaired_df.columns)}
+        conflict_policy = str(repair_strategy["conflict_policy"])
+        preview_limit = int(repair_strategy["preview_limit"])
+        cell_plan: dict[tuple[int, str], dict[str, Any]] = {}
+
+        for issue in selected_issues:
+            issue_id = str(issue["issue_id"])
+            if issue_id in skipped_ids:
+                col = str(issue["column"])
+                remaining_by_column[col] = max(0, remaining_by_column.get(col, 1) - 1)
+                if remaining_by_column.get(col, 0) <= 0:
+                    completed_columns.add(col)
+                continue
+
+            column = str(issue["column"])
+            issue_type = str(issue["issue_type"])
+            if issue_type not in {"missing_values", "numeric_outlier", "rare_category"}:
+                add_skip(
+                    issue_id,
+                    "unsupported_issue_type",
+                    {"issue_type": issue_type, "column": column},
+                )
+                remaining_by_column[column] = max(0, remaining_by_column.get(column, 1) - 1)
+                if remaining_by_column.get(column, 0) <= 0:
+                    completed_columns.add(column)
+                continue
+            rule = issue.get("repair_rule", {})
+            deps = column_dependencies.get(column, [])
+            missing_dep_cols = [dep for dep in deps if dep not in df.columns]
+            if missing_dep_cols:
+                add_skip(
+                    issue_id,
+                    "dependency_column_not_found",
+                    {"column": column, "depends_on": missing_dep_cols, "issue_type": issue_type},
+                )
+                remaining_by_column[column] = max(0, remaining_by_column.get(column, 1) - 1)
+                if remaining_by_column.get(column, 0) <= 0:
+                    completed_columns.add(column)
+                continue
+            if column in cycle_columns:
+                add_skip(
+                    issue_id,
+                    "dependency_cycle",
+                    {"column": column, "depends_on": deps, "issue_type": issue_type},
+                )
+                remaining_by_column[column] = max(0, remaining_by_column.get(column, 1) - 1)
+                if remaining_by_column.get(column, 0) <= 0:
+                    completed_columns.add(column)
+                continue
+            unresolved = [dep for dep in deps if dep in remaining_by_column and dep not in completed_columns]
+            if unresolved:
+                add_skip(
+                    issue_id,
+                    "dependency_unresolved",
+                    {"column": column, "depends_on": unresolved, "issue_type": issue_type},
+                )
+                remaining_by_column[column] = max(0, remaining_by_column.get(column, 1) - 1)
+                if remaining_by_column.get(column, 0) <= 0:
+                    completed_columns.add(column)
+                continue
+
+            series_original = original_df[column]
+            mask = _issue_mask_from_rule(series_original, issue_type, rule, frame_pd)
+            positions = [idx for idx, flag in enumerate(mask.tolist()) if bool(flag)]
+            issue_raw_counts[issue_id] = len(positions)
+
+            if issue_type == "numeric_outlier" and str(repair_strategy["outlier"]) == "skip":
+                add_skip(
+                    issue_id,
+                    "strategy_disabled",
+                    {"column": column, "issue_type": issue_type, "strategy": "outlier=skip"},
+                )
+                remaining_by_column[column] = max(0, remaining_by_column.get(column, 1) - 1)
+                if remaining_by_column.get(column, 0) <= 0:
+                    completed_columns.add(column)
+                continue
+
+            if not positions:
+                add_skip(issue_id, "no_rows_matched", {"column": column, "issue_type": issue_type})
+                remaining_by_column[column] = max(0, remaining_by_column.get(column, 1) - 1)
+                if remaining_by_column.get(column, 0) <= 0:
+                    completed_columns.add(column)
+                continue
+
+            replacement_preview: Any = None
+            if issue_type == "missing_values":
+                replacement_value = _replacement_for_missing(series_original, frame_pd, repair_strategy)
+                replacement_preview = replacement_value
+            elif issue_type == "numeric_outlier":
+                lower = float(rule.get("lower_bound"))
+                upper = float(rule.get("upper_bound"))
+                replacement_preview = {"lower_bound": round(lower, 12), "upper_bound": round(upper, 12)}
+            elif issue_type == "rare_category":
+                rare_values = list(rule.get("rare_values", []))
+                replacement_value = _replacement_for_rare(series_original, rare_values, repair_strategy, rule)
+                replacement_preview = replacement_value
+
+            issue_replacement_preview[issue_id] = replacement_preview
+            issue_accept_rows.setdefault(issue_id, set())
+            issue_conflict_rows.setdefault(issue_id, set())
+            col_pos = int(column_position[column])
+
+            for pos in positions:
+                before_value = series_original.iat[pos]
+                after_value = before_value
+
+                if issue_type == "missing_values":
+                    after_value = replacement_preview
+                elif issue_type == "numeric_outlier":
+                    lower = float(rule.get("lower_bound"))
+                    upper = float(rule.get("upper_bound"))
+                    try:
+                        val = float(before_value)
+                    except Exception:
+                        continue
+                    after_value = min(upper, max(lower, val))
+                elif issue_type == "rare_category":
+                    after_value = replacement_preview
+
+                before_is_nan = bool(frame_pd.isna(before_value))
+                after_is_nan = bool(frame_pd.isna(after_value))
+                if (before_is_nan and after_is_nan) or ((not before_is_nan) and (not after_is_nan) and before_value == after_value):
+                    continue
+
+                key = (pos, column)
+                proposal = {
+                    "issue_id": issue_id,
+                    "column": column,
+                    "row_pos": pos,
+                    "row": _index_to_builtin(original_df.index[pos]),
+                    "col_pos": col_pos,
+                    "before": before_value,
+                    "after": after_value,
+                }
+                existing = cell_plan.get(key)
+                if existing is None:
+                    cell_plan[key] = proposal
+                    issue_accept_rows[issue_id].add(pos)
+                    continue
+
+                existing_issue_id = str(existing["issue_id"])
+                issue_conflict_rows.setdefault(issue_id, set()).add(pos)
+                if len(conflict_events) < 120:
+                    conflict_events.append(
+                        {
+                            "row": _index_to_builtin(original_df.index[pos]),
+                            "column": column,
+                            "existing_issue_id": existing_issue_id,
+                            "incoming_issue_id": issue_id,
+                            "resolution": conflict_policy,
+                        }
+                    )
+
+                if conflict_policy == "last_wins":
+                    issue_accept_rows.setdefault(existing_issue_id, set()).discard(pos)
+                    issue_conflict_rows.setdefault(existing_issue_id, set()).add(pos)
+                    cell_plan[key] = proposal
+                    issue_accept_rows[issue_id].add(pos)
+
+            remaining_by_column[column] = max(0, remaining_by_column.get(column, 1) - 1)
+            if remaining_by_column.get(column, 0) <= 0:
+                completed_columns.add(column)
+
+        for proposal in cell_plan.values():
+            repaired_df.iat[int(proposal["row_pos"]), int(proposal["col_pos"])] = proposal["after"]
+
+        post_issues_internal = _detect_issues_for_frame(repaired_df, frame_pd, scan_config=scan_config)
+        before_issue_type_counts = _issue_type_counter(issues_internal)
+        after_issue_type_counts = _issue_type_counter(post_issues_internal)
+        before_issue_column_counts = _issue_counter_by_column(issues_internal)
+        after_issue_column_counts = _issue_counter_by_column(post_issues_internal)
+
+        changes_by_issue: dict[str, list[dict[str, Any]]] = {}
+        for proposal in cell_plan.values():
+            issue_id = str(proposal["issue_id"])
+            changes_by_issue.setdefault(issue_id, []).append(proposal)
+
+        for issue_id in selected_issue_ids:
+            issue = issue_map.get(issue_id)
+            if issue is None:
+                continue
+            if issue_id in skipped_ids:
+                continue
+
+            issue_type = str(issue.get("issue_type"))
+            column = str(issue.get("column"))
+            issue_changes = sorted(changes_by_issue.get(issue_id, []), key=lambda item: int(item["row_pos"]))
+            rows_touched = len(issue_changes)
+
+            if rows_touched <= 0:
+                reason = "conflict_all_skipped" if issue_conflict_rows.get(issue_id) else "no_rows_matched"
+                add_skip(
+                    issue_id,
+                    reason,
+                    {"column": column, "issue_type": issue_type, "conflict_rows": len(issue_conflict_rows.get(issue_id, set()))},
+                )
+                continue
+
+            rule = issue.get("repair_rule", {})
+            before_count = int(issue.get("count", issue_raw_counts.get(issue_id, rows_touched)))
+            after_mask = _issue_mask_from_rule(repaired_df[column], issue_type, rule, frame_pd)
+            after_count = int(after_mask.sum())
+            resolved_count = max(0, before_count - after_count)
+            cells_preview = [
+                {
+                    "row": _index_to_builtin(change["row"]),
+                    "before": _to_builtin(change["before"]),
+                    "after": _to_builtin(change["after"]),
+                }
+                for change in issue_changes[:preview_limit]
+            ]
+
+            applied_repairs.append(
+                {
+                    "issue_id": issue_id,
+                    "column": column,
+                    "issue_type": issue_type,
+                    "rows_touched": rows_touched,
+                    "replacement_preview": issue_replacement_preview.get(issue_id),
+                    "before_count": before_count,
+                    "after_count": after_count,
+                    "resolved_count": resolved_count,
+                    "conflict_rows_skipped": len(issue_conflict_rows.get(issue_id, set())),
+                    "cells_preview": cells_preview,
+                    "strategy": {
+                        "conflict_policy": conflict_policy,
+                        "missing_numeric": repair_strategy["missing_numeric"],
+                        "missing_categorical": repair_strategy["missing_categorical"],
+                        "outlier": repair_strategy["outlier"],
+                        "rare_category": repair_strategy["rare_category"],
+                    },
+                }
+            )
+    except KnownEngineError:
+        raise
+    except Exception as exc:
+        raise KnownEngineError(
+            code=ErrorCode.REPAIR_BATCH_FAILED,
+            message="Batch repair failed",
+            details={"csv_path": str(csv_file), "reason": str(exc)},
+        ) from exc
+
+    output_csv: str | None = None
+    rollback_info: dict[str, Any] | None = None
+    if write_output:
+        output_csv_raw = str(payload.get("output_csv") or "").strip()
+        output_dir_raw = str(payload.get("output_dir") or "").strip()
+        if output_csv_raw:
+            output_path = _resolve_output_file(output_csv_raw)
+        elif output_dir_raw:
+            output_dir = _resolve_output_dir(output_dir_raw)
+            output_path = output_dir / f"{csv_file.stem}.repaired.csv"
+        else:
+            output_path = csv_file.with_name(f"{csv_file.stem}.repaired.csv")
+
+        os.makedirs(output_path.parent, exist_ok=True)
+
+        if enable_rollback:
+            rollback_dir_raw = str(payload.get("rollback_dir") or "").strip()
+            if rollback_dir_raw:
+                rollback_dir = _resolve_output_dir(rollback_dir_raw)
+            else:
+                rollback_dir = output_path.parent / ".rollback"
+            os.makedirs(rollback_dir, exist_ok=True)
+            rollback_id = f"rb-{int(time.time() * 1000)}-{uuid.uuid4().hex[:8]}"
+            backup_csv = rollback_dir / f"{rollback_id}.{csv_file.name}.bak.csv"
+            manifest_path = rollback_dir / f"{rollback_id}.json"
+            shutil.copy2(csv_file, backup_csv)
+            manifest = {
+                "rollback_id": rollback_id,
+                "created_at": int(time.time()),
+                "source_csv": str(csv_file),
+                "output_csv": str(output_path),
+                "backup_csv": str(backup_csv),
+                "selected_issue_ids": selected_issue_ids,
+                "scan_config": scan_config,
+                "repair_strategy": repair_strategy,
+            }
+            manifest_path.write_text(json.dumps(_to_builtin(manifest), ensure_ascii=True, indent=2) + "\n", encoding="utf-8")
+            rollback_info = {
+                "rollback_id": rollback_id,
+                "manifest_path": str(manifest_path),
+                "backup_csv": str(backup_csv),
+                "restore_action": "rollback_repair_batch",
+            }
+
+        repaired_df.to_csv(output_path, index=False)
+        output_csv = str(output_path)
+
+    total_cells_modified = int(len(cell_plan))
+    before_issue_count = int(len(issues_internal))
+    after_issue_count = int(len(post_issues_internal))
+    changed_cells_preview = [
+        {
+            "row": _index_to_builtin(change["row"]),
+            "column": str(change["column"]),
+            "issue_id": str(change["issue_id"]),
+            "before": _to_builtin(change["before"]),
+            "after": _to_builtin(change["after"]),
+        }
+        for change in sorted(cell_plan.values(), key=lambda item: (int(item["row_pos"]), str(item["column"])))[:preview_limit]
+    ]
+    return _to_builtin(
+        {
+            "csv_path": str(csv_file),
+            "scan_config": scan_config,
+            "repair_strategy": repair_strategy,
+            "column_dependencies": column_dependencies,
+            "plan_only": plan_only,
+            "execution_mode": "plan_only" if plan_only else "apply",
+            "write_output_requested": write_output_requested,
+            "write_output": write_output,
+            "output_csv": output_csv,
+            "selected_issue_count": len(selected_issue_ids),
+            "applied_issue_count": len(applied_repairs),
+            "total_cells_modified": total_cells_modified,
+            "selected_issue_ids": selected_issue_ids,
+            "applied_repairs": applied_repairs,
+            "skipped_issues": skipped_issues,
+            "scan_issue_count": before_issue_count,
+            "conflict_summary": {
+                "policy": conflict_policy,
+                "total_conflicts": len(conflict_events),
+                "events_preview": conflict_events[:preview_limit],
+            },
+            "comparison": {
+                "before_issue_count": before_issue_count,
+                "after_issue_count": after_issue_count,
+                "resolved_issue_count": max(0, before_issue_count - after_issue_count),
+                "before_issue_type_counts": before_issue_type_counts,
+                "after_issue_type_counts": after_issue_type_counts,
+                "before_column_issue_counts": before_issue_column_counts,
+                "after_column_issue_counts": after_issue_column_counts,
+                "changed_cell_count": total_cells_modified,
+                "changed_cells_preview": changed_cells_preview,
+            },
+            "rollback": rollback_info,
+        }
+    )
+
+
+def action_rollback_repair_batch(payload: dict[str, Any]) -> dict[str, Any]:
+    manifest_path_raw = str(_require(payload, "manifest_path"))
+    manifest_path = _resolve_output_file(manifest_path_raw)
+    if not manifest_path.exists():
+        raise KnownEngineError(
+            code=ErrorCode.FILE_NOT_FOUND,
+            message=f"Rollback manifest does not exist: {manifest_path}",
+            details={"manifest_path": str(manifest_path)},
+        )
+
+    try:
+        manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    except Exception as exc:
+        raise KnownEngineError(
+            code=ErrorCode.ROLLBACK_FAILED,
+            message="Failed to read rollback manifest",
+            details={"manifest_path": str(manifest_path), "reason": str(exc)},
+        ) from exc
+
+    if not isinstance(manifest, dict):
+        raise KnownEngineError(
+            code=ErrorCode.ROLLBACK_FAILED,
+            message="Rollback manifest must be an object",
+            details={"manifest_path": str(manifest_path)},
+        )
+
+    backup_csv = Path(str(manifest.get("backup_csv") or "")).expanduser().resolve()
+    if not backup_csv.exists():
+        raise KnownEngineError(
+            code=ErrorCode.FILE_NOT_FOUND,
+            message=f"Rollback backup does not exist: {backup_csv}",
+            details={"backup_csv": str(backup_csv), "manifest_path": str(manifest_path)},
+        )
+
+    restore_target = str(payload.get("restore_target") or "source_csv").strip().lower()
+    target_csv_raw = str(payload.get("target_csv") or "").strip()
+    target_path = _rollback_manifest_to_target(manifest, restore_target, custom_target=target_csv_raw)
+
+    try:
+        os.makedirs(target_path.parent, exist_ok=True)
+        shutil.copy2(backup_csv, target_path)
+    except Exception as exc:
+        raise KnownEngineError(
+            code=ErrorCode.ROLLBACK_FAILED,
+            message="Rollback copy failed",
+            details={"backup_csv": str(backup_csv), "target_csv": str(target_path), "reason": str(exc)},
+        ) from exc
+
+    return _to_builtin(
+        {
+            "rollback_id": manifest.get("rollback_id"),
+            "manifest_path": str(manifest_path),
+            "backup_csv": str(backup_csv),
+            "restored_to": str(target_path),
+            "source_csv": manifest.get("source_csv"),
+            "output_csv": manifest.get("output_csv"),
+        }
+    )

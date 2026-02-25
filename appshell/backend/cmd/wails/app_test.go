@@ -13,6 +13,7 @@ func TestNormalizeRequestForTrainPayload(t *testing.T) {
 		"csv_path":   "data/raw/demo.csv",
 		"target_col": "stroke",
 		"output_dir": "outputs/results/mvp",
+		"task_type":  "classification",
 		"timeout_ms": 12000,
 	})
 	if err != nil {
@@ -30,6 +31,9 @@ func TestNormalizeRequestForTrainPayload(t *testing.T) {
 	}
 	if req.Payload["output_dir"] != "outputs/results/mvp" {
 		t.Fatalf("unexpected output_dir: %v", req.Payload["output_dir"])
+	}
+	if req.Payload["task_type"] != "classification" {
+		t.Fatalf("unexpected task_type: %v", req.Payload["task_type"])
 	}
 	if timeout != 12*time.Second {
 		t.Fatalf("unexpected timeout: %s", timeout)
@@ -78,6 +82,157 @@ func TestNormalizeRequestForRepairPayload(t *testing.T) {
 		t.Fatalf("unexpected k_neighbors: %v", req.Payload["k_neighbors"])
 	}
 	if timeout != 15*time.Second {
+		t.Fatalf("unexpected timeout: %s", timeout)
+	}
+}
+
+func TestNormalizeRequestForScanFilePayload(t *testing.T) {
+	req, timeout, err := normalizeRequest(map[string]any{
+		"action":                          "scan_file",
+		"csv_path":                        "data/raw/healthcare-dataset-stroke-data.csv",
+		"max_bins":                        96,
+		"max_issues":                      500,
+		"numeric_iqr_factor":              2.0,
+		"enable_time_series_shift":        true,
+		"time_series_z_threshold":         4.5,
+		"enable_cross_column_consistency": true,
+		"consistency_rules": []map[string]any{
+			{
+				"type":      "lte",
+				"left_col":  "start_day",
+				"right_col": "end_day",
+			},
+		},
+		"enable_duplicate_record": true,
+		"duplicate_subset":        []string{"id", "name"},
+		"timeout_ms":              8000,
+	})
+	if err != nil {
+		t.Fatalf("normalizeRequest failed: %v", err)
+	}
+
+	if req.Action != "scan_file" {
+		t.Fatalf("unexpected action: %s", req.Action)
+	}
+	if req.Payload["csv_path"] != "data/raw/healthcare-dataset-stroke-data.csv" {
+		t.Fatalf("unexpected csv_path: %v", req.Payload["csv_path"])
+	}
+	if req.Payload["max_bins"] != 96 {
+		t.Fatalf("unexpected max_bins: %v", req.Payload["max_bins"])
+	}
+	if req.Payload["max_issues"] != 500 {
+		t.Fatalf("unexpected max_issues: %v", req.Payload["max_issues"])
+	}
+	if req.Payload["numeric_iqr_factor"] != 2.0 {
+		t.Fatalf("unexpected numeric_iqr_factor: %v", req.Payload["numeric_iqr_factor"])
+	}
+	if req.Payload["time_series_z_threshold"] != 4.5 {
+		t.Fatalf("unexpected time_series_z_threshold: %v", req.Payload["time_series_z_threshold"])
+	}
+	if req.Payload["consistency_rules"] == nil {
+		t.Fatalf("consistency_rules should be forwarded")
+	}
+	if req.Payload["duplicate_subset"] == nil {
+		t.Fatalf("duplicate_subset should be forwarded")
+	}
+	if timeout != 8*time.Second {
+		t.Fatalf("unexpected timeout: %s", timeout)
+	}
+}
+
+func TestNormalizeRequestForRepairBatchPayload(t *testing.T) {
+	req, timeout, err := normalizeRequest(map[string]any{
+		"action":          "repair_batch",
+		"csv_path":        "data/raw/healthcare-dataset-stroke-data.csv",
+		"issue_ids":       []string{"age::numeric_outlier", "bmi::missing_values"},
+		"write_output":    false,
+		"plan_only":       true,
+		"enable_rollback": true,
+		"rollback_dir":    "outputs/rollback",
+		"repair_strategy": map[string]any{
+			"conflict_policy": "last_wins",
+		},
+		"column_dependencies": map[string]any{
+			"bmi": []string{"age"},
+		},
+		"max_issues":              1200,
+		"time_series_z_threshold": 5.2,
+		"duplicate_subset":        []string{"id", "age"},
+		"scan_config": map[string]any{
+			"max_bins": 88,
+		},
+		"timeout_ms": 20000,
+	})
+	if err != nil {
+		t.Fatalf("normalizeRequest failed: %v", err)
+	}
+
+	if req.Action != "repair_batch" {
+		t.Fatalf("unexpected action: %s", req.Action)
+	}
+	if req.Payload["csv_path"] != "data/raw/healthcare-dataset-stroke-data.csv" {
+		t.Fatalf("unexpected csv_path: %v", req.Payload["csv_path"])
+	}
+	if req.Payload["write_output"] != false {
+		t.Fatalf("unexpected write_output: %v", req.Payload["write_output"])
+	}
+	if req.Payload["plan_only"] != true {
+		t.Fatalf("unexpected plan_only: %v", req.Payload["plan_only"])
+	}
+	if req.Payload["enable_rollback"] != true {
+		t.Fatalf("unexpected enable_rollback: %v", req.Payload["enable_rollback"])
+	}
+	if req.Payload["rollback_dir"] != "outputs/rollback" {
+		t.Fatalf("unexpected rollback_dir: %v", req.Payload["rollback_dir"])
+	}
+	if req.Payload["repair_strategy"] == nil {
+		t.Fatalf("repair_strategy should be forwarded")
+	}
+	if req.Payload["column_dependencies"] == nil {
+		t.Fatalf("column_dependencies should be forwarded")
+	}
+	if req.Payload["max_issues"] != 1200 {
+		t.Fatalf("unexpected max_issues: %v", req.Payload["max_issues"])
+	}
+	if req.Payload["time_series_z_threshold"] != 5.2 {
+		t.Fatalf("unexpected time_series_z_threshold: %v", req.Payload["time_series_z_threshold"])
+	}
+	if req.Payload["duplicate_subset"] == nil {
+		t.Fatalf("duplicate_subset should be forwarded")
+	}
+	if req.Payload["scan_config"] == nil {
+		t.Fatalf("scan_config should be forwarded")
+	}
+	if timeout != 20*time.Second {
+		t.Fatalf("unexpected timeout: %s", timeout)
+	}
+}
+
+func TestNormalizeRequestForRollbackRepairBatchPayload(t *testing.T) {
+	req, timeout, err := normalizeRequest(map[string]any{
+		"action":         "rollback_repair_batch",
+		"manifest_path":  "outputs/results/.rollback/rb-1.json",
+		"restore_target": "output_csv",
+		"target_csv":     "outputs/results/recovered.csv",
+		"timeout_ms":     30000,
+	})
+	if err != nil {
+		t.Fatalf("normalizeRequest failed: %v", err)
+	}
+
+	if req.Action != "rollback_repair_batch" {
+		t.Fatalf("unexpected action: %s", req.Action)
+	}
+	if req.Payload["manifest_path"] != "outputs/results/.rollback/rb-1.json" {
+		t.Fatalf("unexpected manifest_path: %v", req.Payload["manifest_path"])
+	}
+	if req.Payload["restore_target"] != "output_csv" {
+		t.Fatalf("unexpected restore_target: %v", req.Payload["restore_target"])
+	}
+	if req.Payload["target_csv"] != "outputs/results/recovered.csv" {
+		t.Fatalf("unexpected target_csv: %v", req.Payload["target_csv"])
+	}
+	if timeout != 30*time.Second {
 		t.Fatalf("unexpected timeout: %s", timeout)
 	}
 }

@@ -19,8 +19,11 @@ from sklearn.metrics import (
     confusion_matrix,
     fbeta_score,
     f1_score,
+    mean_absolute_error,
+    mean_squared_error,
     precision_score,
     recall_score,
+    r2_score,
     roc_auc_score,
     roc_curve,
 )
@@ -59,6 +62,22 @@ def _build_classifier(random_state: int, class_weight: Any = "balanced") -> lgb.
         return lgb.LGBMClassifier(**base_params)
 
 
+def _build_regressor(random_state: int) -> lgb.LGBMRegressor:
+    base_params: dict[str, Any] = {
+        "random_state": random_state,
+        "verbose": -1,
+        "n_jobs": 1,
+    }
+    try:
+        return lgb.LGBMRegressor(
+            **base_params,
+            deterministic=True,
+            force_col_wise=True,
+        )
+    except TypeError:
+        return lgb.LGBMRegressor(**base_params)
+
+
 def _encode_features(features: pd.DataFrame) -> pd.DataFrame:
     encoded = features.copy()
     categorical_cols = encoded.select_dtypes(include=["object", "category"]).columns
@@ -69,6 +88,34 @@ def _encode_features(features: pd.DataFrame) -> pd.DataFrame:
         encoded[col] = encoded[col].astype("category")
 
     return encoded
+
+
+def infer_task_type(target: pd.Series, requested: str = "auto") -> str:
+    mode = str(requested or "auto").strip().lower()
+    if mode not in {"auto", "classification", "regression"}:
+        raise ValueError("task_type must be auto/classification/regression")
+
+    non_null_target = target.dropna()
+    if non_null_target.empty:
+        raise ValueError("target has no non-null values")
+
+    unique_count = int(non_null_target.nunique(dropna=True))
+    non_null_rows = int(non_null_target.shape[0])
+    unique_ratio = float(unique_count) / float(non_null_rows) if non_null_rows > 0 else 0.0
+
+    is_numeric = bool(pd.api.types.is_numeric_dtype(non_null_target))
+    is_float_target = bool(pd.api.types.is_float_dtype(non_null_target))
+    looks_continuous = (is_float_target and unique_count > 20) or (
+        is_numeric and unique_count > 20 and unique_ratio > 0.2
+    )
+
+    if mode == "classification":
+        if looks_continuous:
+            raise ValueError("continuous numeric target is not suitable for classification mode")
+        return "classification"
+    if mode == "regression":
+        return "regression"
+    return "regression" if looks_continuous else "classification"
 
 
 def get_decision_threshold(model: Any, default: float = 0.5) -> float:
@@ -225,18 +272,61 @@ def _compute_metrics(
     return metrics
 
 
-def train_model(df: pd.DataFrame, target_col: str) -> TrainingBundle:
+def _compute_regression_metrics(
+    y_test: pd.Series,
+    y_pred: np.ndarray,
+    feature_names: list[str],
+    feature_importance: np.ndarray,
+    y_train: pd.Series,
+) -> dict[str, Any]:
+    y_true = np.asarray(y_test).astype(float)
+    y_hat = np.asarray(y_pred).astype(float)
+    abs_err = np.abs(y_true - y_hat)
+
+    mae = float(mean_absolute_error(y_true, y_hat))
+    rmse = float(np.sqrt(mean_squared_error(y_true, y_hat)))
+    r2 = float(r2_score(y_true, y_hat))
+    denom = np.maximum(np.abs(y_true), 1e-8)
+    mape = float(np.mean(abs_err / denom))
+
+    baseline_std = float(np.std(np.asarray(y_train).astype(float))) if len(y_train) > 1 else 1.0
+    scale = max(1e-8, baseline_std * 3.0)
+    confidence = np.clip(1.0 - (abs_err / scale), 0.0, 1.0)
+
+    metrics: dict[str, Any] = {
+        "task_type": "regression",
+        "mae": mae,
+        "rmse": rmse,
+        "r2": r2,
+        "mape": mape,
+        "prediction_confidence_mean": float(np.mean(confidence)),
+        "prediction_confidence_p10": float(np.quantile(confidence, 0.10)),
+        "prediction_confidence_p90": float(np.quantile(confidence, 0.90)),
+        "y_test": y_true,
+        "y_pred": y_hat,
+        "y_prob": confidence,
+        "feature_importance": dict(zip(feature_names, feature_importance)),
+    }
+    return metrics
+
+
+def train_model(df: pd.DataFrame, target_col: str, task_type: str = "auto") -> TrainingBundle:
     if target_col not in df.columns:
         raise ValueError(f"target column not found: {target_col}")
 
     feature_names = [name for name in df.columns if name != target_col]
     features = df.loc[:, feature_names].copy()
     target = df[target_col]
+    if int(target.isna().sum()) > 0:
+        raise ValueError(f"target column contains missing values: {target_col}")
+    if int(target.dropna().nunique(dropna=True)) < 2:
+        raise ValueError(f"target column must contain at least 2 distinct values: {target_col}")
+    resolved_task_type = infer_task_type(target, requested=task_type)
 
     encoded_features = _encode_features(features)
     random_state = int(MODEL_CONFIG.get("random_state", 42))
     test_size = float(MODEL_CONFIG.get("test_size", 0.2))
-    stratify = target if target.nunique() > 1 else None
+    stratify = target if resolved_task_type == "classification" and target.nunique() > 1 else None
 
     x_train, x_test, y_train, y_test = train_test_split(
         encoded_features,
@@ -245,6 +335,27 @@ def train_model(df: pd.DataFrame, target_col: str) -> TrainingBundle:
         random_state=random_state,
         stratify=stratify,
     )
+
+    if resolved_task_type == "regression":
+        model = _build_regressor(random_state=random_state)
+        model.fit(x_train, y_train)
+        setattr(model, "task_type", "regression")
+        y_pred = np.asarray(model.predict(x_test)).astype(float)
+        metrics = _compute_regression_metrics(
+            y_test=y_test,
+            y_pred=y_pred,
+            feature_names=feature_names,
+            feature_importance=model.feature_importances_,
+            y_train=y_train,
+        )
+        normal_data = x_train.copy()
+        return TrainingBundle(
+            model=model,
+            x_test=x_test,
+            normal_data=normal_data,
+            metrics=metrics,
+            feature_names=feature_names,
+        )
 
     class_weight = MODEL_CONFIG.get("class_weight", "balanced")
     default_threshold = float(MODEL_CONFIG.get("decision_threshold", 0.5))
@@ -256,7 +367,7 @@ def train_model(df: pd.DataFrame, target_col: str) -> TrainingBundle:
 
     decision_threshold = default_threshold
     threshold_meta: dict[str, float] | None = None
-    is_binary = target.nunique() == 2
+    is_binary = y_train.nunique() == 2
 
     if is_binary:
         x_fit = x_train
@@ -272,7 +383,6 @@ def train_model(df: pd.DataFrame, target_col: str) -> TrainingBundle:
                 stratify=y_train,
             )
         except ValueError:
-            # Rare small-data path: fallback to train-set threshold search.
             x_val = None
             y_val = None
 
@@ -293,6 +403,7 @@ def train_model(df: pd.DataFrame, target_col: str) -> TrainingBundle:
 
     model = _build_classifier(random_state=random_state, class_weight=class_weight)
     model.fit(x_train, y_train)
+    setattr(model, "task_type", "classification")
     if is_binary:
         model.decision_threshold = decision_threshold
 
@@ -307,6 +418,7 @@ def train_model(df: pd.DataFrame, target_col: str) -> TrainingBundle:
         decision_threshold=get_decision_threshold(model),
         threshold_meta=threshold_meta,
     )
+    metrics["task_type"] = "classification"
 
     normal_data = x_train[y_train == 0].copy()
     if normal_data.empty:
@@ -320,8 +432,12 @@ def train_model(df: pd.DataFrame, target_col: str) -> TrainingBundle:
     )
 
 
-def process_and_train(df: pd.DataFrame, target_col: str) -> tuple[Any, pd.DataFrame, pd.DataFrame, dict[str, Any], list[str]]:
-    bundle = train_model(df, target_col)
+def process_and_train(
+    df: pd.DataFrame,
+    target_col: str,
+    task_type: str = "auto",
+) -> tuple[Any, pd.DataFrame, pd.DataFrame, dict[str, Any], list[str]]:
+    bundle = train_model(df, target_col, task_type=task_type)
     return bundle.model, bundle.x_test, bundle.normal_data, bundle.metrics, bundle.feature_names
 
 

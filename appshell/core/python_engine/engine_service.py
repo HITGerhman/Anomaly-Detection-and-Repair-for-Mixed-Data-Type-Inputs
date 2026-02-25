@@ -4,7 +4,14 @@ from __future__ import annotations
 
 from typing import Any, Callable
 
-from engine_core import action_health, action_repair, action_train
+from engine_core import (
+    action_health,
+    action_repair,
+    action_repair_batch,
+    action_rollback_repair_batch,
+    action_scan_file,
+    action_train,
+)
 from engine_protocol import ErrorCode, KnownEngineError
 
 
@@ -14,6 +21,9 @@ ActionHandler = Callable[[dict[str, Any]], dict[str, Any]]
 _REGISTRY: dict[str, ActionHandler] = {
     "health": action_health,
     "repair": action_repair,
+    "repair_batch": action_repair_batch,
+    "rollback_repair_batch": action_rollback_repair_batch,
+    "scan_file": action_scan_file,
     "train": action_train,
 }
 
