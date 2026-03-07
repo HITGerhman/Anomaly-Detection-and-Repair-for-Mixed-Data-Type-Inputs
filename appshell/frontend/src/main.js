@@ -52,10 +52,16 @@ const csvFileInput = document.getElementById("csv-file-input");
 const statusPill = document.getElementById("status-pill");
 const statusIcon = document.getElementById("status-icon");
 const statusMessage = document.getElementById("status-message");
+const runKpiProgress = document.getElementById("run-kpi-progress");
+const runKpiStageCount = document.getElementById("run-kpi-stage-count");
+const runKpiEventCount = document.getElementById("run-kpi-event-count");
+const runKpiElapsed = document.getElementById("run-kpi-elapsed");
 const progressFill = document.getElementById("progress-fill");
 const phaseHints = document.getElementById("phase-hints");
 const progressTimeline = document.getElementById("progress-timeline");
 const progressMetrics = document.getElementById("progress-metrics");
+const progressStageBars = document.getElementById("progress-stage-bars");
+const progressFailure = document.getElementById("progress-failure");
 const taskIdLabel = document.getElementById("task-id-label");
 const eventLog = document.getElementById("event-log");
 
@@ -67,6 +73,7 @@ const detectionSummary = document.getElementById("detection-summary");
 const detectionMessage = document.getElementById("detection-message");
 const repairableOverview = document.getElementById("repairable-overview");
 const nextActionText = document.getElementById("next-action-text");
+const resultObservability = document.getElementById("result-observability");
 const selectedIssuePill = document.getElementById("selected-issue-pill");
 const issueMapList = document.getElementById("issue-map-list");
 const mapScaleNote = document.getElementById("map-scale-note");
@@ -89,6 +96,7 @@ const repairReductionText = document.getElementById("repair-reduction-text");
 const kpiAppliedCount = document.getElementById("kpi-applied-count");
 const kpiSkippedCount = document.getElementById("kpi-skipped-count");
 const kpiCellsCount = document.getElementById("kpi-cells-count");
+const repairObservability = document.getElementById("repair-observability");
 
 const resultBox = document.getElementById("result-box");
 const toggleResponseBtn = document.getElementById("toggle-response-btn");
@@ -177,6 +185,20 @@ const STATUS_ICON_SYMBOL = {
 
 const TERMINAL_STATUSES = new Set(["succeeded", "failed", "canceled", "timed_out"]);
 
+const STAGE_LABEL_MAP = {
+  validate_input: "参数校验",
+  load_csv: "读取数据",
+  load_model: "加载模型",
+  preprocess: "预处理",
+  scan_columns: "扫描列异常",
+  train_model: "训练模型",
+  evaluate_model: "评估模型",
+  apply_repairs: "应用修复",
+  write_output: "写出结果",
+  complete: "完成",
+  unknown: "未知阶段",
+};
+
 const state = {
   currentStep: STEP_CONFIG,
   currentTaskId: "",
@@ -202,6 +224,7 @@ const state = {
   runningIntent: "",
   taskStartAtMS: 0,
   lastRunningHint: "",
+  seenProgressEventKeys: new Set(),
   advancedMode: false,
   responseExpanded: false,
   mockTasks: new Map(),
@@ -246,6 +269,48 @@ function formatList(value, fallback = "-") {
     .map((item) => String(item ?? "").trim())
     .filter(Boolean);
   return list.length > 0 ? list.join(", ") : fallback;
+}
+
+function stageLabel(raw) {
+  const value = String(raw || "").trim();
+  if (!value) return STAGE_LABEL_MAP.unknown;
+  const key = value.toLowerCase();
+  if (STAGE_LABEL_MAP[key]) return STAGE_LABEL_MAP[key];
+  if (value.includes("_")) {
+    return value
+      .split("_")
+      .map((part) => STAGE_LABEL_MAP[part.toLowerCase()] || part)
+      .join(" ");
+  }
+  return value;
+}
+
+function parseTimeMS(raw) {
+  const text = String(raw || "").trim();
+  if (!text) return 0;
+  const value = Date.parse(text);
+  return Number.isFinite(value) ? value : 0;
+}
+
+function getTaskProgress(task) {
+  const direct = asObject(task?.progress);
+  if (Object.keys(direct).length > 0) {
+    return direct;
+  }
+  const obs = asObject(task?.response?.result?.observability);
+  if (Object.keys(obs).length === 0) {
+    return {};
+  }
+  return {
+    current_stage: String(obs?.current_stage || ""),
+    progress_percent: toInt(obs?.progress_percent, 0),
+    last_message: String(obs?.last_message || ""),
+    stage_durations_ms: asObject(obs?.stage_durations_ms),
+    bottleneck_stage: String(obs?.bottleneck_stage || ""),
+    bottleneck_ms: toInt(obs?.bottleneck_ms, 0),
+    failure: asObject(obs?.failure),
+    events: asArray(obs?.events),
+  };
 }
 
 function escapeHtml(raw) {
@@ -376,31 +441,60 @@ function renderConfigFlowline() {
   });
 }
 
-function runningStageIndex(status, elapsedMS, stepCount) {
-  if (stepCount <= 0) return 0;
-  const normalized = String(status || "").toLowerCase();
-  if (normalized === "pending") return 0;
-  if (normalized === "running") {
-    if (elapsedMS < 1200) return 0;
-    if (elapsedMS < 3200) return Math.min(1, stepCount - 1);
-    if (elapsedMS < 5200) return Math.min(2, stepCount - 1);
-    return Math.min(3, stepCount - 1);
+function normalizeStageLabel(raw) {
+  const value = String(raw || "").trim();
+  if (!value) return "未知阶段";
+  return stageLabel(value);
+}
+
+function fallbackTimelineLabels(intent) {
+  return RUNNING_HINTS[intent] || RUNNING_HINTS[INTENT_SCAN];
+}
+
+function extractProgressStages(task, intent) {
+  const progress = getTaskProgress(task);
+  const events = asArray(progress?.events).map((item) => asObject(item));
+  const stages = [];
+  const seen = new Set();
+
+  for (const event of events) {
+    const stage = normalizeStageLabel(event?.stage);
+    if (seen.has(stage)) continue;
+    seen.add(stage);
+    stages.push(stage);
   }
-  if (TERMINAL_STATUSES.has(normalized)) return stepCount - 1;
-  return 0;
+
+  if (stages.length > 0) return stages;
+  return fallbackTimelineLabels(intent);
+}
+
+function stageStateForTimeline(stage, stageIndex, currentStage, currentIndex, status) {
+  const normalizedStatus = String(status || "idle").toLowerCase();
+  if (TERMINAL_STATUSES.has(normalizedStatus)) return "done";
+  if (normalizedStatus === "pending" || normalizedStatus === "running") {
+    if (currentIndex >= 0) {
+      if (stageIndex < currentIndex) return "done";
+      if (stageIndex === currentIndex) return "active";
+      return "";
+    }
+    if (stageIndex === 0) return "active";
+    return "";
+  }
+  return stage === currentStage ? "active" : "";
 }
 
 function renderProgressTimeline(task, intent) {
   if (!progressTimeline) return;
-  const labels = RUNNING_HINTS[intent] || RUNNING_HINTS[INTENT_SCAN];
   const status = String(task?.status || "idle").toLowerCase();
-  const elapsedMS = Math.max(0, Date.now() - toInt(state.taskStartAtMS, Date.now()));
-  const activeIndex = runningStageIndex(status, elapsedMS, labels.length);
+  const progress = getTaskProgress(task);
+  const stages = extractProgressStages(task, intent);
+  const currentStage = normalizeStageLabel(progress?.current_stage || stages[0] || "");
+  const currentIndex = stages.findIndex((stage) => stage === currentStage);
 
-  progressTimeline.innerHTML = labels
-    .map((label, idx) => {
-      const cls = idx < activeIndex ? "done" : idx === activeIndex ? "active" : "";
-      return `<li class="${cls}">${escapeHtml(label)}</li>`;
+  progressTimeline.innerHTML = stages
+    .map((stage, idx) => {
+      const cls = stageStateForTimeline(stage, idx, currentStage, currentIndex, status);
+      return `<li class="${cls}">${escapeHtml(stage)}</li>`;
     })
     .join("");
 }
@@ -414,25 +508,242 @@ function formatRemainingTime(task) {
   return `${Math.ceil(remain / 1000)}s`;
 }
 
+function formatDurationMS(value) {
+  const ms = toInt(value, 0);
+  if (ms <= 0) return "-";
+  if (ms < 1000) return `${ms} ms`;
+  return `${(ms / 1000).toFixed(2)} s`;
+}
+
+function formatFailureLocation(failure) {
+  const f = asObject(failure);
+  const file = String(f?.file || "").trim();
+  const column = String(f?.column || "").trim();
+  const rule = String(f?.rule || "").trim();
+  const parts = [];
+  if (file) parts.push(`文件: ${shortPath(file)}`);
+  if (column) parts.push(`列: ${column}`);
+  if (rule) parts.push(`规则: ${rule}`);
+  if (parts.length > 0) return parts.join(" | ");
+  return "-";
+}
+
+function taskElapsedMS(task) {
+  const now = Date.now();
+  const fallbackStart = toInt(state.taskStartAtMS, 0);
+  const started =
+    parseTimeMS(task?.started_at) || parseTimeMS(task?.created_at) || (fallbackStart > 0 ? fallbackStart : now);
+  const ended = parseTimeMS(task?.ended_at);
+  const end = ended > 0 ? ended : now;
+  return Math.max(0, end - started);
+}
+
+function formatElapsedTime(ms) {
+  const value = Math.max(0, toInt(ms, 0));
+  if (value < 1000) return `${value}ms`;
+  if (value < 60_000) return `${(value / 1000).toFixed(1)}s`;
+  const mins = Math.floor(value / 60_000);
+  const secs = Math.floor((value % 60_000) / 1000);
+  return `${mins}m ${secs}s`;
+}
+
+function formatTaskType(intent) {
+  if (intent === INTENT_REPAIR) return "批量修复";
+  if (intent === INTENT_TRAIN) return "模型训练";
+  return "全列检测";
+}
+
+function buildStageDurationEntries(task, intent) {
+  const progress = getTaskProgress(task);
+  const durations = asObject(progress?.stage_durations_ms);
+  const list = [];
+
+  for (const [stageRaw, rawMS] of Object.entries(durations)) {
+    const ms = Math.max(0, toInt(rawMS, 0));
+    if (ms <= 0) continue;
+    list.push({
+      stageRaw,
+      stage: normalizeStageLabel(stageRaw),
+      ms,
+    });
+  }
+  if (list.length > 0) {
+    return list;
+  }
+
+  const starts = new Map();
+  const derived = new Map();
+  const events = asArray(progress?.events).map((item) => asObject(item));
+  for (const event of events) {
+    const stage = normalizeStageLabel(event?.stage);
+    const phase = String(event?.phase || "").toLowerCase();
+    const atMS = toInt(event?.at_ms, 0);
+    if (!stage || atMS <= 0) continue;
+    if (phase === "start") {
+      starts.set(stage, atMS);
+      continue;
+    }
+    if (phase === "complete" || phase === "done" || phase === "success" || phase === "error") {
+      if (!starts.has(stage)) continue;
+      const duration = Math.max(0, atMS - toInt(starts.get(stage), atMS));
+      starts.delete(stage);
+      if (duration <= 0) continue;
+      const prev = toInt(derived.get(stage), 0);
+      if (duration > prev) {
+        derived.set(stage, duration);
+      }
+    }
+  }
+
+  return Array.from(derived.entries()).map(([stage, ms]) => ({
+    stageRaw: stage,
+    stage,
+    ms: toInt(ms, 0),
+  }));
+}
+
+function renderProgressStageBars(task, intent) {
+  if (!progressStageBars) return;
+  const progress = getTaskProgress(task);
+  const entries = buildStageDurationEntries(task, intent);
+  if (entries.length === 0) {
+    progressStageBars.innerHTML = '<p class="stage-bar-empty">等待任务运行后生成阶段耗时。</p>';
+    return;
+  }
+
+  const maxMS = Math.max(1, ...entries.map((entry) => entry.ms));
+  const bottleneck = normalizeStageLabel(progress?.bottleneck_stage || "");
+
+  progressStageBars.innerHTML = entries
+    .sort((a, b) => b.ms - a.ms)
+    .slice(0, 8)
+    .map((entry) => {
+      const width = Math.max(8, Math.round((entry.ms / maxMS) * 100));
+      const isBottleneck = bottleneck && entry.stage === bottleneck;
+      return `
+        <div class="stage-bar-row ${isBottleneck ? "is-bottleneck" : ""}">
+          <div class="stage-bar-head">
+            <span>${escapeHtml(entry.stage)}</span>
+            <strong>${escapeHtml(formatDurationMS(entry.ms))}</strong>
+          </div>
+          <div class="stage-bar-track">
+            <i class="stage-bar-fill" style="width:${width}%"></i>
+          </div>
+        </div>
+      `;
+    })
+    .join("");
+}
+
+function renderProgressFailure(task) {
+  const status = String(task?.status || "idle").toLowerCase();
+  const progress = getTaskProgress(task);
+  const failure = asObject(progress?.failure);
+
+  let message = String(failure?.message || "").trim();
+  if (!message && status === "failed") {
+    message = toReadableError(task);
+  }
+  if (!message && status === "succeeded") {
+    message = "无失败信息";
+  }
+  if (!message && (status === "running" || status === "pending")) {
+    message = "任务运行中，暂未检测到失败。";
+  }
+  if (!message) {
+    message = "-";
+  }
+
+  renderDescriptionList(progressFailure, [
+    ["阶段", String(failure?.stage || progress?.current_stage || "-")],
+    ["错误码", String(failure?.error_code || "-")],
+    ["文件", failure?.file ? shortPath(failure.file) : "-"],
+    ["列", String(failure?.column || "-")],
+    ["规则", String(failure?.rule || "-")],
+    ["原因", normalizeReadableErrorText(message)],
+  ]);
+}
+
+function renderRunKpis(task, intent) {
+  const status = String(task?.status || "idle").toLowerCase();
+  const progress = getTaskProgress(task);
+  const fallbackPercent = STATUS_PROGRESS[status] ?? 0;
+  const percent = clamp(toInt(progress?.progress_percent, fallbackPercent), 0, 100);
+  const stages = extractProgressStages(task, intent);
+  const events = asArray(progress?.events);
+  const elapsed = taskElapsedMS(task);
+
+  if (runKpiProgress) runKpiProgress.textContent = `${percent}%`;
+  if (runKpiStageCount) runKpiStageCount.textContent = String(stages.length);
+  if (runKpiEventCount) runKpiEventCount.textContent = String(events.length);
+  if (runKpiElapsed) runKpiElapsed.textContent = formatElapsedTime(elapsed);
+}
+
 function renderProgressMetrics(task, intent) {
   const request = asObject(task?.request);
   const response = asObject(task?.response);
   const result = asObject(response?.result);
   const profile = asObject(result?.data_profile);
+  const progress = getTaskProgress(task);
   const scannedRows = toInt(profile?.rows, 0);
   const issueCount = toInt(result?.issue_count, 0);
+  const bottleneckStage = normalizeStageLabel(progress?.bottleneck_stage || "");
+  const bottleneckMS = toInt(progress?.bottleneck_ms, 0);
+
   renderDescriptionList(progressMetrics, [
-    ["任务类型", intent === INTENT_REPAIR ? "批量修复" : "全列检测"],
+    ["任务类型", formatTaskType(intent)],
+    ["当前阶段", String(progress?.current_stage || "等待开始")],
+    ["当前进度", `${clamp(toInt(progress?.progress_percent, 0), 0, 100)}%`],
     ["已扫描行数", scannedRows > 0 ? scannedRows : "计算中"],
     ["发现问题", issueCount > 0 ? issueCount : "计算中"],
+    ["瓶颈阶段", bottleneckStage ? `${bottleneckStage} (${formatDurationMS(bottleneckMS)})` : "计算中"],
     ["超时设置", `${toInt(request?.payload?.timeout_ms, toInt(timeoutInput?.value, 90000))} ms`],
     ["预计剩余", formatRemainingTime(task)],
   ]);
 }
 
 function renderProgressSidebar(task, intent) {
+  renderRunKpis(task, intent);
   renderProgressTimeline(task, intent);
   renderProgressMetrics(task, intent);
+  renderProgressStageBars(task, intent);
+  renderProgressFailure(task);
+}
+
+function renderTaskObservability(target, task) {
+  if (!target) return;
+  if (!task) {
+    renderDescriptionList(target, [
+      ["状态", "暂无任务"],
+      ["来源", "-"],
+      ["阶段", "-"],
+      ["进度", "0%"],
+      ["总耗时", "-"],
+      ["瓶颈", "-"],
+      ["定位", "-"],
+      ["原因", "-"],
+    ]);
+    return;
+  }
+  const progress = getTaskProgress(task);
+  const durations = buildStageDurationEntries(task, intentFromTask(task));
+  const durationMS =
+    toInt(task?.response?.duration_ms, 0) ||
+    durations.reduce((sum, item) => sum + Math.max(0, toInt(item?.ms, 0)), 0);
+  const source = asArray(progress?.events).length > 0 ? "实时事件流" : "终态摘要";
+  const failure = asObject(progress?.failure);
+  const failureLocation = formatFailureLocation(failure);
+  const failureMessage = String(failure?.message || "").trim();
+
+  renderDescriptionList(target, [
+    ["来源", source],
+    ["阶段", String(progress?.current_stage || "-")],
+    ["进度", `${clamp(toInt(progress?.progress_percent, 0), 0, 100)}%`],
+    ["总耗时", formatDurationMS(durationMS)],
+    ["瓶颈", progress?.bottleneck_stage ? `${normalizeStageLabel(progress.bottleneck_stage)} (${formatDurationMS(progress?.bottleneck_ms)})` : "-"],
+    ["定位", failureLocation],
+    ["原因", failureMessage ? normalizeReadableErrorText(failureMessage) : "-"],
+  ]);
 }
 
 function renderRepairOverviewSidebar(result) {
@@ -587,9 +898,11 @@ function setTaskId(taskId) {
   if (taskIdLabel) taskIdLabel.textContent = `Task: ${taskId || "-"}`;
 }
 
-function setStatus(status, message) {
+function setStatus(status, message, progressOverride = null) {
   const normalized = String(status || "idle").toLowerCase();
-  const progress = STATUS_PROGRESS[normalized] ?? 0;
+  const fallback = STATUS_PROGRESS[normalized] ?? 0;
+  const customProgress = Number(progressOverride);
+  const progress = Number.isFinite(customProgress) ? clamp(Math.trunc(customProgress), 0, 100) : fallback;
 
   if (statusIcon) {
     const symbol = STATUS_ICON_SYMBOL[normalized] || STATUS_ICON_SYMBOL.idle;
@@ -960,6 +1273,8 @@ function setScanRepairVisibility(hasIssues) {
 function resetResultPanels() {
   if (detectionSummary) detectionSummary.innerHTML = "";
   if (detectionMessage) detectionMessage.textContent = "-";
+  renderTaskObservability(resultObservability, null);
+  renderTaskObservability(repairObservability, null);
   renderCompactList(repairableOverview, ["暂无可修复项"]);
   if (nextActionText) nextActionText.textContent = "先运行检测。";
   if (repairSummary) repairSummary.innerHTML = "";
@@ -1652,7 +1967,7 @@ function updateMapScaleLegend(scanResult) {
   mapScaleNote.textContent = "刻度说明：横轴为分桶列，纵轴标签为行范围。";
 }
 
-function renderScanResult(result) {
+function renderScanResult(result, taskSnapshot = state.currentTask) {
   const scanResult = asObject(result);
   const scanView = buildScanView(scanResult);
   state.scanResult = scanResult;
@@ -1685,6 +2000,7 @@ function renderScanResult(result) {
   if (mediumRiskColumns) rows.push(["中风险列", mediumRiskColumns]);
 
   renderDescriptionList(detectionSummary, rows);
+  renderTaskObservability(resultObservability, taskSnapshot);
   renderScanOverview({
     issueCount,
     targetColumn,
@@ -1727,6 +2043,7 @@ function renderScanFailure(reason, task = null, phase = "检测") {
   ]);
 
   renderScanFailureOverview(`${phase}失败：${normalizeReadableErrorText(String(reason || "未知错误"))}`, suggestion);
+  renderTaskObservability(resultObservability, task || state.currentTask);
 
   if (issueMapList) {
     issueMapList.innerHTML = '<div class="scan-placeholder">未生成异常缩略图。请修正参数后重试。</div>';
@@ -1748,7 +2065,7 @@ function describeIssueImpact(issue) {
   return `检测阶段识别到 ${issueType}。`;
 }
 
-function renderRepairResult(result) {
+function renderRepairResult(result, taskSnapshot = state.currentTask) {
   const repairResult = asObject(result);
   const comparison = asObject(repairResult?.comparison);
   const beforeIssueCount = toInt(comparison?.before_issue_count, toInt(repairResult?.scan_issue_count, 0));
@@ -1773,6 +2090,7 @@ function renderRepairResult(result) {
     ["已写出文件", String(repairResult?.write_output ?? false)],
     ["回滚清单", rollback?.manifest_path ? shortPath(rollback.manifest_path) : "-"],
   ]);
+  renderTaskObservability(repairObservability, taskSnapshot);
 
   if (!repairDetailList) return;
   repairDetailList.innerHTML = "";
@@ -1834,6 +2152,7 @@ function renderRepairFailure(reason, task = null) {
     ["状态", String(task?.status || "failed")],
     ["错误码", String(task?.response?.error?.code || "-")],
   ]);
+  renderTaskObservability(repairObservability, task || state.currentTask);
 
   if (!repairDetailList) return;
   repairDetailList.innerHTML = "";
@@ -2220,32 +2539,22 @@ function completedHintForIntent(intent) {
   return "检测完成，正在整理异常摘要。";
 }
 
-function renderPhaseHints(intent, status) {
+function renderPhaseHints(intent, status, task = null) {
   if (!phaseHints) return;
   const normalizedStatus = String(status || "idle").toLowerCase();
-  const hints = RUNNING_HINTS[intent] || RUNNING_HINTS[INTENT_SCAN];
+  const hints = extractProgressStages(task, intent);
+  const progress = getTaskProgress(task);
+  const currentStage = normalizeStageLabel(progress?.current_stage || hints[0] || "");
+  const currentIndex = hints.findIndex((item) => item === currentStage);
 
   if (normalizedStatus === "idle" || hints.length === 0) {
     phaseHints.innerHTML = "<li>等待任务开始</li>";
     return;
   }
 
-  let activeIndex = 0;
-  if (normalizedStatus === "pending") {
-    activeIndex = 0;
-  } else if (normalizedStatus === "running") {
-    const elapsedMS = Math.max(0, Date.now() - toInt(state.taskStartAtMS, Date.now()));
-    if (elapsedMS < 1200) activeIndex = 0;
-    else if (elapsedMS < 3200) activeIndex = 1;
-    else if (elapsedMS < 5200) activeIndex = 2;
-    else activeIndex = 3;
-  } else {
-    activeIndex = hints.length - 1;
-  }
-
   const rows = [];
   for (let i = 0; i < hints.length; i += 1) {
-    const cls = i < activeIndex ? "done" : i === activeIndex ? "active" : "";
+    const cls = stageStateForTimeline(hints[i], i, currentStage, currentIndex, normalizedStatus);
     rows.push(`<li class="${cls}">${escapeHtml(hints[i])}</li>`);
   }
   phaseHints.innerHTML = rows.join("");
@@ -2253,14 +2562,17 @@ function renderPhaseHints(intent, status) {
 
 function buildTaskMessage(task, intent) {
   const status = String(task?.status || "idle").toLowerCase();
-  const elapsedMS = Math.max(0, Date.now() - toInt(state.taskStartAtMS, Date.now()));
+  const progress = getTaskProgress(task);
+  const lastMessage = String(progress?.last_message || "").trim();
 
   if (status === "pending") return "任务已提交，等待执行槽位...";
-  if (status === "running") return runningHintForIntent(intent, elapsedMS);
+  if (status === "running") return lastMessage || runningHintForIntent(intent, 0);
   if (status === "succeeded") return completedHintForIntent(intent);
   if (status === "canceled") return "任务已取消。";
   if (status === "timed_out") return "任务已超时，请适当增大超时参数。";
   if (status === "failed") {
+    const failureMessage = String(progress?.failure?.message || "").trim();
+    if (failureMessage) return `任务失败：${normalizeReadableErrorText(failureMessage)}`;
     const readable = toReadableError(task);
     return `任务失败：${readable}`;
   }
@@ -2277,9 +2589,11 @@ function renderTask(task, intent = "") {
 
   const status = String(task?.status || "idle").toLowerCase();
   const taskIntent = intent || intentFromTask(task);
+  const progress = getTaskProgress(task);
+  const progressPercent = status === "succeeded" ? 100 : toInt(progress?.progress_percent, STATUS_PROGRESS[status] ?? 0);
   const message = buildTaskMessage(task, taskIntent);
-  setStatus(status, message);
-  renderPhaseHints(taskIntent, status);
+  setStatus(status, message, progressPercent);
+  renderPhaseHints(taskIntent, status, task);
   renderProgressSidebar(task, taskIntent);
 
   if (resultBox) resultBox.textContent = JSON.stringify(task || {}, null, 2);
@@ -2297,7 +2611,7 @@ function handleTerminalTask(task, intent, options = {}) {
   if (intent === INTENT_SCAN) {
     if (status === "succeeded") {
       clearError();
-      renderScanResult(task?.response?.result);
+      renderScanResult(task?.response?.result, task);
       setWizardStep(STEP_RESULT, { immediate: fromHistory });
       if (!fromHistory) addEvent("检测任务完成。", taskId);
     } else {
@@ -2313,7 +2627,7 @@ function handleTerminalTask(task, intent, options = {}) {
   if (intent === INTENT_REPAIR) {
     if (status === "succeeded") {
       clearError();
-      renderRepairResult(task?.response?.result);
+      renderRepairResult(task?.response?.result, task);
       setWizardStep(STEP_REPAIR, { immediate: fromHistory });
       if (!fromHistory) addEvent("批量修复任务完成。", taskId);
     } else {
@@ -2326,11 +2640,47 @@ function handleTerminalTask(task, intent, options = {}) {
   }
 }
 
+function appendProgressEvents(task, taskId) {
+  const progress = getTaskProgress(task);
+  const events = asArray(progress?.events).map((item) => asObject(item));
+  if (events.length === 0) return;
+
+  for (const event of events) {
+    const key = `${taskId}|${toInt(event?.at_ms, 0)}|${String(event?.stage || "")}|${String(event?.phase || "")}|${String(event?.message || "")}`;
+    if (state.seenProgressEventKeys.has(key)) continue;
+    state.seenProgressEventKeys.add(key);
+
+    const stage = String(event?.stage || "未知阶段");
+    const phase = String(event?.phase || "info").toLowerCase();
+    const msg = String(event?.message || "").trim();
+    const file = String(event?.file || "").trim();
+    const column = String(event?.column || "").trim();
+    const rule = String(event?.rule || "").trim();
+    const errorCode = String(event?.error_code || "").trim();
+    const scopeParts = [];
+    if (file) scopeParts.push(`文件:${shortPath(file)}`);
+    if (column) scopeParts.push(`列:${column}`);
+    if (rule) scopeParts.push(`规则:${rule}`);
+    if (errorCode) scopeParts.push(`错误码:${errorCode}`);
+
+    const phaseText =
+      phase === "start"
+        ? "开始"
+        : phase === "complete" || phase === "done" || phase === "success"
+        ? "完成"
+        : phase === "error"
+        ? "失败"
+        : "进行中";
+    const content = msg || `${stage}${phaseText}`;
+    const scopeText = scopeParts.length > 0 ? ` (${scopeParts.join(" | ")})` : "";
+    addEvent(`阶段[${stage}] ${phaseText}: ${content}${scopeText}`, taskId);
+  }
+}
+
 async function pollTask(taskId, intent) {
   const token = Date.now();
   state.pollingToken = token;
   let lastStatus = "";
-  let lastHint = "";
 
   while (state.pollingToken === token && state.currentTaskId === taskId) {
     let snapshot;
@@ -2361,13 +2711,7 @@ async function pollTask(taskId, intent) {
       addEvent(`状态 -> ${status}`, taskId);
       lastStatus = status;
     }
-    if (status === "running") {
-      const hint = runningHintForIntent(resolvedIntent, Math.max(0, Date.now() - toInt(state.taskStartAtMS, Date.now())));
-      if (hint !== lastHint) {
-        addEvent(`阶段: ${hint}`, taskId);
-        lastHint = hint;
-      }
-    }
+    appendProgressEvents(snapshot, taskId);
 
     if (TERMINAL_STATUSES.has(status)) {
       setRunningUi(false);
@@ -2386,6 +2730,7 @@ async function startTask(payload, intent) {
   state.runningIntent = intent || "";
   state.taskStartAtMS = Date.now();
   state.lastRunningHint = "";
+  state.seenProgressEventKeys = new Set();
   setStatus("pending", "任务已提交，等待执行槽位...");
   setWizardStep(STEP_PROGRESS);
 

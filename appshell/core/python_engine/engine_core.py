@@ -14,6 +14,7 @@ from pathlib import Path
 from typing import Any
 
 from engine_protocol import ErrorCode, KnownEngineError
+from engine_logging import log_event
 
 try:
     import numpy as np  # type: ignore
@@ -29,6 +30,34 @@ except Exception:  # pragma: no cover - optional runtime dependency
 PROJECT_ROOT = Path(__file__).resolve().parents[3]
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
+
+
+def _emit_stage_progress(
+    action: str,
+    stage: str,
+    phase: str,
+    progress: int,
+    message: str,
+    **fields: Any,
+) -> None:
+    payload = {
+        "action": str(action or "").strip(),
+        "stage": str(stage or "").strip(),
+        "phase": str(phase or "").strip(),
+        "progress": int(max(0, min(100, int(progress)))),
+        "message": str(message or "").strip(),
+    }
+    for key, value in fields.items():
+        if value is None:
+            continue
+        if isinstance(value, str) and not value.strip():
+            continue
+        payload[key] = value
+    try:
+        level = "warning" if payload["phase"] == "error" else "info"
+        log_event(level, "stage_progress", **payload)
+    except Exception:
+        return
 
 
 def _require(payload: dict[str, Any], key: str) -> Any:
@@ -1624,6 +1653,7 @@ def action_health(_: dict[str, Any]) -> dict[str, Any]:
 
 
 def action_scan_file(payload: dict[str, Any]) -> dict[str, Any]:
+    _emit_stage_progress("scan_file", "validate_input", "start", 2, "开始校验扫描参数")
     frame_pd = _load_dataframe_module("Scan")
     csv_path = _require(payload, "csv_path")
     scan_config = _scan_config_from_payload(payload)
@@ -1631,31 +1661,81 @@ def action_scan_file(payload: dict[str, Any]) -> dict[str, Any]:
 
     csv_file = _resolve_input_csv(str(csv_path))
     if not csv_file.exists():
+        _emit_stage_progress(
+            "scan_file",
+            "validate_input",
+            "error",
+            100,
+            "输入文件不存在",
+            file=str(csv_file),
+            error_code=ErrorCode.FILE_NOT_FOUND,
+        )
         raise KnownEngineError(
             code=ErrorCode.FILE_NOT_FOUND,
             message=f"Input CSV does not exist: {csv_file}",
             details={"csv_path": str(csv_file)},
         )
 
+    _emit_stage_progress("scan_file", "load_csv", "start", 14, "开始读取待扫描文件", file=str(csv_file))
     try:
         df = frame_pd.read_csv(csv_file)
     except Exception as exc:
+        _emit_stage_progress(
+            "scan_file",
+            "load_csv",
+            "error",
+            100,
+            "读取待扫描文件失败",
+            file=str(csv_file),
+            error_code=ErrorCode.CSV_READ_FAILED,
+            reason=str(exc),
+        )
         raise KnownEngineError(
             code=ErrorCode.CSV_READ_FAILED,
             message="Failed to read CSV",
             details={"csv_path": str(csv_file), "reason": str(exc)},
         ) from exc
+    _emit_stage_progress(
+        "scan_file",
+        "load_csv",
+        "complete",
+        28,
+        "待扫描文件读取完成",
+        file=str(csv_file),
+        rows=int(df.shape[0]),
+        columns=int(df.shape[1]),
+    )
 
+    _emit_stage_progress("scan_file", "scan_columns", "start", 42, "开始扫描列级异常", file=str(csv_file))
     try:
         issues_internal = _detect_issues_for_frame(df, frame_pd, scan_config=scan_config)
     except KnownEngineError:
         raise
     except Exception as exc:
+        _emit_stage_progress(
+            "scan_file",
+            "scan_columns",
+            "error",
+            100,
+            "扫描异常失败",
+            file=str(csv_file),
+            error_code=ErrorCode.SCAN_FAILED,
+            reason=str(exc),
+        )
         raise KnownEngineError(
             code=ErrorCode.SCAN_FAILED,
             message="File scan failed",
             details={"csv_path": str(csv_file), "reason": str(exc)},
         ) from exc
+    _emit_stage_progress(
+        "scan_file",
+        "scan_columns",
+        "complete",
+        78,
+        "列级异常扫描完成",
+        file=str(csv_file),
+        issue_count=int(len(issues_internal)),
+    )
 
     row_count = int(df.shape[0])
     issue_type_counts = _issue_type_counter(issues_internal)
@@ -1775,6 +1855,17 @@ def action_scan_file(payload: dict[str, Any]) -> dict[str, Any]:
         )
     )
 
+    _emit_stage_progress(
+        "scan_file",
+        "build_summary",
+        "complete",
+        100,
+        "扫描结果已汇总",
+        file=str(csv_file),
+        issue_count=int(len(issues)),
+        anomaly_column_count=int(len(anomaly_columns)),
+    )
+
     return _to_builtin(
         {
             "csv_path": str(csv_file),
@@ -1802,6 +1893,7 @@ def action_scan_file(payload: dict[str, Any]) -> dict[str, Any]:
 
 
 def action_train(payload: dict[str, Any]) -> dict[str, Any]:
+    _emit_stage_progress("train", "validate_input", "start", 2, "开始校验训练参数")
     train_pd, process_and_train, save_system_state = _load_training_modules()
 
     csv_path = _require(payload, "csv_path")
@@ -1811,46 +1903,165 @@ def action_train(payload: dict[str, Any]) -> dict[str, Any]:
 
     csv_file = _resolve_input_csv(str(csv_path))
     if not csv_file.exists():
+        _emit_stage_progress(
+            "train",
+            "validate_input",
+            "error",
+            100,
+            "输入文件不存在",
+            file=str(csv_file),
+            error_code=ErrorCode.FILE_NOT_FOUND,
+        )
         raise KnownEngineError(
             code=ErrorCode.FILE_NOT_FOUND,
             message=f"Input CSV does not exist: {csv_file}",
             details={"csv_path": str(csv_file)},
         )
 
+    _emit_stage_progress("train", "load_csv", "start", 12, "开始读取训练数据", file=str(csv_file))
     try:
         df = train_pd.read_csv(csv_file)
     except Exception as exc:  # pragma: no cover - serialization guard
+        _emit_stage_progress(
+            "train",
+            "load_csv",
+            "error",
+            100,
+            "读取训练数据失败",
+            file=str(csv_file),
+            error_code=ErrorCode.CSV_READ_FAILED,
+            reason=str(exc),
+        )
         raise KnownEngineError(
             code=ErrorCode.CSV_READ_FAILED,
             message="Failed to read CSV",
             details={"csv_path": str(csv_file), "reason": str(exc)},
         ) from exc
+    _emit_stage_progress(
+        "train",
+        "load_csv",
+        "complete",
+        26,
+        "训练数据读取完成",
+        file=str(csv_file),
+        rows=int(df.shape[0]),
+        columns=int(df.shape[1]),
+    )
 
     if target_col not in df.columns:
+        _emit_stage_progress(
+            "train",
+            "validate_input",
+            "error",
+            100,
+            "目标列不存在",
+            file=str(csv_file),
+            column=target_col,
+            error_code=ErrorCode.INVALID_TARGET_COLUMN,
+        )
         raise KnownEngineError(
             code=ErrorCode.INVALID_TARGET_COLUMN,
             message=f"Target column not found: {target_col}",
             details={"available_columns": list(df.columns)},
         )
 
-    resolved_task_type = _validate_train_target(df, target_col, train_pd, requested_mode=requested_task_type)
+    try:
+        resolved_task_type = _validate_train_target(df, target_col, train_pd, requested_mode=requested_task_type)
+    except KnownEngineError as exc:
+        details = exc.details if isinstance(exc.details, dict) else {}
+        _emit_stage_progress(
+            "train",
+            "validate_input",
+            "error",
+            100,
+            "训练参数校验失败",
+            file=str(csv_file),
+            column=str(details.get("target_col") or target_col),
+            error_code=exc.code,
+            reason=str(exc.message),
+        )
+        raise
+    _emit_stage_progress(
+        "train",
+        "validate_input",
+        "complete",
+        34,
+        "训练参数校验通过",
+        file=str(csv_file),
+        column=target_col,
+        task_type=resolved_task_type,
+    )
 
+    _emit_stage_progress(
+        "train",
+        "train_model",
+        "start",
+        46,
+        "开始训练模型",
+        column=target_col,
+        task_type=resolved_task_type,
+    )
     try:
         model, x_test, normal_data, metrics, feature_names = process_and_train(
             df,
             target_col,
             task_type=resolved_task_type,
         )
+        _emit_stage_progress(
+            "train",
+            "train_model",
+            "complete",
+            78,
+            "模型训练完成",
+            column=target_col,
+            task_type=resolved_task_type,
+        )
+        _emit_stage_progress(
+            "train",
+            "save_artifacts",
+            "start",
+            86,
+            "开始写入模型产物",
+            file=str(output_dir),
+        )
         os.makedirs(output_dir, exist_ok=True)
         save_system_state(model, x_test, normal_data, feature_names, save_dir=output_dir)
+        _emit_stage_progress(
+            "train",
+            "save_artifacts",
+            "complete",
+            96,
+            "模型产物写入完成",
+            file=str(output_dir),
+        )
     except KnownEngineError:
         raise
     except Exception as exc:  # pragma: no cover - runtime guard
+        _emit_stage_progress(
+            "train",
+            "train_model",
+            "error",
+            100,
+            "训练流程失败",
+            column=target_col,
+            file=str(csv_file),
+            error_code=ErrorCode.TRAINING_FAILED,
+            reason=str(exc),
+        )
         raise KnownEngineError(
             code=ErrorCode.TRAINING_FAILED,
             message="Model training failed",
             details={"reason": str(exc)},
         ) from exc
+
+    _emit_stage_progress(
+        "train",
+        "complete",
+        "complete",
+        100,
+        "训练任务完成",
+        file=str(output_dir),
+    )
 
     return {
         "artifacts": {
@@ -1872,11 +2083,21 @@ def action_train(payload: dict[str, Any]) -> dict[str, Any]:
 
 
 def action_repair(payload: dict[str, Any]) -> dict[str, Any]:
+    _emit_stage_progress("repair", "validate_input", "start", 2, "开始校验修复参数")
     load_system_state, predict_with_threshold, repair_anomaly_sample = _load_repair_modules()
 
     model_dir_text = str(_require(payload, "model_dir"))
     model_dir = _resolve_existing_dir(model_dir_text)
     if not model_dir.exists() or not model_dir.is_dir():
+        _emit_stage_progress(
+            "repair",
+            "validate_input",
+            "error",
+            100,
+            "模型目录不存在",
+            file=str(model_dir),
+            error_code=ErrorCode.FILE_NOT_FOUND,
+        )
         raise KnownEngineError(
             code=ErrorCode.FILE_NOT_FOUND,
             message=f"Model directory does not exist: {model_dir}",
@@ -1886,23 +2107,53 @@ def action_repair(payload: dict[str, Any]) -> dict[str, Any]:
     required_files = ["model_lgb.pkl", "test_data.pkl", "normal_data.pkl"]
     missing = [name for name in required_files if not (model_dir / name).exists()]
     if missing:
+        _emit_stage_progress(
+            "repair",
+            "validate_input",
+            "error",
+            100,
+            "模型目录缺少必要产物",
+            file=str(model_dir),
+            error_code=ErrorCode.FILE_NOT_FOUND,
+        )
         raise KnownEngineError(
             code=ErrorCode.FILE_NOT_FOUND,
             message="Model directory is missing required artifacts",
             details={"model_dir": str(model_dir), "missing_files": missing},
         )
 
+    _emit_stage_progress("repair", "load_model", "start", 16, "开始加载模型状态", file=str(model_dir))
     try:
         model, x_test, normal_data = load_system_state(model_dir)
     except Exception as exc:
+        _emit_stage_progress(
+            "repair",
+            "load_model",
+            "error",
+            100,
+            "加载模型状态失败",
+            file=str(model_dir),
+            error_code=ErrorCode.MODEL_STATE_LOAD_FAILED,
+            reason=str(exc),
+        )
         raise KnownEngineError(
             code=ErrorCode.MODEL_STATE_LOAD_FAILED,
             message="Failed to load model state artifacts",
             details={"model_dir": str(model_dir), "reason": str(exc)},
         ) from exc
+    _emit_stage_progress("repair", "load_model", "complete", 34, "模型状态加载完成", file=str(model_dir))
 
     model_task_type = str(getattr(model, "task_type", "classification")).strip().lower()
     if model_task_type != "classification":
+        _emit_stage_progress(
+            "repair",
+            "validate_input",
+            "error",
+            100,
+            "当前模型类型不支持单样本修复",
+            file=str(model_dir),
+            error_code=ErrorCode.UNSUPPORTED_TARGET_TYPE,
+        )
         raise KnownEngineError(
             code=ErrorCode.UNSUPPORTED_TARGET_TYPE,
             message=f"Repair action supports classification models only: {model_task_type}",
@@ -1915,6 +2166,15 @@ def action_repair(payload: dict[str, Any]) -> dict[str, Any]:
 
     sample_index = _to_int(payload, "sample_index", default=0, minimum=0)
     if sample_index >= int(x_test.shape[0]):
+        _emit_stage_progress(
+            "repair",
+            "validate_input",
+            "error",
+            100,
+            "样本索引超出范围",
+            file=str(model_dir),
+            error_code=ErrorCode.INVALID_INPUT,
+        )
         raise KnownEngineError(
             code=ErrorCode.INVALID_INPUT,
             message="sample_index is out of range",
@@ -1968,6 +2228,15 @@ def action_repair(payload: dict[str, Any]) -> dict[str, Any]:
     before_pred = int(before_pred_arr[0])
     before_score = float(before_prob_arr[0])
 
+    _emit_stage_progress(
+        "repair",
+        "repair_search",
+        "start",
+        54,
+        "开始执行单样本修复搜索",
+        file=str(model_dir),
+        sample_index=sample_index,
+    )
     try:
         repair_bundle = repair_anomaly_sample(
             model=model,
@@ -1981,11 +2250,31 @@ def action_repair(payload: dict[str, Any]) -> dict[str, Any]:
     except KnownEngineError:
         raise
     except Exception as exc:
+        _emit_stage_progress(
+            "repair",
+            "repair_search",
+            "error",
+            100,
+            "修复搜索失败",
+            file=str(model_dir),
+            error_code=ErrorCode.REPAIR_FAILED,
+            reason=str(exc),
+        )
         raise KnownEngineError(
             code=ErrorCode.REPAIR_FAILED,
             message="Repair search failed",
             details={"reason": str(exc)},
         ) from exc
+    _emit_stage_progress(
+        "repair",
+        "repair_search",
+        "complete",
+        78,
+        "单样本修复搜索完成",
+        file=str(model_dir),
+        sample_index=sample_index,
+        changed_fields=int(len(repair_bundle.changes)),
+    )
 
     after_pred_arr, after_prob_arr = predict_with_threshold(model, repair_bundle.repaired_sample)
     after_pred = int(after_pred_arr[0])
@@ -1994,6 +2283,7 @@ def action_repair(payload: dict[str, Any]) -> dict[str, Any]:
     artifacts: dict[str, str] = {}
     output_dir_raw = payload.get("output_dir")
     if (not dry_run) and output_dir_raw is not None and str(output_dir_raw).strip():
+        _emit_stage_progress("repair", "write_output", "start", 86, "开始写出修复结果", file=str(output_dir_raw))
         output_dir = _resolve_output_dir(str(output_dir_raw))
         os.makedirs(output_dir, exist_ok=True)
         repaired_csv = output_dir / f"repair_sample_{sample_index}.csv"
@@ -2017,6 +2307,7 @@ def action_repair(payload: dict[str, Any]) -> dict[str, Any]:
             "repaired_sample_csv": str(repaired_csv),
             "repair_report_json": str(report_json),
         }
+        _emit_stage_progress("repair", "write_output", "complete", 96, "修复结果写出完成", file=str(output_dir))
 
     result: dict[str, Any] = {
         "model_dir": str(model_dir),
@@ -2044,10 +2335,21 @@ def action_repair(payload: dict[str, Any]) -> dict[str, Any]:
     if artifacts:
         result["artifacts"] = artifacts
 
+    _emit_stage_progress(
+        "repair",
+        "complete",
+        "complete",
+        100,
+        "单样本修复任务完成",
+        file=str(model_dir),
+        sample_index=sample_index,
+    )
+
     return result
 
 
 def action_repair_batch(payload: dict[str, Any]) -> dict[str, Any]:
+    _emit_stage_progress("repair_batch", "validate_input", "start", 2, "开始校验批量修复参数")
     frame_pd = _load_dataframe_module("Repair batch")
     csv_path = _require(payload, "csv_path")
     scan_config = _scan_config_from_payload(payload)
@@ -2079,23 +2381,63 @@ def action_repair_batch(payload: dict[str, Any]) -> dict[str, Any]:
 
     csv_file = _resolve_input_csv(str(csv_path))
     if not csv_file.exists():
+        _emit_stage_progress(
+            "repair_batch",
+            "validate_input",
+            "error",
+            100,
+            "输入文件不存在",
+            file=str(csv_file),
+            error_code=ErrorCode.FILE_NOT_FOUND,
+        )
         raise KnownEngineError(
             code=ErrorCode.FILE_NOT_FOUND,
             message=f"Input CSV does not exist: {csv_file}",
             details={"csv_path": str(csv_file)},
         )
 
+    _emit_stage_progress("repair_batch", "load_csv", "start", 12, "开始读取待修复文件", file=str(csv_file))
     try:
         df = frame_pd.read_csv(csv_file)
     except Exception as exc:
+        _emit_stage_progress(
+            "repair_batch",
+            "load_csv",
+            "error",
+            100,
+            "读取待修复文件失败",
+            file=str(csv_file),
+            error_code=ErrorCode.CSV_READ_FAILED,
+            reason=str(exc),
+        )
         raise KnownEngineError(
             code=ErrorCode.CSV_READ_FAILED,
             message="Failed to read CSV",
             details={"csv_path": str(csv_file), "reason": str(exc)},
         ) from exc
+    _emit_stage_progress(
+        "repair_batch",
+        "load_csv",
+        "complete",
+        22,
+        "待修复文件读取完成",
+        file=str(csv_file),
+        rows=int(df.shape[0]),
+        columns=int(df.shape[1]),
+    )
 
+    _emit_stage_progress("repair_batch", "scan_columns", "start", 34, "开始识别可修复问题", file=str(csv_file))
     try:
         issues_internal = _detect_issues_for_frame(df, frame_pd, scan_config=scan_config)
+        _emit_stage_progress(
+            "repair_batch",
+            "scan_columns",
+            "complete",
+            48,
+            "可修复问题识别完成",
+            file=str(csv_file),
+            issue_count=int(len(issues_internal)),
+        )
         issue_map = {str(item["issue_id"]): item for item in issues_internal}
 
         original_df = df.copy(deep=True)
@@ -2159,6 +2501,16 @@ def action_repair_batch(payload: dict[str, Any]) -> dict[str, Any]:
         conflict_policy = str(repair_strategy["conflict_policy"])
         preview_limit = int(repair_strategy["preview_limit"])
         cell_plan: dict[tuple[int, str], dict[str, Any]] = {}
+
+        _emit_stage_progress(
+            "repair_batch",
+            "apply_repairs",
+            "start",
+            56,
+            "开始应用修复计划",
+            file=str(csv_file),
+            issue_count=int(len(selected_issues)),
+        )
 
         for issue in selected_issues:
             issue_id = str(issue["issue_id"])
@@ -2322,6 +2674,15 @@ def action_repair_batch(payload: dict[str, Any]) -> dict[str, Any]:
             repaired_df.iat[int(proposal["row_pos"]), int(proposal["col_pos"])] = proposal["after"]
 
         post_issues_internal = _detect_issues_for_frame(repaired_df, frame_pd, scan_config=scan_config)
+        _emit_stage_progress(
+            "repair_batch",
+            "apply_repairs",
+            "complete",
+            78,
+            "修复计划应用完成",
+            file=str(csv_file),
+            changed_cells=int(len(cell_plan)),
+        )
         before_issue_type_counts = _issue_type_counter(issues_internal)
         after_issue_type_counts = _issue_type_counter(post_issues_internal)
         before_issue_column_counts = _issue_counter_by_column(issues_internal)
@@ -2388,9 +2749,32 @@ def action_repair_batch(payload: dict[str, Any]) -> dict[str, Any]:
                     },
                 }
             )
-    except KnownEngineError:
+    except KnownEngineError as exc:
+        details = exc.details if isinstance(exc.details, dict) else {}
+        _emit_stage_progress(
+            "repair_batch",
+            "apply_repairs",
+            "error",
+            100,
+            "批量修复失败",
+            file=str(details.get("csv_path") or csv_file),
+            column=str(details.get("column") or ""),
+            rule=str(details.get("rule") or details.get("rule_name") or ""),
+            error_code=exc.code,
+            reason=str(exc.message),
+        )
         raise
     except Exception as exc:
+        _emit_stage_progress(
+            "repair_batch",
+            "apply_repairs",
+            "error",
+            100,
+            "批量修复失败",
+            file=str(csv_file),
+            error_code=ErrorCode.REPAIR_BATCH_FAILED,
+            reason=str(exc),
+        )
         raise KnownEngineError(
             code=ErrorCode.REPAIR_BATCH_FAILED,
             message="Batch repair failed",
@@ -2400,6 +2784,7 @@ def action_repair_batch(payload: dict[str, Any]) -> dict[str, Any]:
     output_csv: str | None = None
     rollback_info: dict[str, Any] | None = None
     if write_output:
+        _emit_stage_progress("repair_batch", "write_output", "start", 86, "开始写出修复结果", file=str(csv_file))
         output_csv_raw = str(payload.get("output_csv") or "").strip()
         output_dir_raw = str(payload.get("output_dir") or "").strip()
         if output_csv_raw:
@@ -2443,6 +2828,7 @@ def action_repair_batch(payload: dict[str, Any]) -> dict[str, Any]:
 
         repaired_df.to_csv(output_path, index=False)
         output_csv = str(output_path)
+        _emit_stage_progress("repair_batch", "write_output", "complete", 96, "修复结果写出完成", file=str(output_csv))
 
     total_cells_modified = int(len(cell_plan))
     before_issue_count = int(len(issues_internal))
@@ -2457,6 +2843,16 @@ def action_repair_batch(payload: dict[str, Any]) -> dict[str, Any]:
         }
         for change in sorted(cell_plan.values(), key=lambda item: (int(item["row_pos"]), str(item["column"])))[:preview_limit]
     ]
+    _emit_stage_progress(
+        "repair_batch",
+        "complete",
+        "complete",
+        100,
+        "批量修复任务完成",
+        file=str(output_csv or csv_file),
+        selected_issue_count=int(len(selected_issue_ids)),
+        applied_issue_count=int(len(applied_repairs)),
+    )
     return _to_builtin(
         {
             "csv_path": str(csv_file),

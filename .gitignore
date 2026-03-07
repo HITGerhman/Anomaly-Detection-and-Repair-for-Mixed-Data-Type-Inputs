@@ -64,6 +64,7 @@ data/processed/
 #-------
 AGENTS.md
 MEMO.md
+LEARNING_PATH_PRIVATE.md
 #------------------------------
 #pics
 #------------------------------
@@ -79,3 +80,8 @@ Pic/**/*.gif
 Pic/**/*.bmp
 Pic/**/*.webp
 Pic/**/*.pdf
+
+# ------------------------------
+# Thesis defense assets
+# ------------------------------
+thesis-defense/

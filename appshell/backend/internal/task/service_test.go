@@ -2,6 +2,7 @@ package task
 
 import (
 	"context"
+	"fmt"
 	"path/filepath"
 	"sync/atomic"
 	"testing"
@@ -15,6 +16,90 @@ type fakeRunner struct {
 	blockUntilCtx bool
 	running       int32
 	maxRunning    int32
+}
+
+type progressRunner struct {
+	observer engine.StderrObserver
+	fail     bool
+}
+
+func (r *progressRunner) SetStderrObserver(observer engine.StderrObserver) {
+	r.observer = observer
+}
+
+func (r *progressRunner) Run(ctx context.Context, req engine.Request) (engine.Response, error) {
+	if r.observer != nil {
+		now := time.Now()
+		r.observer(engine.StderrEvent{
+			TaskID: req.TaskID,
+			Parsed: map[string]any{
+				"event":     "stage_progress",
+				"stage":     "load_csv",
+				"phase":     "start",
+				"progress":  12,
+				"message":   "开始读取文件",
+				"timestamp": now.Format(time.RFC3339Nano),
+				"file":      "demo.csv",
+			},
+			ObservedAt: now,
+		})
+		time.Sleep(20 * time.Millisecond)
+		r.observer(engine.StderrEvent{
+			TaskID: req.TaskID,
+			Parsed: map[string]any{
+				"event":     "stage_progress",
+				"stage":     "load_csv",
+				"phase":     "complete",
+				"progress":  48,
+				"message":   "读取完成",
+				"timestamp": time.Now().Format(time.RFC3339Nano),
+				"file":      "demo.csv",
+			},
+			ObservedAt: time.Now(),
+		})
+	}
+
+	if r.fail {
+		if r.observer != nil {
+			r.observer(engine.StderrEvent{
+				TaskID: req.TaskID,
+				Parsed: map[string]any{
+					"event":      "stage_progress",
+					"stage":      "apply_repairs",
+					"phase":      "error",
+					"progress":   100,
+					"message":    "规则冲突",
+					"file":       "demo.csv",
+					"column":     "age",
+					"rule":       "age<=retire_age",
+					"error_code": "REPAIR_BATCH_FAILED",
+					"timestamp":  time.Now().Format(time.RFC3339Nano),
+				},
+				ObservedAt: time.Now(),
+			})
+		}
+		return engine.Response{}, fmt.Errorf("simulated runner failure")
+	}
+
+	if r.observer != nil {
+		r.observer(engine.StderrEvent{
+			TaskID: req.TaskID,
+			Parsed: map[string]any{
+				"event":     "stage_progress",
+				"stage":     "complete",
+				"phase":     "complete",
+				"progress":  100,
+				"message":   "任务完成",
+				"timestamp": time.Now().Format(time.RFC3339Nano),
+			},
+			ObservedAt: time.Now(),
+		})
+	}
+	return engine.Response{
+		TaskID: req.TaskID,
+		Status: "ok",
+		Result: map[string]any{"ok": true},
+	}, nil
 }
 
 func (r *fakeRunner) Run(ctx context.Context, req engine.Request) (engine.Response, error) {
@@ -245,5 +330,76 @@ func TestTaskHistoryKeepsOnlyRecentNRecords(t *testing.T) {
 	}
 	if !got[taskIDs[1]] || !got[taskIDs[2]] {
 		t.Fatalf("newest tasks should remain after trim")
+	}
+}
+
+func TestTaskProgressStreamIsCapturedFromRunnerEvents(t *testing.T) {
+	runner := &progressRunner{}
+	svc := NewServiceWithConfig(runner, Config{
+		MaxConcurrency: 1,
+		QueueSize:      8,
+	})
+	defer svc.Close()
+
+	taskID, err := svc.RunTask(engine.Request{
+		Action:  "scan_file",
+		Payload: map[string]any{"csv_path": "demo.csv"},
+	}, 2*time.Second)
+	if err != nil {
+		t.Fatalf("RunTask failed: %v", err)
+	}
+	waitForStatus(t, svc, taskID, 2*time.Second, StatusSucceeded)
+
+	task, ok := svc.GetTaskStatus(taskID)
+	if !ok {
+		t.Fatalf("task not found: %s", taskID)
+	}
+	if task.Progress.ProgressPercent != 100 {
+		t.Fatalf("expected progress 100, got %d", task.Progress.ProgressPercent)
+	}
+	if len(task.Progress.Events) < 2 {
+		t.Fatalf("expected >=2 progress events, got %d", len(task.Progress.Events))
+	}
+	if task.Progress.BottleneckStage == "" {
+		t.Fatalf("expected bottleneck stage to be computed")
+	}
+	if len(task.Progress.StageDurationsMS) == 0 {
+		t.Fatalf("expected stage durations to be present")
+	}
+	obs := task.Response.Result["observability"]
+	if obs == nil {
+		t.Fatalf("expected observability summary in response result")
+	}
+}
+
+func TestTaskFailureLocationCapturedFromRunnerEvents(t *testing.T) {
+	runner := &progressRunner{fail: true}
+	svc := NewServiceWithConfig(runner, Config{
+		MaxConcurrency: 1,
+		QueueSize:      8,
+	})
+	defer svc.Close()
+
+	taskID, err := svc.RunTask(engine.Request{
+		Action:  "repair_batch",
+		Payload: map[string]any{"csv_path": "demo.csv"},
+	}, 2*time.Second)
+	if err != nil {
+		t.Fatalf("RunTask failed: %v", err)
+	}
+	waitForStatus(t, svc, taskID, 2*time.Second, StatusFailed)
+
+	task, ok := svc.GetTaskStatus(taskID)
+	if !ok {
+		t.Fatalf("task not found: %s", taskID)
+	}
+	if task.Progress.Failure == nil {
+		t.Fatalf("expected failure location from stage events")
+	}
+	if task.Progress.Failure.Column != "age" {
+		t.Fatalf("expected failure column=age, got %s", task.Progress.Failure.Column)
+	}
+	if task.Progress.Failure.Rule == "" {
+		t.Fatalf("expected failure rule to be captured")
 	}
 }

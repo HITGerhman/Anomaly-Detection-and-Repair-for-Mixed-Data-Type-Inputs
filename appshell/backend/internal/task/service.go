@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"sort"
+	"strings"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -28,10 +29,46 @@ type Task struct {
 	Request   engine.Request  `json:"request"`
 	Response  engine.Response `json:"response"`
 	Error     string          `json:"error"`
+	Progress  TaskProgress    `json:"progress"`
 	CreatedAt time.Time       `json:"created_at"`
 	StartedAt time.Time       `json:"started_at"`
 	EndedAt   time.Time       `json:"ended_at"`
 	TimeoutMS int64           `json:"timeout_ms"`
+}
+
+type TaskProgress struct {
+	CurrentStage     string               `json:"current_stage"`
+	ProgressPercent  int                  `json:"progress_percent"`
+	LastMessage      string               `json:"last_message"`
+	UpdatedAtMS      int64                `json:"updated_at_ms"`
+	StageStartedAtMS map[string]int64     `json:"stage_started_at_ms,omitempty"`
+	StageDurationsMS map[string]int64     `json:"stage_durations_ms,omitempty"`
+	BottleneckStage  string               `json:"bottleneck_stage,omitempty"`
+	BottleneckMS     int64                `json:"bottleneck_ms,omitempty"`
+	Failure          *TaskFailureLocation `json:"failure,omitempty"`
+	Events           []TaskProgressEvent  `json:"events,omitempty"`
+	Meta             map[string]any       `json:"meta,omitempty"`
+}
+
+type TaskFailureLocation struct {
+	Stage     string `json:"stage,omitempty"`
+	Message   string `json:"message,omitempty"`
+	File      string `json:"file,omitempty"`
+	Column    string `json:"column,omitempty"`
+	Rule      string `json:"rule,omitempty"`
+	ErrorCode string `json:"error_code,omitempty"`
+}
+
+type TaskProgressEvent struct {
+	AtMS      int64  `json:"at_ms"`
+	Stage     string `json:"stage"`
+	Phase     string `json:"phase"`
+	Progress  int    `json:"progress"`
+	Message   string `json:"message"`
+	File      string `json:"file,omitempty"`
+	Column    string `json:"column,omitempty"`
+	Rule      string `json:"rule,omitempty"`
+	ErrorCode string `json:"error_code,omitempty"`
 }
 
 type Runner interface {
@@ -93,6 +130,12 @@ func NewServiceWithConfig(runner Runner, cfg Config) *Service {
 		runtime: make(map[string]runtimeInfo),
 		queue:   make(chan string, cfg.QueueSize),
 		stopCh:  make(chan struct{}),
+	}
+
+	if observerRunner, ok := runner.(interface {
+		SetStderrObserver(engine.StderrObserver)
+	}); ok {
+		observerRunner.SetStderrObserver(s.onRunnerStderr)
 	}
 
 	for i := 0; i < cfg.MaxConcurrency; i++ {
@@ -163,6 +206,99 @@ func isTerminalStatus(status string) bool {
 	}
 }
 
+const maxProgressEvents = 240
+
+func newTaskProgressSnapshot() TaskProgress {
+	return TaskProgress{
+		CurrentStage:     "",
+		ProgressPercent:  0,
+		LastMessage:      "",
+		UpdatedAtMS:      time.Now().UnixMilli(),
+		StageStartedAtMS: map[string]int64{},
+		StageDurationsMS: map[string]int64{},
+		BottleneckStage:  "",
+		BottleneckMS:     0,
+		Failure:          nil,
+		Events:           make([]TaskProgressEvent, 0, 16),
+		Meta:             map[string]any{},
+	}
+}
+
+func toStringAny(v any) string {
+	switch x := v.(type) {
+	case string:
+		return x
+	case fmt.Stringer:
+		return x.String()
+	default:
+		if v == nil {
+			return ""
+		}
+		return fmt.Sprint(v)
+	}
+}
+
+func toIntAny(v any, fallback int) int {
+	switch x := v.(type) {
+	case int:
+		return x
+	case int32:
+		return int(x)
+	case int64:
+		return int(x)
+	case float32:
+		return int(x)
+	case float64:
+		return int(x)
+	case string:
+		if x == "" {
+			return fallback
+		}
+		var parsed int
+		if _, err := fmt.Sscanf(x, "%d", &parsed); err == nil {
+			return parsed
+		}
+		return fallback
+	default:
+		return fallback
+	}
+}
+
+func stageDisplayName(stage string) string {
+	text := stage
+	switch text {
+	case "validate_input":
+		return "参数校验"
+	case "load_csv":
+		return "读取数据"
+	case "train_model":
+		return "模型训练"
+	case "evaluate_metrics":
+		return "评估指标"
+	case "save_artifacts":
+		return "保存产物"
+	case "scan_columns":
+		return "扫描列异常"
+	case "build_summary":
+		return "整理结果"
+	case "load_model":
+		return "加载模型"
+	case "repair_search":
+		return "修复搜索"
+	case "apply_repairs":
+		return "应用修复"
+	case "write_output":
+		return "写出结果"
+	case "complete":
+		return "完成"
+	default:
+		if text == "" {
+			return "未知阶段"
+		}
+		return text
+	}
+}
+
 func (s *Service) RunTask(req engine.Request, timeout time.Duration) (string, error) {
 	if s.runner == nil {
 		return "", fmt.Errorf("runner is nil")
@@ -180,6 +316,7 @@ func (s *Service) RunTask(req engine.Request, timeout time.Duration) (string, er
 		ID:        taskID,
 		Status:    StatusPending,
 		Request:   req,
+		Progress:  newTaskProgressSnapshot(),
 		CreatedAt: now,
 		TimeoutMS: int64(timeout / time.Millisecond),
 	}
@@ -243,6 +380,15 @@ func (s *Service) execute(taskID string) {
 	}
 	task.Status = StatusRunning
 	task.StartedAt = time.Now()
+	if task.Progress.StageStartedAtMS == nil {
+		task.Progress = newTaskProgressSnapshot()
+	}
+	task.Progress.CurrentStage = "任务执行"
+	if task.Progress.ProgressPercent < 5 {
+		task.Progress.ProgressPercent = 5
+	}
+	task.Progress.LastMessage = "任务已进入执行阶段"
+	task.Progress.UpdatedAtMS = task.StartedAt.UnixMilli()
 	runningSnapshot := *task
 	req := task.Request
 	ctx := rt.ctx
@@ -281,6 +427,7 @@ func (s *Service) execute(taskID string) {
 		if stored.Error == "" {
 			stored.Error = "canceled"
 		}
+		s.finalizeTaskProgressLocked(stored)
 		s.persistTask(*stored)
 		observability.Warn("task_finished", map[string]any{
 			"task_id": taskID,
@@ -294,6 +441,7 @@ func (s *Service) execute(taskID string) {
 		if stored.Error == "" {
 			stored.Error = "timeout"
 		}
+		s.finalizeTaskProgressLocked(stored)
 		s.persistTask(*stored)
 		observability.Warn("task_finished", map[string]any{
 			"task_id": taskID,
@@ -305,6 +453,7 @@ func (s *Service) execute(taskID string) {
 	case err != nil:
 		stored.Status = StatusFailed
 		stored.Error = err.Error()
+		s.finalizeTaskProgressLocked(stored)
 		s.persistTask(*stored)
 		observability.Error("task_finished", map[string]any{
 			"task_id": taskID,
@@ -324,6 +473,19 @@ func (s *Service) execute(taskID string) {
 			stored.Error = resp.Error.Code + ": " + resp.Error.Message
 		}
 	}
+	s.finalizeTaskProgressLocked(stored)
+	if stored.Response.Result == nil {
+		stored.Response.Result = map[string]any{}
+	}
+	stored.Response.Result["observability"] = map[string]any{
+		"current_stage":      stored.Progress.CurrentStage,
+		"progress_percent":   stored.Progress.ProgressPercent,
+		"stage_durations_ms": stored.Progress.StageDurationsMS,
+		"bottleneck_stage":   stored.Progress.BottleneckStage,
+		"bottleneck_ms":      stored.Progress.BottleneckMS,
+		"failure":            stored.Progress.Failure,
+		"last_message":       stored.Progress.LastMessage,
+	}
 	s.persistTask(*stored)
 	observability.Info("task_finished", map[string]any{
 		"task_id": taskID,
@@ -331,6 +493,282 @@ func (s *Service) execute(taskID string) {
 		"error":   stored.Error,
 	})
 	s.cleanupRuntimeLocked(taskID)
+}
+
+func (s *Service) onRunnerStderr(event engine.StderrEvent) {
+	if s == nil || strings.TrimSpace(event.TaskID) == "" {
+		return
+	}
+
+	parsed := event.Parsed
+	if len(parsed) == 0 {
+		return
+	}
+
+	eventName := strings.TrimSpace(toStringAny(parsed["event"]))
+	if eventName == "" {
+		return
+	}
+
+	stage := strings.TrimSpace(toStringAny(parsed["stage"]))
+	phase := strings.ToLower(strings.TrimSpace(toStringAny(parsed["phase"])))
+	message := strings.TrimSpace(toStringAny(parsed["message"]))
+	progress := toIntAny(parsed["progress"], -1)
+	if progress < 0 {
+		progress = toIntAny(parsed["progress_percent"], -1)
+	}
+
+	if eventName == "engine_request_received" {
+		stage = "validate_input"
+		phase = "start"
+		if progress < 0 {
+			progress = 2
+		}
+	}
+	if eventName == "engine_request_succeeded" {
+		stage = "complete"
+		phase = "complete"
+		if progress < 0 {
+			progress = 100
+		}
+	}
+	if eventName == "engine_request_failed" || eventName == "engine_request_crashed" {
+		if stage == "" {
+			stage = "complete"
+		}
+		phase = "error"
+		if progress < 0 {
+			progress = 100
+		}
+	}
+
+	if eventName != "stage_progress" && !strings.HasPrefix(eventName, "engine_request_") {
+		return
+	}
+
+	atMS := event.ObservedAt.UnixMilli()
+	if tsText := strings.TrimSpace(toStringAny(parsed["timestamp"])); tsText != "" {
+		if ts, err := time.Parse(time.RFC3339Nano, tsText); err == nil {
+			atMS = ts.UnixMilli()
+		}
+	}
+	if stage == "" {
+		stage = "unknown"
+	}
+	if phase == "" {
+		phase = "info"
+	}
+	stageLabel := stageDisplayName(stage)
+	file := strings.TrimSpace(toStringAny(parsed["file"]))
+	if file == "" {
+		file = strings.TrimSpace(toStringAny(parsed["csv_path"]))
+	}
+	column := strings.TrimSpace(toStringAny(parsed["column"]))
+	if column == "" {
+		column = strings.TrimSpace(toStringAny(parsed["target_col"]))
+	}
+	rule := strings.TrimSpace(toStringAny(parsed["rule"]))
+	if rule == "" {
+		rule = strings.TrimSpace(toStringAny(parsed["rule_name"]))
+	}
+	errorCode := strings.TrimSpace(toStringAny(parsed["error_code"]))
+	if errorCode == "" {
+		errorCode = strings.TrimSpace(toStringAny(parsed["code"]))
+	}
+
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	task, ok := s.tasks[event.TaskID]
+	if !ok || task == nil {
+		return
+	}
+	if task.Progress.StageStartedAtMS == nil {
+		task.Progress = newTaskProgressSnapshot()
+	}
+
+	if progress >= 0 {
+		if progress > 100 {
+			progress = 100
+		}
+		if progress > task.Progress.ProgressPercent {
+			task.Progress.ProgressPercent = progress
+		}
+	}
+
+	if phase == "start" {
+		task.Progress.CurrentStage = stageLabel
+		task.Progress.StageStartedAtMS[stage] = atMS
+	}
+	if phase == "complete" || phase == "done" || phase == "success" || phase == "error" {
+		if startedMS, exists := task.Progress.StageStartedAtMS[stage]; exists && startedMS > 0 {
+			duration := atMS - startedMS
+			if duration < 0 {
+				duration = 0
+			}
+			task.Progress.StageDurationsMS[stage] = duration
+			if duration > task.Progress.BottleneckMS {
+				task.Progress.BottleneckMS = duration
+				task.Progress.BottleneckStage = stageLabel
+			}
+			delete(task.Progress.StageStartedAtMS, stage)
+		}
+	}
+
+	if phase == "error" {
+		task.Progress.Failure = &TaskFailureLocation{
+			Stage:     stageLabel,
+			Message:   message,
+			File:      file,
+			Column:    column,
+			Rule:      rule,
+			ErrorCode: errorCode,
+		}
+	}
+
+	if message == "" {
+		message = stageLabel
+	}
+	task.Progress.LastMessage = message
+	task.Progress.UpdatedAtMS = atMS
+	task.Progress.Meta["event"] = eventName
+
+	progressEvent := TaskProgressEvent{
+		AtMS:      atMS,
+		Stage:     stageLabel,
+		Phase:     phase,
+		Progress:  max(progress, 0),
+		Message:   message,
+		File:      file,
+		Column:    column,
+		Rule:      rule,
+		ErrorCode: errorCode,
+	}
+	task.Progress.Events = append(task.Progress.Events, progressEvent)
+	if len(task.Progress.Events) > maxProgressEvents {
+		task.Progress.Events = task.Progress.Events[len(task.Progress.Events)-maxProgressEvents:]
+	}
+}
+
+func (s *Service) finalizeTaskProgressLocked(task *Task) {
+	if task == nil {
+		return
+	}
+	if task.Progress.StageStartedAtMS == nil {
+		task.Progress = newTaskProgressSnapshot()
+	}
+
+	endMS := time.Now().UnixMilli()
+	if !task.EndedAt.IsZero() {
+		endMS = task.EndedAt.UnixMilli()
+	}
+
+	for stage, startedMS := range task.Progress.StageStartedAtMS {
+		if startedMS <= 0 {
+			continue
+		}
+		duration := endMS - startedMS
+		if duration < 0 {
+			duration = 0
+		}
+		if duration > task.Progress.StageDurationsMS[stage] {
+			task.Progress.StageDurationsMS[stage] = duration
+		}
+	}
+	task.Progress.StageStartedAtMS = map[string]int64{}
+
+	var maxStage string
+	var maxDuration int64
+	for stage, duration := range task.Progress.StageDurationsMS {
+		if duration > maxDuration {
+			maxDuration = duration
+			maxStage = stageDisplayName(stage)
+		}
+	}
+	task.Progress.BottleneckMS = maxDuration
+	task.Progress.BottleneckStage = maxStage
+
+	if task.Progress.ProgressPercent < 100 {
+		task.Progress.ProgressPercent = 100
+	}
+	if task.Progress.CurrentStage == "" {
+		task.Progress.CurrentStage = stageDisplayName("complete")
+	}
+	if task.Progress.LastMessage == "" {
+		if task.Status == StatusSucceeded {
+			task.Progress.LastMessage = "任务完成"
+		} else {
+			task.Progress.LastMessage = "任务结束"
+		}
+	}
+	if task.Progress.Failure == nil && task.Status != StatusSucceeded {
+		task.Progress.Failure = &TaskFailureLocation{
+			Stage:   task.Progress.CurrentStage,
+			Message: task.Error,
+		}
+	}
+	task.Progress.UpdatedAtMS = endMS
+}
+
+func hydrateTaskProgressFromResponse(task *Task) {
+	if task == nil {
+		return
+	}
+	if task.Progress.StageDurationsMS != nil && (task.Progress.ProgressPercent > 0 || len(task.Progress.Events) > 0) {
+		return
+	}
+	result := task.Response.Result
+	if result == nil {
+		if task.Progress.StageDurationsMS == nil {
+			task.Progress = newTaskProgressSnapshot()
+		}
+		return
+	}
+	rawObs, ok := result["observability"]
+	if !ok {
+		if task.Progress.StageDurationsMS == nil {
+			task.Progress = newTaskProgressSnapshot()
+		}
+		return
+	}
+	obs, ok := rawObs.(map[string]any)
+	if !ok {
+		if task.Progress.StageDurationsMS == nil {
+			task.Progress = newTaskProgressSnapshot()
+		}
+		return
+	}
+
+	task.Progress = newTaskProgressSnapshot()
+	task.Progress.CurrentStage = strings.TrimSpace(toStringAny(obs["current_stage"]))
+	task.Progress.ProgressPercent = toIntAny(obs["progress_percent"], 0)
+	task.Progress.LastMessage = strings.TrimSpace(toStringAny(obs["last_message"]))
+	task.Progress.BottleneckStage = strings.TrimSpace(toStringAny(obs["bottleneck_stage"]))
+	task.Progress.BottleneckMS = int64(toIntAny(obs["bottleneck_ms"], 0))
+
+	if rawDurations, ok := obs["stage_durations_ms"].(map[string]any); ok {
+		for key, value := range rawDurations {
+			stage := strings.TrimSpace(key)
+			if stage == "" {
+				continue
+			}
+			task.Progress.StageDurationsMS[stage] = int64(toIntAny(value, 0))
+		}
+	}
+	if rawFailure, ok := obs["failure"].(map[string]any); ok {
+		task.Progress.Failure = &TaskFailureLocation{
+			Stage:     strings.TrimSpace(toStringAny(rawFailure["stage"])),
+			Message:   strings.TrimSpace(toStringAny(rawFailure["message"])),
+			File:      strings.TrimSpace(toStringAny(rawFailure["file"])),
+			Column:    strings.TrimSpace(toStringAny(rawFailure["column"])),
+			Rule:      strings.TrimSpace(toStringAny(rawFailure["rule"])),
+			ErrorCode: strings.TrimSpace(toStringAny(rawFailure["error_code"])),
+		}
+	}
+	if task.Progress.ProgressPercent <= 0 && isTerminalStatus(task.Status) {
+		task.Progress.ProgressPercent = 100
+	}
+	task.Progress.UpdatedAtMS = time.Now().UnixMilli()
 }
 
 func (s *Service) cleanupRuntimeLocked(taskID string) {
@@ -364,6 +802,7 @@ func (s *Service) CancelTask(taskID string) bool {
 		task.Status = StatusCanceled
 		task.Error = "canceled"
 		task.EndedAt = time.Now()
+		s.finalizeTaskProgressLocked(task)
 		delete(s.runtime, taskID)
 		rt.cancel()
 		s.persistTask(*task)
@@ -373,6 +812,8 @@ func (s *Service) CancelTask(taskID string) bool {
 		})
 	case StatusRunning:
 		task.Error = "canceled"
+		task.Progress.LastMessage = "任务已收到取消请求"
+		task.Progress.UpdatedAtMS = time.Now().UnixMilli()
 		rt.cancel()
 		observability.Warn("task_cancel_requested", map[string]any{
 			"task_id": taskID,
@@ -390,6 +831,7 @@ func (s *Service) GetTaskStatus(taskID string) (*Task, bool) {
 	task, ok := s.tasks[taskID]
 	if ok {
 		copyTask := *task
+		hydrateTaskProgressFromResponse(&copyTask)
 		s.mu.RUnlock()
 		return &copyTask, true
 	}
@@ -406,6 +848,7 @@ func (s *Service) GetTaskStatus(taskID string) (*Task, bool) {
 		})
 		return nil, false
 	}
+	hydrateTaskProgressFromResponse(hTask)
 	return hTask, ok
 }
 
@@ -415,7 +858,9 @@ func (s *Service) List() []Task {
 
 	out := make([]Task, 0, len(s.tasks))
 	for _, task := range s.tasks {
-		out = append(out, *task)
+		copyTask := *task
+		hydrateTaskProgressFromResponse(&copyTask)
+		out = append(out, copyTask)
 	}
 	sort.Slice(out, func(i, j int) bool {
 		return out[i].CreatedAt.After(out[j].CreatedAt)
@@ -425,7 +870,14 @@ func (s *Service) List() []Task {
 
 func (s *Service) ListRecentTasks(limit int) ([]Task, error) {
 	if s.history != nil {
-		return s.history.ListRecentTasks(context.Background(), limit)
+		items, err := s.history.ListRecentTasks(context.Background(), limit)
+		if err != nil {
+			return nil, err
+		}
+		for i := range items {
+			hydrateTaskProgressFromResponse(&items[i])
+		}
+		return items, nil
 	}
 
 	items := s.List()

@@ -535,6 +535,35 @@ button:disabled {
   font-size: 14px;
 }
 
+.run-kpi-row {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.run-kpi {
+  border-radius: 9px;
+  border: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.66);
+  padding: 7px 8px;
+}
+
+.run-kpi p {
+  margin: 0;
+  color: #666872;
+  font-size: 11px;
+  font-weight: 650;
+}
+
+.run-kpi strong {
+  display: block;
+  margin-top: 3px;
+  color: #2b2d34;
+  font-size: 16px;
+  line-height: 1.05;
+  font-weight: 700;
+}
+
 .config-basic-note {
   margin: 0;
   border-radius: 10px;
@@ -873,6 +902,63 @@ button:disabled {
 .phase-hints li.done::before {
   content: "✓";
   color: #1e7f4d;
+}
+
+.stage-bars {
+  display: grid;
+  gap: 8px;
+}
+
+.stage-bar-empty {
+  margin: 0;
+  color: #6e7078;
+  font-size: 12px;
+}
+
+.stage-bar-row {
+  display: grid;
+  gap: 5px;
+}
+
+.stage-bar-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  color: #474a52;
+  font-size: 12px;
+}
+
+.stage-bar-head strong {
+  color: #2f3138;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.stage-bar-track {
+  width: 100%;
+  height: 7px;
+  border-radius: 999px;
+  overflow: hidden;
+  background: rgba(214, 218, 226, 0.9);
+}
+
+.stage-bar-fill {
+  display: block;
+  width: 0%;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #56a8ff, #007aff);
+  transition: width 240ms ease;
+}
+
+.stage-bar-row.is-bottleneck .stage-bar-head {
+  color: #0453ad;
+  font-weight: 650;
+}
+
+.stage-bar-row.is-bottleneck .stage-bar-fill {
+  background: linear-gradient(90deg, #ff995f, #ff5e57);
 }
 
 .compare-chart {
@@ -1441,6 +1527,44 @@ button:disabled {
   font-weight: 650;
 }
 
+.result-observability {
+  margin-top: 10px;
+  border-radius: 10px;
+  border: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.62);
+  padding: 9px;
+}
+
+.result-observability h3 {
+  margin: 0 0 8px;
+  color: #33343b;
+  font-size: 13px;
+  font-weight: 650;
+}
+
+#result-observability,
+#repair-observability,
+#progress-failure {
+  grid-template-columns: 86px minmax(0, 1fr);
+  gap: 6px 8px;
+}
+
+#result-observability dt,
+#repair-observability dt,
+#progress-failure dt {
+  color: #6c6d75;
+  font-size: 12px;
+}
+
+#result-observability dd,
+#repair-observability dd,
+#progress-failure dd {
+  color: #2f3037;
+  font-size: 12px;
+  line-height: 1.35;
+  font-weight: 600;
+}
+
 .kpi-strip {
   margin: 0 0 10px;
   display: grid;
@@ -1639,6 +1763,10 @@ pre {
 
   .result-grid {
     grid-template-columns: 1fr;
+  }
+
+  .run-kpi-row {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .kpi-strip {

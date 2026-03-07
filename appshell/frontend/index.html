@@ -172,6 +172,25 @@
 
                     <p id="status-message" class="status-message">等待任务开始</p>
 
+                    <div class="run-kpi-row">
+                      <article class="run-kpi">
+                        <p>当前进度</p>
+                        <strong id="run-kpi-progress">0%</strong>
+                      </article>
+                      <article class="run-kpi">
+                        <p>阶段数量</p>
+                        <strong id="run-kpi-stage-count">0</strong>
+                      </article>
+                      <article class="run-kpi">
+                        <p>事件流</p>
+                        <strong id="run-kpi-event-count">0</strong>
+                      </article>
+                      <article class="run-kpi">
+                        <p>已用时</p>
+                        <strong id="run-kpi-elapsed">0s</strong>
+                      </article>
+                    </div>
+
                     <div class="progress-track">
                       <div id="progress-fill" class="progress-fill idle"></div>
                     </div>
@@ -210,6 +229,16 @@
                     <article class="side-card">
                       <h2>任务关键指标</h2>
                       <dl id="progress-metrics"></dl>
+                    </article>
+                    <article class="side-card">
+                      <h2>阶段耗时分布</h2>
+                      <div id="progress-stage-bars" class="stage-bars">
+                        <p class="stage-bar-empty">等待任务运行后生成阶段耗时。</p>
+                      </div>
+                    </article>
+                    <article class="side-card">
+                      <h2>失败定位</h2>
+                      <dl id="progress-failure"></dl>
                     </article>
                   </aside>
                 </div>
@@ -251,6 +280,11 @@
                         <dl id="detection-summary"></dl>
                       </div>
                     </details>
+
+                    <article class="result-observability">
+                      <h3>任务诊断</h3>
+                      <dl id="result-observability"></dl>
+                    </article>
                   </article>
 
                   <article class="result-card issue-detail-card">
@@ -360,6 +394,10 @@
                         <button id="export-json-side-btn" class="btn-secondary" type="button" disabled>导出 JSON</button>
                         <button id="export-csv-side-btn" class="btn-secondary" type="button" disabled>导出 CSV</button>
                       </div>
+                    </article>
+                    <article class="side-card">
+                      <h2>任务诊断</h2>
+                      <dl id="repair-observability"></dl>
                     </article>
                   </aside>
                 </div>
