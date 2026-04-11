@@ -1,4 +1,4 @@
-﻿const wheelFrame = document.getElementById("wheel-frame");
+const wheelFrame = document.getElementById("wheel-frame");
 const wheelOrbit = document.getElementById("wheel-orbit");
 const wizardCard = document.getElementById("wizard-card");
 
@@ -16,6 +16,78 @@ const stepRepair = document.getElementById("step-repair");
 const responseShell = document.getElementById("response-shell");
 const progressAdvanced = document.getElementById("progress-advanced");
 const resultAdvanced = document.getElementById("result-advanced");
+
+const startupGate = document.getElementById("startup-gate");
+const startupTitle = document.getElementById("startup-title");
+const startupSummary = document.getElementById("startup-summary");
+const startupStatusPill = document.getElementById("startup-status-pill");
+const startupCounts = document.getElementById("startup-counts");
+const startupCheckList = document.getElementById("startup-check-list");
+const startupDetails = document.getElementById("startup-details");
+const startupRaw = document.getElementById("startup-raw");
+const startupRetryBtn = document.getElementById("startup-retry-btn");
+const startupCopyBtn = document.getElementById("startup-copy-btn");
+const startupCloseBtn = document.getElementById("startup-close-btn");
+
+const smartHomeView = document.getElementById("smart-home-view");
+const smartRunView = document.getElementById("smart-run-view");
+const smartResultView = document.getElementById("smart-result-view");
+const advancedWorkspaceView = document.getElementById("advanced-workspace-view");
+const continueLatestBtn = document.getElementById("continue-latest-btn");
+const viewStartupBtn = document.getElementById("view-startup-btn");
+const openAdvancedBtn = document.getElementById("open-advanced-btn");
+const backSmartBtn = document.getElementById("back-smart-btn");
+const smartDropzone = document.getElementById("smart-dropzone");
+const smartChooseCsvBtn = document.getElementById("smart-choose-csv-btn");
+const smartSelectedCsv = document.getElementById("smart-selected-csv");
+const smartOutputDetails = document.getElementById("smart-output-details");
+const smartOutputInput = document.getElementById("smart-output-dir");
+const smartChooseOutputBtn = document.getElementById("smart-choose-output-btn");
+const smartModeBanner = document.getElementById("smart-mode-banner");
+const smartSummaryCard = document.getElementById("smart-summary-card");
+const smartSummaryMessage = document.getElementById("smart-summary-message");
+const smartSummaryList = document.getElementById("smart-summary-list");
+const smartSummaryTrust = document.getElementById("smart-summary-trust");
+const smartPreferenceWorkspace = document.getElementById("smart-preference-workspace");
+const smartPreferenceBanner = document.getElementById("smart-preference-banner");
+const smartPrefConservativeInput = document.getElementById("smart-pref-conservative");
+const smartPrefAvoidTimeInput = document.getElementById("smart-pref-avoid-time");
+const smartPrefRequireApprovalInput = document.getElementById("smart-pref-require-approval");
+const smartPrefProtectedColumnsInput = document.getElementById("smart-pref-protected-columns");
+const smartPrefSaveBtn = document.getElementById("smart-pref-save-btn");
+const smartPrefResetBtn = document.getElementById("smart-pref-reset-btn");
+const smartStartBtn = document.getElementById("smart-start-btn");
+const smartRunStatusPill = document.getElementById("smart-run-status-pill");
+const smartRunTaskId = document.getElementById("smart-run-task-id");
+const smartRunTitle = document.getElementById("smart-run-title");
+const smartRunMessage = document.getElementById("smart-run-message");
+const smartRunProgressFill = document.getElementById("smart-run-progress-fill");
+const smartRunStages = document.getElementById("smart-run-stages");
+const smartRunMetrics = document.getElementById("smart-run-metrics");
+const smartRunEvents = document.getElementById("smart-run-events");
+const smartRunCancelBtn = document.getElementById("smart-run-cancel-btn");
+const smartOpenAdvancedRunBtn = document.getElementById("smart-open-advanced-run-btn");
+const smartSafetyBanner = document.getElementById("smart-safety-banner");
+const smartResultPresentation = document.getElementById("smart-result-presentation");
+const smartResultConclusion = document.getElementById("smart-result-conclusion");
+const smartResultSummary = document.getElementById("smart-result-summary");
+const smartApprovalCard = document.getElementById("smart-approval-card");
+const smartApprovalMessage = document.getElementById("smart-approval-message");
+const smartApprovalSummary = document.getElementById("smart-approval-summary");
+const smartApprovalReasons = document.getElementById("smart-approval-reasons");
+const smartApprovalPreferences = document.getElementById("smart-approval-preferences");
+const smartApprovalContinueBtn = document.getElementById("smart-approval-continue-btn");
+const smartApprovalRejectBtn = document.getElementById("smart-approval-reject-btn");
+const smartArtifactList = document.getElementById("smart-artifact-list");
+const smartNewRunBtn = document.getElementById("smart-new-run-btn");
+const smartOpenAdvancedResultBtn = document.getElementById("smart-open-advanced-result-btn");
+const smartExportJsonBtn = document.getElementById("smart-export-json-btn");
+const smartExportCsvBtn = document.getElementById("smart-export-csv-btn");
+const smartReasoningBody = document.getElementById("smart-reasoning-body");
+const smartTraceSummary = document.getElementById("smart-trace-summary");
+const smartTraceList = document.getElementById("smart-trace-list");
+const smartResultRaw = document.getElementById("smart-result-raw");
+const smartTrustChecks = document.getElementById("smart-trust-checks");
 
 const detectForm = document.getElementById("detect-form");
 
@@ -74,6 +146,7 @@ const detectionMessage = document.getElementById("detection-message");
 const repairableOverview = document.getElementById("repairable-overview");
 const nextActionText = document.getElementById("next-action-text");
 const resultObservability = document.getElementById("result-observability");
+const resultPresentation = document.getElementById("result-presentation");
 const selectedIssuePill = document.getElementById("selected-issue-pill");
 const issueMapList = document.getElementById("issue-map-list");
 const mapScaleNote = document.getElementById("map-scale-note");
@@ -97,6 +170,7 @@ const kpiAppliedCount = document.getElementById("kpi-applied-count");
 const kpiSkippedCount = document.getElementById("kpi-skipped-count");
 const kpiCellsCount = document.getElementById("kpi-cells-count");
 const repairObservability = document.getElementById("repair-observability");
+const repairPresentation = document.getElementById("repair-presentation");
 
 const resultBox = document.getElementById("result-box");
 const toggleResponseBtn = document.getElementById("toggle-response-btn");
@@ -112,8 +186,14 @@ const STEP_RESULT = "result";
 const STEP_REPAIR = "repair";
 const STEP_ORDER = [STEP_CONFIG, STEP_PROGRESS, STEP_RESULT, STEP_REPAIR];
 
+const VIEW_SMART_HOME = "smart_home";
+const VIEW_SMART_RUN = "smart_run";
+const VIEW_SMART_RESULT = "smart_result";
+const VIEW_ADVANCED_WORKSPACE = "advanced_workspace";
+
 const INTENT_SCAN = "scan";
 const INTENT_REPAIR = "repair_batch";
+const INTENT_AGENT_AUTO = "agent_auto";
 const INTENT_TRAIN = "train";
 
 const STEP_META = {
@@ -154,6 +234,12 @@ const RUNNING_HINTS = {
     "正在应用修复规则（填补/截断/类别替换）...",
     "正在验证修复效果并写入结果文件...",
     "正在生成修复摘要...",
+  ],
+  [INTENT_AGENT_AUTO]: [
+    "正在生成智能修复计划...",
+    "正在预演候选方案并执行验证门禁...",
+    "正在执行自动修复并复扫结果...",
+    "正在整理解释、图表与审计轨迹...",
   ],
   [INTENT_TRAIN]: [
     "正在读取训练数据...",
@@ -199,8 +285,40 @@ const STAGE_LABEL_MAP = {
   unknown: "未知阶段",
 };
 
+function defaultSmartPreferenceProfile() {
+  return {
+    conservative_mode: false,
+    avoid_time_columns: true,
+    protected_columns: [],
+    require_approval_for_high_risk: true,
+  };
+}
+
+function normalizeSmartPreferenceProfile(raw = {}) {
+  const base = defaultSmartPreferenceProfile();
+  const protectedColumns = Array.isArray(raw?.protected_columns)
+    ? raw.protected_columns
+    : String(raw?.protected_columns || "")
+        .split(",")
+        .map((item) => String(item || "").trim())
+        .filter(Boolean);
+  return {
+    conservative_mode: Boolean(raw?.conservative_mode ?? base.conservative_mode),
+    avoid_time_columns: Boolean(raw?.avoid_time_columns ?? base.avoid_time_columns),
+    protected_columns: Array.from(new Set(protectedColumns)),
+    require_approval_for_high_risk: Boolean(
+      raw?.require_approval_for_high_risk ?? base.require_approval_for_high_risk
+    ),
+  };
+}
+
+function cloneSmartPreferenceProfile(raw = {}) {
+  return normalizeSmartPreferenceProfile(raw);
+}
+
 const state = {
   currentStep: STEP_CONFIG,
+  currentShellView: VIEW_SMART_HOME,
   currentTaskId: "",
   currentTask: null,
   pollingToken: 0,
@@ -227,11 +345,48 @@ const state = {
   seenProgressEventKeys: new Set(),
   advancedMode: false,
   responseExpanded: false,
+  startupReport: null,
+  startupRunning: false,
+  appInitialized: false,
+  recentTaskCandidate: null,
+  smartDraft: {
+    csvPath: "",
+    outputDir: "",
+  },
+  smartPreferences: {
+    workspaceID: "",
+    draft: defaultSmartPreferenceProfile(),
+    saved: defaultSmartPreferenceProfile(),
+    loading: false,
+    saving: false,
+    loaded: false,
+    message: "",
+    tone: "info",
+  },
+  smartSessionSnapshot: null,
+  smartTraceEvents: [],
+  smartDetailsLoading: false,
+  smartDetailsError: "",
   mockTasks: new Map(),
+  mockAgentSessions: new Map(),
+  mockAgentTrace: new Map(),
+  mockPreferenceStore: new Map(),
 };
 
 function hasBinding(methodName) {
   return Boolean(window?.go?.main?.App?.[methodName]);
+}
+
+function hasAnyAppBinding() {
+  return Boolean(window?.go?.main?.App);
+}
+
+function isPreviewMode() {
+  return !hasAnyAppBinding();
+}
+
+function isSmartAutofixAvailable() {
+  return hasBinding("RunAgentAutofixSession") || isPreviewMode();
 }
 
 function asArray(value) {
@@ -240,6 +395,33 @@ function asArray(value) {
 
 function asObject(value) {
   return value && typeof value === "object" && !Array.isArray(value) ? value : {};
+}
+
+function resolveSmartWorkspaceID(workspaceID = "", csvPath = "") {
+  const explicit = String(workspaceID || "").trim();
+  if (explicit) return explicit;
+  const normalized = String(csvPath || "").trim().replace(/\\/g, "/");
+  if (!normalized) return "";
+  const segments = normalized.split("/").filter(Boolean);
+  if (segments.length <= 1) return normalized;
+  return segments.slice(0, -1).join("/");
+}
+
+function smartPreferenceColumnsText(columns) {
+  return asArray(columns)
+    .map((item) => String(item || "").trim())
+    .filter(Boolean)
+    .join(", ");
+}
+
+function setShellView(view) {
+  state.currentShellView = view;
+  if (smartHomeView) smartHomeView.classList.toggle("hidden", view !== VIEW_SMART_HOME);
+  if (smartRunView) smartRunView.classList.toggle("hidden", view !== VIEW_SMART_RUN);
+  if (smartResultView) smartResultView.classList.toggle("hidden", view !== VIEW_SMART_RESULT);
+  if (advancedWorkspaceView) advancedWorkspaceView.classList.toggle("hidden", view !== VIEW_ADVANCED_WORKSPACE);
+  if (openAdvancedBtn) openAdvancedBtn.classList.toggle("hidden", view === VIEW_ADVANCED_WORKSPACE);
+  if (backSmartBtn) backSmartBtn.classList.toggle("hidden", view !== VIEW_ADVANCED_WORKSPACE);
 }
 
 function toInt(value, fallback = 0) {
@@ -346,12 +528,376 @@ function shortPath(raw) {
   return pieces.length > 0 ? pieces[pieces.length - 1] : text;
 }
 
+function padDate(value) {
+  return String(value).padStart(2, "0");
+}
+
+function buildTimestampSlug(date = new Date()) {
+  return `${date.getFullYear()}${padDate(date.getMonth() + 1)}${padDate(date.getDate())}_${padDate(date.getHours())}${padDate(date.getMinutes())}${padDate(date.getSeconds())}`;
+}
+
+function buildSmartDefaultOutputDir() {
+  return `outputs/results/agent_auto_${buildTimestampSlug()}`;
+}
+
+function getSmartCsvPath() {
+  const draft = String(state.smartDraft?.csvPath || "").trim();
+  if (draft) return draft;
+  return String(csvPathInput?.value || "").trim();
+}
+
+function getSmartOutputDir() {
+  const preferred = String(smartOutputInput?.value || state.smartDraft?.outputDir || "").trim();
+  if (preferred) return preferred;
+  const generated = buildSmartDefaultOutputDir();
+  state.smartDraft.outputDir = generated;
+  if (smartOutputInput) smartOutputInput.value = generated;
+  if (outputInput && !String(outputInput.value || "").trim()) outputInput.value = generated;
+  return generated;
+}
+
+function syncSmartDraftToClassicInputs() {
+  const csvPath = getSmartCsvPath();
+  const outputDir = String(smartOutputInput?.value || state.smartDraft?.outputDir || "").trim();
+  if (csvPathInput && csvPath) csvPathInput.value = csvPath;
+  if (outputInput && outputDir) outputInput.value = outputDir;
+}
+
+function isAgentAutoAction(action) {
+  const normalized = String(action || "").trim().toLowerCase();
+  return normalized === "agent.session.auto" || normalized === "agent.session.approve";
+}
+
+function isTerminalTaskStatus(status) {
+  return TERMINAL_STATUSES.has(String(status || "").toLowerCase());
+}
+
+function updateContinueLatestButton() {
+  if (!continueLatestBtn) return;
+  const task = state.recentTaskCandidate;
+  if (!task || !task?.id) {
+    continueLatestBtn.disabled = true;
+    continueLatestBtn.textContent = "查看最近结果";
+    return;
+  }
+
+  continueLatestBtn.disabled = false;
+  const running = !isTerminalTaskStatus(task?.status);
+  if (isAgentAutoAction(task?.request?.action) && running) {
+    continueLatestBtn.textContent = "继续最近任务";
+    return;
+  }
+  if (isAgentAutoAction(task?.request?.action)) {
+    continueLatestBtn.textContent = "查看最近智能结果";
+    return;
+  }
+  continueLatestBtn.textContent = "打开最近工作台任务";
+}
+
+function renderSmartModeBanner(message = "", tone = "info") {
+  if (!smartModeBanner) return;
+  const text = String(message || "").trim();
+  smartModeBanner.textContent = text;
+  smartModeBanner.className = "safety-banner";
+  if (!text) {
+    smartModeBanner.classList.add("hidden");
+    return;
+  }
+  smartModeBanner.classList.add(`smart-tone-${tone}`);
+  smartModeBanner.classList.remove("hidden");
+}
+
+function renderSmartPreferenceBanner(message = "", tone = "info") {
+  if (!smartPreferenceBanner) return;
+  const text = String(message || "").trim();
+  smartPreferenceBanner.textContent = text;
+  smartPreferenceBanner.className = "safety-banner";
+  if (!text) {
+    smartPreferenceBanner.classList.add("hidden");
+    return;
+  }
+  smartPreferenceBanner.classList.add(`smart-tone-${tone}`);
+  smartPreferenceBanner.classList.remove("hidden");
+}
+
+function syncSmartPreferenceInputsFromState() {
+  const draft = cloneSmartPreferenceProfile(state.smartPreferences?.draft);
+  if (smartPrefConservativeInput) smartPrefConservativeInput.checked = Boolean(draft.conservative_mode);
+  if (smartPrefAvoidTimeInput) smartPrefAvoidTimeInput.checked = Boolean(draft.avoid_time_columns);
+  if (smartPrefRequireApprovalInput) smartPrefRequireApprovalInput.checked = Boolean(draft.require_approval_for_high_risk);
+  if (smartPrefProtectedColumnsInput) {
+    smartPrefProtectedColumnsInput.value = smartPreferenceColumnsText(draft.protected_columns);
+  }
+}
+
+function readSmartPreferenceDraftFromInputs() {
+  return normalizeSmartPreferenceProfile({
+    conservative_mode: Boolean(smartPrefConservativeInput?.checked),
+    avoid_time_columns: Boolean(smartPrefAvoidTimeInput?.checked),
+    require_approval_for_high_risk: Boolean(smartPrefRequireApprovalInput?.checked),
+    protected_columns: String(smartPrefProtectedColumnsInput?.value || "")
+      .split(",")
+      .map((item) => String(item || "").trim())
+      .filter(Boolean),
+  });
+}
+
+function updateSmartPreferenceDraftFromInputs() {
+  state.smartPreferences.draft = readSmartPreferenceDraftFromInputs();
+  state.smartPreferences.message = "";
+  state.smartPreferences.tone = "info";
+  renderSmartPreferenceCard();
+}
+
+function buildSmartUserPreferencesPayload() {
+  return cloneSmartPreferenceProfile(state.smartPreferences?.draft);
+}
+
+function renderSmartPreferenceCard() {
+  const csvPath = getSmartCsvPath();
+  const workspaceID =
+    String(state.smartPreferences?.workspaceID || "").trim() ||
+    resolveSmartWorkspaceID("", csvPath);
+  const loading = Boolean(state.smartPreferences?.loading);
+  const saving = Boolean(state.smartPreferences?.saving);
+  const loaded = Boolean(state.smartPreferences?.loaded);
+
+  syncSmartPreferenceInputsFromState();
+  if (smartPreferenceWorkspace) {
+    smartPreferenceWorkspace.textContent = workspaceID
+      ? `工作区: ${workspaceID}`
+      : "选择 CSV 后会加载当前工作区默认偏好。";
+  }
+
+  if (!csvPath) {
+    renderSmartPreferenceBanner("当前还没有工作区上下文，先选择 CSV 再加载或保存默认偏好。", "info");
+  } else if (loading) {
+    renderSmartPreferenceBanner("正在加载当前工作区的默认偏好...", "info");
+  } else if (saving) {
+    renderSmartPreferenceBanner("正在保存当前偏好为工作区默认设置...", "info");
+  } else if (String(state.smartPreferences?.message || "").trim()) {
+    renderSmartPreferenceBanner(state.smartPreferences.message, state.smartPreferences.tone || "info");
+  } else if (loaded) {
+    renderSmartPreferenceBanner("当前草稿会随本次运行发送；只有点击“保存为工作区默认”才会写入持久化 profile。", "info");
+  } else {
+    renderSmartPreferenceBanner("", "info");
+  }
+
+  const disableInputs = !csvPath || loading || saving || state.isRunning;
+  if (smartPrefConservativeInput) smartPrefConservativeInput.disabled = disableInputs;
+  if (smartPrefAvoidTimeInput) smartPrefAvoidTimeInput.disabled = disableInputs;
+  if (smartPrefRequireApprovalInput) smartPrefRequireApprovalInput.disabled = disableInputs;
+  if (smartPrefProtectedColumnsInput) smartPrefProtectedColumnsInput.disabled = disableInputs;
+  if (smartPrefSaveBtn) smartPrefSaveBtn.disabled = disableInputs;
+  if (smartPrefResetBtn) smartPrefResetBtn.disabled = disableInputs || !loaded;
+}
+
+async function loadSmartPreferencesForCSV(csvPath, options = {}) {
+  const path = String(csvPath || "").trim();
+  const workspaceID = resolveSmartWorkspaceID("", path);
+  if (!path) {
+    state.smartPreferences = {
+      workspaceID: "",
+      draft: defaultSmartPreferenceProfile(),
+      saved: defaultSmartPreferenceProfile(),
+      loading: false,
+      saving: false,
+      loaded: false,
+      message: "",
+      tone: "info",
+    };
+    renderSmartPreferenceCard();
+    return;
+  }
+  if (!options?.force && state.smartPreferences.loaded && state.smartPreferences.workspaceID === workspaceID) {
+    renderSmartPreferenceCard();
+    return;
+  }
+
+  state.smartPreferences.loading = true;
+  state.smartPreferences.workspaceID = workspaceID;
+  state.smartPreferences.message = "";
+  state.smartPreferences.tone = "info";
+  renderSmartPreferenceCard();
+  try {
+    const record = await apiGetAgentPreferences("", path);
+    const profile = cloneSmartPreferenceProfile(asObject(record?.profile));
+    state.smartPreferences = {
+      workspaceID: String(record?.workspace_id || workspaceID).trim(),
+      draft: cloneSmartPreferenceProfile(profile),
+      saved: cloneSmartPreferenceProfile(profile),
+      loading: false,
+      saving: false,
+      loaded: true,
+      message: "已加载当前工作区默认偏好。",
+      tone: "success",
+    };
+  } catch (err) {
+    state.smartPreferences.loading = false;
+    state.smartPreferences.loaded = false;
+    state.smartPreferences.message = `加载偏好失败: ${normalizeReadableErrorText(String(err))}`;
+    state.smartPreferences.tone = "warning";
+  }
+  renderSmartPreferenceCard();
+}
+
+async function saveSmartPreferencesForWorkspace() {
+  const csvPath = getSmartCsvPath();
+  if (!csvPath) {
+    renderSmartPreferenceBanner("请先选择 CSV，再保存工作区默认偏好。", "warning");
+    return null;
+  }
+
+  state.smartPreferences.saving = true;
+  state.smartPreferences.message = "";
+  renderSmartPreferenceCard();
+  try {
+    const record = await apiSaveAgentPreferences({
+      csv_path: csvPath,
+      workspace_id: state.smartPreferences.workspaceID || resolveSmartWorkspaceID("", csvPath),
+      profile: buildSmartUserPreferencesPayload(),
+    });
+    const profile = cloneSmartPreferenceProfile(asObject(record?.profile));
+    state.smartPreferences = {
+      workspaceID: String(record?.workspace_id || resolveSmartWorkspaceID("", csvPath)).trim(),
+      draft: cloneSmartPreferenceProfile(profile),
+      saved: cloneSmartPreferenceProfile(profile),
+      loading: false,
+      saving: false,
+      loaded: true,
+      message: "已保存为当前工作区默认偏好。",
+      tone: "success",
+    };
+    renderSmartPreferenceCard();
+    return record;
+  } catch (err) {
+    state.smartPreferences.saving = false;
+    state.smartPreferences.message = `保存偏好失败: ${normalizeReadableErrorText(String(err))}`;
+    state.smartPreferences.tone = "warning";
+    renderSmartPreferenceCard();
+    return null;
+  }
+}
+
+function renderSmartHome() {
+  const csvPath = getSmartCsvPath();
+  const outputDir = getSmartOutputDir();
+  const fileSelected = Boolean(csvPath);
+  const columnCount = state.availableColumns.length;
+  const smartAvailable = isSmartAutofixAvailable();
+
+  if (smartSelectedCsv) {
+    smartSelectedCsv.textContent = fileSelected ? csvPath : "尚未选择文件";
+  }
+  if (smartDropzone) {
+    smartDropzone.classList.toggle("is-ready", fileSelected);
+    smartDropzone.classList.toggle("is-disabled", !smartAvailable);
+  }
+  if (smartSummaryCard) {
+    smartSummaryCard.classList.toggle("hidden", !fileSelected);
+  }
+  if (smartSummaryMessage) {
+    smartSummaryMessage.textContent = fileSelected
+      ? "确认以下摘要后即可启动智能闭环。"
+      : "选择文件后会自动生成本次任务摘要。";
+  }
+  if (smartSummaryList) {
+    renderDescriptionList(smartSummaryList, [
+      ["文件", fileSelected ? shortPath(csvPath) : "-"],
+      ["完整路径", fileSelected ? csvPath : "-"],
+      ["识别列数", fileSelected ? (columnCount > 0 ? columnCount : "读取中") : "-"],
+      ["输出目录", outputDir || "-"],
+      ["执行入口", "agent.session.auto"],
+      ["安全策略", "自动复扫 + 自动验证 + 失败自动回滚"],
+    ]);
+  }
+  if (smartSummaryTrust) {
+    renderCompactList(smartSummaryTrust, [
+      "自动复扫",
+      "自动验证",
+      "失败自动回滚",
+      fileSelected && columnCount > 0 ? `已读取 ${columnCount} 个字段` : "等待列信息",
+    ]);
+  }
+
+  if (!smartAvailable && hasAnyAppBinding()) {
+    renderSmartModeBanner("当前环境未暴露 RunAgentAutofixSession，默认智能闭环不可用。可切换到高级工作台继续使用经典流程。", "warning");
+  } else if (fileSelected) {
+    renderSmartModeBanner("系统将先生成修复摘要，再在你点击“开始智能处理”后进入自动闭环。", "info");
+  } else {
+    renderSmartModeBanner("", "info");
+  }
+
+  if (smartStartBtn) {
+    smartStartBtn.disabled = !smartAvailable || !fileSelected || state.isRunning;
+  }
+  if (smartChooseCsvBtn) smartChooseCsvBtn.disabled = state.isRunning;
+  if (smartChooseOutputBtn) smartChooseOutputBtn.disabled = state.isRunning;
+  if (smartOutputInput) smartOutputInput.disabled = state.isRunning;
+  renderSmartPreferenceCard();
+  updateContinueLatestButton();
+}
+
+function renderArtifactList(target, items, emptyText) {
+  if (!target) return;
+  const rows = asArray(items)
+    .map((item) => asObject(item))
+    .filter((item) => String(item?.path || "").trim());
+  if (rows.length === 0) {
+    target.innerHTML = `<p class="core-message">${escapeHtml(String(emptyText || "暂无产物。"))}</p>`;
+    return;
+  }
+  target.innerHTML = rows
+    .map(
+      (item) => `
+        <article class="artifact-item">
+          <strong>${escapeHtml(String(item?.label || "产物"))}</strong>
+          <span>${escapeHtml(String(item?.path || "-"))}</span>
+        </article>
+      `
+    )
+    .join("");
+}
+
+function smartVerdictTone(verdict) {
+  const normalized = String(verdict || "").trim().toLowerCase();
+  if (normalized === "accepted") return "success";
+  if (normalized === "approval_required" || normalized === "validation_rejected" || normalized === "rolled_back") return "warning";
+  if (normalized === "approval_rejected") return "neutral";
+  if (normalized === "rollback_failed") return "danger";
+  return "neutral";
+}
+
+function renderSmartSafetyBanner(verdict, text) {
+  if (!smartSafetyBanner) return;
+  const normalized = String(verdict || "").trim().toLowerCase();
+  const message = String(text || "").trim();
+  if (!normalized && !message) {
+    smartSafetyBanner.className = "smart-safety-banner hidden";
+    smartSafetyBanner.innerHTML = "";
+    return;
+  }
+  smartSafetyBanner.className = `smart-safety-banner ${smartVerdictTone(normalized)}`;
+  smartSafetyBanner.innerHTML = `
+    <strong>${escapeHtml(normalized || "result")}</strong>
+    <p>${escapeHtml(message || "任务已完成。")}</p>
+  `;
+}
+
+function renderSmartTracePlaceholder(message) {
+  if (smartTraceSummary) smartTraceSummary.textContent = String(message || "等待会话轨迹。");
+  if (smartTraceList) smartTraceList.innerHTML = "";
+}
+
 function syncExportButtons(enabled) {
   const on = Boolean(enabled);
+  if (copyJsonBtn) copyJsonBtn.disabled = !on;
   if (exportJsonBtn) exportJsonBtn.disabled = !on;
   if (exportCsvBtn) exportCsvBtn.disabled = !on;
   if (exportJsonSideBtn) exportJsonSideBtn.disabled = !on;
   if (exportCsvSideBtn) exportCsvSideBtn.disabled = !on;
+  if (smartExportJsonBtn) smartExportJsonBtn.disabled = !on;
+  if (smartExportCsvBtn) smartExportCsvBtn.disabled = !on;
 }
 
 function renderConfigSidebar() {
@@ -548,6 +1094,7 @@ function formatElapsedTime(ms) {
 }
 
 function formatTaskType(intent) {
+  if (intent === INTENT_AGENT_AUTO) return "智能闭环";
   if (intent === INTENT_REPAIR) return "批量修复";
   if (intent === INTENT_TRAIN) return "模型训练";
   return "全列检测";
@@ -744,6 +1291,385 @@ function renderTaskObservability(target, task) {
     ["定位", failureLocation],
     ["原因", failureMessage ? normalizeReadableErrorText(failureMessage) : "-"],
   ]);
+}
+
+function presentationToneClass(tone) {
+  const normalized = String(tone || "neutral")
+    .trim()
+    .toLowerCase()
+    .replaceAll(/\s+/g, "-");
+  return normalized || "neutral";
+}
+
+function getPresentationBundle(result) {
+  const root = asObject(result);
+  const nestedAgent = asObject(root?.agent);
+  const nestedPresentation = asObject(nestedAgent?.presentation);
+  if (Object.keys(nestedPresentation).length > 0) {
+    return nestedPresentation;
+  }
+  return asObject(root?.presentation);
+}
+
+function renderPresentationVerdict(verdict) {
+  const text = String(verdict || "").trim();
+  if (!text) return "";
+  return `<span class="presentation-verdict ${presentationToneClass(text)}">${escapeHtml(text)}</span>`;
+}
+
+function renderPresentationHighlights(highlights) {
+  const cards = asArray(highlights)
+    .map((item) => asObject(item))
+    .filter((item) => Object.keys(item).length > 0);
+  if (cards.length === 0) return "";
+  return `
+    <section class="metric-strip">
+      ${cards
+        .map((item) => {
+          const tone = presentationToneClass(item?.tone);
+          return `
+            <article class="metric-card ${tone}">
+              <span class="metric-card-label">${escapeHtml(String(item?.label || item?.id || "-"))}</span>
+              <strong class="metric-card-value">${escapeHtml(String(item?.value ?? "-"))}</strong>
+              ${item?.hint ? `<span class="metric-card-hint">${escapeHtml(String(item.hint))}</span>` : ""}
+            </article>
+          `;
+        })
+        .join("")}
+    </section>
+  `;
+}
+
+function renderEvidenceRefs(refs) {
+  const items = asArray(refs)
+    .map((item) => String(item || "").trim())
+    .filter(Boolean);
+  if (items.length === 0) return "";
+  return `
+    <div class="evidence-list">
+      ${items.map((item) => `<span class="evidence-tag">${escapeHtml(item)}</span>`).join("")}
+    </div>
+  `;
+}
+
+function renderRankedBarChart(series) {
+  const rows = asArray(series).map((item) => asObject(item)).filter((item) => Object.keys(item).length > 0);
+  if (rows.length === 0) return "";
+  const maxValue = Math.max(1, ...rows.map((item) => Math.max(0, Number(item?.value) || 0)));
+  return `
+    <div class="presentation-bar-list">
+      ${rows
+        .map((item) => {
+          const value = Math.max(0, Number(item?.value) || 0);
+          const width = `${((value / maxValue) * 100).toFixed(2)}%`;
+          return `
+            <div class="presentation-bar-row">
+              <div class="presentation-bar-head">
+                <span>${escapeHtml(String(item?.label || "-"))}</span>
+                <strong>${escapeHtml(String(item?.value ?? 0))}</strong>
+              </div>
+              <div class="presentation-bar-track">
+                <i class="presentation-bar-fill ${presentationToneClass(item?.tone)}" style="width:${width}"></i>
+              </div>
+            </div>
+          `;
+        })
+        .join("")}
+    </div>
+  `;
+}
+
+function renderStackedBarChart(series) {
+  const rows = asArray(series).map((item) => asObject(item)).filter((item) => Object.keys(item).length > 0);
+  if (rows.length === 0) return "";
+  const total = Math.max(1, rows.reduce((sum, item) => sum + Math.max(0, Number(item?.value) || 0), 0));
+  return `
+    <div class="presentation-segment-strip">
+      ${rows
+        .map((item) => {
+          const value = Math.max(0, Number(item?.value) || 0);
+          const width = `${Math.max(3, (value / total) * 100).toFixed(2)}%`;
+          return `<i class="presentation-segment ${presentationToneClass(item?.tone)}" style="width:${width}"></i>`;
+        })
+        .join("")}
+    </div>
+    <div class="presentation-segment-legend">
+      ${rows
+        .map(
+          (item) =>
+            `<span class="presentation-segment-pill">${escapeHtml(String(item?.label || "-"))}: ${escapeHtml(String(item?.value ?? 0))}</span>`
+        )
+        .join("")}
+    </div>
+  `;
+}
+
+function renderComparisonBarChart(series, delta) {
+  const rows = asArray(series).map((item) => asObject(item)).filter((item) => Object.keys(item).length > 0);
+  if (rows.length === 0) return "";
+  const paired = rows.some(
+    (item) =>
+      Object.prototype.hasOwnProperty.call(item, "before") || Object.prototype.hasOwnProperty.call(item, "after")
+  );
+  if (!paired) {
+    const deltaText = Number.isFinite(Number(delta)) ? `<p>净变化: ${escapeHtml(String(delta))}</p>` : "";
+    return `${renderRankedBarChart(rows)}${deltaText}`;
+  }
+  const maxValue = Math.max(
+    1,
+    ...rows.map((item) => Math.max(0, Number(item?.before) || 0, Number(item?.after) || 0))
+  );
+  return `
+    <div class="presentation-comparison-list">
+      ${rows
+        .map((item) => {
+          const before = Math.max(0, Number(item?.before) || 0);
+          const after = Math.max(0, Number(item?.after) || 0);
+          const beforeWidth = `${((before / maxValue) * 100).toFixed(2)}%`;
+          const afterWidth = `${((after / maxValue) * 100).toFixed(2)}%`;
+          const deltaValue = Number(item?.delta);
+          const deltaText = Number.isFinite(deltaValue) ? `变化 ${deltaValue > 0 ? "+" : ""}${deltaValue}` : "";
+          return `
+            <div class="presentation-comparison-row">
+              <div class="presentation-comparison-head">
+                <span>${escapeHtml(String(item?.label || "-"))}</span>
+                <strong>${deltaText ? escapeHtml(deltaText) : ""}</strong>
+              </div>
+              <div class="compare-row">
+                <span>Before</span>
+                <div class="presentation-mini-track"><i class="presentation-mini-fill before" style="width:${beforeWidth}"></i></div>
+                <strong>${escapeHtml(String(item?.before ?? 0))}</strong>
+              </div>
+              <div class="compare-row">
+                <span>After</span>
+                <div class="presentation-mini-track"><i class="presentation-mini-fill after" style="width:${afterWidth}"></i></div>
+                <strong>${escapeHtml(String(item?.after ?? 0))}</strong>
+              </div>
+            </div>
+          `;
+        })
+        .join("")}
+    </div>
+  `;
+}
+
+function renderTimelineChart(events) {
+  const rows = asArray(events).map((item) => asObject(item)).filter((item) => Object.keys(item).length > 0);
+  if (rows.length === 0) return "";
+  return `
+    <div class="presentation-timeline">
+      ${rows
+        .map((item) => {
+          const hint = String(item?.hint || "").trim();
+          return `
+            <article class="presentation-timeline-item ${presentationToneClass(item?.tone)}">
+              <strong>${escapeHtml(String(item?.label || "-"))} · ${escapeHtml(String(item?.value || "-"))}</strong>
+              ${hint ? `<p>${escapeHtml(hint)}</p>` : ""}
+            </article>
+          `;
+        })
+        .join("")}
+    </div>
+  `;
+}
+
+function renderSpotlightCard(data) {
+  const payload = asObject(data);
+  const entries = Object.entries(payload).filter(([, value]) => String(value ?? "").trim() !== "");
+  if (entries.length === 0) return "";
+  return `
+    <div class="presentation-spotlight">
+      <dl>
+        ${entries
+          .map(([key, value]) => `<dt>${escapeHtml(String(key))}</dt><dd>${escapeHtml(String(value))}</dd>`)
+          .join("")}
+      </dl>
+    </div>
+  `;
+}
+
+function renderHeatmapHintChart(data) {
+  const payload = asObject(data);
+  const thumbnails = asArray(payload?.column_thumbnails);
+  if (thumbnails.length === 0) return "";
+  const topColumns = thumbnails
+    .slice()
+    .sort((left, right) => (Number(right?.risk_score) || 0) - (Number(left?.risk_score) || 0))
+    .slice(0, 3)
+    .map((item) => `${String(item?.column || "-")}: ${Math.round(Number(item?.risk_score) || 0)}`);
+  return `
+    <div class="presentation-insights">
+      <div class="safety-banner">异常热力图继续复用下方列缩略图组件，便于和原始 issue 详情联动查看。</div>
+      <dl>
+        <dt>热区列数</dt>
+        <dd>${escapeHtml(String(thumbnails.length))}</dd>
+        <dt>重点列</dt>
+        <dd>${escapeHtml(topColumns.join(" | ") || "-")}</dd>
+      </dl>
+    </div>
+  `;
+}
+
+function renderPresentationChart(chart) {
+  const spec = asObject(chart);
+  const data = asObject(spec?.data);
+  let body = "";
+  switch (String(spec?.kind || "").trim()) {
+    case "ranked_bar":
+      body = renderRankedBarChart(data?.series);
+      break;
+    case "stacked_bar":
+      body = renderStackedBarChart(data?.series);
+      break;
+    case "comparison_bar":
+      body = renderComparisonBarChart(data?.series, data?.delta);
+      break;
+    case "timeline":
+      body = renderTimelineChart(data?.events);
+      break;
+    case "spotlight_card":
+      body = renderSpotlightCard(data);
+      break;
+    case "heatmap_grid":
+      body = renderHeatmapHintChart(data);
+      break;
+    default:
+      body = "";
+  }
+
+  if (!body) {
+    body = `<div class="presentation-empty">${escapeHtml(String(spec?.empty_state || "No chart data available."))}</div>`;
+  }
+
+  return `
+    <article class="chart-card" data-chart-kind="${escapeHtml(String(spec?.kind || ""))}">
+      <h4>${escapeHtml(String(spec?.title || spec?.id || "Chart"))}</h4>
+      ${spec?.subtitle ? `<p>${escapeHtml(String(spec.subtitle))}</p>` : ""}
+      ${body}
+    </article>
+  `;
+}
+
+function renderPresentationBundle(target, bundle) {
+  if (!target) return;
+  const payload = asObject(bundle);
+  if (Object.keys(payload).length === 0) {
+    target.innerHTML = "";
+    target.classList.add("hidden");
+    return;
+  }
+
+  const sections = asArray(payload?.sections).map((item) => asObject(item)).filter((item) => Object.keys(item).length > 0);
+  const charts = asArray(payload?.charts).map((item) => asObject(item)).filter((item) => Object.keys(item).length > 0);
+  const headerTitle = String(payload?.headline || payload?.kind || "Presentation");
+  const summary = String(payload?.summary || "").trim();
+  const riskAndSafety = sections.find((item) => String(item?.id || "").trim() === "risk_and_safety");
+
+  target.classList.remove("hidden");
+  target.innerHTML = `
+    <div class="presentation-header">
+      ${renderPresentationVerdict(payload?.verdict)}
+      <h2>${escapeHtml(headerTitle)}</h2>
+      ${summary ? `<p>${escapeHtml(summary)}</p>` : ""}
+    </div>
+    ${renderPresentationHighlights(payload?.highlights)}
+    ${riskAndSafety?.body ? `<div class="safety-banner">${escapeHtml(String(riskAndSafety.body))}</div>` : ""}
+    ${charts.length > 0 ? `<section class="chart-grid">${charts.map((item) => renderPresentationChart(item)).join("")}</section>` : ""}
+    ${
+      sections.length > 0
+        ? `
+      <section class="presentation-insights">
+        ${sections
+          .map((section) => {
+            const bullets = asArray(section?.bullets).map((item) => String(item || "").trim()).filter(Boolean);
+            return `
+              <article class="insight-section" data-section-id="${escapeHtml(String(section?.id || ""))}">
+                <h4>${escapeHtml(String(section?.title || section?.id || "Section"))}</h4>
+                ${section?.body ? `<p>${escapeHtml(String(section.body))}</p>` : ""}
+                ${bullets.length > 0 ? `<ul>${bullets.map((item) => `<li>${escapeHtml(item)}</li>`).join("")}</ul>` : ""}
+                ${renderEvidenceRefs(section?.evidence_refs)}
+              </article>
+            `;
+          })
+          .join("")}
+      </section>
+    `
+        : ""
+    }
+  `;
+}
+
+function buildRepairView(result) {
+  const root = asObject(result);
+  const agentBlock = asObject(root?.agent);
+  const safety = asObject(root?.safety);
+  const presentation = getPresentationBundle(root);
+  if (Object.keys(agentBlock).length === 0) {
+    return {
+      repairResult: root,
+      presentation,
+      isAgent: false,
+      safety,
+      validation: {},
+      agentBlock: {},
+    };
+  }
+
+  const execution = asObject(agentBlock?.execution);
+  const validation = asObject(agentBlock?.validation);
+  const previewValidation = asObject(validation?.preview);
+  const comparison = asObject(execution?.comparison || previewValidation || validation);
+  const plan = asObject(agentBlock?.plan);
+  const explanationBlock = asObject(agentBlock?.explanation);
+  const repairResult = {
+    ...root,
+    ...execution,
+  };
+
+  if (Object.keys(comparison).length > 0) {
+    repairResult.comparison = comparison;
+  }
+  if (!repairResult.selected_issue_count) {
+    repairResult.selected_issue_count = asArray(plan?.selected_issue_ids).length;
+  }
+  if (!repairResult.applied_issue_count) {
+    repairResult.applied_issue_count = Math.max(0, toInt(comparison?.resolved_issue_count, 0));
+  }
+  if (!repairResult.total_cells_modified) {
+    repairResult.total_cells_modified = Math.max(0, toInt(comparison?.changed_cell_count, 0));
+  }
+  if (!repairResult.scan_issue_count) {
+    repairResult.scan_issue_count = Math.max(0, toInt(comparison?.before_issue_count, 0));
+  }
+  if (!repairResult.selected_source) {
+    repairResult.selected_source = String(plan?.selected_source || "");
+  }
+  if (Object.keys(asObject(repairResult?.issue_source_map)).length === 0) {
+    repairResult.issue_source_map = asObject(plan?.issue_source_map);
+  }
+  if (asArray(repairResult?.skipped_issues).length === 0) {
+    repairResult.skipped_issues = asArray(plan?.skipped_issues);
+  }
+  if (!repairResult.execution_mode) {
+    repairResult.execution_mode = String(agentBlock?.run_mode || "agent");
+  }
+  if (!Object.keys(asObject(repairResult?.rollback)).length) {
+    repairResult.rollback = asObject(execution?.rollback);
+  }
+  if (!Object.keys(asObject(repairResult?.rollback)).length) {
+    repairResult.rollback = asObject(safety?.rollback_execution);
+  }
+  if (!Object.prototype.hasOwnProperty.call(repairResult, "write_output")) {
+    repairResult.write_output = Boolean(execution?.output_csv);
+  }
+  return {
+    repairResult,
+    presentation,
+    isAgent: true,
+    safety,
+    validation,
+    agentBlock,
+  };
 }
 
 function renderRepairOverviewSidebar(result) {
@@ -1005,8 +1931,14 @@ function setRunningUi(isRunning) {
   if (newDetectBtn) newDetectBtn.disabled = state.isRunning;
   if (backResultBtn) backResultBtn.disabled = state.isRunning;
   if (newRepairDetectBtn) newRepairDetectBtn.disabled = state.isRunning;
+  if (smartRunCancelBtn) smartRunCancelBtn.disabled = !state.isRunning || !state.currentTaskId;
+  if (smartChooseCsvBtn) smartChooseCsvBtn.disabled = state.isRunning;
+  if (smartChooseOutputBtn) smartChooseOutputBtn.disabled = state.isRunning;
+  if (smartOutputInput) smartOutputInput.disabled = state.isRunning;
+  if (smartStartBtn) smartStartBtn.disabled = state.isRunning || !getSmartCsvPath() || !isSmartAutofixAvailable();
 
   updateSelectedIssuePill();
+  renderSmartHome();
 }
 
 function setStepVisibility(step) {
@@ -1056,6 +1988,11 @@ function setConfigAdvancedVisibility(enabled) {
     configBasicNote.classList.toggle("hidden", on);
   }
   renderConfigSidebar();
+  if (!String(smartOutputInput?.value || "").trim()) {
+    smartOutputInput.value = buildSmartDefaultOutputDir();
+    state.smartDraft.outputDir = String(smartOutputInput.value || "");
+  }
+  renderSmartHome();
 }
 
 function setAutoMode(enabled, options = {}) {
@@ -1236,6 +2173,316 @@ function saveFile(name, content, mime) {
   URL.revokeObjectURL(url);
 }
 
+function startupStatusLabel(status) {
+  const normalized = String(status || "checking").trim().toLowerCase();
+  if (normalized === "ok") return "通过";
+  if (normalized === "warning") return "有警告";
+  if (normalized === "failed") return "阻塞失败";
+  return "检查中";
+}
+
+function startupSummaryText(report, loading = false) {
+  if (loading || !report) {
+    return "正在检查 Python 引擎、运行时依赖、输出目录和任务历史数据库，请稍候。";
+  }
+
+  const status = String(report?.overall_status || "failed").toLowerCase();
+  if (status === "ok") {
+    return "运行环境准备就绪，正在进入应用。";
+  }
+  if (status === "warning") {
+    return "启动自检已完成，应用可以进入，但仍有非阻塞警告需要留意。";
+  }
+  return "发现阻塞性问题，应用不会继续进入主流程。请根据下列提示修复后重新自检。";
+}
+
+function startupCountsText(report, loading = false) {
+  if (loading || !report) return "等待检查结果...";
+  const summary = asObject(report?.summary);
+  return `通过 ${toInt(summary?.passed, 0)} 项 · 警告 ${toInt(summary?.warnings, 0)} 项 · 失败 ${toInt(summary?.failed, 0)} 项`;
+}
+
+function startupItemDetailText(item) {
+  const detail = asObject(item?.detail);
+  const parts = [];
+  if (detail?.provider) parts.push(`Provider: ${String(detail.provider)}`);
+  if (detail?.cognition_status) parts.push(`Cognition: ${String(detail.cognition_status)}`);
+  if (detail?.planner_mode) parts.push(`Planner: ${String(detail.planner_mode)}`);
+  if (detail?.llm_mode) parts.push(`LLM: ${String(detail.llm_mode)}`);
+  if (detail?.graph_id || detail?.version) {
+    const graphLabel = [String(detail?.graph_id || "").trim(), String(detail?.version || "").trim()]
+      .filter(Boolean)
+      .join(" @ ");
+    if (graphLabel) parts.push(`Graph: ${graphLabel}`);
+  }
+  if (detail?.model) parts.push(`Model: ${String(detail.model)}`);
+  if (detail?.fallback_reason_code) parts.push(`Fallback: ${String(detail.fallback_reason_code)}`);
+  if (detail?.fallback_message) parts.push(String(detail.fallback_message));
+  if (detail?.fallback_active === true) parts.push("Fallback active");
+  if (item?.path) parts.push(`路径: ${String(item.path)}`);
+  if (detail?.db_path) parts.push(`数据库: ${String(detail.db_path)}`);
+  if (detail?.selected_path) parts.push(`模型目录: ${String(detail.selected_path)}`);
+  if (detail?.reason) parts.push(`原因: ${normalizeReadableErrorText(String(detail.reason))}`);
+  if (detail?.dependency) parts.push(`依赖: ${String(detail.dependency)}`);
+  if (Array.isArray(detail?.missing_files) && detail.missing_files.length > 0) {
+    parts.push(`缺失文件: ${detail.missing_files.join(", ")}`);
+  }
+  if (item?.auto_fixed) parts.push("已自动创建缺失目录");
+  return parts.join(" | ");
+}
+
+function setStartupGateVisible(visible) {
+  if (!startupGate) return;
+  startupGate.classList.toggle("hidden", !visible);
+}
+
+function renderStartupGate(report = null, options = {}) {
+  const loading = Boolean(options?.loading);
+  const data = loading ? null : asObject(report);
+  const status = loading ? "checking" : String(data?.overall_status || "failed").toLowerCase();
+
+  setStartupGateVisible(true);
+
+  if (startupTitle) {
+    startupTitle.textContent =
+      status === "ok"
+        ? "启动自检通过"
+        : status === "warning"
+        ? "启动自检完成（有警告）"
+        : status === "failed"
+        ? "启动自检未通过"
+        : "正在执行启动自检";
+  }
+  if (startupSummary) startupSummary.textContent = startupSummaryText(data, loading);
+  if (startupStatusPill) {
+    startupStatusPill.className = `startup-status-pill ${status}`;
+    startupStatusPill.textContent = loading ? "checking" : startupStatusLabel(status);
+  }
+  if (startupCounts) startupCounts.textContent = startupCountsText(data, loading);
+
+  if (startupCheckList) {
+    if (loading) {
+      startupCheckList.innerHTML = `
+        <li class="startup-check-item checking">
+          <div>
+            <strong>启动自检进行中</strong>
+            <p>正在准备应用运行环境。</p>
+          </div>
+        </li>
+      `;
+    } else {
+      const items = asArray(data?.items);
+      startupCheckList.innerHTML = items
+        .map((item) => {
+          const detailText = startupItemDetailText(item);
+          return `
+            <li class="startup-check-item ${escapeHtml(String(item?.status || "fail"))}">
+              <div>
+                <strong>${escapeHtml(String(item?.label || item?.key || "未知检查项"))}</strong>
+                <p>${escapeHtml(String(item?.message || "-"))}</p>
+                ${detailText ? `<small>${escapeHtml(detailText)}</small>` : ""}
+              </div>
+            </li>
+          `;
+        })
+        .join("");
+    }
+  }
+
+  if (startupDetails) {
+    startupDetails.classList.toggle("hidden", loading);
+    startupDetails.open = !loading && status === "failed";
+  }
+  if (startupRaw) {
+    startupRaw.textContent = loading ? "{}" : `${JSON.stringify(data || {}, null, 2)}\n`;
+  }
+  if (startupRetryBtn) {
+    startupRetryBtn.disabled = loading || Boolean(data?.can_enter);
+  }
+  if (startupCopyBtn) {
+    startupCopyBtn.disabled = loading || !data;
+  }
+  if (startupCloseBtn) {
+    startupCloseBtn.disabled = loading || !Boolean(data?.can_enter);
+  }
+}
+
+async function copyStartupDiagnostics() {
+  if (!state.startupReport) return;
+
+  const text = `${JSON.stringify(state.startupReport, null, 2)}\n`;
+  try {
+    if (navigator?.clipboard?.writeText) {
+      await navigator.clipboard.writeText(text);
+    } else {
+      const temp = document.createElement("textarea");
+      temp.value = text;
+      temp.style.position = "fixed";
+      temp.style.opacity = "0";
+      document.body.appendChild(temp);
+      temp.focus();
+      temp.select();
+      document.execCommand("copy");
+      document.body.removeChild(temp);
+    }
+    if (startupCopyBtn) {
+      startupCopyBtn.textContent = "已复制";
+      setTimeout(() => {
+        startupCopyBtn.textContent = "复制诊断信息";
+      }, 1200);
+    }
+  } catch (err) {
+    addEvent(`复制启动诊断失败: ${String(err)}`);
+  }
+}
+
+function openStartupDiagnostics() {
+  renderStartupGate(state.startupReport || null);
+  setStartupGateVisible(true);
+}
+
+function closeStartupDiagnostics() {
+  if (state.startupReport?.can_enter) {
+    setStartupGateVisible(false);
+  }
+}
+
+function openAdvancedWorkspace() {
+  const currentAction = String(state.currentTask?.request?.action || "").toLowerCase();
+  if (isAgentAutoAction(currentAction)) {
+    const status = String(state.currentTask?.status || "").toLowerCase();
+    if (isTerminalTaskStatus(status)) {
+      renderRepairResult(state.currentTask?.response?.result, state.currentTask);
+      setWizardStep(STEP_REPAIR, { immediate: true });
+    } else if (state.currentTask?.id) {
+      setWizardStep(STEP_PROGRESS, { immediate: true });
+    }
+  }
+  setShellView(VIEW_ADVANCED_WORKSPACE);
+}
+
+function returnToSmartSurface() {
+  const currentAction = String(state.currentTask?.request?.action || "").toLowerCase();
+  const currentStatus = String(state.currentTask?.status || "").toLowerCase();
+  if (isAgentAutoAction(currentAction) && state.currentTask?.id) {
+    if (isTerminalTaskStatus(currentStatus)) {
+      renderSmartResult(state.currentTask, { skipHydrate: false });
+      return;
+    }
+    renderSmartRun(state.currentTask);
+    return;
+  }
+  setShellView(VIEW_SMART_HOME);
+  renderSmartHome();
+}
+
+function pickRecentHistoryCandidate(tasks) {
+  const items = asArray(tasks).map((item) => asObject(item));
+  const runningAuto = items.find((item) => isAgentAutoAction(item?.request?.action) && !isTerminalTaskStatus(item?.status));
+  if (runningAuto) return runningAuto;
+  const latestAuto = items.find((item) => isAgentAutoAction(item?.request?.action));
+  if (latestAuto) return latestAuto;
+  return items.find((item) => actionToIntent(item?.request?.action)) || null;
+}
+
+function restoreRecentTask(task, options = {}) {
+  if (!task || !task?.id) return;
+  const intent = actionToIntent(task?.request?.action);
+  if (!intent) return;
+
+  state.currentTaskId = String(task?.id || "");
+  state.currentTask = task;
+  state.runningIntent = intent;
+  const startedAtMs = Date.parse(String(task?.started_at || task?.created_at || ""));
+  state.taskStartAtMS = Number.isFinite(startedAtMs) ? startedAtMs : Date.now();
+  renderTask(task, intent);
+
+  const fromHistory = Boolean(options?.fromHistory);
+  const status = String(task?.status || "").toLowerCase();
+  if (!isTerminalTaskStatus(status)) {
+    setRunningUi(true);
+    if (intent === INTENT_AGENT_AUTO) {
+      renderSmartRun(task);
+    } else {
+      setWizardStep(STEP_PROGRESS, { immediate: fromHistory });
+    }
+    void pollTask(String(task.id), intent);
+    return;
+  }
+
+  setRunningUi(false);
+  if (intent === INTENT_AGENT_AUTO) {
+    renderSmartResult(task, { skipHydrate: false });
+    return;
+  }
+  handleTerminalTask(task, intent, { fromHistory });
+}
+
+async function initializeAppShell() {
+  if (state.appInitialized) return;
+  setWizardStep(STEP_CONFIG, { immediate: true });
+  setShellView(VIEW_SMART_HOME);
+  setAdvancedMode(false);
+  setAutoMode(false, { silent: true });
+  setStatus("idle", "等待任务开始");
+  renderPhaseHints(INTENT_SCAN, "idle");
+  setTaskId("");
+  setRunningUi(false);
+  resetResultPanels();
+  clearError();
+  updateMatrixDensityUi();
+  renderConfigSidebar();
+  addEvent("前端已就绪，请先执行全列检测。");
+  await refreshColumnsForCsv(csvPathInput?.value || "", "初始加载");
+  await loadRecentHistory();
+  state.appInitialized = true;
+}
+
+async function runStartupChecksFlow(source = "启动") {
+  if (state.startupRunning) return;
+  state.startupRunning = true;
+  renderStartupGate(null, { loading: true });
+
+  try {
+    const report = await apiRunStartupChecks();
+    state.startupReport = report;
+    renderStartupGate(report);
+
+    const overallStatus = String(report?.overall_status || "failed").toLowerCase();
+    addEvent(`启动自检(${source})完成: ${startupStatusLabel(overallStatus)}。`);
+
+    if (report?.can_enter) {
+      await initializeAppShell();
+      await delay(hasBinding("RunStartupChecks") ? 280 : 520);
+      setStartupGateVisible(false);
+    }
+  } catch (err) {
+    const reason = normalizeReadableErrorText(String(err));
+    const fallbackReport = {
+      overall_status: "failed",
+      can_enter: false,
+      checked_at: new Date().toISOString(),
+      items: [
+        {
+          key: "startup_gate",
+          label: "启动自检",
+          status: "fail",
+          blocking: true,
+          message: "启动自检执行失败。",
+          detail: { reason },
+        },
+      ],
+      summary: { passed: 0, warnings: 0, failed: 1 },
+      raw: { reason },
+    };
+    state.startupReport = fallbackReport;
+    renderStartupGate(fallbackReport);
+    addEvent(`启动自检失败: ${reason}`);
+  } finally {
+    state.startupRunning = false;
+  }
+}
+
 function csvEscape(value) {
   return `"${String(value ?? "").replaceAll('"', '""')}"`;
 }
@@ -1275,6 +2522,8 @@ function resetResultPanels() {
   if (detectionMessage) detectionMessage.textContent = "-";
   renderTaskObservability(resultObservability, null);
   renderTaskObservability(repairObservability, null);
+  renderPresentationBundle(resultPresentation, null);
+  renderPresentationBundle(repairPresentation, null);
   renderCompactList(repairableOverview, ["暂无可修复项"]);
   if (nextActionText) nextActionText.textContent = "先运行检测。";
   if (repairSummary) repairSummary.innerHTML = "";
@@ -1970,6 +3219,7 @@ function updateMapScaleLegend(scanResult) {
 function renderScanResult(result, taskSnapshot = state.currentTask) {
   const scanResult = asObject(result);
   const scanView = buildScanView(scanResult);
+  const presentation = getPresentationBundle(scanResult);
   state.scanResult = scanResult;
   state.scanViewResult = scanView;
   state.selectedIssueIds.clear();
@@ -2001,6 +3251,7 @@ function renderScanResult(result, taskSnapshot = state.currentTask) {
 
   renderDescriptionList(detectionSummary, rows);
   renderTaskObservability(resultObservability, taskSnapshot);
+  renderPresentationBundle(resultPresentation, presentation);
   renderScanOverview({
     issueCount,
     targetColumn,
@@ -2044,6 +3295,7 @@ function renderScanFailure(reason, task = null, phase = "检测") {
 
   renderScanFailureOverview(`${phase}失败：${normalizeReadableErrorText(String(reason || "未知错误"))}`, suggestion);
   renderTaskObservability(resultObservability, task || state.currentTask);
+  renderPresentationBundle(resultPresentation, null);
 
   if (issueMapList) {
     issueMapList.innerHTML = '<div class="scan-placeholder">未生成异常缩略图。请修正参数后重试。</div>';
@@ -2066,7 +3318,8 @@ function describeIssueImpact(issue) {
 }
 
 function renderRepairResult(result, taskSnapshot = state.currentTask) {
-  const repairResult = asObject(result);
+  const view = buildRepairView(result);
+  const repairResult = asObject(view?.repairResult);
   const comparison = asObject(repairResult?.comparison);
   const beforeIssueCount = toInt(comparison?.before_issue_count, toInt(repairResult?.scan_issue_count, 0));
   const afterIssueCount = toInt(comparison?.after_issue_count, Math.max(0, beforeIssueCount - toInt(repairResult?.applied_issue_count, 0)));
@@ -2075,10 +3328,16 @@ function renderRepairResult(result, taskSnapshot = state.currentTask) {
   const skippedCount = asArray(repairResult?.skipped_issues).length;
   const modifiedCells = toInt(repairResult?.total_cells_modified, 0);
   const rollback = asObject(repairResult?.rollback);
+  const repairModeLabel = view?.isAgent
+    ? "Agent / Autofix"
+    : state.lastRepairMode === "auto"
+    ? "自动修复全部问题列"
+    : "手动选择修复";
   setRepairKpis(appliedCount, skippedCount, modifiedCells);
   renderRepairOverviewSidebar(repairResult);
+  renderPresentationBundle(repairPresentation, view?.presentation);
   renderDescriptionList(repairSummary, [
-    ["修复模式", state.lastRepairMode === "auto" ? "自动修复全部问题列" : "手动选择修复"],
+    ["修复模式", repairModeLabel],
     ["执行模式", String(repairResult?.execution_mode || "apply")],
     ["已选问题", repairResult?.selected_issue_count ?? 0],
     ["已修复问题", repairResult?.applied_issue_count ?? 0],
@@ -2089,6 +3348,7 @@ function renderRepairResult(result, taskSnapshot = state.currentTask) {
     ["输出文件", repairResult?.output_csv ?? "-"],
     ["已写出文件", String(repairResult?.write_output ?? false)],
     ["回滚清单", rollback?.manifest_path ? shortPath(rollback.manifest_path) : "-"],
+    ["来源", repairResult?.selected_source ? String(repairResult.selected_source) : "-"],
   ]);
   renderTaskObservability(repairObservability, taskSnapshot);
 
@@ -2146,8 +3406,9 @@ function renderRepairResult(result, taskSnapshot = state.currentTask) {
 function renderRepairFailure(reason, task = null) {
   resetRepairKpis();
   resetRepairOverviewSidebar();
+  renderPresentationBundle(repairPresentation, null);
   renderDescriptionList(repairSummary, [
-    ["阶段", "repair_batch"],
+    ["阶段", String(task?.request?.action || "repair_batch")],
     ["任务ID", String(task?.id || state.currentTaskId || "-")],
     ["状态", String(task?.status || "failed")],
     ["错误码", String(task?.response?.error?.code || "-")],
@@ -2161,6 +3422,456 @@ function renderRepairFailure(reason, task = null) {
   const suggestion = extractSuggestion(task);
   li.textContent = suggestion ? `修复失败：${reason}。建议：${suggestion}` : `修复失败：${String(reason || "未知错误")}`;
   repairDetailList.appendChild(li);
+}
+
+function approvalReasonLabel(code) {
+  switch (String(code || "").trim()) {
+    case "high_risk_columns_selected":
+      return "命中了高风险列";
+    case "time_like_columns_selected":
+      return "命中了时间/日期列";
+    case "protected_columns_selected":
+      return "命中了保护列";
+    case "planner_requested_approval":
+      return "Planner 请求在写入前人工确认";
+    default:
+      return String(code || "-");
+  }
+}
+
+function firstNonEmptyText(...values) {
+  for (const value of values) {
+    const text = String(value || "").trim();
+    if (text) return text;
+  }
+  return "";
+}
+
+function buildSmartCognition(view, session = null) {
+  const agentBlock = asObject(view?.agentBlock);
+  const explanation = asObject(agentBlock?.explanation);
+  const plan = asObject(agentBlock?.plan || asObject(session?.latest_plan));
+  const traceSummary = asObject(session?.trace_summary || agentBlock?.trace_summary);
+  const traceCognition = asObject(traceSummary?.cognition);
+  const sessionContext = asObject(session?.context);
+  const contextCognition = asObject(sessionContext?.cognition_state);
+  const explanationCognition = asObject(explanation?.cognition);
+  const planCognition = asObject(plan?.cognition);
+  const cognition =
+    Object.keys(explanationCognition).length > 0
+      ? explanationCognition
+      : Object.keys(planCognition).length > 0
+      ? planCognition
+      : Object.keys(contextCognition).length > 0
+      ? contextCognition
+      : traceCognition;
+  return {
+    mode: String(explanation?.mode || "").trim(),
+    provider: String(cognition?.provider || traceCognition?.provider || "").trim(),
+    status: String(cognition?.status || traceCognition?.status || "").trim(),
+    plannerMode: String(cognition?.planner_mode || traceCognition?.planner_mode || "").trim(),
+    llmMode: String(cognition?.llm_mode || traceCognition?.llm_mode || "").trim(),
+    graphID: String(cognition?.graph_id || "").trim(),
+    version: String(cognition?.version || "").trim(),
+    summary: firstNonEmptyText(cognition?.summary, traceCognition?.last_summary),
+    fallbackReasonCode: String(cognition?.fallback_reason_code || traceCognition?.fallback_reason_code || "").trim(),
+    fallbackMessage: String(cognition?.fallback_message || "").trim(),
+    reasonCodes: asArray(cognition?.reason_codes || traceCognition?.reason_codes)
+      .map((item) => String(item || "").trim())
+      .filter(Boolean),
+    selectedCandidateID: String(cognition?.selected_candidate_id || traceCognition?.selected_candidate_id || "").trim(),
+    eventCount: toInt(traceCognition?.event_count, 0),
+  };
+}
+
+function smartCognitionLabel(cognition) {
+  const provider = String(cognition?.provider || "").trim();
+  const status = String(cognition?.status || "").trim();
+  if (provider && status) return `${provider}/${status}`;
+  return provider || status || "";
+}
+
+function smartCognitionSummaryText(cognition) {
+  return firstNonEmptyText(cognition?.summary, cognition?.fallbackMessage);
+}
+
+function smartCognitionFallbackText(cognition) {
+  const reason = String(cognition?.fallbackReasonCode || "").trim();
+  const message = String(cognition?.fallbackMessage || "").trim();
+  if (!reason && !message) return "";
+  if (!reason) return message;
+  if (!message) return `Fallback: ${reason}`;
+  return `Fallback: ${reason} (${message})`;
+}
+
+function buildSmartApprovalDetails(view, session = null) {
+  const agentBlock = asObject(view?.agentBlock);
+  const approval = asObject(agentBlock?.approval);
+  const sessionContext = asObject(session?.context);
+  const riskAssessment = asObject(sessionContext?.risk_assessment);
+  const approvalState = asObject(sessionContext?.approval_state);
+  const required = Boolean(approval?.required || approvalState?.required || riskAssessment?.required);
+  const reasonSource =
+    asArray(approval?.reason_codes).length > 0
+      ? approval.reason_codes
+      : asArray(approvalState?.reason_codes).length > 0
+      ? approvalState.reason_codes
+      : riskAssessment?.reason_codes;
+  return {
+    status: String(approval?.status || approvalState?.status || (required ? "required" : "not_required")).trim(),
+    required,
+    reasonCodes: asArray(reasonSource)
+      .map((item) => String(item || "").trim())
+      .filter(Boolean),
+    candidateColumns: asArray(riskAssessment?.candidate_columns || sessionContext?.candidate_columns)
+      .map((item) => String(item || "").trim())
+      .filter(Boolean),
+    riskColumns: asArray(approval?.risk_columns || riskAssessment?.risk_columns),
+    protectedColumns: asArray(approval?.protected_columns || riskAssessment?.protected_columns),
+    timeLikeColumns: asArray(approval?.time_like_columns || riskAssessment?.time_like_columns || sessionContext?.time_like_columns),
+    preferenceSnapshot: cloneSmartPreferenceProfile(asObject(sessionContext?.preference_snapshot)),
+    message: String(approval?.message || approvalState?.message || riskAssessment?.message || "").trim(),
+    selectedSource: String(riskAssessment?.selected_source || asObject(agentBlock?.plan)?.selected_source || asObject(session?.latest_plan)?.selected_source || "").trim(),
+    workspaceID: String(sessionContext?.workspace_id || state.smartPreferences?.workspaceID || "").trim(),
+  };
+}
+
+function renderSmartApprovalCard(view, task, session = null) {
+  if (!smartApprovalCard) return;
+  const details = buildSmartApprovalDetails(view, session);
+  const showCard = details.required || ["required", "rejected", "approved"].includes(details.status);
+  smartApprovalCard.classList.toggle("hidden", !showCard);
+  if (!showCard) return;
+
+  const columns = Array.from(
+    new Set(
+      [...details.candidateColumns, ...details.riskColumns, ...details.protectedColumns, ...details.timeLikeColumns]
+        .map((item) => String(item || "").trim())
+        .filter(Boolean)
+    )
+  );
+  const message =
+    details.status === "required"
+      ? details.message || "当前任务已经通过 preview validation，但在真正写文件前需要你确认。"
+      : details.status === "approved"
+      ? "本次执行已获批准，并从审批点继续完成写入与后验验证。"
+      : "本次执行已在写文件前被取消，没有输出文件被写入，也没有触发回滚。";
+  if (smartApprovalMessage) smartApprovalMessage.textContent = message;
+  if (smartApprovalSummary) {
+    renderDescriptionList(smartApprovalSummary, [
+      ["审批状态", details.status || "-"],
+      ["候选来源", details.selectedSource || "-"],
+      ["影响列", columns.length > 0 ? columns.join(", ") : "-"],
+      ["工作区", details.workspaceID || "-"],
+    ]);
+  }
+  if (smartApprovalReasons) {
+    renderCompactList(
+      smartApprovalReasons,
+      details.reasonCodes.map((code) => approvalReasonLabel(code)),
+      "当前没有额外触发原因。"
+    );
+  }
+  if (smartApprovalPreferences) {
+    renderDescriptionList(smartApprovalPreferences, [
+      ["保守模式", details.preferenceSnapshot.conservative_mode ? "是" : "否"],
+      ["避开时间列", details.preferenceSnapshot.avoid_time_columns ? "是" : "否"],
+      ["高风险需审批", details.preferenceSnapshot.require_approval_for_high_risk ? "是" : "否"],
+      ["保护列", smartPreferenceColumnsText(details.preferenceSnapshot.protected_columns) || "-"],
+    ]);
+  }
+  const actionable = details.status === "required" && !state.isRunning;
+  if (smartApprovalContinueBtn) {
+    smartApprovalContinueBtn.disabled = !actionable;
+    smartApprovalContinueBtn.classList.toggle("hidden", details.status !== "required");
+  }
+  if (smartApprovalRejectBtn) {
+    smartApprovalRejectBtn.disabled = !actionable;
+    smartApprovalRejectBtn.classList.toggle("hidden", details.status !== "required");
+  }
+}
+
+function buildSmartTrustList(view, task, verdict) {
+  const safety = asObject(view?.safety);
+  const validation = asObject(view?.validation);
+  const preview = asObject(validation?.preview);
+  const postExecute = asObject(validation?.post_execute);
+  const approval = buildSmartApprovalDetails(view, state.smartSessionSnapshot);
+  const cognition = buildSmartCognition(view, state.smartSessionSnapshot);
+  const list = [
+    `最终结论: ${verdict || "unknown"}`,
+    preview?.message ? `Preview: ${preview.message}` : "Preview: -",
+  ];
+  if (approval.required || approval.status === "approved" || approval.status === "rejected") {
+    list.push(`Approval: ${approval.status || "required"}`);
+  }
+  if (smartCognitionLabel(cognition)) {
+    list.push(`Cognition: ${smartCognitionLabel(cognition)}`);
+  }
+  if (cognition?.fallbackReasonCode) {
+    list.push(`Fallback: ${cognition.fallbackReasonCode}`);
+  }
+  if (postExecute?.message) {
+    list.push(`Post Validation: ${postExecute.message}`);
+  }
+  if (Array.isArray(safety?.risk_flags) && safety.risk_flags.length > 0) {
+    list.push(`Risk Flags: ${safety.risk_flags.join(", ")}`);
+  }
+  if (task?.response?.error?.code) {
+    list.push(`Error Code: ${String(task.response.error.code)}`);
+  }
+  return list;
+}
+
+function renderSmartReasoning(view, task, session = null) {
+  if (!smartReasoningBody) return;
+  const agentBlock = asObject(view?.agentBlock);
+  const plan = asObject(agentBlock?.plan);
+  const explanationBlock = asObject(agentBlock?.explanation);
+  const validation = asObject(view?.validation);
+  const preview = asObject(validation?.preview);
+  const postExecute = asObject(validation?.post_execute);
+  const sessionContext = asObject(session?.context);
+  const approval = buildSmartApprovalDetails(view, session);
+  const cognition = buildSmartCognition(view, session);
+  const reasoningSummary = String(explanationBlock?.summary || plan?.reasoning_summary || "").trim();
+  const userExplanation = String(explanationBlock?.final_message || plan?.user_explanation || "").trim();
+  const shortBullets = asArray(explanationBlock?.short_bullets)
+    .map((item) => String(item || "").trim())
+    .filter(Boolean)
+    .slice(0, 3);
+  const bullets = [
+    reasoningSummary || "系统已根据当前数据与安全策略选择执行路径。",
+    userExplanation || "你可以在轨迹与验证中继续查看更细的审计信息。",
+    ...shortBullets,
+    smartCognitionLabel(cognition) ? `Cognition: ${smartCognitionLabel(cognition)}` : "",
+    smartCognitionSummaryText(cognition) ? `Cognition Summary: ${smartCognitionSummaryText(cognition)}` : "",
+    smartCognitionFallbackText(cognition),
+    explanationBlock?.risk_note ? `Risk Note: ${String(explanationBlock.risk_note)}` : "",
+    approval?.status && approval.status !== "not_required" ? `Approval: ${approval.status}` : "",
+    preview?.message ? `Preview: ${preview.message}` : "",
+    postExecute?.message ? `Post Validation: ${postExecute.message}` : "",
+    sessionContext?.final_verdict ? `Session Verdict: ${String(sessionContext.final_verdict)}` : "",
+  ].filter(Boolean);
+  smartReasoningBody.innerHTML = `
+    <article class="insight-section">
+      <h4>为什么这样做</h4>
+      <ul>
+        ${bullets.map((item) => `<li>${escapeHtml(item)}</li>`).join("")}
+      </ul>
+    </article>
+  `;
+}
+
+function renderSmartTrace(view, task, session = null, traceEvents = []) {
+  const validation = asObject(view?.validation);
+  const traceSummary = asObject(session?.trace_summary || asObject(view?.agentBlock?.trace_summary));
+  const traces = asArray(traceEvents).map((item) => asObject(item));
+  const cognition = buildSmartCognition(view, session);
+  if (smartTraceSummary) {
+    const traceTypeCounts = asObject(traceSummary?.trace_type_counts);
+    smartTraceSummary.textContent =
+      traces.length > 0
+        ? `已加载 ${traces.length} 条会话轨迹。tool calls: ${toInt(traceSummary?.tool_call_count, toInt(traceSummary?.tool_calls, 0))}，validation events: ${toInt(traceTypeCounts?.validation, toInt(traceSummary?.validation_events, 0))}。`
+        : validation?.message
+        ? validation.message
+        : "暂无额外轨迹，已回退到任务级可观测信息。";
+  }
+  if (smartTraceSummary) {
+    const traceTypeCounts = asObject(traceSummary?.trace_type_counts);
+    const summaryParts = [];
+    if (traces.length > 0) {
+      summaryParts.push(`Loaded ${traces.length} trace events.`);
+      summaryParts.push(`Tool calls: ${toInt(traceSummary?.tool_call_count, toInt(traceSummary?.tool_calls, 0))}`);
+      summaryParts.push(`Validation events: ${toInt(traceTypeCounts?.validation, toInt(traceSummary?.validation_events, 0))}`);
+    } else if (validation?.message) {
+      summaryParts.push(validation.message);
+    } else {
+      summaryParts.push("No extra session trace is available, so the view is using task-level diagnostics.");
+    }
+    if (smartCognitionLabel(cognition)) {
+      summaryParts.push(`LangGraph: ${smartCognitionLabel(cognition)}`);
+    }
+    if (smartCognitionSummaryText(cognition)) {
+      summaryParts.push(smartCognitionSummaryText(cognition));
+    }
+    if (cognition?.fallbackReasonCode) {
+      summaryParts.push(`Fallback: ${cognition.fallbackReasonCode}`);
+    }
+    smartTraceSummary.textContent = summaryParts.join(" ");
+  }
+  if (!smartTraceList) return;
+  if (traces.length === 0) {
+    const progress = getTaskProgress(task);
+    const fallbackStages = extractProgressStages(task, INTENT_AGENT_AUTO);
+    smartTraceList.innerHTML = fallbackStages
+      .map((stage) => `<li>${escapeHtml(stage)}</li>`)
+      .join("");
+    if (fallbackStages.length === 0 && progress?.last_message) {
+      smartTraceList.innerHTML = `<li>${escapeHtml(String(progress.last_message))}</li>`;
+    }
+    return;
+  }
+  smartTraceList.innerHTML = traces
+    .map(
+      (item) => `
+        <li>
+          <strong>${escapeHtml(String(item?.agent_name || "agent"))}</strong>
+          <span>${escapeHtml(String(item?.trace_type || "-"))}</span>
+          <p>${escapeHtml(String(item?.summary || "-"))}</p>
+        </li>
+      `
+    )
+    .join("");
+}
+
+function renderSmartRun(task) {
+  const progress = getTaskProgress(task);
+  const status = String(task?.status || "idle").toLowerCase();
+  const intent = INTENT_AGENT_AUTO;
+  if (smartRunStatusPill) {
+    smartRunStatusPill.className = `status-pill ${status || "idle"}`;
+    smartRunStatusPill.textContent = status || "idle";
+  }
+  if (smartRunTaskId) smartRunTaskId.textContent = `Task: ${String(task?.id || "-")}`;
+  if (smartRunTitle) smartRunTitle.textContent = "智能处理进行中";
+  if (smartRunMessage) smartRunMessage.textContent = buildTaskMessage(task, intent);
+  if (smartRunProgressFill) {
+    smartRunProgressFill.className = `progress-fill ${status || "idle"}`;
+    smartRunProgressFill.style.width = `${clamp(toInt(progress?.progress_percent, STATUS_PROGRESS[status] ?? 0), 0, 100)}%`;
+  }
+  if (smartRunStages) {
+    const stages = extractProgressStages(task, intent);
+    const currentStage = normalizeStageLabel(progress?.current_stage || stages[0] || "");
+    const currentIndex = stages.findIndex((item) => item === currentStage);
+    smartRunStages.innerHTML = stages
+      .map((stage, idx) => `<li class="${stageStateForTimeline(stage, idx, currentStage, currentIndex, status)}">${escapeHtml(stage)}</li>`)
+      .join("");
+  }
+  if (smartRunMetrics) {
+    const durations = buildStageDurationEntries(task, intent);
+    const durationMS =
+      toInt(task?.response?.duration_ms, 0) ||
+      durations.reduce((sum, item) => sum + Math.max(0, toInt(item?.ms, 0)), 0);
+    renderDescriptionList(smartRunMetrics, [
+      ["当前阶段", String(progress?.current_stage || "-")],
+      ["当前进度", `${clamp(toInt(progress?.progress_percent, 0), 0, 100)}%`],
+      ["已用时", formatDurationMS(durationMS)],
+      ["预计剩余", formatRemainingTime(task)],
+    ]);
+  }
+  if (smartRunEvents) {
+    const events = asArray(progress?.events).slice(-8);
+    smartRunEvents.innerHTML =
+      events.length > 0
+        ? events
+            .map(
+              (event) =>
+                `<li>${escapeHtml(String(event?.stage || "-"))}: ${escapeHtml(String(event?.message || event?.phase || "-"))}</li>`
+            )
+            .join("")
+        : "<li>等待实时事件...</li>";
+  }
+  if (smartRunCancelBtn) smartRunCancelBtn.disabled = !state.isRunning || !state.currentTaskId;
+  setShellView(VIEW_SMART_RUN);
+}
+
+async function hydrateSmartAgentDetails(task) {
+  const sessionID = String(asObject(task?.response?.result?.agent)?.session_id || "").trim();
+  state.smartSessionSnapshot = null;
+  state.smartTraceEvents = [];
+  state.smartDetailsLoading = Boolean(sessionID);
+  state.smartDetailsError = "";
+  if (!sessionID) {
+    renderSmartTracePlaceholder("当前结果未携带 session_id，已回退到任务级信息。");
+    return;
+  }
+  renderSmartTracePlaceholder("正在加载会话轨迹与验证详情...");
+  try {
+    const [session, trace] = await Promise.all([apiGetAgentSession(sessionID), apiListAgentTrace(sessionID)]);
+    if (String(state.currentTask?.id || "") !== String(task?.id || "")) return;
+    state.smartSessionSnapshot = asObject(session);
+    state.smartTraceEvents = asArray(trace);
+    renderSmartResult(task, { skipHydrate: true });
+  } catch (err) {
+    state.smartDetailsError = String(err);
+    renderSmartTracePlaceholder(`会话详情加载失败，已回退到任务级信息: ${normalizeReadableErrorText(String(err))}`);
+  } finally {
+    state.smartDetailsLoading = false;
+  }
+}
+
+function renderSmartResult(task, options = {}) {
+  const result = asObject(task?.response?.result);
+  const view = buildRepairView(result);
+  const repairResult = asObject(view?.repairResult);
+  const safety = asObject(view?.safety);
+  const validation = asObject(view?.validation);
+  const session = asObject(state.smartSessionSnapshot);
+  const traceEvents = asArray(state.smartTraceEvents);
+  const comparison = asObject(repairResult?.comparison);
+  const verdict = String(safety?.final_verdict || (String(task?.status || "").toLowerCase() === "succeeded" ? "accepted" : "failed")).trim();
+  const outputCSV = String(repairResult?.output_csv || "").trim();
+  const presentationArtifact = String(session?.presentation_artifact || "").trim();
+  const rollback = asObject(repairResult?.rollback || safety?.rollback_execution);
+  const rollbackManifest = String(rollback?.manifest_path || "").trim();
+  const rejectedSnapshot = String(safety?.rejected_output_snapshot || "").trim();
+  const cognition = buildSmartCognition(view, session);
+  const beforeIssueCount = toInt(comparison?.before_issue_count, toInt(safety?.baseline_scan_summary?.issue_count, 0));
+  const afterIssueCount = toInt(comparison?.after_issue_count, toInt(safety?.post_scan_summary?.issue_count, 0));
+  const resolvedIssueCount = toInt(comparison?.resolved_issue_count, Math.max(0, beforeIssueCount - afterIssueCount));
+  const selectedSource = String(repairResult?.selected_source || asObject(view?.agentBlock?.plan)?.selected_source || "-").trim();
+  const conclusion =
+    verdict === "accepted"
+      ? "系统已完成自动扫描、修复、复扫与验证，本次输出被正式接纳。"
+      : verdict === "validation_rejected"
+      ? "系统在 preview gate 阶段拒绝了自动执行，因此没有写出不可信结果。"
+      : verdict === "rolled_back"
+      ? "系统执行后发现风险未下降，已自动回滚输出产物。"
+      : "系统尝试自动恢复，但仍需要人工介入复核。";
+
+  let finalConclusion = conclusion;
+  if (verdict === "approval_required") {
+    finalConclusion = "系统已经完成 preview validation 和风险评估，但在真正写文件前暂停，等待你确认。";
+  } else if (verdict === "approval_rejected") {
+    finalConclusion = "本次执行已在写文件前取消，没有写出输出文件，也没有触发回滚。";
+  }
+  renderSmartSafetyBanner(verdict, finalConclusion);
+  renderPresentationBundle(smartResultPresentation, view?.presentation);
+  if (smartResultConclusion) smartResultConclusion.textContent = finalConclusion;
+  if (smartResultSummary) {
+    renderDescriptionList(smartResultSummary, [
+      ["最终结论", verdict || "-"],
+      ["采用来源", selectedSource || "-"],
+      ["问题数变化", beforeIssueCount > 0 || afterIssueCount > 0 ? `${beforeIssueCount} -> ${afterIssueCount}` : "-"],
+      ["已解决问题", resolvedIssueCount || 0],
+      ["修改单元格", toInt(repairResult?.total_cells_modified, 0)],
+      ["输出文件", outputCSV || "-"],
+    ]);
+    if (smartCognitionLabel(cognition)) {
+      smartResultSummary.innerHTML += `<dt>${escapeHtml("Cognition")}</dt><dd>${escapeHtml(smartCognitionLabel(cognition))}</dd>`;
+    }
+  }
+  renderArtifactList(
+    smartArtifactList,
+    [
+      outputCSV ? { label: "输出 CSV", path: outputCSV } : null,
+      presentationArtifact ? { label: "presentation.json", path: presentationArtifact } : null,
+      rollbackManifest ? { label: "rollback manifest", path: rollbackManifest } : null,
+      rejectedSnapshot ? { label: "rejected snapshot", path: rejectedSnapshot } : null,
+    ],
+    "当前结果没有额外产物。"
+  );
+  renderCompactList(smartTrustChecks, buildSmartTrustList(view, task, verdict), "等待任务结果。");
+  renderSmartApprovalCard(view, task, session);
+  renderSmartReasoning(view, task, session);
+  renderSmartTrace(view, task, session, traceEvents);
+  if (smartResultRaw) smartResultRaw.textContent = `${JSON.stringify(task || {}, null, 2)}\n`;
+  syncExportButtons(Boolean(task));
+  setShellView(VIEW_SMART_RESULT);
+  if (!options?.skipHydrate) {
+    void hydrateSmartAgentDetails(task);
+  }
 }
 
 function collectScanPayload() {
@@ -2223,6 +3934,11 @@ function delay(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
+async function apiRunStartupChecks() {
+  if (hasBinding("RunStartupChecks")) return window.go.main.App.RunStartupChecks();
+  return mockRunStartupChecks();
+}
+
 async function apiRunTask(payload) {
   if (hasBinding("RunTask")) return window.go.main.App.RunTask(payload);
   return mockRunTask(payload);
@@ -2246,6 +3962,36 @@ async function apiSelectCsv() {
 async function apiSelectOutputDir() {
   if (hasBinding("SelectOutputDir")) return window.go.main.App.SelectOutputDir();
   return "";
+}
+
+async function apiRunAgentAutofixSession(payload) {
+  if (hasBinding("RunAgentAutofixSession")) return window.go.main.App.RunAgentAutofixSession(payload);
+  return mockRunAgentAutofixSession(payload);
+}
+
+async function apiApproveAgentSession(payload) {
+  if (hasBinding("ApproveAgentSession")) return window.go.main.App.ApproveAgentSession(payload);
+  return mockApproveAgentSession(payload);
+}
+
+async function apiGetAgentSession(sessionID) {
+  if (hasBinding("GetAgentSession")) return window.go.main.App.GetAgentSession(sessionID);
+  return mockGetAgentSession(sessionID);
+}
+
+async function apiGetAgentPreferences(workspaceID, csvPath) {
+  if (hasBinding("GetAgentPreferences")) return window.go.main.App.GetAgentPreferences(workspaceID, csvPath);
+  return mockGetAgentPreferences(workspaceID, csvPath);
+}
+
+async function apiSaveAgentPreferences(payload) {
+  if (hasBinding("SaveAgentPreferences")) return window.go.main.App.SaveAgentPreferences(payload);
+  return mockSaveAgentPreferences(payload);
+}
+
+async function apiListAgentTrace(sessionID) {
+  if (hasBinding("ListAgentTrace")) return window.go.main.App.ListAgentTrace(sessionID);
+  return mockListAgentTrace(sessionID);
 }
 
 async function apiListTaskHistory(limit = 20) {
@@ -2275,6 +4021,56 @@ async function mockListCsvColumns() {
     "smoking_status",
     "stroke",
   ];
+}
+
+async function mockRunStartupChecks() {
+  return {
+    overall_status: "warning",
+    can_enter: true,
+    checked_at: new Date().toISOString(),
+    summary: { passed: 4, warnings: 1, failed: 0 },
+    items: [
+      {
+        key: "engine_script",
+        label: "Python 引擎脚本",
+        status: "pass",
+        blocking: true,
+        message: "静态预览模式未检查真实引擎脚本，使用模拟通过结果。",
+      },
+      {
+        key: "engine_health",
+        label: "Python 引擎健康检查",
+        status: "warning",
+        blocking: true,
+        message: "当前是静态预览模式，未执行真实 Python 引擎健康检查。",
+      },
+      {
+        key: "runtime_dependencies",
+        label: "运行时依赖",
+        status: "pass",
+        blocking: true,
+        message: "静态预览模式下使用模拟依赖信息。",
+      },
+      {
+        key: "task_history_sqlite",
+        label: "SQLite 任务历史",
+        status: "pass",
+        blocking: true,
+        message: "静态预览模式未连接真实任务历史数据库。",
+      },
+      {
+        key: "results_output_root",
+        label: "结果输出目录",
+        status: "pass",
+        blocking: true,
+        message: "静态预览模式未验证真实输出目录。",
+      },
+    ],
+    raw: {
+      preview_mode: true,
+      note: "当前是静态预览模式，未执行真实引擎/SQLite 检查。",
+    },
+  };
 }
 
 async function mockRunTask(payload) {
@@ -2394,6 +4190,1104 @@ function buildMockScanResult(payload) {
   };
 }
 
+function mockVerdictFromPayload(payload) {
+  const forced = String(payload?.__mock_verdict || "").trim();
+  if (forced) return forced;
+  const text = String(payload?.csv_path || "").toLowerCase();
+  if (text.includes("rollbackfail")) return "rollback_failed";
+  if (text.includes("rollback")) return "rolled_back";
+  if (text.includes("reject")) return "validation_rejected";
+  return "accepted";
+}
+
+function buildMockPresentationBundle(kind, verdict, title, summary, highlights, sections, charts) {
+  return {
+    version: "1.0",
+    kind,
+    headline: title,
+    summary,
+    verdict,
+    highlights,
+    sections,
+    charts,
+    artifacts: [],
+  };
+}
+
+function buildMockApprovalProfile(payload) {
+  const workspaceID = resolveSmartWorkspaceID(payload?.workspace_id, payload?.csv_path);
+  const stored = state.mockPreferenceStore.get(workspaceID);
+  const saved = stored ? cloneSmartPreferenceProfile(stored.profile) : defaultSmartPreferenceProfile();
+  return {
+    workspaceID,
+    snapshot: normalizeSmartPreferenceProfile({
+      ...saved,
+      ...asObject(payload?.user_preferences),
+    }),
+  };
+}
+
+function buildMockApprovalContext(payload, scan) {
+  const info = buildMockApprovalProfile(payload);
+  const csvPath = String(payload?.csv_path || "").toLowerCase();
+  const selectedSource = "hybrid";
+  let candidateColumns = ["bmi"];
+  let timeLikeColumns = [];
+  let selectedIssueCatalog = [
+    {
+      issue_id: "bmi::missing_values",
+      column: "bmi",
+      issue_type: "missing_values",
+      risk_level: "high",
+    },
+  ];
+  const reasonCodes = [];
+  if (csvPath.includes("time") && info.snapshot.avoid_time_columns) {
+    candidateColumns = ["event_time"];
+    timeLikeColumns = ["event_time"];
+    selectedIssueCatalog = [
+      {
+        issue_id: "event_time::missing_values",
+        column: "event_time",
+        issue_type: "missing_values",
+        risk_level: "high",
+      },
+    ];
+    reasonCodes.push("time_like_columns_selected");
+  }
+  if (asArray(info.snapshot.protected_columns).map((item) => String(item || "").trim()).includes("bmi")) {
+    reasonCodes.push("protected_columns_selected");
+  }
+  if (csvPath.includes("approval") || csvPath.includes("interrupt")) {
+    reasonCodes.push("planner_requested_approval");
+  }
+  return {
+    ...info,
+    scan,
+    required: reasonCodes.length > 0,
+    reasonCodes: Array.from(new Set(reasonCodes)),
+    candidateColumns,
+    timeLikeColumns,
+    riskColumns: candidateColumns.includes("bmi") ? ["bmi"] : [],
+    protectedColumns: asArray(info.snapshot.protected_columns)
+      .map((item) => String(item || "").trim())
+      .filter((item) => candidateColumns.includes(item)),
+    selectedIssueCatalog,
+    selectedSource,
+    message:
+      reasonCodes.length > 0
+        ? "Approval is required before writing output because this run touches guarded columns or planner-requested risk gates."
+        : "Deterministic preview passed and no approval gate is required.",
+  };
+}
+
+function buildMockApprovalResult(context, status) {
+  return {
+    status,
+    required: status === "required" || status === "approved" || status === "rejected",
+    reason_codes: [...context.reasonCodes],
+    risk_columns: [...context.riskColumns],
+    protected_columns: [...context.protectedColumns],
+    time_like_columns: [...context.timeLikeColumns],
+    message: context.message,
+  };
+}
+
+function buildMockExplanationMode(cognition) {
+  const status = String(cognition?.status || "").trim();
+  const provider = String(cognition?.provider || "").trim();
+  if (status === "engaged") return "langgraph_llm";
+  if (status === "degraded") return "langgraph_degraded";
+  if (["fallback", "disabled", "unavailable"].includes(status)) {
+    return provider === "langgraph" || String(cognition?.fallback_reason_code || "").trim()
+      ? "langgraph_fallback"
+      : "deterministic";
+  }
+  return "deterministic";
+}
+
+function buildMockCognitionState(payload, selectedCandidateID, summary, riskNote) {
+  const csvPath = String(payload?.csv_path || "").trim().toLowerCase();
+  const cognition = {
+    provider: "langgraph",
+    status: "engaged",
+    planner_mode: "llm",
+    llm_mode: "configured",
+    graph_id: "phase_e_cognition_graph",
+    version: "phase_e",
+    selected_candidate_id: String(selectedCandidateID || "").trim(),
+    reason_codes: ["langgraph_summary_available"],
+    risk_note: String(riskNote || "").trim(),
+    summary: String(summary || "LangGraph selected a candidate and produced a short explanation.").trim(),
+    fallback_reason_code: "",
+    fallback_message: "",
+  };
+
+  if (csvPath.includes("degraded")) {
+    cognition.status = "degraded";
+    cognition.reason_codes = ["explain_request_failed"];
+    cognition.fallback_reason_code = "explain_request_failed";
+    cognition.fallback_message = "LangGraph selected the candidate, but Go kept a deterministic fallback explanation.";
+    cognition.summary =
+      String(summary || "").trim() || "LangGraph selected the candidate, but explanation rendering degraded to the Go fallback.";
+    return cognition;
+  }
+
+  if (csvPath.includes("disabled")) {
+    cognition.provider = "deterministic";
+    cognition.status = "disabled";
+    cognition.planner_mode = "fallback";
+    cognition.llm_mode = "unavailable";
+    cognition.reason_codes = ["deterministic_fallback"];
+    cognition.fallback_reason_code = "disabled";
+    cognition.fallback_message = "LangGraph sidecar is disabled, so deterministic planning stays active.";
+    cognition.summary =
+      String(summary || "").trim() || "Deterministic planning stayed active because LangGraph was disabled.";
+    return cognition;
+  }
+
+  if (csvPath.includes("fallback") || csvPath.includes("offline") || csvPath.includes("no-llm")) {
+    cognition.provider = "deterministic";
+    cognition.status = "fallback";
+    cognition.planner_mode = "fallback";
+    cognition.llm_mode = "unavailable";
+    cognition.reason_codes = ["deterministic_fallback"];
+    cognition.fallback_reason_code = "planner_mode_fallback";
+    cognition.fallback_message = "LangGraph fallback is active, so deterministic planning stays in control.";
+    cognition.summary =
+      String(summary || "").trim() || "Deterministic planning stayed active because LangGraph was unavailable.";
+  }
+
+  return cognition;
+}
+
+function buildMockCognitionTraceEvent(taskID, sessionID, seq, cognition, createdAt) {
+  const summary =
+    String(cognition?.summary || "").trim() ||
+    (String(cognition?.fallback_reason_code || "").trim()
+      ? `Fallback: ${String(cognition.fallback_reason_code).trim()}`
+      : "Cognition state recorded.");
+  return {
+    id: seq,
+    session_id: sessionID,
+    task_id: taskID,
+    seq,
+    agent_name: "repair_planner",
+    trace_type: "cognition_trace",
+    summary,
+    payload: {
+      phase: "plan_complete",
+      provider: String(cognition?.provider || "").trim(),
+      status: String(cognition?.status || "").trim(),
+      planner_mode: String(cognition?.planner_mode || "").trim(),
+      llm_mode: String(cognition?.llm_mode || "").trim(),
+      graph_id: String(cognition?.graph_id || "").trim(),
+      version: String(cognition?.version || "").trim(),
+      selected_candidate_id: String(cognition?.selected_candidate_id || "").trim(),
+      reason_codes: asArray(cognition?.reason_codes)
+        .map((item) => String(item || "").trim())
+        .filter(Boolean),
+      fallback_reason_code: String(cognition?.fallback_reason_code || "").trim(),
+      summary,
+    },
+    created_at: createdAt,
+  };
+}
+
+function buildMockApprovalTraceSummary(trace) {
+  const traceTypeCounts = {};
+  const agentNames = [];
+  for (const item of asArray(trace)) {
+    const traceType = String(item?.trace_type || "").trim();
+    if (traceType) traceTypeCounts[traceType] = toInt(traceTypeCounts[traceType], 0) + 1;
+    const agentName = String(item?.agent_name || "").trim();
+    if (agentName && !agentNames.includes(agentName)) agentNames.push(agentName);
+  }
+  const last = asArray(trace).slice(-1)[0] || {};
+  const cognitionEvents = asArray(trace).filter((item) => String(item?.trace_type || "").trim() === "cognition_trace");
+  const lastCognition = asObject(cognitionEvents.slice(-1)[0]?.payload);
+  return {
+    event_count: asArray(trace).length,
+    tool_call_count: 2,
+    agent_names: agentNames,
+    trace_type_counts: traceTypeCounts,
+    cognition:
+      cognitionEvents.length > 0
+        ? {
+            event_count: cognitionEvents.length,
+            provider: String(lastCognition?.provider || "").trim(),
+            status: String(lastCognition?.status || "").trim(),
+            last_phase: String(lastCognition?.phase || "").trim(),
+            last_summary: String(lastCognition?.summary || cognitionEvents.slice(-1)[0]?.summary || "").trim(),
+            planner_mode: String(lastCognition?.planner_mode || "").trim(),
+            llm_mode: String(lastCognition?.llm_mode || "").trim(),
+            fallback_reason_code: String(lastCognition?.fallback_reason_code || "").trim(),
+            reason_codes: asArray(lastCognition?.reason_codes)
+              .map((item) => String(item || "").trim())
+              .filter(Boolean),
+            selected_candidate_id: String(lastCognition?.selected_candidate_id || "").trim(),
+          }
+        : {},
+    last_trace_type: String(last?.trace_type || ""),
+    last_trace_summary: String(last?.summary || ""),
+  };
+}
+
+function buildMockApprovalRequiredResult(taskID, payload) {
+  const base = buildMockAgentAutofixResult(taskID, { ...payload, __mock_verdict: "accepted" });
+  const context = buildMockApprovalContext(payload, buildMockScanResult(payload));
+  const approval = buildMockApprovalResult(context, "required");
+  const now = new Date().toISOString();
+  const trace = [
+    {
+      id: 1,
+      session_id: base.session.session_id,
+      task_id: taskID,
+      seq: 1,
+      agent_name: "supervisor",
+      trace_type: "session_started",
+      summary: "Agent auto session started",
+      payload: { goal: base.session.user_goal },
+      created_at: now,
+    },
+    {
+      id: 2,
+      session_id: base.session.session_id,
+      task_id: taskID,
+      seq: 2,
+      agent_name: "profile_memory",
+      trace_type: "memory_updated",
+      summary: "Stored workspace preference snapshot and approval context",
+      payload: {
+        workspace_id: context.workspaceID,
+        preference_snapshot: cloneSmartPreferenceProfile(context.snapshot),
+      },
+      created_at: now,
+    },
+    {
+      id: 3,
+      session_id: base.session.session_id,
+      task_id: taskID,
+      seq: 3,
+      agent_name: "repair_planner",
+      trace_type: "agent_decision",
+      summary: "Planner selected a candidate and requested approval before writing output",
+      payload: { selected_source: context.selectedSource, plan_id: base.result.agent.plan_id },
+      created_at: now,
+    },
+    {
+      id: 4,
+      session_id: base.session.session_id,
+      task_id: taskID,
+      seq: 4,
+      agent_name: "validator",
+      trace_type: "validation",
+      summary: "Preview validation passed, but execution was paused by the approval gate.",
+      payload: {
+        status: "accepted",
+        phase: "preview",
+        before_issue_count: 3,
+        after_issue_count: 1,
+        resolved_issue_count: 2,
+        changed_cell_count: 42,
+      },
+      created_at: now,
+    },
+    {
+      id: 5,
+      session_id: base.session.session_id,
+      task_id: taskID,
+      seq: 5,
+      agent_name: "supervisor",
+      trace_type: "approval_requested",
+      summary: "Execution paused because approval is required before writing output",
+      payload: {
+        approval_state: {
+          status: "required",
+          required: true,
+          reason_codes: [...context.reasonCodes],
+          message: context.message,
+          requested_at: now,
+          task_id: taskID,
+        },
+      },
+      created_at: now,
+    },
+  ];
+  trace.splice(
+    3,
+    0,
+    buildMockCognitionTraceEvent(taskID, base.session.session_id, 4, asObject(base.result.agent.plan?.cognition), now)
+  );
+  trace.forEach((item, idx) => {
+    item.id = idx + 1;
+    item.seq = idx + 1;
+  });
+  const traceSummary = buildMockApprovalTraceSummary(trace);
+
+  base.status = "succeeded";
+  base.result.safety = {
+    final_verdict: "approval_required",
+    risk_flags: ["approval_required"],
+    baseline_scan_summary: {
+      issue_count: asArray(base.result.agent.plan?.selected_issue_ids).length || 3,
+      high_risk_issue_count: context.riskColumns.length,
+      total_issue_score: 123.4,
+    },
+    post_scan_summary: {},
+    rollback_recommendation: {
+      action: "wait_for_approval",
+      reason: "approval_required",
+    },
+    rollback_execution: { status: "not_run" },
+    rejected_output_snapshot: "",
+  };
+  base.result.agent.validation = {
+    status: "accepted",
+    message: context.message,
+    can_execute: true,
+    preview: {
+      status: "accepted",
+      message: "Preview validation passed. Approval is still required before files are written.",
+      before_issue_count: 3,
+      after_issue_count: 1,
+      resolved_issue_count: 2,
+      changed_cell_count: 42,
+    },
+    post_execute: {},
+  };
+  base.result.agent.execution = {
+    status: "paused",
+    auto_mode: true,
+    selected_source: context.selectedSource,
+    rollback_applied: false,
+    output_csv: "",
+    post_scan_output_csv: "",
+    comparison: {
+      before_issue_count: 3,
+      after_issue_count: 1,
+      resolved_issue_count: 2,
+      changed_cell_count: 42,
+    },
+  };
+  base.result.agent.approval = approval;
+  base.result.agent.explanation = {
+    mode: buildMockExplanationMode(asObject(base.result.agent.plan?.cognition)),
+    summary: context.message,
+    final_message: "This run is paused at the approval gate. Continue to write output, or cancel this run with no file changes.",
+    short_bullets: [
+      `Candidate source: ${context.selectedSource}`,
+      `Reason codes: ${context.reasonCodes.join(", ") || "-"}`,
+    ],
+    reason_codes: [...asArray(base.result.agent.plan?.reason_codes)],
+    risk_note: base.result.agent.plan?.risk_note || "",
+    cognition: { ...asObject(base.result.agent.plan?.cognition) },
+  };
+  base.result.agent.trace_summary = traceSummary;
+  base.session.status = "awaiting_approval";
+  base.session.current_task_id = taskID;
+  base.session.context = {
+    csv_path: String(payload?.csv_path || ""),
+    baseline_scan: base.result.safety.baseline_scan_summary,
+    preview_validation: base.result.agent.validation.preview,
+    post_scan: {},
+    post_validation: {},
+    rollback_summary: {},
+    final_verdict: "approval_required",
+    rejected_output_snapshot: "",
+    workspace_id: context.workspaceID,
+    preference_snapshot: cloneSmartPreferenceProfile(context.snapshot),
+    cognition_state: { ...asObject(base.result.agent.plan?.cognition) },
+    approval_state: {
+      status: "required",
+      required: true,
+      reason_codes: [...context.reasonCodes],
+      message: context.message,
+      requested_at: now,
+      task_id: taskID,
+    },
+    risk_assessment: {
+      required: true,
+      reason_codes: [...context.reasonCodes],
+      candidate_columns: [...context.candidateColumns],
+      risk_columns: [...context.riskColumns],
+      protected_columns: [...context.protectedColumns],
+      time_like_columns: [...context.timeLikeColumns],
+      selected_source: context.selectedSource,
+      selected_issue_catalog: [...context.selectedIssueCatalog],
+      message: context.message,
+    },
+    selected_issue_catalog: [...context.selectedIssueCatalog],
+    candidate_columns: [...context.candidateColumns],
+    time_like_columns: [...context.timeLikeColumns],
+  };
+  base.session.trace_summary = traceSummary;
+  base.trace = trace;
+  return base;
+}
+
+function buildMockApprovalRejectedResult(taskID, payload, existingSession, existingTrace = []) {
+  const context = buildMockApprovalContext(payload, buildMockScanResult(payload));
+  const approval = buildMockApprovalResult(context, "rejected");
+  const trace = [...asArray(existingTrace)];
+  trace.push({
+    id: trace.length + 1,
+    session_id: existingSession.session_id,
+    task_id: taskID,
+    seq: trace.length + 1,
+    agent_name: "supervisor",
+    trace_type: "approval_rejected",
+    summary: "Execution was canceled during the approval gate",
+    payload: {
+      approval_state: {
+        status: "rejected",
+        required: true,
+        decision: "rejected",
+        reason_codes: [...context.reasonCodes],
+        message: context.message,
+        task_id: taskID,
+      },
+    },
+    created_at: new Date().toISOString(),
+  });
+  const traceSummary = buildMockApprovalTraceSummary(trace);
+  const result = {
+    csv_path: String(payload?.csv_path || ""),
+    safety: {
+      final_verdict: "approval_rejected",
+      risk_flags: ["approval_rejected"],
+      baseline_scan_summary: asObject(existingSession?.context?.baseline_scan),
+      post_scan_summary: {},
+      rollback_recommendation: {
+        action: "keep_source_only",
+        reason: "approval_rejected",
+      },
+      rollback_execution: { status: "not_run" },
+      rejected_output_snapshot: "",
+    },
+    agent: {
+      session_id: existingSession.session_id,
+      plan_id: existingSession.latest_plan?.plan_id,
+      run_mode: "auto",
+      goal: String(payload?.user_goal || "scan_and_auto_repair"),
+      plan: asObject(existingSession.latest_plan),
+      approval,
+      explanation: {
+        mode: buildMockExplanationMode(asObject(existingSession?.latest_plan?.cognition)),
+        summary: "The run was canceled before any files were written.",
+        final_message: "No output CSV was written and no rollback was needed.",
+        short_bullets: Array.from(asArray(existingSession?.latest_plan?.explanation_bullets)),
+        reason_codes: Array.from(asArray(existingSession?.latest_plan?.reason_codes)),
+        risk_note: String(existingSession?.latest_plan?.risk_note || "").trim(),
+        cognition: { ...asObject(existingSession?.latest_plan?.cognition) },
+      },
+      validation: {
+        status: "accepted",
+        message: context.message,
+        can_execute: true,
+        preview: asObject(existingSession?.context?.preview_validation),
+        post_execute: {},
+      },
+      execution: {
+        status: "skipped",
+        auto_mode: true,
+        rollback_applied: false,
+        output_csv: "",
+        post_scan_output_csv: "",
+      },
+      trace_summary: traceSummary,
+      presentation: {},
+    },
+  };
+  return {
+    status: "succeeded",
+    result,
+    session: {
+      ...existingSession,
+      current_task_id: taskID,
+      status: "approval_rejected",
+      context: {
+        ...asObject(existingSession?.context),
+        final_verdict: "approval_rejected",
+        approval_state: {
+          status: "rejected",
+          required: true,
+          decision: "rejected",
+          reason_codes: [...context.reasonCodes],
+          message: context.message,
+          task_id: taskID,
+        },
+      },
+      trace_summary: traceSummary,
+    },
+    trace,
+  };
+}
+
+function buildMockApprovalApprovedResult(taskID, payload, existingSession, existingTrace = []) {
+  const base = buildMockAgentAutofixResult(taskID, { ...payload, __mock_verdict: "accepted" });
+  const context = buildMockApprovalContext(payload, buildMockScanResult(payload));
+  const approval = buildMockApprovalResult(context, "approved");
+  const trace = [...asArray(existingTrace)];
+  trace.push({
+    id: trace.length + 1,
+    session_id: existingSession.session_id,
+    task_id: taskID,
+    seq: trace.length + 1,
+    agent_name: "supervisor",
+    trace_type: "approval_granted",
+    summary: "Approval was granted and the session resumed execution",
+    payload: {
+      approval_state: {
+        status: "approved",
+        required: true,
+        decision: "approved",
+        reason_codes: [...context.reasonCodes],
+        message: context.message,
+        task_id: taskID,
+      },
+    },
+    created_at: new Date().toISOString(),
+  });
+  const traceSummary = buildMockApprovalTraceSummary(trace);
+  base.result.agent.session_id = existingSession.session_id;
+  base.result.agent.plan_id = existingSession.latest_plan?.plan_id;
+  base.result.agent.plan.plan_id = existingSession.latest_plan?.plan_id;
+  base.result.agent.approval = approval;
+  base.result.agent.trace_summary = traceSummary;
+  base.result.agent.explanation = {
+    ...asObject(base.result.agent.explanation),
+    final_message: "Approval was granted, so the session resumed from the stored preview checkpoint and completed execution.",
+  };
+  base.session.session_id = existingSession.session_id;
+  base.session.root_task_id = existingSession.root_task_id;
+  base.session.current_task_id = taskID;
+  base.session.status = "completed";
+  base.session.latest_plan = {
+    ...asObject(existingSession.latest_plan),
+    ...asObject(base.session.latest_plan),
+    plan_id: existingSession.latest_plan?.plan_id,
+  };
+  base.session.context = {
+    ...asObject(base.session.context),
+    ...asObject(existingSession?.context),
+    final_verdict: "accepted",
+    approval_state: {
+      status: "approved",
+      required: true,
+      decision: "approved",
+      reason_codes: [...context.reasonCodes],
+      message: context.message,
+      task_id: taskID,
+    },
+    risk_assessment: {
+      ...asObject(existingSession?.context?.risk_assessment),
+      message: context.message,
+    },
+  };
+  base.session.trace_summary = traceSummary;
+  base.trace = trace;
+  return base;
+}
+
+function buildMockAgentAutofixResult(taskID, payload) {
+  const scan = buildMockScanResult(payload);
+  const verdict = mockVerdictFromPayload(payload);
+  const outputDir = String(payload?.output_dir || buildSmartDefaultOutputDir());
+  const sessionID = `mock-session-${taskID}`;
+  const planID = `mock-plan-${taskID}`;
+  const beforeIssueCount = asArray(scan?.issues).length;
+  const afterIssueCount =
+    verdict === "accepted" ? 1 : verdict === "validation_rejected" ? beforeIssueCount : beforeIssueCount + 1;
+  const postRiskScore =
+    verdict === "accepted" ? 32.4 : verdict === "validation_rejected" ? 54.2 : 66.8;
+  const selectedSource = verdict === "accepted" ? "hybrid" : verdict === "validation_rejected" ? "rule" : "gower";
+  const outputCSV = `${outputDir}/mock.smart.repaired.csv`;
+  const presentationArtifact = `${outputDir}/presentation.json`;
+  const rollbackManifest = `${outputDir}/rollback/manifest.v2.json`;
+  const rejectedSnapshot =
+    verdict === "rolled_back" || verdict === "rollback_failed" ? `${outputDir}/rollback/${taskID}.rejected.csv` : "";
+  const rollbackExecution =
+    verdict === "rolled_back"
+      ? { status: "executed", manifest_path: rollbackManifest, restore_target: outputCSV }
+      : verdict === "rollback_failed"
+      ? { status: "failed", manifest_path: rollbackManifest, reason: "mock rollback failure" }
+      : {};
+  const safety = {
+    final_verdict: verdict,
+    risk_flags:
+      verdict === "accepted"
+        ? ["validated"]
+        : verdict === "validation_rejected"
+        ? ["preview_rejected"]
+        : ["post_validation_failed", verdict],
+    baseline_scan_summary: {
+      issue_count: beforeIssueCount,
+      high_risk_issue_count: 1,
+      total_issue_score: 123.4,
+    },
+    post_scan_summary: {
+      issue_count: afterIssueCount,
+      high_risk_issue_count: verdict === "accepted" ? 0 : 1,
+      total_issue_score: postRiskScore,
+    },
+    rollback_recommendation: {
+      action: verdict === "accepted" ? "keep_output" : "restore_output_csv",
+      reason: verdict === "accepted" ? "validated" : "risk_not_reduced",
+    },
+    rollback_execution: rollbackExecution,
+    rejected_output_snapshot: rejectedSnapshot,
+  };
+  const validation = {
+    status: verdict === "validation_rejected" ? "rejected" : "accepted",
+    message:
+      verdict === "accepted"
+        ? "Preview validation passed and post-execute validation accepted the result."
+        : verdict === "validation_rejected"
+        ? "Preview validation rejected automatic execution."
+        : "Post-execute validation detected elevated risk and triggered rollback.",
+    can_execute: verdict !== "validation_rejected",
+    preview: {
+      status: verdict === "validation_rejected" ? "rejected" : "accepted",
+      message: verdict === "validation_rejected" ? "Resolved issue count is not better than baseline." : "Candidate is safe to execute.",
+      before_issue_count: beforeIssueCount,
+      after_issue_count: verdict === "validation_rejected" ? beforeIssueCount : Math.max(1, beforeIssueCount - 1),
+      resolved_issue_count: verdict === "validation_rejected" ? 0 : beforeIssueCount - 1,
+      changed_cell_count: verdict === "validation_rejected" ? 0 : 42,
+    },
+    post_execute:
+      verdict === "validation_rejected"
+        ? {}
+        : {
+            status: verdict === "accepted" ? "accepted" : "rejected",
+            message:
+              verdict === "accepted"
+                ? "Rescan confirms lower issue count and lower total issue score."
+                : "Rescan did not meet the acceptance threshold.",
+            before_issue_count: beforeIssueCount,
+            after_issue_count: afterIssueCount,
+            before_total_issue_score: 123.4,
+            after_total_issue_score: postRiskScore,
+          },
+  };
+  const execution =
+    verdict === "validation_rejected"
+      ? {
+          status: "skipped",
+          auto_mode: true,
+          rollback_applied: false,
+          output_csv: "",
+          post_scan_output_csv: "",
+        }
+      : {
+          status: "executed",
+          auto_mode: true,
+          selected_source: selectedSource,
+          output_csv: outputCSV,
+          post_scan_output_csv: outputCSV,
+          rollback_applied: verdict === "rolled_back",
+          applied_issue_count: verdict === "accepted" ? 3 : 2,
+          total_cells_modified: verdict === "accepted" ? 61 : 48,
+          rollback: rollbackExecution,
+          comparison: {
+            before_issue_count: beforeIssueCount,
+            after_issue_count: afterIssueCount,
+            resolved_issue_count: Math.max(0, beforeIssueCount - afterIssueCount),
+            changed_cell_count: verdict === "accepted" ? 61 : 48,
+          },
+        };
+  const plan = {
+    plan_id: planID,
+    selected_candidate_id: `${selectedSource}-candidate`,
+    selected_source: selectedSource,
+    selected_issue_ids: asArray(scan?.issues).map((item) => String(item?.issue_id || "").trim()),
+    skipped_issues: [{ issue_type: "duplicate_record", reason: "unsupported_issue_type" }],
+    reasoning_summary:
+      verdict === "accepted"
+        ? "Hybrid candidate reduced issue count most aggressively while keeping change count acceptable."
+        : "Safety policy kept deterministic evidence and blocked or rolled back the less trustworthy path.",
+    user_explanation: "系统优先比较 rule、gower 与 hybrid 三个候选，再根据验证结果决定执行与否。",
+  };
+  const cognition = buildMockCognitionState(
+    payload,
+    plan.selected_candidate_id,
+    plan.reasoning_summary,
+    "Go validation remains authoritative before any writes."
+  );
+  plan.reason_codes = [...asArray(cognition.reason_codes)];
+  plan.risk_note = String(cognition.risk_note || "").trim();
+  plan.explanation_bullets = [
+    `Cognition: ${smartCognitionLabel(cognition) || "deterministic"}`,
+    smartCognitionSummaryText(cognition),
+    smartCognitionFallbackText(cognition),
+  ].filter(Boolean);
+  plan.cognition = cognition;
+  let traceSummary = {
+    total_events: verdict === "validation_rejected" ? 8 : 12,
+    tool_calls: verdict === "validation_rejected" ? 2 : 4,
+    validation_events: verdict === "validation_rejected" ? 1 : 2,
+    rollback_events: verdict === "rolled_back" || verdict === "rollback_failed" ? 2 : 0,
+  };
+  const presentation = buildMockPresentationBundle(
+    "agent",
+    verdict,
+    verdict === "accepted" ? "智能闭环已完成" : "智能闭环已结束",
+    verdict === "accepted"
+      ? "系统已自动完成扫描、修复、复扫与验证，结果满足接纳条件。"
+      : verdict === "validation_rejected"
+      ? "系统在预演阶段拒绝了自动执行，因此没有写出不可信结果。"
+      : verdict === "rolled_back"
+      ? "系统执行后检测到风险未下降，已自动回滚输出产物。"
+      : "系统尝试自动回滚，但回滚过程失败，需要人工介入。",
+    [
+      { id: "issues", label: "问题数变化", value: `${beforeIssueCount} -> ${afterIssueCount}`, tone: verdict === "accepted" ? "success" : "warning" },
+      { id: "source", label: "采用来源", value: selectedSource, tone: "neutral" },
+      { id: "verdict", label: "最终结论", value: verdict, tone: smartVerdictTone(verdict) },
+    ],
+    [
+      {
+        id: "overview",
+        title: "总体结论",
+        body:
+          verdict === "accepted"
+            ? "本次任务通过自动闭环完成了扫描、修复和后验验证。"
+            : "本次任务保留了验证优先和回滚优先的安全边界。",
+        bullets: [
+          "默认入口为 agent.session.auto",
+          "任务包含自动验证与回滚保护",
+          `最终采用 ${selectedSource} 候选`,
+        ],
+        evidence_refs: ["validation", "trace_summary"],
+      },
+      {
+        id: "risk_and_safety",
+        title: "风险与安全",
+        body:
+          verdict === "accepted"
+            ? "复扫显示问题数与风险分数均下降。"
+            : verdict === "validation_rejected"
+            ? "系统在 preview gate 阶段阻止了不可信执行。"
+            : verdict === "rolled_back"
+            ? "系统在 post-validation 阶段判定结果不安全，并已回滚。"
+            : "系统已尝试回滚，但回滚执行失败，需要人工复核。",
+        bullets: [`risk flags: ${safety.risk_flags.join(", ")}`],
+        evidence_refs: ["safety", "rollback"],
+      },
+    ],
+    [
+      {
+        id: "before_after_issue_comparison",
+        kind: "comparison_bar",
+        title: "问题数前后对比",
+        subtitle: "自动模式的核心结果口径",
+        empty_state: "暂无比较数据",
+        data: {
+          series: [{ label: "issues", before: beforeIssueCount, after: afterIssueCount, delta: afterIssueCount - beforeIssueCount }],
+        },
+      },
+      {
+        id: "validation_verdict_timeline",
+        kind: "timeline",
+        title: "验证时间线",
+        subtitle: "preview 与 post-execute 的关键判断",
+        empty_state: "暂无验证事件",
+        data: {
+          events:
+            verdict === "validation_rejected"
+              ? [{ label: "preview", value: "rejected", tone: "warning", hint: "自动执行被安全门禁阻止" }]
+              : [
+                  { label: "preview", value: "accepted", tone: "success", hint: "候选方案允许执行" },
+                  { label: "post_execute", value: verdict === "accepted" ? "accepted" : "rejected", tone: verdict === "accepted" ? "success" : "warning", hint: verdict === "accepted" ? "结果被接纳" : "结果被回滚" },
+                ],
+        },
+      },
+    ]
+  );
+
+  const result = {
+    csv_path: String(payload?.csv_path || ""),
+    safety,
+    agent: {
+      session_id: sessionID,
+      plan_id: planID,
+      run_mode: "auto",
+      goal: String(payload?.user_goal || "扫描并自动修复"),
+      plan,
+      explanation: {
+        mode: buildMockExplanationMode(cognition),
+        summary: plan.reasoning_summary,
+        final_message:
+          verdict === "accepted"
+            ? "系统已自动交付可信结果。"
+            : "系统保留了安全边界，并给出了可审计的结束原因。",
+      },
+      explanation: {
+        ...asObject({
+          mode: buildMockExplanationMode(cognition),
+          summary: plan.reasoning_summary,
+          /*
+          final_message: asObject({
+            accepted: "绯荤粺宸茶嚜鍔ㄤ氦浠樺彲淇＄粨鏋溿€?,
+            fallback: "绯荤粺淇濈暀浜嗗畨鍏ㄨ竟鐣岋紝骞剁粰鍑轰簡鍙璁＄殑缁撴潫鍘熷洜銆?,
+          })[verdict === "accepted" ? "accepted" : "fallback"],
+          */
+          short_bullets: Array.from(asArray(plan.explanation_bullets)),
+          final_message:
+            verdict === "accepted"
+              ? "The run completed and produced an accepted output."
+              : "The run preserved the safety boundary and returned an auditable reason.",
+          reason_codes: Array.from(asArray(plan.reason_codes)),
+          risk_note: plan.risk_note,
+          cognition,
+        }),
+      },
+      approval: {
+        status: "not_required",
+        required: false,
+        reason_codes: [],
+        risk_columns: [],
+        protected_columns: [],
+        time_like_columns: [],
+        message: "No approval gate is currently active.",
+      },
+      validation,
+      execution,
+      trace_summary: traceSummary,
+      presentation,
+    },
+  };
+
+  const session = {
+    session_id: sessionID,
+    root_task_id: taskID,
+    current_task_id: taskID,
+    status: verdict === "accepted" ? "completed" : verdict === "rolled_back" ? "rolled_back" : verdict === "rollback_failed" ? "rollback_failed" : "validation_rejected",
+    mode: "auto",
+    user_goal: String(payload?.user_goal || "扫描并自动修复"),
+    context: {
+      csv_path: String(payload?.csv_path || ""),
+      baseline_scan: safety.baseline_scan_summary,
+      preview_validation: validation.preview,
+      post_scan: safety.post_scan_summary,
+      post_validation: validation.post_execute,
+      rollback_summary: rollbackExecution,
+      final_verdict: verdict,
+      rejected_output_snapshot: rejectedSnapshot,
+      workspace_id: resolveSmartWorkspaceID(payload?.workspace_id, payload?.csv_path),
+      preference_snapshot: cloneSmartPreferenceProfile(asObject(payload?.user_preferences)),
+      cognition_state: { ...cognition },
+    },
+    latest_plan: plan,
+    presentation,
+    presentation_artifact: presentationArtifact,
+    trace_summary: traceSummary,
+  };
+
+  const trace = [
+    {
+      id: 1,
+      session_id: sessionID,
+      task_id: taskID,
+      seq: 1,
+      agent_name: "supervisor",
+      trace_type: "session_started",
+      summary: "Agent auto session started",
+      payload: { goal: session.user_goal },
+      created_at: new Date().toISOString(),
+    },
+    {
+      id: 2,
+      session_id: sessionID,
+      task_id: taskID,
+      seq: 2,
+      agent_name: "repair_planner",
+      trace_type: "agent_decision",
+      summary: "Planner selected the best candidate",
+      payload: { selected_source: selectedSource, plan_id: planID },
+      created_at: new Date().toISOString(),
+    },
+    {
+      id: 3,
+      session_id: sessionID,
+      task_id: taskID,
+      seq: 3,
+      agent_name: "validator",
+      trace_type: "validation",
+      summary: validation.preview.message,
+      payload: { ...validation.preview, phase: "preview" },
+      created_at: new Date().toISOString(),
+    },
+  ];
+  trace.splice(2, 0, buildMockCognitionTraceEvent(taskID, sessionID, 3, cognition, new Date().toISOString()));
+  trace.forEach((item, idx) => {
+    item.id = idx + 1;
+    item.seq = idx + 1;
+  });
+  if (verdict !== "validation_rejected") {
+    trace.push({
+      id: 4,
+      session_id: sessionID,
+      task_id: taskID,
+      seq: 4,
+      agent_name: "validator",
+      trace_type: "validation",
+      summary: validation.post_execute.message,
+      payload: { ...validation.post_execute, phase: "post_execute" },
+      created_at: new Date().toISOString(),
+    });
+  }
+  if (verdict === "rolled_back" || verdict === "rollback_failed") {
+    trace.push({
+      id: 5,
+      session_id: sessionID,
+      task_id: taskID,
+      seq: 5,
+      agent_name: "validator",
+      trace_type: "rollback_decision",
+      summary: "Unsafe output requires rollback",
+      payload: { verdict },
+      created_at: new Date().toISOString(),
+    });
+    trace.push({
+      id: 6,
+      session_id: sessionID,
+      task_id: taskID,
+      seq: 6,
+      agent_name: "validator",
+      trace_type: "rollback_executed",
+      summary: verdict === "rolled_back" ? "Rollback restored the repaired artifact" : "Rollback attempted but failed",
+      payload: rollbackExecution,
+      created_at: new Date().toISOString(),
+    });
+  }
+  traceSummary = buildMockApprovalTraceSummary(trace);
+  result.agent.trace_summary = traceSummary;
+  session.trace_summary = traceSummary;
+
+  return {
+    status: verdict === "accepted" ? "succeeded" : "failed",
+    result,
+    session,
+    trace,
+  };
+}
+
+async function mockRunAgentAutofixSession(payload) {
+  const id = `mock-agent-task-${Date.now()}`;
+  const approvalContext = buildMockApprovalContext(payload, buildMockScanResult(payload));
+  const built = approvalContext.required ? buildMockApprovalRequiredResult(id, payload) : buildMockAgentAutofixResult(id, payload);
+  state.mockTasks.set(id, {
+    id,
+    payload: { ...payload },
+    action: "agent.session.auto",
+    createdAt: Date.now(),
+    canceled: false,
+    finalStatus: built.status,
+    finalResult: built.result,
+    sessionID: built.session.session_id,
+  });
+  state.mockAgentSessions.set(built.session.session_id, built.session);
+  state.mockAgentTrace.set(built.session.session_id, built.trace);
+  return {
+    id,
+    status: "pending",
+    request: { action: "agent.session.auto", payload: { ...payload } },
+    response: {},
+    error: "",
+  };
+}
+
+async function mockApproveAgentSession(payload) {
+  const sessionID = String(payload?.session_id || "").trim();
+  const decision = String(payload?.decision || "").trim().toLowerCase();
+  const existingSession = asObject(state.mockAgentSessions.get(sessionID));
+  if (!sessionID || Object.keys(existingSession).length === 0) {
+    throw new Error(`mock session not found: ${sessionID}`);
+  }
+  const existingTrace = asArray(state.mockAgentTrace.get(sessionID));
+  const originalTask = state.mockTasks.get(existingSession.root_task_id);
+  const effectivePayload = {
+    ...asObject(originalTask?.payload),
+    ...asObject(payload),
+    csv_path: String(asObject(originalTask?.payload)?.csv_path || existingSession?.context?.csv_path || ""),
+    user_preferences:
+      asObject(payload?.user_preferences) && Object.keys(asObject(payload?.user_preferences)).length > 0
+        ? asObject(payload?.user_preferences)
+        : asObject(existingSession?.context?.preference_snapshot),
+    workspace_id: String(payload?.workspace_id || existingSession?.context?.workspace_id || "").trim(),
+  };
+  const taskID = `mock-agent-approval-${Date.now()}`;
+  const built =
+    decision === "reject"
+      ? buildMockApprovalRejectedResult(taskID, effectivePayload, existingSession, existingTrace)
+      : buildMockApprovalApprovedResult(taskID, effectivePayload, existingSession, existingTrace);
+
+  state.mockTasks.set(taskID, {
+    id: taskID,
+    payload: { ...effectivePayload, session_id: sessionID, plan_id: payload?.plan_id, decision },
+    action: "agent.session.approve",
+    createdAt: Date.now(),
+    canceled: false,
+    finalStatus: built.status,
+    finalResult: built.result,
+    sessionID,
+  });
+  state.mockAgentSessions.set(sessionID, built.session);
+  state.mockAgentTrace.set(sessionID, built.trace);
+  return {
+    id: taskID,
+    status: "pending",
+    request: {
+      action: "agent.session.approve",
+      payload: { ...payload, session_id: sessionID, decision },
+    },
+    response: {},
+    error: "",
+  };
+}
+
+async function mockGetAgentPreferences(workspaceID, csvPath) {
+  const resolved = resolveSmartWorkspaceID(workspaceID, csvPath);
+  const existing = state.mockPreferenceStore.get(resolved);
+  if (existing) {
+    return {
+      workspace_id: resolved,
+      profile: cloneSmartPreferenceProfile(existing.profile),
+      updated_at: existing.updated_at,
+    };
+  }
+  return {
+    workspace_id: resolved,
+    profile: defaultSmartPreferenceProfile(),
+    updated_at: "",
+  };
+}
+
+async function mockSaveAgentPreferences(payload) {
+  const resolved = resolveSmartWorkspaceID(payload?.workspace_id, payload?.csv_path);
+  const profileSource = Object.keys(asObject(payload?.profile)).length > 0 ? payload.profile : payload;
+  const profile = cloneSmartPreferenceProfile(profileSource);
+  const record = {
+    workspace_id: resolved,
+    profile,
+    updated_at: new Date().toISOString(),
+  };
+  state.mockPreferenceStore.set(resolved, record);
+  return {
+    workspace_id: resolved,
+    profile: cloneSmartPreferenceProfile(profile),
+    updated_at: record.updated_at,
+  };
+}
+
+async function mockGetAgentSession(sessionID) {
+  return state.mockAgentSessions.get(sessionID) || {};
+}
+
+async function mockListAgentTrace(sessionID) {
+  return state.mockAgentTrace.get(sessionID) || [];
+}
+
 async function mockGetTaskStatus(taskId) {
   const mock = state.mockTasks.get(taskId);
   if (!mock) throw new Error(`mock task not found: ${taskId}`);
@@ -2426,6 +5320,29 @@ async function mockGetTaskStatus(taskId) {
       request: { action: mock.action, payload: mock.payload },
       response: {},
       error: "",
+    };
+  }
+
+  if (mock.action === "agent.session.auto" || mock.action === "agent.session.approve") {
+    return {
+      id: taskId,
+      status: mock.finalStatus,
+      request: { action: mock.action, payload: mock.payload },
+      response: {
+        task_id: taskId,
+        status: mock.finalStatus === "succeeded" ? "ok" : "error",
+        result: mock.finalResult,
+        error:
+          mock.finalStatus === "succeeded"
+            ? null
+            : {
+                code: String(asObject(mock.finalResult?.safety)?.final_verdict || "AGENT_VALIDATION_REJECTED").toUpperCase(),
+                message: "Mock smart autofix completed with a guarded verdict.",
+              },
+        timestamp: new Date().toISOString(),
+        duration_ms: 3200,
+      },
+      error: mock.finalStatus === "succeeded" ? "" : "AGENT_AUTOFIX_GUARDED_RESULT",
     };
   }
 
@@ -2513,7 +5430,13 @@ async function mockCancelTask(taskId) {
 function actionToIntent(action) {
   const normalized = String(action || "").toLowerCase();
   if (normalized === "scan_file") return INTENT_SCAN;
-  if (normalized === "repair_batch") return INTENT_REPAIR;
+  if (normalized === "repair_batch" || normalized === "repair_with_gower") return INTENT_REPAIR;
+  if (normalized === "agent.session.auto" || normalized === "agent.session.approve") {
+    return INTENT_AGENT_AUTO;
+  }
+  if (normalized === "agent.session.plan" || normalized === "agent.session.execute") {
+    return INTENT_REPAIR;
+  }
   if (normalized === "train") return INTENT_TRAIN;
   return "";
 }
@@ -2534,6 +5457,7 @@ function runningHintForIntent(intent, elapsedMS) {
 }
 
 function completedHintForIntent(intent) {
+  if (intent === INTENT_AGENT_AUTO) return "智能闭环完成，正在整理验证结果与审计轨迹。";
   if (intent === INTENT_REPAIR) return "批量修复完成，正在整理输出结果。";
   if (intent === INTENT_TRAIN) return "训练完成，正在整理模型结果。";
   return "检测完成，正在整理异常摘要。";
@@ -2874,6 +5798,7 @@ async function refreshColumnsForCsv(csvPath, source = "path change") {
   if (!path) {
     setTargetOptions([]);
     renderConfigSidebar();
+    await loadSmartPreferencesForCSV("");
     return;
   }
 
@@ -2888,6 +5813,7 @@ async function refreshColumnsForCsv(csvPath, source = "path change") {
     addEvent(`目标列读取失败: ${normalizeReadableErrorText(String(err))}`);
     renderConfigSidebar();
   }
+  await loadSmartPreferencesForCSV(path);
 }
 
 async function loadRecentHistory() {
@@ -3005,6 +5931,286 @@ function exportResultCsv() {
   saveFile(`${task?.id || "task"}-result.csv`, content, "text/csv;charset=utf-8");
 }
 
+function updateContinueLatestButton() {
+  if (!continueLatestBtn) return;
+  const task = state.recentTaskCandidate;
+  if (!task || !task?.id) {
+    continueLatestBtn.disabled = true;
+    continueLatestBtn.textContent = "查看最近结果";
+    return;
+  }
+
+  continueLatestBtn.disabled = false;
+  const running = !isTerminalTaskStatus(task?.status);
+  if (isAgentAutoAction(task?.request?.action) && running) {
+    continueLatestBtn.textContent = "继续最近任务";
+    return;
+  }
+  if (isAgentAutoAction(task?.request?.action)) {
+    continueLatestBtn.textContent = "查看最近智能结果";
+    return;
+  }
+  continueLatestBtn.textContent = "打开最近工作台任务";
+}
+
+async function syncSmartFileSelection(csvPath, source = "smart-home") {
+  const path = String(csvPath || "").trim();
+  state.smartDraft.csvPath = path;
+  if (csvPathInput) csvPathInput.value = path;
+  syncSmartDraftToClassicInputs();
+  if (!path) {
+    setTargetOptions([]);
+    await loadSmartPreferencesForCSV("");
+    renderSmartHome();
+    return;
+  }
+
+  try {
+    const before = getTargetColumn();
+    const columns = await apiListCsvColumns(path);
+    setTargetOptions(columns, before);
+    addEvent(`智能模式已读取列信息 (${source})`, state.currentTaskId);
+  } catch (err) {
+    setTargetOptions([]);
+    addEvent(`智能模式读取列失败: ${normalizeReadableErrorText(String(err))}`);
+  }
+  renderConfigSidebar();
+  await loadSmartPreferencesForCSV(path);
+  renderSmartHome();
+}
+
+function collectSmartAutofixPayload() {
+  const csvPath = getSmartCsvPath();
+  const outputDir = getSmartOutputDir();
+  const workspaceID =
+    String(state.smartPreferences?.workspaceID || "").trim() ||
+    resolveSmartWorkspaceID("", csvPath);
+  return {
+    csv_path: csvPath,
+    user_goal: "扫描并自动修复",
+    output_dir: outputDir,
+    workspace_id: workspaceID,
+    user_preferences: buildSmartUserPreferencesPayload(),
+    timeout_ms: toInt(timeoutInput?.value, 90000),
+  };
+}
+
+function validateSmartAutofixPayload(payload) {
+  if (!String(payload?.csv_path || "").trim()) return "CSV 文件路径不能为空。";
+  if (!String(payload?.output_dir || "").trim()) return "输出目录不能为空。";
+  if (!Number.isInteger(payload?.timeout_ms) || payload.timeout_ms < 1000) {
+    return "超时必须是 >= 1000 的整数(ms)。";
+  }
+  return "";
+}
+
+async function pollSmartTask(taskId) {
+  const token = Date.now();
+  state.pollingToken = token;
+
+  while (state.pollingToken === token && state.currentTaskId === taskId) {
+    let snapshot;
+    try {
+      snapshot = await apiGetTaskStatus(taskId);
+    } catch (err) {
+      setRunningUi(false);
+      const message = `状态轮询失败: ${String(err)}`;
+      showError(message, "请检查后端连接后重试。");
+      renderSmartSafetyBanner("rollback_failed", message);
+      if (smartResultConclusion) smartResultConclusion.textContent = message;
+      renderSmartTracePlaceholder(message);
+      setShellView(VIEW_SMART_RESULT);
+      addEvent(message, taskId);
+      return null;
+    }
+
+    state.currentTask = snapshot;
+    state.runningIntent = INTENT_AGENT_AUTO;
+    setTaskId(snapshot?.id || "");
+    renderTask(snapshot, INTENT_AGENT_AUTO);
+    const status = String(snapshot?.status || "").toLowerCase();
+    appendProgressEvents(snapshot, taskId);
+
+    if (isTerminalTaskStatus(status)) {
+      setRunningUi(false);
+      renderSmartResult(snapshot, { skipHydrate: false });
+      return snapshot;
+    }
+
+    renderSmartRun(snapshot);
+    await delay(450);
+  }
+  return null;
+}
+
+async function startAgentAutofixTask(payload) {
+  clearError();
+  state.currentTaskId = "";
+  state.currentTask = null;
+  state.runningIntent = INTENT_AGENT_AUTO;
+  state.taskStartAtMS = Date.now();
+  state.lastRunningHint = "";
+  state.seenProgressEventKeys = new Set();
+  state.smartSessionSnapshot = null;
+  state.smartTraceEvents = [];
+  setRunningUi(true);
+  setShellView(VIEW_SMART_RUN);
+  renderSmartTracePlaceholder("等待任务轨迹。");
+
+  let submitted;
+  try {
+    submitted = await apiRunAgentAutofixSession(payload);
+  } catch (err) {
+    setRunningUi(false);
+    const message = `智能任务启动失败: ${String(err)}`;
+    showError(message, "可切换到高级工作台继续使用经典流程。");
+    renderSmartModeBanner(message, "warning");
+    setShellView(VIEW_SMART_HOME);
+    addEvent(message);
+    return null;
+  }
+
+  state.currentTaskId = String(submitted?.id || "");
+  state.currentTask = submitted;
+  state.recentTaskCandidate = submitted;
+  updateContinueLatestButton();
+  renderTask(submitted, INTENT_AGENT_AUTO);
+  renderSmartRun(submitted);
+  addEvent(`智能任务已提交: ${state.currentTaskId}`, state.currentTaskId);
+  return pollSmartTask(state.currentTaskId);
+}
+
+async function startSmartApprovalDecision(decision) {
+  const task = state.currentTask;
+  const result = asObject(task?.response?.result);
+  const agentBlock = asObject(result?.agent);
+  const session = asObject(state.smartSessionSnapshot);
+  const sessionID = String(agentBlock?.session_id || session?.session_id || "").trim();
+  const planID = String(agentBlock?.plan_id || asObject(agentBlock?.plan)?.plan_id || asObject(session?.latest_plan)?.plan_id || "").trim();
+  if (!sessionID || !planID) {
+    showError("审批恢复失败: 缺少 session_id 或 plan_id");
+    return null;
+  }
+
+  clearError();
+  state.currentTaskId = "";
+  state.currentTask = null;
+  state.runningIntent = INTENT_AGENT_AUTO;
+  state.taskStartAtMS = Date.now();
+  state.lastRunningHint = "";
+  state.seenProgressEventKeys = new Set();
+  state.smartSessionSnapshot = null;
+  state.smartTraceEvents = [];
+  setRunningUi(true);
+  setShellView(VIEW_SMART_RUN);
+  renderSmartTracePlaceholder("正在提交审批决定并恢复任务...");
+
+  let submitted;
+  try {
+    submitted = await apiApproveAgentSession({
+      session_id: sessionID,
+      plan_id: planID,
+      decision,
+      timeout_ms: toInt(timeoutInput?.value, 90000),
+    });
+  } catch (err) {
+    setRunningUi(false);
+    const message = `审批操作失败: ${normalizeReadableErrorText(String(err))}`;
+    showError(message);
+    renderSmartTracePlaceholder(message);
+    setShellView(VIEW_SMART_RESULT);
+    return null;
+  }
+
+  state.currentTaskId = String(submitted?.id || "");
+  state.currentTask = submitted;
+  state.recentTaskCandidate = submitted;
+  updateContinueLatestButton();
+  renderTask(submitted, INTENT_AGENT_AUTO);
+  renderSmartRun(submitted);
+  addEvent(`审批决定已提交: ${decision}`, state.currentTaskId);
+  return pollSmartTask(state.currentTaskId);
+}
+
+async function startSmartAutofixWorkflow() {
+  if (!isSmartAutofixAvailable()) {
+    renderSmartModeBanner("当前环境无法直接调用 RunAgentAutofixSession，已为你保留高级工作台入口。", "warning");
+    openAdvancedWorkspace();
+    return;
+  }
+
+  const payload = collectSmartAutofixPayload();
+  const invalid = validateSmartAutofixPayload(payload);
+  if (invalid) {
+    renderSmartModeBanner(invalid, "warning");
+    return;
+  }
+
+  state.smartDraft.csvPath = String(payload.csv_path || "");
+  state.smartDraft.outputDir = String(payload.output_dir || "");
+  syncSmartDraftToClassicInputs();
+  await startAgentAutofixTask(payload);
+}
+
+async function resumeLatestTaskFromNav() {
+  if (!state.recentTaskCandidate) {
+    await loadRecentHistory();
+  }
+  const task = state.recentTaskCandidate;
+  if (!task || !task?.id) return;
+  if (isAgentAutoAction(task?.request?.action)) {
+    restoreRecentTask(task, { fromHistory: true });
+    return;
+  }
+  restoreRecentTask(task, { fromHistory: true });
+  openAdvancedWorkspace();
+}
+
+async function loadRecentHistory() {
+  try {
+    const tasks = await apiListTaskHistory(10);
+    const candidate = pickRecentHistoryCandidate(tasks);
+    state.recentTaskCandidate = candidate;
+    updateContinueLatestButton();
+    if (!candidate || !candidate?.id) return;
+    addEvent(`已识别最近任务: ${candidate?.id || "-"}`, candidate?.id || "");
+    if (isAgentAutoAction(candidate?.request?.action)) {
+      restoreRecentTask(candidate, { fromHistory: true });
+    }
+  } catch (err) {
+    addEvent(`加载历史任务失败: ${String(err)}`);
+  }
+}
+
+function resetSmartSurface() {
+  state.currentTaskId = "";
+  state.currentTask = null;
+  state.pollingToken = Date.now();
+  state.runningIntent = "";
+  state.taskStartAtMS = 0;
+  state.lastRunningHint = "";
+  state.smartSessionSnapshot = null;
+  state.smartTraceEvents = [];
+  setRunningUi(false);
+  clearError();
+  renderSmartSafetyBanner("", "");
+  if (smartResultConclusion) smartResultConclusion.textContent = "系统完成后会在这里解释做了什么以及结果是否可信。";
+  if (smartResultSummary) renderDescriptionList(smartResultSummary, []);
+  renderArtifactList(smartArtifactList, [], "任务完成后会在这里展示输出文件、presentation.json 和 rollback manifest。");
+  if (smartApprovalCard) smartApprovalCard.classList.add("hidden");
+  if (smartApprovalMessage) smartApprovalMessage.textContent = "当前结果未触发额外审批。";
+  if (smartApprovalSummary) renderDescriptionList(smartApprovalSummary, []);
+  if (smartApprovalReasons) renderCompactList(smartApprovalReasons, ["暂无。"]);
+  if (smartApprovalPreferences) renderDescriptionList(smartApprovalPreferences, []);
+  if (smartReasoningBody) smartReasoningBody.innerHTML = "";
+  renderSmartTracePlaceholder("等待会话轨迹。");
+  if (smartResultRaw) smartResultRaw.textContent = "{}\n";
+  renderPresentationBundle(smartResultPresentation, null);
+  renderCompactList(smartTrustChecks, ["等待任务结果。"]);
+  setShellView(VIEW_SMART_HOME);
+  renderSmartHome();
+}
+
 if (detectForm) {
   detectForm.addEventListener("submit", async (event) => {
     event.preventDefault();
@@ -3091,18 +6297,26 @@ if (csvFileInput) {
   csvFileInput.addEventListener("change", async () => {
     const file = csvFileInput.files?.[0];
     if (!file) return;
-    if (csvPathInput) csvPathInput.value = file.name;
-    addEvent(`浏览器模式选择文件: ${file.name}`);
-    await refreshColumnsForCsv(file.name, "浏览器文件选择");
+    const selected = String(file?.path || file?.name || "").trim();
+    if (!selected) return;
+    if (csvPathInput) csvPathInput.value = selected;
+    addEvent(`浏览器模式选择文件: ${selected}`);
+    await syncSmartFileSelection(selected, "浏览器文件选择");
   });
 }
 
 if (csvPathInput) {
+  const syncCsvPathFromInput = async (source) => {
+    const path = String(csvPathInput.value || "").trim();
+    state.smartDraft.csvPath = path;
+    await refreshColumnsForCsv(path, source);
+    renderSmartHome();
+  };
   csvPathInput.addEventListener("change", async () => {
-    await refreshColumnsForCsv(csvPathInput.value, "路径变更");
+    await syncCsvPathFromInput("路径变更");
   });
   csvPathInput.addEventListener("blur", async () => {
-    await refreshColumnsForCsv(csvPathInput.value, "路径失焦");
+    await syncCsvPathFromInput("路径失焦");
   });
 }
 
@@ -3173,20 +6387,209 @@ if (exportJsonBtn) exportJsonBtn.addEventListener("click", exportResultJson);
 if (exportCsvBtn) exportCsvBtn.addEventListener("click", exportResultCsv);
 if (exportJsonSideBtn) exportJsonSideBtn.addEventListener("click", exportResultJson);
 if (exportCsvSideBtn) exportCsvSideBtn.addEventListener("click", exportResultCsv);
+if (smartExportJsonBtn) smartExportJsonBtn.addEventListener("click", exportResultJson);
+if (smartExportCsvBtn) smartExportCsvBtn.addEventListener("click", exportResultCsv);
 
-setWizardStep(STEP_CONFIG, { immediate: true });
-setAdvancedMode(false);
-setAutoMode(false, { silent: true });
-setStatus("idle", "等待任务开始");
-renderPhaseHints(INTENT_SCAN, "idle");
-setTaskId("");
-setRunningUi(false);
-resetResultPanels();
-clearError();
-updateMatrixDensityUi();
-renderConfigSidebar();
-addEvent("前端已就绪，请先执行全列检测。");
-refreshColumnsForCsv(csvPathInput?.value || "", "初始加载");
-loadRecentHistory();
+async function openSmartCsvPicker(source = "smart-home") {
+  const nativePicker = hasBinding("SelectCSV");
+  try {
+    const selected = await apiSelectCsv();
+    if (selected) {
+      addEvent(`智能模式已选择 CSV: ${selected}`);
+      await syncSmartFileSelection(selected, source);
+      return;
+    }
+    if (nativePicker) {
+      addEvent("智能模式 CSV 选择已取消。");
+      return;
+    }
+  } catch (err) {
+    addEvent(`智能模式 CSV 选择器不可用: ${String(err)}`);
+  }
+  if (csvFileInput) csvFileInput.click();
+}
+
+if (continueLatestBtn) {
+  continueLatestBtn.addEventListener("click", async () => {
+    await resumeLatestTaskFromNav();
+  });
+}
+
+if (viewStartupBtn) {
+  viewStartupBtn.addEventListener("click", () => {
+    openStartupDiagnostics();
+  });
+}
+
+if (openAdvancedBtn) {
+  openAdvancedBtn.addEventListener("click", () => {
+    openAdvancedWorkspace();
+  });
+}
+
+if (backSmartBtn) {
+  backSmartBtn.addEventListener("click", () => {
+    returnToSmartSurface();
+  });
+}
+
+if (smartChooseCsvBtn) {
+  smartChooseCsvBtn.addEventListener("click", async () => {
+    await openSmartCsvPicker("智能首页按钮");
+  });
+}
+
+if (smartDropzone) {
+  smartDropzone.addEventListener("click", async () => {
+    await openSmartCsvPicker("智能首页拖拽区");
+  });
+  smartDropzone.addEventListener("dragover", (event) => {
+    event.preventDefault();
+    smartDropzone.classList.add("is-hover");
+  });
+  smartDropzone.addEventListener("dragleave", () => {
+    smartDropzone.classList.remove("is-hover");
+  });
+  smartDropzone.addEventListener("drop", async (event) => {
+    event.preventDefault();
+    smartDropzone.classList.remove("is-hover");
+    const file = event.dataTransfer?.files?.[0];
+    const selected = String(file?.path || file?.name || "").trim();
+    if (!selected) return;
+    addEvent(`智能模式拖拽载入文件: ${selected}`);
+    await syncSmartFileSelection(selected, "拖拽上传");
+  });
+}
+
+if (smartChooseOutputBtn) {
+  smartChooseOutputBtn.addEventListener("click", async () => {
+    await chooseDirectory(smartOutputInput, "输入输出目录", "已选择智能模式输出目录");
+    state.smartDraft.outputDir = String(smartOutputInput?.value || "").trim();
+    syncSmartDraftToClassicInputs();
+    renderConfigSidebar();
+    renderSmartHome();
+  });
+}
+
+if (smartOutputInput) {
+  const syncSmartOutput = () => {
+    state.smartDraft.outputDir = String(smartOutputInput.value || "").trim();
+    syncSmartDraftToClassicInputs();
+    renderConfigSidebar();
+    renderSmartHome();
+  };
+  smartOutputInput.addEventListener("input", syncSmartOutput);
+  smartOutputInput.addEventListener("change", syncSmartOutput);
+}
+
+for (const input of [smartPrefConservativeInput, smartPrefAvoidTimeInput, smartPrefRequireApprovalInput]) {
+  if (!input) continue;
+  input.addEventListener("change", () => {
+    updateSmartPreferenceDraftFromInputs();
+  });
+}
+
+if (smartPrefProtectedColumnsInput) {
+  smartPrefProtectedColumnsInput.addEventListener("input", () => {
+    updateSmartPreferenceDraftFromInputs();
+  });
+  smartPrefProtectedColumnsInput.addEventListener("change", () => {
+    updateSmartPreferenceDraftFromInputs();
+  });
+}
+
+if (smartPrefSaveBtn) {
+  smartPrefSaveBtn.addEventListener("click", async () => {
+    await saveSmartPreferencesForWorkspace();
+  });
+}
+
+if (smartPrefResetBtn) {
+  smartPrefResetBtn.addEventListener("click", () => {
+    state.smartPreferences.draft = cloneSmartPreferenceProfile(state.smartPreferences.saved);
+    state.smartPreferences.message = "已恢复到最近一次加载或保存的工作区默认偏好。";
+    state.smartPreferences.tone = "info";
+    renderSmartPreferenceCard();
+  });
+}
+
+if (outputInput) {
+  const syncClassicOutputToSmart = () => {
+    state.smartDraft.outputDir = String(outputInput.value || "").trim();
+    if (smartOutputInput) smartOutputInput.value = state.smartDraft.outputDir;
+    renderSmartHome();
+  };
+  outputInput.addEventListener("input", syncClassicOutputToSmart);
+  outputInput.addEventListener("change", syncClassicOutputToSmart);
+}
+
+if (smartStartBtn) {
+  smartStartBtn.addEventListener("click", async () => {
+    await startSmartAutofixWorkflow();
+  });
+}
+
+if (smartApprovalContinueBtn) {
+  smartApprovalContinueBtn.addEventListener("click", async () => {
+    await startSmartApprovalDecision("approve");
+  });
+}
+
+if (smartApprovalRejectBtn) {
+  smartApprovalRejectBtn.addEventListener("click", async () => {
+    await startSmartApprovalDecision("reject");
+  });
+}
+
+if (smartRunCancelBtn) {
+  smartRunCancelBtn.addEventListener("click", async () => {
+    if (!state.currentTaskId) return;
+    smartRunCancelBtn.disabled = true;
+    try {
+      const ok = await apiCancelTask(state.currentTaskId);
+      addEvent(ok ? "智能任务取消请求已发送。" : "智能任务取消无效（任务可能已结束）。", state.currentTaskId);
+    } catch (err) {
+      showError(`取消失败: ${String(err)}`);
+      addEvent(`智能任务取消失败: ${String(err)}`, state.currentTaskId);
+    }
+  });
+}
+
+if (smartOpenAdvancedRunBtn) {
+  smartOpenAdvancedRunBtn.addEventListener("click", () => {
+    openAdvancedWorkspace();
+  });
+}
+
+if (smartOpenAdvancedResultBtn) {
+  smartOpenAdvancedResultBtn.addEventListener("click", () => {
+    openAdvancedWorkspace();
+  });
+}
+
+if (smartNewRunBtn) {
+  smartNewRunBtn.addEventListener("click", () => {
+    resetSmartSurface();
+  });
+}
+
+if (startupRetryBtn) {
+  startupRetryBtn.addEventListener("click", async () => {
+    await runStartupChecksFlow("手动重试");
+  });
+}
+
+if (startupCopyBtn) {
+  startupCopyBtn.addEventListener("click", copyStartupDiagnostics);
+}
+
+if (startupCloseBtn) {
+  startupCloseBtn.addEventListener("click", () => {
+    closeStartupDiagnostics();
+  });
+}
+
+renderStartupGate(null, { loading: true });
+void runStartupChecksFlow("初始加载");
 
 

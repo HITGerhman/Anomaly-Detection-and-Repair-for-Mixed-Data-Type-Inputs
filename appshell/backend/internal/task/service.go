@@ -12,6 +12,7 @@ import (
 
 	"appshell/backend/internal/engine"
 	"appshell/backend/internal/observability"
+	"appshell/backend/internal/presentation"
 )
 
 const (
@@ -289,6 +290,32 @@ func stageDisplayName(stage string) string {
 		return "应用修复"
 	case "write_output":
 		return "写出结果"
+	case "agent_intent":
+		return "Agent Intent"
+	case "agent_profile":
+		return "Agent Profile"
+	case "agent_scan":
+		return "Agent Scan"
+	case "agent_strategy":
+		return "Agent Strategy"
+	case "agent_retrieve":
+		return "Agent Retrieve"
+	case "agent_compare":
+		return "Agent Compare"
+	case "agent_plan":
+		return "Agent Plan"
+	case "agent_validate":
+		return "Agent Validate"
+	case "agent_execute":
+		return "Agent Execute"
+	case "agent_rescan":
+		return "Agent Rescan"
+	case "agent_post_validate":
+		return "Agent Post Validate"
+	case "agent_rollback":
+		return "Agent Rollback"
+	case "agent_explain":
+		return "Agent Explain"
 	case "complete":
 		return "完成"
 	default:
@@ -485,6 +512,13 @@ func (s *Service) execute(taskID string) {
 		"bottleneck_ms":      stored.Progress.BottleneckMS,
 		"failure":            stored.Progress.Failure,
 		"last_message":       stored.Progress.LastMessage,
+	}
+	if _, err := presentation.EnrichTaskResult(stored.Request, stored.Response.Result); err != nil {
+		observability.Warn("task_presentation_attach_failed", map[string]any{
+			"task_id": taskID,
+			"action":  stored.Request.Action,
+			"error":   err.Error(),
+		})
 	}
 	s.persistTask(*stored)
 	observability.Info("task_finished", map[string]any{

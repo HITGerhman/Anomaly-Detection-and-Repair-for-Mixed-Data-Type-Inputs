@@ -21,6 +21,7 @@ type fakeRunner struct {
 type progressRunner struct {
 	observer engine.StderrObserver
 	fail     bool
+	stage    string
 }
 
 func (r *progressRunner) SetStderrObserver(observer engine.StderrObserver) {
@@ -28,13 +29,17 @@ func (r *progressRunner) SetStderrObserver(observer engine.StderrObserver) {
 }
 
 func (r *progressRunner) Run(ctx context.Context, req engine.Request) (engine.Response, error) {
+	stageName := r.stage
+	if stageName == "" {
+		stageName = "load_csv"
+	}
 	if r.observer != nil {
 		now := time.Now()
 		r.observer(engine.StderrEvent{
 			TaskID: req.TaskID,
 			Parsed: map[string]any{
 				"event":     "stage_progress",
-				"stage":     "load_csv",
+				"stage":     stageName,
 				"phase":     "start",
 				"progress":  12,
 				"message":   "开始读取文件",
@@ -48,7 +53,7 @@ func (r *progressRunner) Run(ctx context.Context, req engine.Request) (engine.Re
 			TaskID: req.TaskID,
 			Parsed: map[string]any{
 				"event":     "stage_progress",
-				"stage":     "load_csv",
+				"stage":     stageName,
 				"phase":     "complete",
 				"progress":  48,
 				"message":   "读取完成",
@@ -401,5 +406,52 @@ func TestTaskFailureLocationCapturedFromRunnerEvents(t *testing.T) {
 	}
 	if task.Progress.Failure.Rule == "" {
 		t.Fatalf("expected failure rule to be captured")
+	}
+}
+
+func TestAgentStageDisplayNameCapturedFromRunnerEvents(t *testing.T) {
+	cases := []struct {
+		stage string
+		want  string
+	}{
+		{stage: "agent_plan", want: "Agent Plan"},
+		{stage: "agent_rescan", want: "Agent Rescan"},
+		{stage: "agent_post_validate", want: "Agent Post Validate"},
+		{stage: "agent_rollback", want: "Agent Rollback"},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.stage, func(t *testing.T) {
+			runner := &progressRunner{stage: tc.stage}
+			svc := NewServiceWithConfig(runner, Config{
+				MaxConcurrency: 1,
+				QueueSize:      8,
+			})
+			defer svc.Close()
+
+			taskID, err := svc.RunTask(engine.Request{
+				Action:  "agent.session.plan",
+				Payload: map[string]any{"csv_path": "demo.csv"},
+			}, 2*time.Second)
+			if err != nil {
+				t.Fatalf("RunTask failed: %v", err)
+			}
+			waitForStatus(t, svc, taskID, 2*time.Second, StatusSucceeded)
+
+			taskSnapshot, ok := svc.GetTaskStatus(taskID)
+			if !ok {
+				t.Fatalf("task not found: %s", taskID)
+			}
+			found := false
+			for _, event := range taskSnapshot.Progress.Events {
+				if event.Stage == tc.want {
+					found = true
+					break
+				}
+			}
+			if !found {
+				t.Fatalf("expected agent stage display name %q in progress events", tc.want)
+			}
+		})
 	}
 }

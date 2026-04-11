@@ -1,3 +1,4 @@
+import json
 import streamlit as st
 import pandas as pd
 import joblib
@@ -28,6 +29,127 @@ plt.rcParams['axes.facecolor'] = 'white'
 # ==========================================
 st.set_page_config(page_title="Mixed-Type Anomaly Detection System", layout="wide")
 
+def _safe_series_rows(raw_series):
+    rows = []
+    for item in raw_series or []:
+        if isinstance(item, dict):
+            rows.append(item)
+    return rows
+
+def load_presentation_bundle(uploaded_file, manual_path):
+    try:
+        if uploaded_file is not None:
+            return json.load(uploaded_file), uploaded_file.name, ""
+        manual_path = str(manual_path or "").strip()
+        if manual_path:
+            if not os.path.exists(manual_path):
+                return None, "", f"File not found: {manual_path}"
+            with open(manual_path, "r", encoding="utf-8") as fh:
+                return json.load(fh), manual_path, ""
+    except Exception as exc:
+        return None, "", str(exc)
+    return None, "", ""
+
+def render_presentation_chart(chart):
+    if not isinstance(chart, dict):
+        return
+    title = chart.get("title") or chart.get("id") or "Chart"
+    subtitle = chart.get("subtitle") or ""
+    kind = str(chart.get("kind") or "").strip()
+    data = chart.get("data") or {}
+
+    st.markdown(f"#### {title}")
+    if subtitle:
+        st.caption(subtitle)
+
+    if kind in {"ranked_bar", "stacked_bar"}:
+        series = _safe_series_rows(data.get("series"))
+        if series:
+            df = pd.DataFrame(series)
+            if {"label", "value"}.issubset(df.columns):
+                st.bar_chart(df[["label", "value"]].set_index("label"))
+                st.dataframe(df, use_container_width=True, hide_index=True)
+                return
+    elif kind == "comparison_bar":
+        series = _safe_series_rows(data.get("series"))
+        if series:
+            df = pd.DataFrame(series)
+            if {"label", "before", "after"}.issubset(df.columns):
+                st.bar_chart(df[["label", "before", "after"]].set_index("label"))
+                st.dataframe(df, use_container_width=True, hide_index=True)
+                return
+            if {"label", "value"}.issubset(df.columns):
+                st.bar_chart(df[["label", "value"]].set_index("label"))
+                st.dataframe(df, use_container_width=True, hide_index=True)
+                return
+    elif kind == "timeline":
+        events = _safe_series_rows(data.get("events"))
+        if events:
+            st.dataframe(pd.DataFrame(events), use_container_width=True, hide_index=True)
+            return
+    elif kind == "spotlight_card":
+        if isinstance(data, dict) and data:
+            st.json(data)
+            return
+    elif kind == "heatmap_grid":
+        thumbnails = _safe_series_rows(data.get("column_thumbnails"))
+        if thumbnails:
+            df = pd.DataFrame(thumbnails)
+            keep_cols = [col for col in ["column", "risk_score", "risk_level", "issue_count", "anomaly_points"] if col in df.columns]
+            if keep_cols:
+                st.dataframe(df[keep_cols], use_container_width=True, hide_index=True)
+                return
+
+    st.info(chart.get("empty_state") or "No chart data available.")
+
+def render_presentation_bundle(bundle, source_label=""):
+    if not isinstance(bundle, dict) or not bundle:
+        st.info("Upload or point to a presentation.json artifact to preview the unified explanation bundle.")
+        return
+
+    if source_label:
+        st.caption(f"Source: {source_label}")
+
+    st.subheader(bundle.get("headline") or "Presentation Bundle")
+    if bundle.get("summary"):
+        st.markdown(bundle["summary"])
+    st.caption(f"Kind: {bundle.get('kind', '-')} | Verdict: {bundle.get('verdict', '-')} | Version: {bundle.get('version', '-')}")
+
+    highlights = [item for item in (bundle.get("highlights") or []) if isinstance(item, dict)]
+    if highlights:
+        cols = st.columns(min(4, len(highlights)))
+        for idx, item in enumerate(highlights):
+            cols[idx % len(cols)].metric(item.get("label") or item.get("id") or "-", item.get("value") or "-")
+
+    sections = [item for item in (bundle.get("sections") or []) if isinstance(item, dict)]
+    if sections:
+        st.markdown("---")
+        st.markdown("### Unified Explanation")
+        for section in sections:
+            with st.expander(section.get("title") or section.get("id") or "Section", expanded=section.get("id") == "overview"):
+                if section.get("body"):
+                    st.write(section["body"])
+                bullets = [item for item in (section.get("bullets") or []) if str(item).strip()]
+                if bullets:
+                    for bullet in bullets:
+                        st.markdown(f"- {bullet}")
+                evidence = [item for item in (section.get("evidence_refs") or []) if str(item).strip()]
+                if evidence:
+                    st.caption("Evidence: " + ", ".join(map(str, evidence)))
+
+    charts = [item for item in (bundle.get("charts") or []) if isinstance(item, dict)]
+    if charts:
+        st.markdown("---")
+        st.markdown("### Chart Catalog Preview")
+        for chart in charts:
+            render_presentation_chart(chart)
+
+    artifacts = bundle.get("artifacts") or {}
+    if isinstance(artifacts, dict) and artifacts:
+        st.markdown("---")
+        with st.expander("Artifacts", expanded=False):
+            st.json(artifacts)
+
 # --- 【关键修改】初始化 Session State (记忆模块) ---
 # 如果系统第一次启动，先在内存里建几个"空抽屉"来放数据
 if 'uploaded_df' not in st.session_state:
@@ -39,7 +161,7 @@ if 'is_trained' not in st.session_state:
 
 # Sidebar 导航
 st.sidebar.title("📌 Navigation")
-page = st.sidebar.radio("Go to", ["1. Data & Model Training", "2. Detection & Repair"])
+page = st.sidebar.radio("Go to", ["1. Data & Model Training", "2. Detection & Repair", "3. Presentation Viewer"])
 
 # =========================================================
 # 页面 1: 数据上传与训练
@@ -639,3 +761,18 @@ elif page == "2. Detection & Repair":
                     )
                 else:
                     st.info("No anomalies found to export.")
+
+elif page == "3. Presentation Viewer":
+    st.title("🖼️ Stage 4 Presentation Viewer")
+    st.markdown("Load a shared `presentation.json` artifact generated by the Wails/backend pipeline.")
+
+    uploaded_presentation = st.file_uploader("Upload presentation.json", type=["json"], key="presentation_bundle")
+    manual_path = st.text_input("Or read from local path", value="")
+
+    bundle, source_label, error = load_presentation_bundle(uploaded_presentation, manual_path)
+    if error:
+        st.error(f"Failed to load presentation bundle: {error}")
+    elif bundle:
+        render_presentation_bundle(bundle, source_label)
+    else:
+        st.info("Upload a presentation.json file or provide a local path to preview the unified explanation and chart bundle.")

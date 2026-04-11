@@ -9,6 +9,7 @@ import (
 	"strings"
 	"time"
 
+	"appshell/backend/internal/agent"
 	"appshell/backend/internal/engine"
 	"appshell/backend/internal/task"
 )
@@ -38,6 +39,9 @@ func buildRequest(
 	csv string,
 	target string,
 	outputDir string,
+	goal string,
+	sessionID string,
+	planID string,
 	modelDir string,
 	sampleIndex int,
 	maxChanges int,
@@ -45,12 +49,60 @@ func buildRequest(
 	index int,
 	parallel int,
 ) (engine.Request, error) {
+	normalizedAction := strings.TrimSpace(action)
 	req := engine.Request{
-		Action:  action,
+		Action:  normalizedAction,
 		Payload: map[string]any{},
 	}
 
-	if action == "train" {
+	switch normalizedAction {
+	case agent.ActionSessionPlan:
+		if csv == "" {
+			return engine.Request{}, fmt.Errorf("for agent.session.plan, -csv is required")
+		}
+		req.Payload["csv_path"] = csv
+		if goal != "" {
+			req.Payload["user_goal"] = goal
+		}
+		if sessionID != "" {
+			req.Payload["session_id"] = sessionID
+		}
+		if outputDir != "" {
+			req.Payload["output_dir"] = outputDir
+		}
+		return req, nil
+	case agent.ActionSessionAuto:
+		if csv == "" {
+			return engine.Request{}, fmt.Errorf("for agent.session.auto, -csv is required")
+		}
+		req.Payload["csv_path"] = csv
+		if goal != "" {
+			req.Payload["user_goal"] = goal
+		}
+		if sessionID != "" {
+			req.Payload["session_id"] = sessionID
+		}
+		if outputDir != "" {
+			req.Payload["output_dir"] = outputDir
+		}
+		if modelDir != "" {
+			req.Payload["model_dir"] = modelDir
+		}
+		return req, nil
+	case agent.ActionSessionExecute:
+		if sessionID == "" || planID == "" {
+			return engine.Request{}, fmt.Errorf("for agent.session.execute, -session-id and -plan-id are required")
+		}
+		req.Payload["session_id"] = sessionID
+		req.Payload["plan_id"] = planID
+		if outputDir != "" {
+			req.Payload["output_dir"] = outputDir
+		}
+		return req, nil
+	}
+
+	switch engine.ActionName(normalizedAction) {
+	case engine.ActionTrain:
 		if csv == "" || target == "" {
 			return engine.Request{}, fmt.Errorf("for train action, -csv and -target are required")
 		}
@@ -64,9 +116,7 @@ func buildRequest(
 				req.Payload["output_dir"] = outputDir
 			}
 		}
-	}
-
-	if action == "repair" {
+	case engine.ActionRepair:
 		if modelDir == "" {
 			return engine.Request{}, fmt.Errorf("for repair action, -model-dir is required")
 		}
@@ -85,6 +135,23 @@ func buildRequest(
 				req.Payload["output_dir"] = outputDir
 			}
 		}
+	case engine.ActionRepairWithGower:
+		if csv == "" {
+			return engine.Request{}, fmt.Errorf("for repair_with_gower action, -csv is required")
+		}
+		req.Payload["csv_path"] = csv
+		req.Payload["issue_ids"] = []string{}
+		req.Payload["write_output"] = true
+		if modelDir != "" {
+			req.Payload["model_dir"] = modelDir
+		}
+		if outputDir != "" {
+			if parallel > 1 {
+				req.Payload["output_dir"] = filepath.Join(outputDir, fmt.Sprintf("task-%d", index))
+			} else {
+				req.Payload["output_dir"] = outputDir
+			}
+		}
 	}
 
 	return req, nil
@@ -93,10 +160,14 @@ func buildRequest(
 func main() {
 	ensureDefaultGoLogFile()
 
-	action := flag.String("action", "health", "Action to run: health, train or repair")
+	actionChoices := append(engine.KnownActionStrings(), agent.ActionSessionPlan, agent.ActionSessionExecute, agent.ActionSessionAuto)
+	action := flag.String("action", string(engine.ActionHealth), "Action to run: "+strings.Join(actionChoices, ", "))
 	csv := flag.String("csv", "", "CSV path for train action")
 	target := flag.String("target", "", "Target column for train action")
 	modelDir := flag.String("model-dir", "", "Model artifacts directory for repair action")
+	goal := flag.String("goal", "", "User goal for agent.session.plan / agent.session.auto")
+	sessionID := flag.String("session-id", "", "Session id for agent.session.plan / agent.session.auto / agent.session.execute")
+	planID := flag.String("plan-id", "", "Plan id for agent.session.execute")
 	sampleIndex := flag.Int("sample-index", 0, "Sample index in test_data.pkl for repair action")
 	maxChanges := flag.Int("max-changes", 3, "Maximum number of feature edits for repair action")
 	kNeighbors := flag.Int("k-neighbors", 9, "Nearest healthy neighbors for repair action")
@@ -120,7 +191,6 @@ func main() {
 		os.Exit(1)
 	}
 
-	runner := engine.NewRunner(absEngine)
 	absHistoryDB, err := filepath.Abs(*historyDB)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "resolve history db path failed: %v\n", err)
@@ -131,10 +201,22 @@ func main() {
 		fmt.Fprintf(os.Stderr, "init history store failed: %v\n", err)
 		os.Exit(1)
 	}
+	agentStore, err := agent.NewSQLiteStore(absHistoryDB)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "init agent store failed: %v\n", err)
+		os.Exit(1)
+	}
+	baseRunner := engine.NewRunner(absEngine)
+	planner, langGraphManager := agent.NewPhaseBPlannerStack(absEngine)
+	runner := agent.NewRuntimeRunner(baseRunner, agentStore, planner)
 	svc := task.NewServiceWithConfig(runner, task.Config{
 		HistoryStore: historyStore,
 	})
 	defer svc.Close()
+	defer agentStore.Close()
+	if langGraphManager != nil {
+		defer langGraphManager.Close()
+	}
 
 	taskIDs := make([]string, 0, *parallel)
 	for i := 0; i < *parallel; i++ {
@@ -143,6 +225,9 @@ func main() {
 			*csv,
 			*target,
 			*outputDir,
+			*goal,
+			*sessionID,
+			*planID,
 			*modelDir,
 			*sampleIndex,
 			*maxChanges,

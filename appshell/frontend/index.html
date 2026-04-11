@@ -1,4 +1,4 @@
-﻿<!doctype html>
+<!doctype html>
 <html lang="zh-CN">
   <head>
     <meta charset="UTF-8" />
@@ -7,8 +7,264 @@
     <link rel="stylesheet" href="./src/style.css" />
   </head>
   <body>
-    <main class="wizard-app">
-      <section class="wizard-stage">
+    <main class="app-shell">
+      <header class="shell-topbar">
+        <div class="shell-brand">
+          <p class="shell-kicker">SMART AUTOFIX</p>
+          <h1>一键上传，静候结果</h1>
+          <p class="shell-subtitle">默认模式会自动扫描、修复、验证并在必要时回滚；高级工作台仍保留完整手动链路。</p>
+        </div>
+        <div class="shell-actions">
+          <button id="continue-latest-btn" class="btn-secondary btn-compact" type="button" disabled>查看最近结果</button>
+          <button id="view-startup-btn" class="btn-secondary btn-compact" type="button">查看启动诊断</button>
+          <button id="open-advanced-btn" class="btn-secondary btn-compact" type="button">高级工作台</button>
+          <button id="back-smart-btn" class="btn-secondary btn-compact hidden" type="button">返回智能模式</button>
+        </div>
+      </header>
+
+      <section id="smart-home-view" class="shell-view">
+        <div class="smart-grid">
+          <article class="result-card smart-home-card">
+            <div class="smart-home-copy">
+              <p class="card-kicker">SMART HOME</p>
+              <h2>选择文件后，先确认摘要，再开始智能处理</h2>
+              <p class="core-message">
+                系统会默认走 <code>agent.session.auto</code>，自动完成扫描、修复、复扫、验证与回滚保护。
+              </p>
+            </div>
+
+            <button id="smart-dropzone" class="smart-dropzone" type="button">
+              <span class="smart-dropzone-title">点击选择 CSV，或将文件拖拽到此处</span>
+              <span id="smart-selected-csv" class="smart-dropzone-subtitle">尚未选择文件</span>
+            </button>
+
+            <details id="smart-output-details" class="advanced-drawer">
+              <summary>输出目录（可选）</summary>
+              <div class="advanced-drawer-body">
+                <div class="field-row">
+                  <label for="smart-output-dir">输出目录</label>
+                  <div class="field-control row-input">
+                    <input id="smart-output-dir" type="text" value="" placeholder="默认自动生成独立结果目录" />
+                    <button id="smart-choose-output-btn" class="btn-secondary" type="button">选择目录</button>
+                  </div>
+                </div>
+                <p class="field-hint">若留空，系统会在 <code>outputs/results/</code> 下为本次智能任务自动创建独立目录。</p>
+              </div>
+            </details>
+
+            <div id="smart-mode-banner" class="safety-banner hidden"></div>
+
+            <div class="actions smart-home-actions">
+              <button id="smart-choose-csv-btn" class="btn-secondary" type="button">选择文件</button>
+              <button id="smart-start-btn" class="btn-primary" type="button" disabled>开始智能处理</button>
+            </div>
+          </article>
+
+          <aside class="smart-side">
+            <article id="smart-summary-card" class="result-card hidden">
+              <h2>预启动摘要</h2>
+              <p id="smart-summary-message" class="core-message">选择文件后会自动生成本次任务摘要。</p>
+              <dl id="smart-summary-list"></dl>
+              <ul id="smart-summary-trust" class="compact-list">
+                <li>自动复扫</li>
+                <li>自动验证</li>
+                <li>失败自动回滚</li>
+              </ul>
+            </article>
+
+            <article id="smart-preferences-card" class="result-card smart-preference-card">
+              <h2>修复偏好</h2>
+              <p id="smart-preference-workspace" class="field-hint">选择 CSV 后会加载当前工作区默认偏好。</p>
+              <div id="smart-preference-banner" class="safety-banner hidden"></div>
+              <div class="group-list smart-preference-group">
+                <div class="field-row compact">
+                  <label for="smart-pref-conservative">保守模式</label>
+                  <div class="field-control inline-check">
+                    <label class="toggle-row">
+                      <input id="smart-pref-conservative" type="checkbox" />
+                      <span>默认偏向跳过冲突和异常值，降低写入风险</span>
+                    </label>
+                  </div>
+                </div>
+                <div class="field-row compact">
+                  <label for="smart-pref-avoid-time">避开时间列</label>
+                  <div class="field-control inline-check">
+                    <label class="toggle-row">
+                      <input id="smart-pref-avoid-time" type="checkbox" />
+                      <span>候选列命中时间/日期列时优先进入审批</span>
+                    </label>
+                  </div>
+                </div>
+                <div class="field-row compact">
+                  <label for="smart-pref-require-approval">高风险列审批</label>
+                  <div class="field-control inline-check">
+                    <label class="toggle-row">
+                      <input id="smart-pref-require-approval" type="checkbox" />
+                      <span>高风险列命中时必须先确认，再写输出文件</span>
+                    </label>
+                  </div>
+                </div>
+                <div class="field-row compact">
+                  <label for="smart-pref-protected-columns">保护列</label>
+                  <div class="field-control">
+                    <textarea
+                      id="smart-pref-protected-columns"
+                      rows="3"
+                      placeholder="例如: id, timestamp, created_at"
+                    ></textarea>
+                    <p class="field-hint">用逗号分隔。当前草稿会随本次运行一起发送，点击“保存为工作区默认”才会持久化。</p>
+                  </div>
+                </div>
+              </div>
+              <div class="actions smart-preference-actions">
+                <button id="smart-pref-save-btn" class="btn-secondary" type="button">保存为工作区默认</button>
+                <button id="smart-pref-reset-btn" class="btn-secondary" type="button">恢复已加载默认</button>
+              </div>
+            </article>
+
+            <article class="result-card">
+              <h2>默认安全边界</h2>
+              <ul class="compact-list">
+                <li>自动模式不会直接覆盖原始输入文件。</li>
+                <li>执行后会立即复扫并做后验验证。</li>
+                <li>结果不达标时默认回滚输出产物。</li>
+                <li>完整轨迹、理由与审计信息仍可展开查看。</li>
+              </ul>
+            </article>
+          </aside>
+        </div>
+      </section>
+
+      <section id="smart-run-view" class="shell-view hidden">
+        <div class="smart-grid">
+          <article class="result-card smart-run-card">
+            <div class="status-row">
+              <div class="status-main">
+                <span id="smart-run-status-pill" class="status-pill idle">idle</span>
+              </div>
+              <span id="smart-run-task-id">Task: -</span>
+            </div>
+            <h2 id="smart-run-title">智能处理进行中</h2>
+            <p id="smart-run-message" class="status-message">等待任务开始。</p>
+
+            <div class="progress-track">
+              <div id="smart-run-progress-fill" class="progress-fill idle"></div>
+            </div>
+
+            <ul id="smart-run-stages" class="phase-hints">
+              <li>等待任务开始</li>
+            </ul>
+
+            <dl id="smart-run-metrics"></dl>
+
+            <div class="actions smart-run-actions">
+              <button id="smart-run-cancel-btn" class="btn-warning" type="button" disabled>取消任务</button>
+              <button id="smart-open-advanced-run-btn" class="btn-secondary" type="button">在高级工作台中查看</button>
+            </div>
+
+            <details id="smart-run-advanced" class="advanced-drawer">
+              <summary>高级模式（运行日志）</summary>
+              <div class="advanced-drawer-body">
+                <ul id="smart-run-events" class="event-log"></ul>
+              </div>
+            </details>
+          </article>
+
+          <aside class="smart-side">
+            <article class="result-card">
+              <h2>当前策略</h2>
+              <ul class="compact-list">
+                <li>优先走智能闭环入口 <code>agent.session.auto</code></li>
+                <li>自动比较规则修复、Gower 修复与 hybrid 候选</li>
+                <li>自动复扫并基于验证结果决定接纳或回滚</li>
+              </ul>
+            </article>
+          </aside>
+        </div>
+      </section>
+
+      <section id="smart-result-view" class="shell-view hidden">
+        <div class="smart-grid">
+          <article class="smart-result-main">
+            <div id="smart-safety-banner" class="smart-safety-banner hidden"></div>
+            <article id="smart-result-presentation" class="result-card presentation-shell hidden"></article>
+
+            <article class="result-card">
+              <h2>结果摘要</h2>
+              <p id="smart-result-conclusion" class="core-message">系统完成后会在这里解释做了什么以及结果是否可信。</p>
+              <dl id="smart-result-summary"></dl>
+              <div class="actions smart-result-actions">
+                <button id="smart-new-run-btn" class="btn-primary" type="button">开始新的一键处理</button>
+                <button id="smart-open-advanced-result-btn" class="btn-secondary" type="button">在高级工作台中查看</button>
+                <button id="smart-export-json-btn" class="btn-secondary" type="button" disabled>导出 JSON</button>
+                <button id="smart-export-csv-btn" class="btn-secondary" type="button" disabled>导出 CSV</button>
+                </div>
+              </article>
+
+              <article id="smart-approval-card" class="result-card smart-approval-card hidden">
+                <h2>审批确认</h2>
+                <p id="smart-approval-message" class="core-message">当前结果未触发额外审批。</p>
+                <dl id="smart-approval-summary"></dl>
+                <div class="smart-approval-section">
+                  <h3>触发原因</h3>
+                  <ul id="smart-approval-reasons" class="compact-list">
+                    <li>暂无。</li>
+                  </ul>
+                </div>
+                <div class="smart-approval-section">
+                  <h3>记忆中的偏好快照</h3>
+                  <dl id="smart-approval-preferences"></dl>
+                </div>
+                <div class="actions smart-result-actions">
+                  <button id="smart-approval-continue-btn" class="btn-primary" type="button">继续执行</button>
+                  <button id="smart-approval-reject-btn" class="btn-secondary" type="button">取消本次执行</button>
+                </div>
+              </article>
+
+              <article class="result-card">
+                <h2>关键产物</h2>
+                <div id="smart-artifact-list" class="artifact-list">
+                  <p class="core-message">任务完成后会在这里展示输出文件、presentation.json 和 rollback manifest。</p>
+                </div>
+            </article>
+
+            <details class="advanced-drawer" open>
+              <summary>执行理由</summary>
+              <div class="advanced-drawer-body">
+                <div id="smart-reasoning-body" class="presentation-insights"></div>
+              </div>
+            </details>
+
+            <details class="advanced-drawer">
+              <summary>轨迹与验证</summary>
+              <div class="advanced-drawer-body">
+                <div id="smart-trace-summary" class="core-message">等待会话轨迹。</div>
+                <ul id="smart-trace-list" class="timeline-list"></ul>
+              </div>
+            </details>
+
+            <details class="advanced-drawer">
+              <summary>原始结果</summary>
+              <div class="advanced-drawer-body">
+                <pre id="smart-result-raw" class="startup-raw">{}</pre>
+              </div>
+            </details>
+          </article>
+
+          <aside class="smart-side">
+            <article class="result-card">
+              <h2>可信结果清单</h2>
+              <ul id="smart-trust-checks" class="compact-list">
+                <li>等待任务结果。</li>
+              </ul>
+            </article>
+          </aside>
+        </div>
+      </section>
+
+      <section id="advanced-workspace-view" class="shell-view hidden">
+        <div class="wizard-app">
+          <section class="wizard-stage">
         <header class="stage-header">
           <div class="stage-track">
             <div id="stage-fill" class="stage-fill"></div>
@@ -246,6 +502,8 @@
 
               <section id="step-result" class="card-step hidden">
                 <div class="scan-layout">
+                  <article id="result-presentation" class="result-card presentation-shell hidden"></article>
+
                   <article class="result-card scan-overview">
                     <h2>检测总览</h2>
 
@@ -341,6 +599,8 @@
               <section id="step-repair" class="card-step hidden">
                 <div class="step-grid repair-grid">
                   <div class="step-main">
+                    <article id="repair-presentation" class="result-card presentation-shell hidden"></article>
+
                     <div class="result-grid">
                       <article class="result-card">
                         <h2>修复摘要</h2>
@@ -418,8 +678,47 @@
             </article>
           </div>
         </div>
+          </section>
+        </div>
       </section>
     </main>
+
+    <section id="startup-gate" class="startup-gate">
+      <div class="startup-panel">
+        <header class="startup-head">
+          <p class="startup-kicker">PRE-FLIGHT</p>
+          <h2 id="startup-title">正在执行启动自检</h2>
+          <p id="startup-summary" class="startup-summary">正在检查 Python 引擎、依赖、输出目录和任务历史数据库，请稍候。</p>
+        </header>
+
+        <div class="startup-status-row">
+          <span id="startup-status-pill" class="startup-status-pill checking">checking</span>
+          <span id="startup-counts" class="startup-counts">等待检查结果...</span>
+        </div>
+
+        <ul id="startup-check-list" class="startup-check-list">
+          <li class="startup-check-item checking">
+            <div>
+              <strong>启动自检进行中</strong>
+              <p>正在准备应用运行环境。</p>
+            </div>
+          </li>
+        </ul>
+
+        <details id="startup-details" class="advanced-drawer hidden">
+          <summary>查看技术详情</summary>
+          <div class="advanced-drawer-body">
+            <pre id="startup-raw" class="startup-raw">{}</pre>
+          </div>
+        </details>
+
+        <div class="actions startup-actions">
+          <button id="startup-retry-btn" class="btn-primary" type="button" disabled>重新自检</button>
+          <button id="startup-copy-btn" class="btn-secondary" type="button" disabled>复制诊断信息</button>
+          <button id="startup-close-btn" class="btn-secondary" type="button" disabled>关闭</button>
+        </div>
+      </div>
+    </section>
 
     <script type="module" src="./src/main.js"></script>
   </body>

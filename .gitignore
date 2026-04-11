@@ -53,12 +53,14 @@ outputs/
 data/processed/
 *.pkl
 *.joblib
+out/figma-verify/
 
 # ------------------------------
 # Optional large datasets
 # ------------------------------
 *.csv
 *.xlsx
+scripts/langgraph.local.ps1
 #------
 #md
 #-------

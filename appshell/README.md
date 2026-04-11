@@ -9,6 +9,12 @@ This folder is a practical template for migrating the current Streamlit project 
 
 The template does not replace the existing `app.py`. It runs in parallel so migration can be incremental.
 
+## Stage 0 Foundation
+
+- The current Python engine actions remain the stable base for the future Tool Layer: `health`, `train`, `scan_file`, `repair`, `repair_batch`, and `rollback_repair_batch`.
+- `../MULTI_AGENT_BLUEPRINT.md` defines the long-term intelligent upgrade direction, while `../TOOL_LAYER_FOUNDATION.md` records the Stage 0 mapping from actions to future tools and algorithm assets.
+- Stage 0 only preserves and wraps existing assets. It does not add user-visible intelligent workflows or change the current request/response contract.
+
 ## Structure
 
 ```text
@@ -38,6 +44,17 @@ appshell/
 
 ## Quick Start
 
+Run the following commands from the repository root.
+
+Recommended first step on Windows:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\setup_windows_env.ps1
+```
+
+This creates `.venv-win` from the validated `requirements.lock.txt` set.
+See `ENVIRONMENT.md` in the repository root for consistency guarantees and limits.
+
 1. Python engine health check:
 
 ```bash
@@ -47,8 +64,8 @@ echo '{"task_id":"health-1","action":"health","payload":{}}' | python3 appshell/
 2. Python train action:
 
 ```bash
-pip install -r appshell/core/python_engine/requirements.txt
-python3 appshell/core/python_engine/engine_main.py --input appshell/core/python_engine/sample_train_request.json
+.\.venv-win\Scripts\python.exe -m pip install --disable-pip-version-check -r requirements.lock.txt
+.\.venv-win\Scripts\python.exe appshell/core/python_engine/engine_main.py --input appshell/core/python_engine/sample_train_request.json
 ```
 
 3. Go backend demo (polling task status):

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import importlib
 import json
 import math
 import os
@@ -13,6 +14,7 @@ import uuid
 from pathlib import Path
 from typing import Any
 
+from action_catalog import public_action_names
 from engine_protocol import ErrorCode, KnownEngineError
 from engine_logging import log_event
 
@@ -99,6 +101,50 @@ def _resolve_existing_dir(path_text: str) -> Path:
     if raw.is_absolute():
         return raw.resolve()
     return (PROJECT_ROOT / raw).resolve()
+
+
+def _runtime_dependency_snapshot() -> dict[str, dict[str, Any]]:
+    specs = [
+        ("pandas", "pandas"),
+        ("numpy", "numpy"),
+        ("lightgbm", "lightgbm"),
+        ("scikit-learn", "sklearn"),
+        ("joblib", "joblib"),
+    ]
+
+    snapshot: dict[str, dict[str, Any]] = {}
+    for label, module_name in specs:
+        try:
+            module = importlib.import_module(module_name)
+        except Exception as exc:
+            raise KnownEngineError(
+                code=ErrorCode.MISSING_DEPENDENCY,
+                message=f"Runtime dependency check failed: {label}",
+                details={
+                    "dependency": label,
+                    "module": module_name,
+                    "reason": str(exc),
+                },
+            ) from exc
+
+        version = getattr(module, "__version__", None)
+        if not isinstance(version, str) or not version.strip():
+            raise KnownEngineError(
+                code=ErrorCode.MISSING_DEPENDENCY,
+                message=f"Runtime dependency version is unavailable: {label}",
+                details={
+                    "dependency": label,
+                    "module": module_name,
+                    "reason": "__version__ is missing or empty",
+                },
+            )
+
+        snapshot[label] = {
+            "status": "ok",
+            "module": module_name,
+            "version": version.strip(),
+        }
+    return snapshot
 
 
 def _to_builtin(value: Any) -> Any:
@@ -1642,13 +1688,232 @@ def _rollback_manifest_to_target(manifest: dict[str, Any], restore_target: str, 
     )
 
 
+def _build_manifest(
+    *,
+    manifest_version: int,
+    source_tool_id: str,
+    rollback_id: str,
+    source_csv: Path,
+    output_csv: Path,
+    backup_csv: Path,
+    selected_issue_ids: list[str],
+    issue_source_map: dict[str, Any] | None = None,
+    execution_steps: list[dict[str, Any]] | None = None,
+    extra: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    manifest: dict[str, Any] = {
+        "manifest_version": manifest_version,
+        "source_tool_id": source_tool_id,
+        "rollback_id": rollback_id,
+        "created_at": int(time.time()),
+        "source_csv": str(source_csv),
+        "output_csv": str(output_csv),
+        "backup_csv": str(backup_csv),
+        "selected_issue_ids": list(selected_issue_ids),
+        "issue_source_map": _to_builtin(issue_source_map or {}),
+        "execution_steps": _to_builtin(execution_steps or []),
+    }
+    if extra:
+        manifest.update(_to_builtin(extra))
+    return manifest
+
+
+def _create_rollback_artifacts(
+    *,
+    source_tool_id: str,
+    csv_file: Path,
+    output_path: Path,
+    selected_issue_ids: list[str],
+    issue_source_map: dict[str, Any] | None,
+    execution_steps: list[dict[str, Any]] | None,
+    payload: dict[str, Any],
+    extra: dict[str, Any] | None = None,
+) -> tuple[dict[str, Any] | None, dict[str, Any] | None]:
+    enable_rollback = _to_bool(payload, "enable_rollback", default=True)
+    if not enable_rollback:
+        return None, None
+
+    rollback_dir_raw = str(payload.get("rollback_dir") or "").strip()
+    if rollback_dir_raw:
+        rollback_dir = _resolve_output_dir(rollback_dir_raw)
+    else:
+        rollback_dir = output_path.parent / ".rollback"
+    os.makedirs(rollback_dir, exist_ok=True)
+
+    rollback_id = f"rb-{int(time.time() * 1000)}-{uuid.uuid4().hex[:8]}"
+    backup_csv = rollback_dir / f"{rollback_id}.{csv_file.name}.bak.csv"
+    manifest_path = rollback_dir / f"{rollback_id}.json"
+    shutil.copy2(csv_file, backup_csv)
+
+    manifest = _build_manifest(
+        manifest_version=2,
+        source_tool_id=source_tool_id,
+        rollback_id=rollback_id,
+        source_csv=csv_file,
+        output_csv=output_path,
+        backup_csv=backup_csv,
+        selected_issue_ids=selected_issue_ids,
+        issue_source_map=issue_source_map,
+        execution_steps=execution_steps,
+        extra=extra,
+    )
+    manifest_path.write_text(json.dumps(_to_builtin(manifest), ensure_ascii=True, indent=2) + "\n", encoding="utf-8")
+    rollback_info = {
+        "rollback_id": rollback_id,
+        "manifest_path": str(manifest_path),
+        "backup_csv": str(backup_csv),
+        "restore_action": "rollback_repair_batch",
+        "manifest_version": 2,
+        "source_tool_id": source_tool_id,
+    }
+    return manifest, rollback_info
+
+
+def _resolve_output_path(csv_file: Path, payload: dict[str, Any], *, default_suffix: str) -> Path:
+    output_csv_raw = str(payload.get("output_csv") or "").strip()
+    output_dir_raw = str(payload.get("output_dir") or "").strip()
+    if output_csv_raw:
+        return _resolve_output_file(output_csv_raw)
+    if output_dir_raw:
+        output_dir = _resolve_output_dir(output_dir_raw)
+        return output_dir / f"{csv_file.stem}{default_suffix}"
+    return csv_file.with_name(f"{csv_file.stem}{default_suffix}")
+
+
+def _model_importance_weights(model_dir: Path, feature_columns: list[str]) -> list[float] | None:
+    if not feature_columns:
+        return None
+    try:
+        from src.training_core import load_system_state  # type: ignore
+    except Exception:
+        return None
+
+    try:
+        model, _, normal_data = load_system_state(model_dir)
+    except Exception:
+        return None
+
+    importances = getattr(model, "feature_importances_", None)
+    if importances is None:
+        return None
+    values = list(importances)
+    normal_columns = [str(column) for column in list(normal_data.columns)]
+    if len(values) != len(normal_columns):
+        return None
+
+    weight_map = {
+        normal_columns[idx]: max(0.0, float(values[idx]))
+        for idx in range(len(normal_columns))
+    }
+    weights = [float(weight_map.get(column, 0.0)) for column in feature_columns]
+    if any(weight > 0.0 for weight in weights):
+        return weights
+    return None
+
+
+def _gower_strategy_from_payload(payload: dict[str, Any]) -> dict[str, Any]:
+    raw = payload.get("gower_strategy", {})
+    if raw is None:
+        raw = {}
+    if not isinstance(raw, dict):
+        raise KnownEngineError(
+            code=ErrorCode.INVALID_INPUT,
+            message="Field gower_strategy must be an object",
+            details={"field": "gower_strategy"},
+        )
+
+    strategy = {
+        "k_neighbors": _to_positive_int(raw, "k_neighbors", default=5, minimum=1, maximum=200),
+        "weight_mode": str(raw.get("weight_mode", "uniform") or "uniform").strip().lower(),
+        "feature_weights": raw.get("feature_weights"),
+        "preview_limit": _to_positive_int(raw, "preview_limit", default=5, minimum=1, maximum=50),
+    }
+    if strategy["weight_mode"] not in {"uniform", "model_importance", "custom"}:
+        raise KnownEngineError(
+            code=ErrorCode.INVALID_INPUT,
+            message="gower_strategy.weight_mode must be uniform/model_importance/custom",
+            details={"field": "gower_strategy.weight_mode", "value": strategy["weight_mode"]},
+        )
+    return strategy
+
+
+def _resolve_gower_feature_weights(
+    feature_columns: list[str],
+    strategy: dict[str, Any],
+    model_dir: Path | None,
+) -> tuple[list[float] | None, str]:
+    weight_mode = str(strategy.get("weight_mode", "uniform"))
+    if weight_mode == "uniform":
+        return None, "uniform"
+
+    if weight_mode == "custom":
+        raw = strategy.get("feature_weights")
+        if raw is None:
+            raise KnownEngineError(
+                code=ErrorCode.INVALID_INPUT,
+                message="gower_strategy.feature_weights is required when weight_mode=custom",
+                details={"field": "gower_strategy.feature_weights"},
+            )
+        weights: list[float] = []
+        if isinstance(raw, dict):
+            for column in feature_columns:
+                try:
+                    weights.append(max(0.0, float(raw.get(column, 0.0))))
+                except Exception as exc:
+                    raise KnownEngineError(
+                        code=ErrorCode.INVALID_INPUT,
+                        message="Custom gower feature weights must be numeric",
+                        details={"field": "gower_strategy.feature_weights", "column": column},
+                    ) from exc
+        elif isinstance(raw, (list, tuple)):
+            if len(raw) != len(feature_columns):
+                raise KnownEngineError(
+                    code=ErrorCode.INVALID_INPUT,
+                    message="Custom gower feature weights length must match feature columns",
+                    details={
+                        "field": "gower_strategy.feature_weights",
+                        "expected": len(feature_columns),
+                        "actual": len(raw),
+                    },
+                )
+            for idx, item in enumerate(raw):
+                try:
+                    weights.append(max(0.0, float(item)))
+                except Exception as exc:
+                    raise KnownEngineError(
+                        code=ErrorCode.INVALID_INPUT,
+                        message="Custom gower feature weights must be numeric",
+                        details={"field": "gower_strategy.feature_weights", "index": idx},
+                    ) from exc
+        else:
+            raise KnownEngineError(
+                code=ErrorCode.INVALID_INPUT,
+                message="gower_strategy.feature_weights must be an object or list",
+                details={"field": "gower_strategy.feature_weights"},
+            )
+        if not any(weight > 0.0 for weight in weights):
+            raise KnownEngineError(
+                code=ErrorCode.INVALID_INPUT,
+                message="Custom gower feature weights must contain at least one positive value",
+                details={"field": "gower_strategy.feature_weights"},
+            )
+        return weights, "custom"
+
+    if model_dir is not None and model_dir.exists():
+        weights = _model_importance_weights(model_dir, feature_columns)
+        if weights is not None:
+            return weights, "model_importance"
+    return None, "uniform"
+
 def action_health(_: dict[str, Any]) -> dict[str, Any]:
+    dependencies = _runtime_dependency_snapshot()
     return {
         "engine": "python-anomaly-engine",
         "project_root": str(PROJECT_ROOT),
         "python": platform.python_version(),
         "platform": platform.platform(),
-        "actions": ["health", "train", "repair", "scan_file", "repair_batch", "rollback_repair_batch"],
+        "actions": public_action_names(),
+        "dependencies": dependencies,
     }
 
 
@@ -2798,33 +3063,25 @@ def action_repair_batch(payload: dict[str, Any]) -> dict[str, Any]:
         os.makedirs(output_path.parent, exist_ok=True)
 
         if enable_rollback:
-            rollback_dir_raw = str(payload.get("rollback_dir") or "").strip()
-            if rollback_dir_raw:
-                rollback_dir = _resolve_output_dir(rollback_dir_raw)
-            else:
-                rollback_dir = output_path.parent / ".rollback"
-            os.makedirs(rollback_dir, exist_ok=True)
-            rollback_id = f"rb-{int(time.time() * 1000)}-{uuid.uuid4().hex[:8]}"
-            backup_csv = rollback_dir / f"{rollback_id}.{csv_file.name}.bak.csv"
-            manifest_path = rollback_dir / f"{rollback_id}.json"
-            shutil.copy2(csv_file, backup_csv)
-            manifest = {
-                "rollback_id": rollback_id,
-                "created_at": int(time.time()),
-                "source_csv": str(csv_file),
-                "output_csv": str(output_path),
-                "backup_csv": str(backup_csv),
-                "selected_issue_ids": selected_issue_ids,
-                "scan_config": scan_config,
-                "repair_strategy": repair_strategy,
-            }
-            manifest_path.write_text(json.dumps(_to_builtin(manifest), ensure_ascii=True, indent=2) + "\n", encoding="utf-8")
-            rollback_info = {
-                "rollback_id": rollback_id,
-                "manifest_path": str(manifest_path),
-                "backup_csv": str(backup_csv),
-                "restore_action": "rollback_repair_batch",
-            }
+            _, rollback_info = _create_rollback_artifacts(
+                source_tool_id="engine.repair_batch",
+                csv_file=csv_file,
+                output_path=output_path,
+                selected_issue_ids=selected_issue_ids,
+                issue_source_map={issue_id: "rule" for issue_id in selected_issue_ids},
+                execution_steps=[
+                    {
+                        "step": 1,
+                        "tool_id": "engine.repair_batch",
+                        "source": "rule",
+                    }
+                ],
+                payload=payload,
+                extra={
+                    "scan_config": scan_config,
+                    "repair_strategy": repair_strategy,
+                },
+            )
 
         repaired_df.to_csv(output_path, index=False)
         output_csv = str(output_path)
@@ -2876,6 +3133,466 @@ def action_repair_batch(payload: dict[str, Any]) -> dict[str, Any]:
                 "total_conflicts": len(conflict_events),
                 "events_preview": conflict_events[:preview_limit],
             },
+            "comparison": {
+                "before_issue_count": before_issue_count,
+                "after_issue_count": after_issue_count,
+                "resolved_issue_count": max(0, before_issue_count - after_issue_count),
+                "before_issue_type_counts": before_issue_type_counts,
+                "after_issue_type_counts": after_issue_type_counts,
+                "before_column_issue_counts": before_issue_column_counts,
+                "after_column_issue_counts": after_issue_column_counts,
+                "changed_cell_count": total_cells_modified,
+                "changed_cells_preview": changed_cells_preview,
+            },
+            "rollback": rollback_info,
+        }
+    )
+
+
+def action_repair_with_gower(payload: dict[str, Any]) -> dict[str, Any]:
+    _emit_stage_progress("repair_with_gower", "validate_input", "start", 2, "开始校验 Gower 修复参数")
+    frame_pd = _load_dataframe_module("Repair with gower")
+    csv_path = _require(payload, "csv_path")
+    scan_config = _scan_config_from_payload(payload)
+    column_dependencies = _column_dependencies_from_payload(payload)
+    gower_strategy = _gower_strategy_from_payload(payload)
+    write_output_requested = _to_bool(payload, "write_output", default=True)
+    plan_only = _to_bool(payload, "plan_only", default=False)
+    write_output = write_output_requested and (not plan_only)
+
+    raw_issue_ids = payload.get("issue_ids", [])
+    if raw_issue_ids is None:
+        raw_issue_ids = []
+    if not isinstance(raw_issue_ids, (list, tuple, set)):
+        raise KnownEngineError(
+            code=ErrorCode.INVALID_INPUT,
+            message="Field issue_ids must be a string list",
+            details={"field": "issue_ids", "value": raw_issue_ids},
+        )
+
+    selected_issue_ids: list[str] = []
+    seen_issue_ids: set[str] = set()
+    for raw in raw_issue_ids:
+        issue_id = str(raw).strip()
+        if not issue_id or issue_id in seen_issue_ids:
+            continue
+        seen_issue_ids.add(issue_id)
+        selected_issue_ids.append(issue_id)
+
+    model_dir: Path | None = None
+    model_dir_text = str(payload.get("model_dir") or "").strip()
+    if model_dir_text:
+        candidate_model_dir = _resolve_existing_dir(model_dir_text)
+        if candidate_model_dir.exists() and candidate_model_dir.is_dir():
+            model_dir = candidate_model_dir
+
+    try:
+        from src.repair_module import suggest_replacement_from_neighbors  # type: ignore
+    except Exception as exc:
+        raise KnownEngineError(
+            code=ErrorCode.REPAIR_MODULE_IMPORT_FAILED,
+            message="Failed to import Gower repair modules",
+            details={"reason": str(exc)},
+        ) from exc
+
+    csv_file = _resolve_input_csv(str(csv_path))
+    if not csv_file.exists():
+        _emit_stage_progress(
+            "repair_with_gower",
+            "validate_input",
+            "error",
+            100,
+            "输入文件不存在",
+            file=str(csv_file),
+            error_code=ErrorCode.FILE_NOT_FOUND,
+        )
+        raise KnownEngineError(
+            code=ErrorCode.FILE_NOT_FOUND,
+            message=f"Input CSV does not exist: {csv_file}",
+            details={"csv_path": str(csv_file)},
+        )
+
+    _emit_stage_progress("repair_with_gower", "load_csv", "start", 12, "开始读取待修复文件", file=str(csv_file))
+    try:
+        df = frame_pd.read_csv(csv_file)
+    except Exception as exc:
+        _emit_stage_progress(
+            "repair_with_gower",
+            "load_csv",
+            "error",
+            100,
+            "读取待修复文件失败",
+            file=str(csv_file),
+            error_code=ErrorCode.CSV_READ_FAILED,
+            reason=str(exc),
+        )
+        raise KnownEngineError(
+            code=ErrorCode.CSV_READ_FAILED,
+            message="Failed to read CSV",
+            details={"csv_path": str(csv_file), "reason": str(exc)},
+        ) from exc
+    _emit_stage_progress(
+        "repair_with_gower",
+        "load_csv",
+        "complete",
+        22,
+        "待修复文件读取完成",
+        file=str(csv_file),
+        rows=int(df.shape[0]),
+        columns=int(df.shape[1]),
+    )
+
+    _emit_stage_progress("repair_with_gower", "scan_columns", "start", 34, "开始识别 Gower 可修复问题", file=str(csv_file))
+    try:
+        issues_internal = _detect_issues_for_frame(df, frame_pd, scan_config=scan_config)
+        _emit_stage_progress(
+            "repair_with_gower",
+            "scan_columns",
+            "complete",
+            46,
+            "Gower 可修复问题识别完成",
+            file=str(csv_file),
+            issue_count=int(len(issues_internal)),
+        )
+        issue_map = {str(item["issue_id"]): item for item in issues_internal}
+        original_df = df.copy(deep=True)
+        repaired_df = df.copy(deep=True)
+        preview_limit = int(gower_strategy["preview_limit"])
+        supported_issue_types = {"missing_values", "numeric_outlier", "rare_category"}
+        skipped_issues: list[dict[str, Any]] = []
+        skipped_ids: set[str] = set()
+        selected_issues: list[dict[str, Any]] = []
+        cell_plan: dict[tuple[int, str], dict[str, Any]] = {}
+        changes_by_issue: dict[str, list[dict[str, Any]]] = {}
+        issue_evidence: dict[str, dict[str, Any]] = {}
+
+        def add_skip(issue_id: str, reason: str, extra: dict[str, Any] | None = None) -> None:
+            if issue_id in skipped_ids:
+                return
+            row: dict[str, Any] = {"issue_id": issue_id, "reason": reason}
+            if extra:
+                row.update(extra)
+            skipped_issues.append(row)
+            skipped_ids.add(issue_id)
+
+        for issue_id in selected_issue_ids:
+            issue = issue_map.get(issue_id)
+            if issue is None:
+                add_skip(issue_id, "issue_not_found")
+                continue
+            column = str(issue["column"])
+            if column not in repaired_df.columns:
+                add_skip(issue_id, "column_not_found")
+                continue
+            selected_issues.append(issue)
+
+        selected_issues.sort(
+            key=lambda item: (
+                -float(item.get("issue_score", 0.0)),
+                str(item.get("column", "")),
+                str(item.get("issue_id", "")),
+            )
+        )
+
+        _emit_stage_progress(
+            "repair_with_gower",
+            "repair_search",
+            "start",
+            56,
+            "开始执行 Gower 邻居检索",
+            file=str(csv_file),
+            issue_count=int(len(selected_issues)),
+        )
+
+        for issue in selected_issues:
+            issue_id = str(issue["issue_id"])
+            column = str(issue["column"])
+            issue_type = str(issue["issue_type"])
+            if issue_type not in supported_issue_types:
+                add_skip(
+                    issue_id,
+                    "unsupported_issue_type",
+                    {"issue_type": issue_type, "column": column},
+                )
+                continue
+
+            rule = issue.get("repair_rule", {})
+            mask = _issue_mask_from_rule(original_df[column], issue_type, rule, frame_pd)
+            positions = [idx for idx, flag in enumerate(mask.tolist()) if bool(flag)]
+            if not positions:
+                add_skip(issue_id, "no_rows_matched", {"issue_type": issue_type, "column": column})
+                continue
+
+            healthy_mask = ~mask
+            if issue_type == "missing_values":
+                healthy_mask = healthy_mask & original_df[column].notna()
+            elif issue_type == "numeric_outlier":
+                numeric_series = frame_pd.to_numeric(original_df[column], errors="coerce")
+                healthy_mask = healthy_mask & numeric_series.notna()
+            elif issue_type == "rare_category":
+                healthy_mask = healthy_mask & original_df[column].notna()
+
+            candidate_pool = original_df.loc[healthy_mask].copy()
+            if candidate_pool.empty:
+                add_skip(issue_id, "no_healthy_neighbors", {"issue_type": issue_type, "column": column})
+                continue
+
+            feature_columns = [str(name) for name in repaired_df.columns if str(name) != column]
+            feature_weights, effective_weight_mode = _resolve_gower_feature_weights(
+                feature_columns,
+                gower_strategy,
+                model_dir,
+            )
+
+            issue_changes: list[dict[str, Any]] = []
+            mean_distances: list[float] = []
+            confidences: list[float] = []
+            replacement_values: list[Any] = []
+            preview_rows: list[dict[str, Any]] = []
+            neighbor_count = 0
+
+            for pos in positions:
+                row_label = original_df.index[pos]
+                candidate_rows = candidate_pool.drop(index=row_label, errors="ignore")
+                if candidate_rows.empty:
+                    candidate_rows = candidate_pool
+                try:
+                    suggestion = suggest_replacement_from_neighbors(
+                        candidate_rows,
+                        original_df.iloc[[pos]],
+                        column,
+                        feature_columns=feature_columns,
+                        k_neighbors=int(gower_strategy["k_neighbors"]),
+                        feature_weights=feature_weights,
+                        preview_limit=preview_limit,
+                    )
+                except Exception:
+                    continue
+
+                before_value = original_df[column].iat[pos]
+                after_value = suggestion.replacement_value
+                before_is_nan = bool(frame_pd.isna(before_value))
+                after_is_nan = bool(frame_pd.isna(after_value))
+                if (before_is_nan and after_is_nan) or (
+                    (not before_is_nan) and (not after_is_nan) and before_value == after_value
+                ):
+                    continue
+
+                proposal = {
+                    "issue_id": issue_id,
+                    "column": column,
+                    "row_pos": pos,
+                    "row": _index_to_builtin(original_df.index[pos]),
+                    "col_pos": int(list(repaired_df.columns).index(column)),
+                    "before": before_value,
+                    "after": after_value,
+                }
+                cell_plan[(pos, column)] = proposal
+                issue_changes.append(proposal)
+                changes_by_issue.setdefault(issue_id, []).append(proposal)
+                mean_distances.append(float(suggestion.distance_summary["mean"]))
+                confidences.append(float(suggestion.confidence))
+                replacement_values.append(after_value)
+                neighbor_count = max(neighbor_count, int(suggestion.neighbor_count))
+                for item in suggestion.neighbor_rows_preview:
+                    if len(preview_rows) >= preview_limit:
+                        break
+                    preview_rows.append(item)
+
+            if not issue_changes:
+                add_skip(issue_id, "no_healthy_neighbors", {"issue_type": issue_type, "column": column})
+                continue
+
+            for proposal in issue_changes:
+                repaired_df.iat[int(proposal["row_pos"]), int(proposal["col_pos"])] = proposal["after"]
+
+            unique_replacements: list[Any] = []
+            for item in replacement_values:
+                builtin_item = _to_builtin(item)
+                if builtin_item in unique_replacements:
+                    continue
+                unique_replacements.append(builtin_item)
+
+            replacement_value: Any
+            if len(unique_replacements) == 1:
+                replacement_value = unique_replacements[0]
+            else:
+                replacement_value = unique_replacements[:preview_limit]
+
+            distance_summary = {
+                "min": round(min(mean_distances), 6),
+                "max": round(max(mean_distances), 6),
+                "mean": round(sum(mean_distances) / float(len(mean_distances)), 6),
+                "median": round(float(frame_pd.Series(mean_distances).median()), 6),
+            }
+            issue_evidence[issue_id] = {
+                "issue_id": issue_id,
+                "column": column,
+                "issue_type": issue_type,
+                "neighbor_count": neighbor_count,
+                "neighbor_rows_preview": preview_rows[:preview_limit],
+                "distance_summary": distance_summary,
+                "replacement_value": replacement_value,
+                "candidate_confidence": round(sum(confidences) / float(len(confidences)), 6),
+                "weight_mode": effective_weight_mode,
+            }
+
+        _emit_stage_progress(
+            "repair_with_gower",
+            "repair_search",
+            "complete",
+            76,
+            "Gower 邻居检索完成",
+            file=str(csv_file),
+            changed_cells=int(len(cell_plan)),
+        )
+
+        post_issues_internal = _detect_issues_for_frame(repaired_df, frame_pd, scan_config=scan_config)
+        before_issue_type_counts = _issue_type_counter(issues_internal)
+        after_issue_type_counts = _issue_type_counter(post_issues_internal)
+        before_issue_column_counts = _issue_counter_by_column(issues_internal)
+        after_issue_column_counts = _issue_counter_by_column(post_issues_internal)
+        applied_repairs: list[dict[str, Any]] = []
+        neighbor_evidence: list[dict[str, Any]] = []
+
+        for issue_id in selected_issue_ids:
+            issue = issue_map.get(issue_id)
+            if issue is None or issue_id in skipped_ids:
+                continue
+            issue_type = str(issue.get("issue_type"))
+            column = str(issue.get("column"))
+            issue_changes = sorted(changes_by_issue.get(issue_id, []), key=lambda item: int(item["row_pos"]))
+            if not issue_changes:
+                continue
+            rule = issue.get("repair_rule", {})
+            before_count = int(issue.get("count", len(issue_changes)))
+            after_mask = _issue_mask_from_rule(repaired_df[column], issue_type, rule, frame_pd)
+            after_count = int(after_mask.sum())
+            resolved_count = max(0, before_count - after_count)
+            evidence = issue_evidence.get(issue_id, {})
+            applied_repairs.append(
+                {
+                    "issue_id": issue_id,
+                    "column": column,
+                    "issue_type": issue_type,
+                    "rows_touched": len(issue_changes),
+                    "replacement_preview": evidence.get("replacement_value"),
+                    "before_count": before_count,
+                    "after_count": after_count,
+                    "resolved_count": resolved_count,
+                    "candidate_confidence": evidence.get("candidate_confidence", 0.0),
+                    "cells_preview": [
+                        {
+                            "row": _index_to_builtin(change["row"]),
+                            "before": _to_builtin(change["before"]),
+                            "after": _to_builtin(change["after"]),
+                        }
+                        for change in issue_changes[:preview_limit]
+                    ],
+                    "strategy": {
+                        "tool_id": "engine.repair_with_gower",
+                        "weight_mode": evidence.get("weight_mode", "uniform"),
+                        "k_neighbors": int(gower_strategy["k_neighbors"]),
+                    },
+                }
+            )
+            if evidence:
+                neighbor_evidence.append(evidence)
+    except KnownEngineError:
+        raise
+    except Exception as exc:
+        _emit_stage_progress(
+            "repair_with_gower",
+            "repair_search",
+            "error",
+            100,
+            "Gower 修复失败",
+            file=str(csv_file),
+            error_code=ErrorCode.REPAIR_BATCH_FAILED,
+            reason=str(exc),
+        )
+        raise KnownEngineError(
+            code=ErrorCode.REPAIR_BATCH_FAILED,
+            message="Gower repair failed",
+            details={"csv_path": str(csv_file), "reason": str(exc)},
+        ) from exc
+
+    output_csv: str | None = None
+    rollback_info: dict[str, Any] | None = None
+    if write_output:
+        _emit_stage_progress("repair_with_gower", "write_output", "start", 84, "开始写出 Gower 修复结果", file=str(csv_file))
+        output_path = _resolve_output_path(csv_file, payload, default_suffix=".repaired.gower.csv")
+        os.makedirs(output_path.parent, exist_ok=True)
+        if _to_bool(payload, "enable_rollback", default=True):
+            _, rollback_info = _create_rollback_artifacts(
+                source_tool_id="engine.repair_with_gower",
+                csv_file=csv_file,
+                output_path=output_path,
+                selected_issue_ids=selected_issue_ids,
+                issue_source_map={issue_id: "gower" for issue_id in selected_issue_ids},
+                execution_steps=[
+                    {
+                        "step": 1,
+                        "tool_id": "engine.repair_with_gower",
+                        "source": "gower",
+                    }
+                ],
+                payload=payload,
+                extra={
+                    "scan_config": scan_config,
+                    "gower_strategy": gower_strategy,
+                    "column_dependencies": column_dependencies,
+                    "model_dir": str(model_dir) if model_dir is not None else None,
+                },
+            )
+        repaired_df.to_csv(output_path, index=False)
+        output_csv = str(output_path)
+        _emit_stage_progress("repair_with_gower", "write_output", "complete", 96, "Gower 修复结果写出完成", file=str(output_csv))
+
+    total_cells_modified = int(len(cell_plan))
+    before_issue_count = int(len(issues_internal))
+    after_issue_count = int(len(post_issues_internal))
+    changed_cells_preview = [
+        {
+            "row": _index_to_builtin(change["row"]),
+            "column": str(change["column"]),
+            "issue_id": str(change["issue_id"]),
+            "before": _to_builtin(change["before"]),
+            "after": _to_builtin(change["after"]),
+        }
+        for change in sorted(cell_plan.values(), key=lambda item: (int(item["row_pos"]), str(item["column"])))[:preview_limit]
+    ]
+    _emit_stage_progress(
+        "repair_with_gower",
+        "complete",
+        "complete",
+        100,
+        "Gower 修复任务完成",
+        file=str(output_csv or csv_file),
+        selected_issue_count=int(len(selected_issue_ids)),
+        applied_issue_count=int(len(applied_repairs)),
+    )
+    return _to_builtin(
+        {
+            "csv_path": str(csv_file),
+            "scan_config": scan_config,
+            "column_dependencies": column_dependencies,
+            "gower_strategy": {
+                "k_neighbors": int(gower_strategy["k_neighbors"]),
+                "weight_mode": str(gower_strategy["weight_mode"]),
+                "preview_limit": int(gower_strategy["preview_limit"]),
+            },
+            "plan_only": plan_only,
+            "execution_mode": "plan_only" if plan_only else "apply",
+            "write_output": write_output,
+            "output_csv": output_csv,
+            "selected_issue_ids": selected_issue_ids,
+            "selected_issue_count": len(selected_issue_ids),
+            "applied_issue_count": len(applied_repairs),
+            "total_cells_modified": total_cells_modified,
+            "applied_repairs": applied_repairs,
+            "skipped_issues": skipped_issues,
+            "neighbor_evidence": neighbor_evidence,
             "comparison": {
                 "before_issue_count": before_issue_count,
                 "after_issue_count": after_issue_count,
@@ -2944,9 +3661,12 @@ def action_rollback_repair_batch(payload: dict[str, Any]) -> dict[str, Any]:
         {
             "rollback_id": manifest.get("rollback_id"),
             "manifest_path": str(manifest_path),
+            "manifest_version": manifest.get("manifest_version", 1),
+            "source_tool_id": manifest.get("source_tool_id", "engine.repair_batch"),
             "backup_csv": str(backup_csv),
             "restored_to": str(target_path),
             "source_csv": manifest.get("source_csv"),
             "output_csv": manifest.get("output_csv"),
+            "issue_source_map": manifest.get("issue_source_map", {}),
         }
     )

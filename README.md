@@ -4,112 +4,162 @@
 
 本系统集成 **LightGBM** 进行异常检测，**SHAP** 提供可解释性，并使用 **Gower 距离 + KNN** 实现智能修复建议。
 
+## 🏗️ 项目架构
+
+本项目采用**双轨并行**架构：
+
+- **旧版入口 (app.py):** Streamlit 演示界面，用于算法验证和快速原型
+- **新版入口 (appshell/):** 产品化桌面应用，采用 `Python Engine + Go Backend + Wails Frontend` 架构
+
+推荐使用 **appshell** 作为主要交付路径，它提供更完整的任务管理、进度追踪和可观测性。
+
 ## 🚀 核心功能
 
 - **混合类型支持:** 原生处理数值型和分类型混合数据，无需复杂预处理
 - **可解释 AI:** 使用 SHAP 值提供全局和局部解释
 - **智能修复:** 基于 Gower 距离的 KNN 修复建议 + 修复验证
-- **批量检测:** 支持批量检测并导出 CSV 报告
+- **整表扫描:** 支持列级异常检测，输出缩略图、热点片段和问题统计
+- **批量修复:** 支持按选中问题 ID 批量修复，并生成回滚清单
+- **启动自检:** 应用启动前检查 Python 引擎、运行时依赖、结果目录、SQLite 和默认模型状态
 - **可视化分析:** ROC 曲线、混淆矩阵、特征重要性图表
-- **交互式界面:** 使用 Streamlit 构建的现代化 UI
+- **桌面应用:** 使用 Wails 构建的跨平台桌面界面
 
 ## ✨ 功能特性
 
-### 📊 数据分析面板
-- 数据统计概览（行数、列数、缺失值、内存占用）
-- 数据类型分布（数值型 vs 分类型）
-- 缺失值分析报告
-- 数值特征描述性统计
-- 分类特征分布可视化
-- 目标列类别分布 & 不平衡比率
+### 🎯 Python 引擎支持的操作
 
-### 📈 模型性能可视化
-- **5 大核心指标:** Accuracy, Precision, Recall, F1-Score, AUC-ROC
-- **ROC 曲线:** 带 AUC 面积填充的交互式图表
-- **混淆矩阵:** 热力图 + TN/FP/FN/TP 详细解读
-- **特征重要性:** 条形图 + Top 5 排名表
+- **health:** 健康检查
+- **train:** 模型训练（支持 auto/classification/regression 任务类型）
+- **scan_file:** 整表列级扫描，输出列缩略图、热点片段、问题类型统计、置信度和特征解释
+- **repair:** 单样本修复（基于模型驱动的搜索）
+- **repair_batch:** 批量修复（按选中的 issue_ids 执行）
+- **rollback_repair_batch:** 回滚批量修复
 
-### 🔬 单条检测 & 修复
-- 样本详情展示
-- 实时异常检测
-- SHAP 可解释性分析
-- 智能修复建议
-- **修复验证功能:** 应用修复后查看预测变化
+### Stage 0 Foundation
 
-### 📤 批量检测 & 导出
-- 全量/自定义范围批量扫描
-- 检测结果汇总统计
-- 结果筛选（全部/仅异常/仅正常）
-- CSV 导出（全部结果/仅异常）
+- 当前 `health / train / repair / scan_file / repair_batch / rollback_repair_batch` 六个 engine actions 已冻结为未来 Tool Layer 的稳定基础。
+- `MULTI_AGENT_BLUEPRINT.md` 定义长期智能化升级方向，`TOOL_LAYER_FOUNDATION.md` 定义 Stage 0 的 action/tool/algorithm asset 映射。
+- Stage 0 只做“保留与包装现有资产”，不引入用户可见的智能化入口变化，也不改变现有线协议与主流程。
+
+### 🔍 支持的异常类型
+
+- 缺失值 (missing values)
+- 异常值 (outliers)
+- 稀有类别 (rare categories)
+- 时间序列偏移 (time_series_shift)
+- 跨列一致性问题 (cross_column_consistency)
+- 重复记录 (duplicate_record)
+
+### 📊 Streamlit 演示界面 (app.py)
+
+- 数据统计概览与类型分布
+- 模型训练与性能可视化（ROC、混淆矩阵、特征重要性）
+- 单条样本检测与 SHAP 解释
+- 修复建议与验证
+- 批量检测与 CSV 导出
+
+### 🖥️ Wails 桌面应用 (appshell/)
+
+- 启动自检与诊断信息复制
+- CSV 列读取与目标列选择
+- 训练任务发起与实时进度展示
+- 整表扫描任务与问题勾选
+- 批量修复任务与回滚清单展示
+- 任务历史查询与诊断信息
 
 ## 📁 项目结构
 
 ```
-├── app.py                      # Streamlit 主应用入口
+├── app.py                      # Streamlit 演示入口（旧版）
 ├── config.py                   # 配置文件（路径、参数）
-├── requirements.txt            # 依赖包
+├── requirements.txt            # Python 依赖包
 ├── README.md
 │
-├── src/                        # 核心源码模块
-│   ├── __init__.py
-│   ├── data_loader.py          # 数据加载与预处理
-│   ├── repair_module.py        # 异常修复模块（Gower + KNN）
-│   └── utils.py                # 工具函数（训练、评估、保存）
+├── src/                        # 核心算法模块
+│   ├── training_core.py         # 训练核心逻辑
+│   ├── repair_core.py           # 单样本修复搜索逻辑
+│   ├── data_loader.py           # 数据加载与预处理
+│   └── utils.py                 # 工具函数
+│
+├── appshell/                   # 桌面应用主路径（新版）
+│   ├── core/python_engine/      # Python 引擎层
+│   │   ├── engine_main.py       # CLI 入口
+│   │   ├── engine_service.py    # 动作路由
+│   │   ├── engine_protocol.py   # 协议与错误结构
+│   │   ├── engine_logging.py    # 结构化日志
+│   │   └── engine_core.py       # 核心业务逻辑
+│   ├── backend/                 # Go 编排层
+│   │   ├── internal/engine/     # Python 进程管理
+│   │   ├── internal/task/       # 任务编排与历史
+│   │   └── cmd/wails/           # Wails 应用入口
+│   ├── frontend/                # Wails 前端
+│   └── build/windows/           # Windows 打包脚本
 │
 ├── data/                       # 数据目录
-│   ├── raw/                    # 原始数据集
-│   │   └── healthcare-dataset-stroke-data.csv
-│   └── processed/              # 模型和处理后的数据
-│       ├── model_lgb.pkl
-│       ├── test_data.pkl
-│       ├── normal_data.pkl
-│       └── config.pkl
+│   ├── raw/                     # 原始数据集
+│   └── processed/               # 模型和处理后的数据
 │
 ├── outputs/                    # 输出文件
-│   ├── figures/                # 生成的图表
-│   └── results/                # 结果数据
+│   ├── results/                 # 训练与检测结果
+│   └── appshell/                # Go 日志与任务历史
+│       ├── go_backend.log
+│       └── task_history.sqlite
 │
-├── scripts/                    # 独立脚本工具
-│   ├── benchmark.py            # 基准测试
-│   ├── find_anomalies.py       # 查找异常样本
-│   └── plot_results.py         # 绘图脚本
+├── tests/                      # 测试用例
+│   └── python_engine/
 │
-└── archive/                    # 归档（旧版本代码）
+├── thesis-defense/             # 答辩材料
+│   ├── 流程图
+│   ├── 对比图
+│   └── Defense_Poster_Draft_2026-03.pptx
+│
+└── scripts/                    # 独立脚本工具
 ```
 
 ## 🛠️ 技术栈
 
 | 类别 | 技术 |
 |------|------|
-| **语言** | Python 3.9+ |
+| **语言** | Python 3.9+, Go 1.21+ |
 | **机器学习** | LightGBM, Scikit-learn |
 | **可解释性** | SHAP |
 | **距离度量** | Gower (支持混合类型) |
 | **可视化** | Matplotlib, Streamlit Charts |
-| **前端界面** | Streamlit |
+| **前端界面** | Streamlit (演示), Wails (桌面应用) |
+| **任务编排** | Go (并发调度、超时控制) |
+| **持久化** | SQLite (任务历史) |
 
 ## 📦 快速开始
 
-### 1. 克隆仓库
+### 方式 1: Streamlit 演示界面（快速验证）
+
+#### 1. 克隆仓库
 
 ```bash
-git clone https://github.com/your-username/Mixed-Type-Anomaly-Detection.git
-cd Mixed-Type-Anomaly-Detection
+git clone <repository-url>
+cd "Anomaly Detection and Repair for Mixed Data Type Inputs"
 ```
 
-### 2. 安装依赖
+#### 1.5 推荐独立环境（Windows）
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\setup_windows_env.ps1
+```
+
+这会在仓库内创建 `.venv-win`，并按 `requirements.lock.txt` 安装已经验证过的依赖集合。更完整的环境说明见 `ENVIRONMENT.md`。
+#### 2. 安装依赖
 
 ```bash
 pip install -r requirements.txt
 ```
 
-### 3. 运行应用
+#### 3. 运行应用
 
 ```bash
 streamlit run app.py
 ```
 
-### 4. 使用流程
+#### 4. 使用流程
 
 1. **页面 1 - 数据与模型训练**
    - 上传 CSV 数据集
@@ -122,18 +172,86 @@ streamlit run app.py
    - **单条检测 Tab:** 选择样本 → 运行检测 → 查看修复建议 → 验证修复效果
    - **批量检测 Tab:** 选择范围 → 批量扫描 → 筛选结果 → 导出 CSV
 
+### 方式 2: Wails 桌面应用（产品化路径）
+
+#### 1. 环境准备
+
+- Python 3.11（推荐使用仓库内 `.venv-win` 独立环境）
+- Go 1.21+
+- Node.js (用于前端构建)
+- Wails CLI: `go install github.com/wailsapp/wails/v2/cmd/wails@latest`
+
+推荐先执行：
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\setup_windows_env.ps1
+```
+
+#### 2. 运行开发模式
+
+```bash
+cd appshell
+wails dev
+```
+
+#### 3. 构建桌面应用
+
+```bash
+cd appshell
+wails build
+```
+
+Windows 打包脚本位于 `appshell/build/windows/`。
+
+#### 4. 启动自检
+
+桌面端在进入现有四步向导前会先执行一次阻塞式启动自检：
+
+- 检查 `engine_main.py` 是否存在且可执行
+- 调用 Python `health` 动作验证 `pandas`、`numpy`、`lightgbm`、`scikit-learn`、`joblib`
+- 自动创建并检查 `outputs/results/` 是否可写
+- 自动创建并检查 `APPSHELL_TASK_DB` 对应的 SQLite 目录与库文件
+- 检查默认模型候选目录 `outputs/results/wails_repair/` 和 `data/processed/`
+
+判定规则：
+
+- Python 引擎、运行时依赖、输出目录、SQLite 失败时会阻塞进入应用
+- 默认模型缺失只会显示 warning，表示“尚未训练”而不是环境损坏
+- 浏览器静态预览模式会使用 mock 自检结果，因此不会执行真实的 Python/SQLite 检查
+
 ## 📊 示例数据集
 
 项目使用 [Stroke Prediction Dataset](https://www.kaggle.com/datasets/fedesoriano/stroke-prediction-dataset) 作为演示数据。
 
 ## 📝 模块说明
 
+### Python 引擎层 (appshell/core/python_engine/)
+
 | 模块 | 功能 |
 |------|------|
-| `src/data_loader.py` | 数据加载、清洗、类型转换 |
-| `src/repair_module.py` | 基于 Gower 距离的 KNN 修复建议 |
-| `src/utils.py` | 模型训练、评估、可视化数据生成、状态保存/加载 |
-| `config.py` | 集中管理路径和配置参数 |
+| `engine_main.py` | CLI 入口，处理 JSON 请求/响应 |
+| `engine_service.py` | 动作路由（health/train/scan_file/repair/repair_batch/rollback_repair_batch） |
+| `engine_protocol.py` | 协议定义与错误码 |
+| `engine_logging.py` | 结构化日志输出 |
+| `engine_core.py` | 训练、扫描、修复、批量修复、回滚主逻辑 |
+
+### 核心算法层 (src/)
+
+| 模块 | 功能 |
+|------|------|
+| `training_core.py` | 训练核心逻辑，支持 auto/classification/regression |
+| `repair_core.py` | 单样本修复搜索逻辑 |
+| `data_loader.py` | 数据加载、清洗、类型转换 |
+| `utils.py` | 模型训练、评估、可视化、状态保存/加载 |
+
+### Go 编排层 (appshell/backend/)
+
+| 模块 | 功能 |
+|------|------|
+| `internal/engine/runner.go` | Python 进程管理与事件流接收 |
+| `internal/task/service.go` | 任务编排、并发调度、超时取消、状态轮询 |
+| `internal/observability/` | 结构化日志 |
+| `cmd/wails/` | Wails 应用入口与 Go 绑定 |
 
 ## 🔧 配置
 
