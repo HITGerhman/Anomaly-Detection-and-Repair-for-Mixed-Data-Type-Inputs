@@ -4,32 +4,18 @@ from __future__ import annotations
 
 from typing import Any, Callable
 
-from engine_core import (
-    action_health,
-    action_repair,
-    action_repair_batch,
-    action_rollback_repair_batch,
-    action_scan_file,
-    action_train,
-)
+from action_catalog import build_action_registry, supported_action_names
 from engine_protocol import ErrorCode, KnownEngineError
 
 
 ActionHandler = Callable[[dict[str, Any]], dict[str, Any]]
 
 
-_REGISTRY: dict[str, ActionHandler] = {
-    "health": action_health,
-    "repair": action_repair,
-    "repair_batch": action_repair_batch,
-    "rollback_repair_batch": action_rollback_repair_batch,
-    "scan_file": action_scan_file,
-    "train": action_train,
-}
+_REGISTRY: dict[str, ActionHandler] = build_action_registry()
 
 
 def supported_actions() -> list[str]:
-    return sorted(_REGISTRY.keys())
+    return supported_action_names()
 
 
 def handle_action(action: str, payload: dict[str, Any]) -> dict[str, Any]:

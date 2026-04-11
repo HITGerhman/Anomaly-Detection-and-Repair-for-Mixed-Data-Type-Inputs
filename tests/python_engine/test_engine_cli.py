@@ -215,6 +215,144 @@ def test_repair_batch_plan_only_returns_real_comparison(tmp_path: Path) -> None:
     assert "conflict_summary" in result
 
 
+def test_repair_with_gower_plan_only_returns_neighbor_evidence(tmp_path: Path) -> None:
+    csv_path = tmp_path / "repair_with_gower_plan_only.csv"
+    pd.DataFrame(
+        {
+            "id": [1, 2, 3, 3, 5, 6, 7, 8],
+            "age": [20, 21, 22, 22, 23, 24, 430, np.nan],
+            "bmi": [20.1, np.nan, 21.5, 21.5, 23.1, 24.2, 25.3, 24.7],
+            "work_type": ["Private", "Private", "Govt", "Govt", "Self", "Private", "X", None],
+        }
+    ).to_csv(csv_path, index=False)
+
+    scan_resp = _run_engine(
+        json.dumps(
+            {
+                "task_id": "scan-for-gower-plan-only",
+                "action": "scan_file",
+                "payload": {
+                    "csv_path": str(csv_path),
+                    "scan_config": {
+                        "enable_duplicate_record": True,
+                        "duplicate_subset": ["id", "age", "bmi", "work_type"],
+                    },
+                },
+            }
+        )
+    )
+    assert scan_resp["status"] == "ok"
+    selected_ids = [item["issue_id"] for item in scan_resp["result"]["issues"]]
+    assert selected_ids
+
+    repair_resp = _run_engine(
+        json.dumps(
+            {
+                "task_id": "repair-with-gower-plan-only",
+                "action": "repair_with_gower",
+                "payload": {
+                    "csv_path": str(csv_path),
+                    "issue_ids": selected_ids,
+                    "plan_only": True,
+                    "write_output": True,
+                    "scan_config": {
+                        "enable_duplicate_record": True,
+                        "duplicate_subset": ["id", "age", "bmi", "work_type"],
+                    },
+                },
+            }
+        )
+    )
+    assert repair_resp["status"] == "ok"
+    result = repair_resp["result"]
+    assert result["plan_only"] is True
+    assert result["write_output"] is False
+    assert result["execution_mode"] == "plan_only"
+    assert result["selected_issue_count"] >= 1
+    assert result["neighbor_evidence"]
+    assert result["comparison"]["before_issue_count"] >= result["comparison"]["after_issue_count"]
+    assert any(item["reason"] == "unsupported_issue_type" for item in result["skipped_issues"])
+
+
+def test_repair_with_gower_write_output_and_model_importance(tmp_path: Path) -> None:
+    csv_path = tmp_path / "repair_with_gower_weighted.csv"
+    rows = 120
+    rng = np.random.default_rng(20260316)
+    df = pd.DataFrame(
+        {
+            "age": np.concatenate([rng.integers(18, 50, size=rows - 24), rng.integers(62, 85, size=24)]),
+            "bmi": np.concatenate([rng.normal(24, 2.5, size=rows - 24), rng.normal(36, 2.2, size=24)]),
+            "work_type": rng.choice(["Private", "Govt", "Self"], size=rows),
+            "stroke": np.concatenate([np.zeros(rows - 24, dtype=int), np.ones(24, dtype=int)]),
+        }
+    )
+    df.loc[5, "bmi"] = np.nan
+    df.loc[7, "work_type"] = "UNKNOWN"
+    df.to_csv(csv_path, index=False)
+
+    model_dir = tmp_path / "gower_model"
+    train_resp = _run_engine(
+        json.dumps(
+            {
+                "task_id": "gower-train",
+                "action": "train",
+                "payload": {
+                    "csv_path": str(csv_path),
+                    "target_col": "stroke",
+                    "output_dir": str(model_dir),
+                },
+            }
+        )
+    )
+    assert train_resp["status"] == "ok"
+
+    scan_resp = _run_engine(
+        json.dumps(
+            {
+                "task_id": "scan-for-gower-weighted",
+                "action": "scan_file",
+                "payload": {"csv_path": str(csv_path)},
+            }
+        )
+    )
+    assert scan_resp["status"] == "ok"
+    selected_ids = [
+        item["issue_id"]
+        for item in scan_resp["result"]["issues"]
+        if item["issue_type"] in {"missing_values", "rare_category", "numeric_outlier"}
+    ][:3]
+    assert selected_ids
+
+    output_csv = tmp_path / "weighted.repaired.csv"
+    repair_resp = _run_engine(
+        json.dumps(
+            {
+                "task_id": "repair-with-gower-weighted",
+                "action": "repair_with_gower",
+                "payload": {
+                    "csv_path": str(csv_path),
+                    "issue_ids": selected_ids,
+                    "write_output": True,
+                    "output_csv": str(output_csv),
+                    "enable_rollback": True,
+                    "rollback_dir": str(tmp_path / "rollback_meta"),
+                    "model_dir": str(model_dir),
+                    "gower_strategy": {
+                        "weight_mode": "model_importance",
+                        "k_neighbors": 5,
+                    },
+                },
+            }
+        )
+    )
+    assert repair_resp["status"] == "ok"
+    result = repair_resp["result"]
+    assert output_csv.exists()
+    assert result["rollback"] is not None
+    assert Path(result["rollback"]["manifest_path"]).exists()
+    assert any(item["weight_mode"] == "model_importance" for item in result["neighbor_evidence"])
+
+
 def test_rollback_repair_batch_restores_source_file(tmp_path: Path) -> None:
     csv_path = tmp_path / "rollback_input.csv"
     pd.DataFrame(
@@ -274,6 +412,52 @@ def test_rollback_repair_batch_restores_source_file(tmp_path: Path) -> None:
     assert rollback_resp["status"] == "ok"
     assert rollback_resp["result"]["restored_to"] == str(csv_path.resolve())
     assert csv_path.read_text(encoding="utf-8") == original_content
+
+
+def test_rollback_repair_batch_supports_hybrid_manifest_v2(tmp_path: Path) -> None:
+    csv_path = tmp_path / "hybrid_source.csv"
+    csv_path.write_text("a,b\n1,2\n", encoding="utf-8")
+    backup_csv = tmp_path / "hybrid_backup.csv"
+    backup_csv.write_text("a,b\n1,2\n", encoding="utf-8")
+    output_csv = tmp_path / "hybrid_output.csv"
+    manifest_path = tmp_path / "hybrid_manifest.json"
+    manifest_path.write_text(
+        json.dumps(
+            {
+                "manifest_version": 2,
+                "source_tool_id": "engine.hybrid_repair",
+                "rollback_id": "rb-hybrid-1",
+                "source_csv": str(csv_path),
+                "output_csv": str(output_csv),
+                "backup_csv": str(backup_csv),
+                "execution_steps": [
+                    {"step": 1, "tool_id": "engine.repair_batch"},
+                    {"step": 2, "tool_id": "engine.repair_with_gower"},
+                ],
+                "selected_issue_ids": ["issue-1", "issue-2"],
+                "issue_source_map": {"issue-1": "rule", "issue-2": "gower"},
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    csv_path.write_text("corrupted,data\n9,9\n", encoding="utf-8")
+    rollback_resp = _run_engine(
+        json.dumps(
+            {
+                "task_id": "rollback-hybrid-v2",
+                "action": "rollback_repair_batch",
+                "payload": {
+                    "manifest_path": str(manifest_path),
+                    "restore_target": "source_csv",
+                },
+            }
+        )
+    )
+    assert rollback_resp["status"] == "ok"
+    assert rollback_resp["result"]["manifest_version"] == 2
+    assert rollback_resp["result"]["source_tool_id"] == "engine.hybrid_repair"
+    assert csv_path.read_text(encoding="utf-8") == "a,b\n1,2\n"
 
 
 def test_invalid_target_returns_invalid_target_column_code(tmp_path: Path) -> None:
