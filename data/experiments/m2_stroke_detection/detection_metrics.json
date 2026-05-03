@@ -1,0 +1,991 @@
+{
+  "data_profile": {
+    "clean_columns": 16,
+    "clean_rows": 4228,
+    "corrupted_columns": 16,
+    "corrupted_rows": 4240,
+    "ground_truth_rows": 100,
+    "m1_injection_counts_by_type": {
+      "cross_column_consistency": 16,
+      "duplicate_record": 12,
+      "missing_values": 30,
+      "numeric_outlier": 24,
+      "rare_category": 18
+    }
+  },
+  "dataset": "m2_stroke_detection",
+  "metrics": {
+    "by_type": {
+      "cross_column_consistency": {
+        "f1": 1.0,
+        "fn": 0,
+        "fp": 0,
+        "ground_truth_count": 16,
+        "precision": 1.0,
+        "predicted_count": 16,
+        "recall": 1.0,
+        "tp": 16
+      },
+      "duplicate_record": {
+        "f1": 1.0,
+        "fn": 0,
+        "fp": 0,
+        "ground_truth_count": 12,
+        "precision": 1.0,
+        "predicted_count": 12,
+        "recall": 1.0,
+        "tp": 12
+      },
+      "missing_values": {
+        "f1": 1.0,
+        "fn": 0,
+        "fp": 0,
+        "ground_truth_count": 30,
+        "precision": 1.0,
+        "predicted_count": 30,
+        "recall": 1.0,
+        "tp": 30
+      },
+      "numeric_outlier": {
+        "f1": 0.282353,
+        "fn": 0,
+        "fp": 122,
+        "ground_truth_count": 24,
+        "precision": 0.164384,
+        "predicted_count": 146,
+        "recall": 1.0,
+        "tp": 24
+      },
+      "rare_category": {
+        "f1": 1.0,
+        "fn": 0,
+        "fp": 0,
+        "ground_truth_count": 18,
+        "precision": 1.0,
+        "predicted_count": 18,
+        "recall": 1.0,
+        "tp": 18
+      }
+    },
+    "overall": {
+      "f1": 0.621118,
+      "fn": 0,
+      "fp": 122,
+      "ground_truth_count": 100,
+      "precision": 0.45045,
+      "predicted_count": 222,
+      "recall": 1.0,
+      "tp": 100
+    }
+  },
+  "milestone": "M2",
+  "notes": [
+    "M2 evaluates detection only; repair quality belongs to M3.",
+    "The evaluator imports engine_core internals only to access complete masks.",
+    "No detector threshold tuning or core algorithm changes are performed by M2."
+  ],
+  "scan_config": {
+    "auto_pair_constraints": true,
+    "consistency_rules": [
+      {
+        "left_col": "record_start_day",
+        "name": "record_start_before_end",
+        "right_col": "record_end_day",
+        "type": "lte"
+      }
+    ],
+    "duplicate_subset": [
+      "source_row_id"
+    ],
+    "enable_cross_column_consistency": true,
+    "enable_duplicate_record": true,
+    "enable_time_series_shift": false,
+    "max_bins": 120,
+    "max_issues": 1000,
+    "min_categorical_samples": 8,
+    "min_numeric_samples": 6,
+    "numeric_iqr_factor": 1.5,
+    "preview_limit": 20,
+    "rare_count_floor": 2,
+    "rare_ratio_threshold": 0.01,
+    "robust_z_threshold": 3.5,
+    "time_series_min_points": 24,
+    "time_series_z_threshold": 4.0
+  },
+  "scan_issue_count": 12,
+  "scan_issues": [
+    {
+      "column": "record_start_day",
+      "confidence": 0.471188,
+      "count": 16,
+      "detail": {
+        "left_col": "record_start_day",
+        "operator": "<=",
+        "peak_margin": 10.0,
+        "preview": [
+          {
+            "row": 95,
+            "values": {
+              "record_end_day": 110,
+              "record_start_day": 120
+            }
+          },
+          {
+            "row": 105,
+            "values": {
+              "record_end_day": 120,
+              "record_start_day": 130
+            }
+          },
+          {
+            "row": 119,
+            "values": {
+              "record_end_day": 134,
+              "record_start_day": 144
+            }
+          },
+          {
+            "row": 128,
+            "values": {
+              "record_end_day": 23,
+              "record_start_day": 33
+            }
+          },
+          {
+            "row": 320,
+            "values": {
+              "record_end_day": 95,
+              "record_start_day": 105
+            }
+          },
+          {
+            "row": 458,
+            "values": {
+              "record_end_day": 113,
+              "record_start_day": 123
+            }
+          },
+          {
+            "row": 1105,
+            "values": {
+              "record_end_day": 40,
+              "record_start_day": 50
+            }
+          },
+          {
+            "row": 1148,
+            "values": {
+              "record_end_day": 83,
+              "record_start_day": 93
+            }
+          },
+          {
+            "row": 1632,
+            "values": {
+              "record_end_day": 87,
+              "record_start_day": 97
+            }
+          },
+          {
+            "row": 2207,
+            "values": {
+              "record_end_day": 62,
+              "record_start_day": 72
+            }
+          },
+          {
+            "row": 2230,
+            "values": {
+              "record_end_day": 85,
+              "record_start_day": 95
+            }
+          },
+          {
+            "row": 2457,
+            "values": {
+              "record_end_day": 72,
+              "record_start_day": 82
+            }
+          },
+          {
+            "row": 2555,
+            "values": {
+              "record_end_day": 50,
+              "record_start_day": 60
+            }
+          },
+          {
+            "row": 3026,
+            "values": {
+              "record_end_day": 41,
+              "record_start_day": 51
+            }
+          },
+          {
+            "row": 3377,
+            "values": {
+              "record_end_day": 32,
+              "record_start_day": 42
+            }
+          },
+          {
+            "row": 3672,
+            "values": {
+              "record_end_day": 87,
+              "record_start_day": 97
+            }
+          }
+        ],
+        "right_col": "record_end_day",
+        "row_count": 4240,
+        "rule_name": "record_start_before_end",
+        "rule_type": "lte",
+        "valid_rows": 4240,
+        "violated_count": 16
+      },
+      "detected_rows": 16,
+      "issue_id": "record_start_day::cross_column_consistency::record_start_before_end",
+      "issue_score": 0.320604,
+      "issue_type": "cross_column_consistency",
+      "ratio": 0.003774,
+      "severity": "low"
+    },
+    {
+      "column": "source_row_id",
+      "confidence": 0.464906,
+      "count": 24,
+      "detail": {
+        "duplicate_count": 24,
+        "duplicate_groups": 12,
+        "largest_group_size": 2,
+        "preview": [
+          {
+            "row": 58,
+            "signature": {
+              "source_row_id": 1116
+            }
+          },
+          {
+            "row": 1004,
+            "signature": {
+              "source_row_id": 17683
+            }
+          },
+          {
+            "row": 1092,
+            "signature": {
+              "source_row_id": 19419
+            }
+          },
+          {
+            "row": 1845,
+            "signature": {
+              "source_row_id": 32826
+            }
+          },
+          {
+            "row": 2005,
+            "signature": {
+              "source_row_id": 35737
+            }
+          },
+          {
+            "row": 2138,
+            "signature": {
+              "source_row_id": 38074
+            }
+          },
+          {
+            "row": 2272,
+            "signature": {
+              "source_row_id": 40390
+            }
+          },
+          {
+            "row": 2354,
+            "signature": {
+              "source_row_id": 41820
+            }
+          },
+          {
+            "row": 2971,
+            "signature": {
+              "source_row_id": 52050
+            }
+          },
+          {
+            "row": 3076,
+            "signature": {
+              "source_row_id": 53815
+            }
+          },
+          {
+            "row": 3671,
+            "signature": {
+              "source_row_id": 63453
+            }
+          },
+          {
+            "row": 3985,
+            "signature": {
+              "source_row_id": 68721
+            }
+          },
+          {
+            "row": 4228,
+            "signature": {
+              "source_row_id": 35737
+            }
+          },
+          {
+            "row": 4229,
+            "signature": {
+              "source_row_id": 19419
+            }
+          },
+          {
+            "row": 4230,
+            "signature": {
+              "source_row_id": 52050
+            }
+          },
+          {
+            "row": 4231,
+            "signature": {
+              "source_row_id": 63453
+            }
+          },
+          {
+            "row": 4232,
+            "signature": {
+              "source_row_id": 32826
+            }
+          },
+          {
+            "row": 4233,
+            "signature": {
+              "source_row_id": 41820
+            }
+          },
+          {
+            "row": 4234,
+            "signature": {
+              "source_row_id": 17683
+            }
+          },
+          {
+            "row": 4235,
+            "signature": {
+              "source_row_id": 53815
+            }
+          }
+        ],
+        "subset_columns": [
+          "source_row_id"
+        ]
+      },
+      "detected_rows": 24,
+      "issue_id": "row::duplicate_record",
+      "issue_score": 0.358642,
+      "issue_type": "duplicate_record",
+      "ratio": 0.00566,
+      "severity": "low"
+    },
+    {
+      "column": "avg_glucose_level",
+      "confidence": 0.407547,
+      "count": 8,
+      "detail": {
+        "missing_count": 8,
+        "preview": [
+          {
+            "row": 367,
+            "value": null
+          },
+          {
+            "row": 723,
+            "value": null
+          },
+          {
+            "row": 969,
+            "value": null
+          },
+          {
+            "row": 1517,
+            "value": null
+          },
+          {
+            "row": 1595,
+            "value": null
+          },
+          {
+            "row": 1817,
+            "value": null
+          },
+          {
+            "row": 1871,
+            "value": null
+          },
+          {
+            "row": 4061,
+            "value": null
+          }
+        ],
+        "row_count": 4240
+      },
+      "detected_rows": 8,
+      "issue_id": "avg_glucose_level::missing_values",
+      "issue_score": 0.142642,
+      "issue_type": "missing_values",
+      "ratio": 0.001887,
+      "severity": "low"
+    },
+    {
+      "column": "bmi",
+      "confidence": 0.408491,
+      "count": 9,
+      "detail": {
+        "missing_count": 9,
+        "preview": [
+          {
+            "row": 14,
+            "value": null
+          },
+          {
+            "row": 263,
+            "value": null
+          },
+          {
+            "row": 358,
+            "value": null
+          },
+          {
+            "row": 378,
+            "value": null
+          },
+          {
+            "row": 697,
+            "value": null
+          },
+          {
+            "row": 2076,
+            "value": null
+          },
+          {
+            "row": 3163,
+            "value": null
+          },
+          {
+            "row": 3210,
+            "value": null
+          },
+          {
+            "row": 3812,
+            "value": null
+          }
+        ],
+        "row_count": 4240
+      },
+      "detected_rows": 9,
+      "issue_id": "bmi::missing_values",
+      "issue_score": 0.160472,
+      "issue_type": "missing_values",
+      "ratio": 0.002123,
+      "severity": "low"
+    },
+    {
+      "column": "smoking_status",
+      "confidence": 0.408491,
+      "count": 9,
+      "detail": {
+        "missing_count": 9,
+        "preview": [
+          {
+            "row": 1757,
+            "value": null
+          },
+          {
+            "row": 2035,
+            "value": null
+          },
+          {
+            "row": 2050,
+            "value": null
+          },
+          {
+            "row": 2421,
+            "value": null
+          },
+          {
+            "row": 2895,
+            "value": null
+          },
+          {
+            "row": 2954,
+            "value": null
+          },
+          {
+            "row": 3334,
+            "value": null
+          },
+          {
+            "row": 3604,
+            "value": null
+          },
+          {
+            "row": 3938,
+            "value": null
+          }
+        ],
+        "row_count": 4240
+      },
+      "detected_rows": 9,
+      "issue_id": "smoking_status::missing_values",
+      "issue_score": 0.160472,
+      "issue_type": "missing_values",
+      "ratio": 0.002123,
+      "severity": "low"
+    },
+    {
+      "column": "work_type",
+      "confidence": 0.403774,
+      "count": 4,
+      "detail": {
+        "missing_count": 4,
+        "preview": [
+          {
+            "row": 70,
+            "value": null
+          },
+          {
+            "row": 269,
+            "value": null
+          },
+          {
+            "row": 1417,
+            "value": null
+          },
+          {
+            "row": 3824,
+            "value": null
+          }
+        ],
+        "row_count": 4240
+      },
+      "detected_rows": 4,
+      "issue_id": "work_type::missing_values",
+      "issue_score": 0.071321,
+      "issue_type": "missing_values",
+      "ratio": 0.000943,
+      "severity": "low"
+    },
+    {
+      "column": "age",
+      "confidence": 0.551462,
+      "count": 9,
+      "detail": {
+        "iqr_factor": 1.5,
+        "iqr_hits": 9,
+        "lower_bound": -29.5,
+        "outlier_count": 9,
+        "preview": [
+          {
+            "row": 73,
+            "value": 140.0
+          },
+          {
+            "row": 255,
+            "value": 140.0
+          },
+          {
+            "row": 330,
+            "value": 140.0
+          },
+          {
+            "row": 532,
+            "value": 140.0
+          },
+          {
+            "row": 704,
+            "value": 140.0
+          },
+          {
+            "row": 978,
+            "value": 140.0
+          },
+          {
+            "row": 1412,
+            "value": 140.0
+          },
+          {
+            "row": 1851,
+            "value": 140.0
+          },
+          {
+            "row": 2146,
+            "value": 140.0
+          }
+        ],
+        "robust_hits": 9,
+        "robust_z_threshold": 3.5,
+        "upper_bound": 110.5
+      },
+      "detected_rows": 9,
+      "issue_id": "age::numeric_outlier",
+      "issue_score": 0.183396,
+      "issue_type": "numeric_outlier",
+      "ratio": 0.002123,
+      "severity": "low"
+    },
+    {
+      "column": "avg_glucose_level",
+      "confidence": 0.695377,
+      "count": 122,
+      "detail": {
+        "iqr_factor": 1.5,
+        "iqr_hits": 122,
+        "lower_bound": 31.49875,
+        "outlier_count": 122,
+        "preview": [
+          {
+            "row": 149,
+            "value": 157.77
+          },
+          {
+            "row": 430,
+            "value": 158.89
+          },
+          {
+            "row": 525,
+            "value": 163.82
+          },
+          {
+            "row": 956,
+            "value": 420.0
+          },
+          {
+            "row": 1315,
+            "value": 153.24
+          },
+          {
+            "row": 1419,
+            "value": 160.94
+          },
+          {
+            "row": 1545,
+            "value": 420.0
+          },
+          {
+            "row": 1675,
+            "value": 163.17
+          },
+          {
+            "row": 2013,
+            "value": 167.16
+          },
+          {
+            "row": 2034,
+            "value": 155.23
+          },
+          {
+            "row": 2044,
+            "value": 162.72
+          },
+          {
+            "row": 2064,
+            "value": 162.14
+          },
+          {
+            "row": 2105,
+            "value": 166.29
+          },
+          {
+            "row": 2116,
+            "value": 166.38
+          },
+          {
+            "row": 2137,
+            "value": 163.02
+          },
+          {
+            "row": 2180,
+            "value": 152.87
+          },
+          {
+            "row": 2194,
+            "value": 159.7
+          },
+          {
+            "row": 2212,
+            "value": 151.25
+          },
+          {
+            "row": 2248,
+            "value": 157.67
+          },
+          {
+            "row": 2264,
+            "value": 149.75
+          }
+        ],
+        "robust_hits": 32,
+        "robust_z_threshold": 3.5,
+        "upper_bound": 147.70875
+      },
+      "detected_rows": 122,
+      "issue_id": "avg_glucose_level::numeric_outlier",
+      "issue_score": 2.486038,
+      "issue_type": "numeric_outlier",
+      "ratio": 0.028774,
+      "severity": "low"
+    },
+    {
+      "column": "bmi",
+      "confidence": 0.559104,
+      "count": 15,
+      "detail": {
+        "iqr_factor": 1.5,
+        "iqr_hits": 15,
+        "lower_bound": 9.475,
+        "outlier_count": 15,
+        "preview": [
+          {
+            "row": 114,
+            "value": 95.0
+          },
+          {
+            "row": 148,
+            "value": 95.0
+          },
+          {
+            "row": 765,
+            "value": 95.0
+          },
+          {
+            "row": 818,
+            "value": 45.8
+          },
+          {
+            "row": 855,
+            "value": 95.0
+          },
+          {
+            "row": 1479,
+            "value": 45.9
+          },
+          {
+            "row": 1624,
+            "value": 46.1
+          },
+          {
+            "row": 1682,
+            "value": 46.2
+          },
+          {
+            "row": 1898,
+            "value": 95.0
+          },
+          {
+            "row": 2373,
+            "value": 45.9
+          },
+          {
+            "row": 2795,
+            "value": 46.2
+          },
+          {
+            "row": 3396,
+            "value": 95.0
+          },
+          {
+            "row": 3662,
+            "value": 46.0
+          },
+          {
+            "row": 3685,
+            "value": 46.0
+          },
+          {
+            "row": 3896,
+            "value": 46.1
+          }
+        ],
+        "robust_hits": 6,
+        "robust_z_threshold": 3.5,
+        "upper_bound": 45.675
+      },
+      "detected_rows": 15,
+      "issue_id": "bmi::numeric_outlier",
+      "issue_score": 0.30566,
+      "issue_type": "numeric_outlier",
+      "ratio": 0.003538,
+      "severity": "low"
+    },
+    {
+      "column": "gender",
+      "confidence": 0.384481,
+      "count": 5,
+      "detail": {
+        "preview": [
+          {
+            "row": 969,
+            "value": "__M1_RARE_GENDER_000__"
+          },
+          {
+            "row": 1519,
+            "value": "__M1_RARE_GENDER_014__"
+          },
+          {
+            "row": 2179,
+            "value": "__M1_RARE_GENDER_011__"
+          },
+          {
+            "row": 3440,
+            "value": "__M1_RARE_GENDER_003__"
+          },
+          {
+            "row": 4084,
+            "value": "__M1_RARE_GENDER_007__"
+          }
+        ],
+        "rare_count": 5,
+        "rare_ratio_threshold": 0.01,
+        "rare_threshold": 43,
+        "rare_values_preview": [
+          "__M1_RARE_GENDER_000__",
+          "__M1_RARE_GENDER_014__",
+          "__M1_RARE_GENDER_011__",
+          "__M1_RARE_GENDER_003__",
+          "__M1_RARE_GENDER_007__"
+        ]
+      },
+      "detected_rows": 5,
+      "issue_id": "gender::rare_category",
+      "issue_score": 0.076415,
+      "issue_type": "rare_category",
+      "ratio": 0.001179,
+      "severity": "low"
+    },
+    {
+      "column": "smoking_status",
+      "confidence": 0.386274,
+      "count": 7,
+      "detail": {
+        "preview": [
+          {
+            "row": 266,
+            "value": "__M1_RARE_SMOKING_STATUS_010__"
+          },
+          {
+            "row": 686,
+            "value": "__M1_RARE_SMOKING_STATUS_001__"
+          },
+          {
+            "row": 1681,
+            "value": "__M1_RARE_SMOKING_STATUS_005__"
+          },
+          {
+            "row": 1836,
+            "value": "__M1_RARE_SMOKING_STATUS_013__"
+          },
+          {
+            "row": 1868,
+            "value": "__M1_RARE_SMOKING_STATUS_002__"
+          },
+          {
+            "row": 2232,
+            "value": "__M1_RARE_SMOKING_STATUS_008__"
+          },
+          {
+            "row": 4099,
+            "value": "__M1_RARE_SMOKING_STATUS_009__"
+          }
+        ],
+        "rare_count": 7,
+        "rare_ratio_threshold": 0.01,
+        "rare_threshold": 43,
+        "rare_values_preview": [
+          "__M1_RARE_SMOKING_STATUS_010__",
+          "__M1_RARE_SMOKING_STATUS_001__",
+          "__M1_RARE_SMOKING_STATUS_005__",
+          "__M1_RARE_SMOKING_STATUS_013__",
+          "__M1_RARE_SMOKING_STATUS_002__",
+          "__M1_RARE_SMOKING_STATUS_008__",
+          "__M1_RARE_SMOKING_STATUS_009__"
+        ]
+      },
+      "detected_rows": 7,
+      "issue_id": "smoking_status::rare_category",
+      "issue_score": 0.106981,
+      "issue_type": "rare_category",
+      "ratio": 0.001651,
+      "severity": "low"
+    },
+    {
+      "column": "work_type",
+      "confidence": 0.385377,
+      "count": 6,
+      "detail": {
+        "preview": [
+          {
+            "row": 263,
+            "value": "__M1_RARE_WORK_TYPE_015__"
+          },
+          {
+            "row": 428,
+            "value": "__M1_RARE_WORK_TYPE_006__"
+          },
+          {
+            "row": 1940,
+            "value": "__M1_RARE_WORK_TYPE_017__"
+          },
+          {
+            "row": 2456,
+            "value": "__M1_RARE_WORK_TYPE_012__"
+          },
+          {
+            "row": 2463,
+            "value": "__M1_RARE_WORK_TYPE_016__"
+          },
+          {
+            "row": 3925,
+            "value": "__M1_RARE_WORK_TYPE_004__"
+          }
+        ],
+        "rare_count": 6,
+        "rare_ratio_threshold": 0.01,
+        "rare_threshold": 43,
+        "rare_values_preview": [
+          "__M1_RARE_WORK_TYPE_015__",
+          "__M1_RARE_WORK_TYPE_006__",
+          "__M1_RARE_WORK_TYPE_017__",
+          "__M1_RARE_WORK_TYPE_012__",
+          "__M1_RARE_WORK_TYPE_016__",
+          "__M1_RARE_WORK_TYPE_004__"
+        ]
+      },
+      "detected_rows": 6,
+      "issue_id": "work_type::rare_category",
+      "issue_score": 0.091698,
+      "issue_type": "rare_category",
+      "ratio": 0.001415,
+      "severity": "low"
+    }
+  ],
+  "scoring_policy": {
+    "event_matching": {
+      "cross_column_consistency": "anomaly_type + row_index",
+      "duplicate_record": "anomaly_type + source_row_id group",
+      "missing_values": "anomaly_type + row_index + column",
+      "numeric_outlier": "anomaly_type + row_index + column",
+      "rare_category": "anomaly_type + row_index + column"
+    },
+    "time_series_shift": "excluded from M2 scoring because M1 did not inject this anomaly type"
+  },
+  "source": {
+    "clean_csv": "clean.csv",
+    "corrupted_csv": "corrupted.csv",
+    "ground_truth_csv": "ground_truth.csv",
+    "m1_dir": "data\\experiments\\m1_stroke"
+  }
+}

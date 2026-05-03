@@ -1,6 +1,6 @@
 ﻿# MEMO
 
-Last updated: 2026-04-11 18:29:03
+Last updated: 2026-05-03 19:02:57
 
 ## 椤圭洰鎬荤洰鏍?
 - 灏嗏€滄贩鍚堟暟鎹被鍨嬪紓甯告娴嬩笌淇鈥濋」鐩粠绠楁硶鍘熷瀷鎺ㄨ繘涓哄彲浜や粯銆佸彲婕旂ず銆佸彲娴嬭瘯鐨勬闈㈠簲鐢ㄣ€?- 浠?`appshell/` 浣滀负浜у搧鍖栦富璺緞锛屽舰鎴?`Python Engine + Go Backend + Wails Frontend` 鐨勭ǔ瀹氭灦鏋勩€?- 淇濈暀 `app.py` 浣滀负鏃х増 Streamlit 婕旂ず鍏ュ彛锛岀敤浜庣畻娉曢獙璇併€佺粨鏋滃鐓у拰绛旇京灞曠ず銆?- 閫愭琛ラ綈鐪熷疄鐢ㄦ埛闂幆锛氬鍏?CSV -> 璁粌/鎵弿 -> 闂绛涢€?-> 鎵归噺淇 -> 鍥炴粴 -> 鍘嗗彶鏌ョ湅銆?- 鍦ㄤ繚鐣欑幇鏈夌畻娉曡祫浜т笌宸ョ▼楠ㄦ灦鐨勫墠鎻愪笅锛岄€愭鍗囩骇涓衡€滃 agent 鍐崇瓥灞?+ 纭畾鎬у伐鍏峰眰鈥濈殑鏅鸿兘鍖栦骇鍝併€?- 鏈€缁堢洰鏍囨槸璁╃敤鎴峰敖閲忓彧闇€閫夋嫨鏂囦欢锛屽嵆鍙嚜鍔ㄨ幏寰楁壂鎻忋€佷慨澶嶃€侀獙璇併€佸洖婊氫繚鎶ゅ拰鍥捐〃鍖栬В閲婄粨鏋溿€?
@@ -569,3 +569,127 @@ Last updated: 2026-04-11 18:29:03
   - 当前机器的 `node` 缺失、系统级 `python PATH` 不够干净的问题依然存在，后续如果继续在这台机器上开发，值得单独做一次环境收口。
 - 我们目前已完成的步骤：已完成分支创建、全部改动的 commit、远端推送、上游绑定和 PR 入口生成。
 - 我们当前正在努力解决的问题：此刻只剩最后一个很小的收尾动作，即把这条推送记录本身也提交并同步到同一远端分支；功能层面的主成果已经安全备份到 GitHub。
+
+## Update 2026-05-03 18:29:16
+
+- 改动日期：2026-05-03 18:29:16 +08:00
+- 改动内容简述：执行毕业设计路线图 M0“项目基线确认”，新增项目基线说明文档，并在路线图中更新 M0 状态、说明和验证命令；本次只做基线确认与文档记录，不执行 M1 及之后任务，不重构主架构，不引入新依赖。
+- 最终目标：在继续推进毕业设计收尾前，先形成当前项目真实状态快照，让后续开发者能够知道项目如何启动、如何验证、哪些入口可用、哪些环境问题和核心模块风险需要谨慎处理。
+- 当前采用的方法：
+  - 先读取 `GRADUATION_PROJECT_ROADMAP.md` 和当前 `MEMO.md`，确认 M0 的目标和边界。
+  - 用现有 `.venv-win`、Python engine、Go backend 和 Node/npm 命令做基线验证，只记录真实结果，不修复环境、不安装依赖。
+  - 将验证结果沉淀到 `PROJECT_BASELINE.md`，并让路线图只保留总纲级状态和命令摘要。
+- 相关模块/文件：
+  - `PROJECT_BASELINE.md`
+  - `GRADUATION_PROJECT_ROADMAP.md`
+  - `MEMO.md`
+- 已完成的步骤 / 已解决的问题 / 新增功能：
+  - 新增 `PROJECT_BASELINE.md`，记录当前主入口、环境状态、验证命令、已知问题和高风险模块。
+  - 确认当前主入口包括：`app.py` Streamlit 路径、Python engine JSON 协议入口、Go backend demo、Wails shell backend、frontend 静态预览。
+  - 确认 `.venv-win` Python 可用：`Python 3.11.7`。
+  - Python engine 测试收集通过：`21 tests collected in 1.68s`。
+  - Python engine 测试执行通过：`21 passed in 33.86s`。
+  - Engine health 验证通过，返回 `status=ok`，并确认支持 `health/train/repair/scan_file/repair_batch/rollback_repair_batch`。
+  - Go 关键包在默认环境下暴露真实问题：`appshell/backend/internal/engine` 因 Python 子进程入口返回 `exit status 9009` 失败；`internal/task` 和 `cmd/wails` 通过。
+  - 临时将 `.\.venv-win\Scripts` 加入 `PATH` 后，`go test ./internal/engine ./internal/task ./cmd/wails` 通过，说明 Go 侧失败主要来自默认 Python 入口环境，而不是本轮代码改动。
+  - 确认 Node/npm 当前不可作为可靠前端基线：`node --version` 失败为 `Access is denied`，`npm --version` 失败为命令不存在。
+  - 已在 `GRADUATION_PROJECT_ROADMAP.md` 中将 M0 状态更新为 `DONE`，并补充完成说明、验证命令和结果摘要；M1-M6 仍保持 `TODO`。
+- 当前问题 / 待处理事项：
+  - 默认 shell 的 Python 入口仍不适合作为 Go engine runner 测试依赖；后续如需让 Go 测试在任意终端稳定通过，需要把 `.venv-win\Scripts` 或可用系统 Python 放入常规 `PATH`。
+  - Node/npm 当前不可用，前端构建、lint 或打包验证仍需后续单独恢复环境后再做。
+  - 根目录 `README.md` 与 AppShell 当前能力仍存在文档漂移，后续需要在独立任务中同步。
+  - Windows clean-machine 安装包验证仍未完成，不属于本次 M0 的已通过基线。
+  - 当前已有未跟踪项 `out/figma-verify/` 与 `scripts/langgraph.local.ps1` 未处理，保持原样。
+- 我们目前已完成的步骤：已完成 M0 项目基线确认、基线文档新增、路线图 M0 状态更新，以及本次改动记录。
+- 我们当前正在努力解决的问题：把项目从“能跑的工程原型”收束为“可证明、可复现、可测试、可演示、可写论文”的毕业设计交付状态；本次已先完成后续工作的真实基线锚点。
+
+## Update 2026-05-03 18:47:40
+
+- 改动日期：2026-05-03 18:47:40 +08:00
+- 改动内容简述：执行毕业设计路线图 M1“实验数据与异常注入体系”，新增可复现实验数据生成脚本、M1 专项测试和 `data/experiments/m1_stroke/` 数据产物，并在路线图中更新 M1 状态、说明和验证命令；本次不执行 M2 及之后任务，不修改核心算法、Python engine 协议、Go 后端或 Wails 前端，不引入新依赖。
+- 最终目标：为后续 M2 检测效果评估和 M3 修复效果评估提供可信的 clean/corrupted/ground truth 基础数据，使毕业设计证明链条从“系统能运行”推进到“结果可复现、可量化”。
+- 当前采用的方法：
+  - 使用 M0 已确认可用的 `.venv-win` Python 环境执行生成与验证。
+  - 选择混合类型且体量适中的 `data/raw/healthcare-dataset-stroke-data.csv` 作为 M1 主数据源。
+  - 先生成保守 clean subset，再用固定随机种子 `20260503` 注入当前系统可扫描和可解释的五类异常。
+  - 将注入事实写入 `ground_truth.csv`，将统计信息写入 `injection_summary.json`，不在 M1 阶段计算检测或修复指标。
+- 相关模块/文件：
+  - `.gitignore`
+  - `scripts/generate_m1_experiment_data.py`
+  - `tests/python_engine/test_m1_experiment_data.py`
+  - `data/experiments/m1_stroke/clean.csv`
+  - `data/experiments/m1_stroke/corrupted.csv`
+  - `data/experiments/m1_stroke/ground_truth.csv`
+  - `data/experiments/m1_stroke/injection_summary.json`
+  - `data/experiments/m1_stroke/README.md`
+  - `GRADUATION_PROJECT_ROADMAP.md`
+  - `MEMO.md`
+- 已完成的步骤 / 已解决的问题 / 新增功能：
+  - 新增 `scripts/generate_m1_experiment_data.py`，支持默认从 stroke 原始数据生成 M1 实验数据，也支持自定义 `--source-csv`、`--output-dir` 和 `--seed`。
+  - clean subset 已删除缺失行，移除天然极稀有类别，并过滤 `age`、`avg_glucose_level`、`bmi` 的明显数值尾部，以降低原始噪声对 ground truth 的污染。
+  - 为实验数据新增 `row_id`、`source_row_id`、`record_start_day`、`record_end_day`，其中正常数据满足 `record_start_day <= record_end_day`。
+  - 已注入五类 M1 范围异常：`missing_values=30`、`numeric_outlier=24`、`rare_category=18`、`duplicate_record=12`、`cross_column_consistency=16`。
+  - 已生成 `clean.csv`：4228 行、16 列。
+  - 已生成 `corrupted.csv`：4240 行、16 列。
+  - 已生成 `ground_truth.csv`：100 条注入记录，字段固定为 `injection_id/anomaly_type/expected_issue_type/row_id/source_row_id/row_index/column/original_value/corrupted_value/repairable/notes`。
+  - 已生成 `injection_summary.json` 和数据目录 `README.md`，记录种子、行列数、注入数量和 M1/M2/M3 边界。
+  - 新增 `tests/python_engine/test_m1_experiment_data.py`，覆盖文件存在性、数量关系、注入统计一致性、clean/corrupted 基本约束和重复运行稳定性。
+  - 已在 `.gitignore` 中为 M1 的三个小型 CSV 数据资产添加例外，确保后续提交时不会被全局 `*.csv` 规则静默忽略。
+  - 已在 `GRADUATION_PROJECT_ROADMAP.md` 中将 M1 状态更新为 `DONE`，并补充完成说明、验证命令和结果摘要；M2-M6 仍保持 `TODO`。
+- 验证结果：
+  - `.\.venv-win\Scripts\python.exe scripts\generate_m1_experiment_data.py --output-dir data\experiments\m1_stroke --seed 20260503` 执行成功。
+  - `.\.venv-win\Scripts\python.exe -m pytest tests/python_engine/test_m1_experiment_data.py -q` 通过：`2 passed in 2.70s`。
+  - `.\.venv-win\Scripts\python.exe -m pytest tests/python_engine -q` 通过：`23 passed in 25.58s`。
+  - scan smoke test 通过，engine 返回 `status=ok`，读取 `corrupted.csv` 的 4240 行、16 列，汇总 `issue_count=19`，包含缺失值、数值离群、稀有类别、重复记录和跨列一致性问题。
+- 当前问题 / 待处理事项：
+  - M1 只完成实验数据与 ground truth 构造；检测指标、混淆统计和评估报告留给 M2。
+  - M1 不计算修复指标；修复效果评估留给 M3。
+  - 本次未处理默认 Python PATH、Node/npm 和前端构建环境问题，这些仍沿用 M0 记录的基线结论。
+  - 当前已有未跟踪项 `out/figma-verify/` 与 `scripts/langgraph.local.ps1` 未处理，保持原样。
+- 我们目前已完成的步骤：已完成 M0 项目基线确认，以及 M1 可复现实验数据、异常注入记录、统计摘要、专项测试和路线图状态更新。
+- 我们当前正在努力解决的问题：继续把项目收束为可证明的毕业设计交付物；下一步只有在明确执行 M2 时，才应基于本次 `data/experiments/m1_stroke/` 计算检测效果指标。
+
+## Update 2026-05-03 19:02:57
+
+- 改动日期：2026-05-03 19:02:57 +08:00
+- 改动内容简述：执行毕业设计路线图 M2“异常检测效果评估”，新增检测评估脚本、M2 专项测试和 `data/experiments/m2_stroke_detection/` 评估产物，并在路线图中更新 M2 状态、说明和验证命令；本次不执行 M3 及之后任务，不修改核心算法、Python engine 协议、Go 后端或 Wails 前端，不引入新依赖。
+- 最终目标：基于 M1 的可控注入数据和 ground truth，量化当前扫描器发现真实异常的能力，形成可写入论文和答辩材料的检测指标与问题分析。
+- 当前采用的方法：
+  - 使用 `.venv-win` Python 环境运行 M2 评估。
+  - 以 `data/experiments/m1_stroke/ground_truth.csv` 作为唯一真值来源。
+  - 评估脚本调用现有 `engine_core` 内部检测函数取得完整 mask，但不改 `scan_file` 对外协议。
+  - 评分口径为：缺失值、数值离群、稀有类别按 `anomaly_type + row_index + column` 精确匹配；跨列一致性按 `anomaly_type + row_index` 匹配；重复记录按 `anomaly_type + source_row_id` 组匹配。
+  - M2 关闭 `time_series_shift` 评分，因为 M1 未注入该类异常。
+- 相关模块/文件：
+  - `scripts/evaluate_m2_detection.py`
+  - `tests/python_engine/test_m2_detection_evaluation.py`
+  - `data/experiments/m2_stroke_detection/detection_metrics.json`
+  - `data/experiments/m2_stroke_detection/detection_matches.json`
+  - `data/experiments/m2_stroke_detection/README.md`
+  - `GRADUATION_PROJECT_ROADMAP.md`
+  - `MEMO.md`
+- 已完成的步骤 / 已解决的问题 / 新增功能：
+  - 新增 `scripts/evaluate_m2_detection.py`，支持从 M1 目录读取 clean/corrupted/ground truth/summary，并输出 M2 检测评估结果。
+  - 已生成 `detection_metrics.json`，包含总体指标、分类型指标、scan 配置、数据摘要和扫描 issue 清单。
+  - 已生成 `detection_matches.json`，包含 100 条 ground truth 的命中状态、false positives 和 false negatives 明细。
+  - 已生成 `README.md`，整理可用于论文/答辩的检测指标表和评分口径说明。
+  - 新增 `tests/python_engine/test_m2_detection_evaluation.py`，覆盖输出文件、JSON 结构、指标一致性、五类异常覆盖、100 条 ground truth 纳入评分和重复运行稳定性。
+  - 已在 `GRADUATION_PROJECT_ROADMAP.md` 中将 M2 状态更新为 `DONE`，并补充完成说明、验证命令和结果摘要；M3-M6 仍保持 `TODO`。
+- 检测评估结果：
+  - 总体：ground truth `100`，predicted `222`，TP `100`，FP `122`，FN `0`，precision `0.450450`，recall `1.000000`，F1 `0.621118`。
+  - `missing_values`：TP `30`，FP `0`，FN `0`，precision/recall/F1 均为 `1.000000`。
+  - `rare_category`：TP `18`，FP `0`，FN `0`，precision/recall/F1 均为 `1.000000`。
+  - `duplicate_record`：TP `12`，FP `0`，FN `0`，precision/recall/F1 均为 `1.000000`。
+  - `cross_column_consistency`：TP `16`，FP `0`，FN `0`，precision/recall/F1 均为 `1.000000`。
+  - `numeric_outlier`：TP `24`，FP `122`，FN `0`，precision `0.164384`，recall `1.000000`，F1 `0.282353`；误报主要来自当前离群检测规则同时标记了 corrupted 数据中的自然高端数值，本次只记录现象，不调参、不修核心检测逻辑。
+- 验证结果：
+  - `.\.venv-win\Scripts\python.exe scripts\evaluate_m2_detection.py --m1-dir data\experiments\m1_stroke --output-dir data\experiments\m2_stroke_detection` 执行成功。
+  - `.\.venv-win\Scripts\python.exe -m pytest tests/python_engine/test_m2_detection_evaluation.py -q` 通过：`2 passed in 2.45s`。
+  - `.\.venv-win\Scripts\python.exe -m pytest tests/python_engine -q` 通过：`25 passed in 31.37s`。
+- 当前问题 / 待处理事项：
+  - M2 只完成检测效果评估；修复前后质量、修复成功率、数值误差和类别字段修复准确率留给 M3。
+  - 当前 numeric outlier 误报较多，后续若要提升 precision，应在独立任务中讨论阈值策略或更细的 clean baseline，而不混入本次 M2。
+  - 本次未处理默认 Python PATH、Node/npm 和前端构建环境问题，这些仍沿用 M0 记录的基线结论。
+  - 当前已有未跟踪项 `out/figma-verify/` 与 `scripts/langgraph.local.ps1` 未处理，保持原样。
+- 我们目前已完成的步骤：已完成 M0 项目基线确认、M1 可复现实验数据构造，以及 M2 检测指标、匹配明细、评估报告、专项测试和路线图状态更新。
+- 我们当前正在努力解决的问题：继续把项目收束为可证明的毕业设计交付物；下一步只有在明确执行 M3 时，才应基于本次检测结果进一步评估修复效果。

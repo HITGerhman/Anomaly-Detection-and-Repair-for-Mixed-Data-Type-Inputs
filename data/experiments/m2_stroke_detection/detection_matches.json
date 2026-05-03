@@ -1,0 +1,4838 @@
+{
+  "dataset": "m2_stroke_detection",
+  "false_negatives": [],
+  "false_positives": [
+    {
+      "anomaly_type": "numeric_outlier",
+      "key": "numeric_outlier|row=1315|col=avg_glucose_level",
+      "prediction": {
+        "anomaly_type": "numeric_outlier",
+        "column": "avg_glucose_level",
+        "issue_id": "avg_glucose_level::numeric_outlier",
+        "issue_ids": [
+          "avg_glucose_level::numeric_outlier"
+        ],
+        "key": "numeric_outlier|row=1315|col=avg_glucose_level",
+        "row_index": 1315,
+        "value": "153.24"
+      }
+    },
+    {
+      "anomaly_type": "numeric_outlier",
+      "key": "numeric_outlier|row=1419|col=avg_glucose_level",
+      "prediction": {
+        "anomaly_type": "numeric_outlier",
+        "column": "avg_glucose_level",
+        "issue_id": "avg_glucose_level::numeric_outlier",
+        "issue_ids": [
+          "avg_glucose_level::numeric_outlier"
+        ],
+        "key": "numeric_outlier|row=1419|col=avg_glucose_level",
+        "row_index": 1419,
+        "value": "160.94"
+      }
+    },
+    {
+      "anomaly_type": "numeric_outlier",
+      "key": "numeric_outlier|row=1479|col=bmi",
+      "prediction": {
+        "anomaly_type": "numeric_outlier",
+        "column": "bmi",
+        "issue_id": "bmi::numeric_outlier",
+        "issue_ids": [
+          "bmi::numeric_outlier"
+        ],
+        "key": "numeric_outlier|row=1479|col=bmi",
+        "row_index": 1479,
+        "value": "45.9"
+      }
+    },
+    {
+      "anomaly_type": "numeric_outlier",
+      "key": "numeric_outlier|row=149|col=avg_glucose_level",
+      "prediction": {
+        "anomaly_type": "numeric_outlier",
+        "column": "avg_glucose_level",
+        "issue_id": "avg_glucose_level::numeric_outlier",
+        "issue_ids": [
+          "avg_glucose_level::numeric_outlier"
+        ],
+        "key": "numeric_outlier|row=149|col=avg_glucose_level",
+        "row_index": 149,
+        "value": "157.77"
+      }
+    },
+    {
+      "anomaly_type": "numeric_outlier",
+      "key": "numeric_outlier|row=1624|col=bmi",
+      "prediction": {
+        "anomaly_type": "numeric_outlier",
+        "column": "bmi",
+        "issue_id": "bmi::numeric_outlier",
+        "issue_ids": [
+          "bmi::numeric_outlier"
+        ],
+        "key": "numeric_outlier|row=1624|col=bmi",
+        "row_index": 1624,
+        "value": "46.1"
+      }
+    },
+    {
+      "anomaly_type": "numeric_outlier",
+      "key": "numeric_outlier|row=1675|col=avg_glucose_level",
+      "prediction": {
+        "anomaly_type": "numeric_outlier",
+        "column": "avg_glucose_level",
+        "issue_id": "avg_glucose_level::numeric_outlier",
+        "issue_ids": [
+          "avg_glucose_level::numeric_outlier"
+        ],
+        "key": "numeric_outlier|row=1675|col=avg_glucose_level",
+        "row_index": 1675,
+        "value": "163.17"
+      }
+    },
+    {
+      "anomaly_type": "numeric_outlier",
+      "key": "numeric_outlier|row=1682|col=bmi",
+      "prediction": {
+        "anomaly_type": "numeric_outlier",
+        "column": "bmi",
+        "issue_id": "bmi::numeric_outlier",
+        "issue_ids": [
+          "bmi::numeric_outlier"
+        ],
+        "key": "numeric_outlier|row=1682|col=bmi",
+        "row_index": 1682,
+        "value": "46.2"
+      }
+    },
+    {
+      "anomaly_type": "numeric_outlier",
+      "key": "numeric_outlier|row=2013|col=avg_glucose_level",
+      "prediction": {
+        "anomaly_type": "numeric_outlier",
+        "column": "avg_glucose_level",
+        "issue_id": "avg_glucose_level::numeric_outlier",
+        "issue_ids": [
+          "avg_glucose_level::numeric_outlier"
+        ],
+        "key": "numeric_outlier|row=2013|col=avg_glucose_level",
+        "row_index": 2013,
+        "value": "167.16"
+      }
+    },
+    {
+      "anomaly_type": "numeric_outlier",
+      "key": "numeric_outlier|row=2034|col=avg_glucose_level",
+      "prediction": {
+        "anomaly_type": "numeric_outlier",
+        "column": "avg_glucose_level",
+        "issue_id": "avg_glucose_level::numeric_outlier",
+        "issue_ids": [
+          "avg_glucose_level::numeric_outlier"
+        ],
+        "key": "numeric_outlier|row=2034|col=avg_glucose_level",
+        "row_index": 2034,
+        "value": "155.23"
+      }
+    },
+    {
+      "anomaly_type": "numeric_outlier",
+      "key": "numeric_outlier|row=2044|col=avg_glucose_level",
+      "prediction": {
+        "anomaly_type": "numeric_outlier",
+        "column": "avg_glucose_level",
+        "issue_id": "avg_glucose_level::numeric_outlier",
+        "issue_ids": [
+          "avg_glucose_level::numeric_outlier"
+        ],
+        "key": "numeric_outlier|row=2044|col=avg_glucose_level",
+        "row_index": 2044,
+        "value": "162.72"
+      }
+    },
+    {
+      "anomaly_type": "numeric_outlier",
+      "key": "numeric_outlier|row=2064|col=avg_glucose_level",
+      "prediction": {
+        "anomaly_type": "numeric_outlier",
+        "column": "avg_glucose_level",
+        "issue_id": "avg_glucose_level::numeric_outlier",
+        "issue_ids": [
+          "avg_glucose_level::numeric_outlier"
+        ],
+        "key": "numeric_outlier|row=2064|col=avg_glucose_level",
+        "row_index": 2064,
+        "value": "162.14"
+      }
+    },
+    {
+      "anomaly_type": "numeric_outlier",
+      "key": "numeric_outlier|row=2105|col=avg_glucose_level",
+      "prediction": {
+        "anomaly_type": "numeric_outlier",
+        "column": "avg_glucose_level",
+        "issue_id": "avg_glucose_level::numeric_outlier",
+        "issue_ids": [
+          "avg_glucose_level::numeric_outlier"
+        ],
+        "key": "numeric_outlier|row=2105|col=avg_glucose_level",
+        "row_index": 2105,
+        "value": "166.29"
+      }
+    },
+    {
+      "anomaly_type": "numeric_outlier",
+      "key": "numeric_outlier|row=2116|col=avg_glucose_level",
+      "prediction": {
+        "anomaly_type": "numeric_outlier",
+        "column": "avg_glucose_level",
+        "issue_id": "avg_glucose_level::numeric_outlier",
+        "issue_ids": [
+          "avg_glucose_level::numeric_outlier"
+        ],
+        "key": "numeric_outlier|row=2116|col=avg_glucose_level",
+        "row_index": 2116,
+        "value": "166.38"
+      }
+    },
+    {
+      "anomaly_type": "numeric_outlier",
+      "key": "numeric_outlier|row=2137|col=avg_glucose_level",
+      "prediction": {
+        "anomaly_type": "numeric_outlier",
+        "column": "avg_glucose_level",
+        "issue_id": "avg_glucose_level::numeric_outlier",
+        "issue_ids": [
+          "avg_glucose_level::numeric_outlier"
+        ],
+        "key": "numeric_outlier|row=2137|col=avg_glucose_level",
+        "row_index": 2137,
+        "value": "163.02"
+      }
+    },
+    {
+      "anomaly_type": "numeric_outlier",
+      "key": "numeric_outlier|row=2180|col=avg_glucose_level",
+      "prediction": {
+        "anomaly_type": "numeric_outlier",
+        "column": "avg_glucose_level",
+        "issue_id": "avg_glucose_level::numeric_outlier",
+        "issue_ids": [
+          "avg_glucose_level::numeric_outlier"
+        ],
+        "key": "numeric_outlier|row=2180|col=avg_glucose_level",
+        "row_index": 2180,
+        "value": "152.87"
+      }
+    },
+    {
+      "anomaly_type": "numeric_outlier",
+      "key": "numeric_outlier|row=2194|col=avg_glucose_level",
+      "prediction": {
+        "anomaly_type": "numeric_outlier",
+        "column": "avg_glucose_level",
+        "issue_id": "avg_glucose_level::numeric_outlier",
+        "issue_ids": [
+          "avg_glucose_level::numeric_outlier"
+        ],
+        "key": "numeric_outlier|row=2194|col=avg_glucose_level",
+        "row_index": 2194,
+        "value": "159.7"
+      }
+    },
+    {
+      "anomaly_type": "numeric_outlier",
+      "key": "numeric_outlier|row=2212|col=avg_glucose_level",
+      "prediction": {
+        "anomaly_type": "numeric_outlier",
+        "column": "avg_glucose_level",
+        "issue_id": "avg_glucose_level::numeric_outlier",
+        "issue_ids": [
+          "avg_glucose_level::numeric_outlier"
+        ],
+        "key": "numeric_outlier|row=2212|col=avg_glucose_level",
+        "row_index": 2212,
+        "value": "151.25"
+      }
+    },
+    {
+      "anomaly_type": "numeric_outlier",
+      "key": "numeric_outlier|row=2248|col=avg_glucose_level",
+      "prediction": {
+        "anomaly_type": "numeric_outlier",
+        "column": "avg_glucose_level",
+        "issue_id": "avg_glucose_level::numeric_outlier",
+        "issue_ids": [
+          "avg_glucose_level::numeric_outlier"
+        ],
+        "key": "numeric_outlier|row=2248|col=avg_glucose_level",
+        "row_index": 2248,
+        "value": "157.67"
+      }
+    },
+    {
+      "anomaly_type": "numeric_outlier",
+      "key": "numeric_outlier|row=2264|col=avg_glucose_level",
+      "prediction": {
+        "anomaly_type": "numeric_outlier",
+        "column": "avg_glucose_level",
+        "issue_id": "avg_glucose_level::numeric_outlier",
+        "issue_ids": [
+          "avg_glucose_level::numeric_outlier"
+        ],
+        "key": "numeric_outlier|row=2264|col=avg_glucose_level",
+        "row_index": 2264,
+        "value": "149.75"
+      }
+    },
+    {
+      "anomaly_type": "numeric_outlier",
+      "key": "numeric_outlier|row=2272|col=avg_glucose_level",
+      "prediction": {
+        "anomaly_type": "numeric_outlier",
+        "column": "avg_glucose_level",
+        "issue_id": "avg_glucose_level::numeric_outlier",
+        "issue_ids": [
+          "avg_glucose_level::numeric_outlier"
+        ],
+        "key": "numeric_outlier|row=2272|col=avg_glucose_level",
+        "row_index": 2272,
+        "value": "150.03"
+      }
+    },
+    {
+      "anomaly_type": "numeric_outlier",
+      "key": "numeric_outlier|row=2285|col=avg_glucose_level",
+      "prediction": {
+        "anomaly_type": "numeric_outlier",
+        "column": "avg_glucose_level",
+        "issue_id": "avg_glucose_level::numeric_outlier",
+        "issue_ids": [
+          "avg_glucose_level::numeric_outlier"
+        ],
+        "key": "numeric_outlier|row=2285|col=avg_glucose_level",
+        "row_index": 2285,
+        "value": "156.7"
+      }
+    },
+    {
+      "anomaly_type": "numeric_outlier",
+      "key": "numeric_outlier|row=2349|col=avg_glucose_level",
+      "prediction": {
+        "anomaly_type": "numeric_outlier",
+        "column": "avg_glucose_level",
+        "issue_id": "avg_glucose_level::numeric_outlier",
+        "issue_ids": [
+          "avg_glucose_level::numeric_outlier"
+        ],
+        "key": "numeric_outlier|row=2349|col=avg_glucose_level",
+        "row_index": 2349,
+        "value": "159.39"
+      }
+    },
+    {
+      "anomaly_type": "numeric_outlier",
+      "key": "numeric_outlier|row=2360|col=avg_glucose_level",
+      "prediction": {
+        "anomaly_type": "numeric_outlier",
+        "column": "avg_glucose_level",
+        "issue_id": "avg_glucose_level::numeric_outlier",
+        "issue_ids": [
+          "avg_glucose_level::numeric_outlier"
+        ],
+        "key": "numeric_outlier|row=2360|col=avg_glucose_level",
+        "row_index": 2360,
+        "value": "149.9"
+      }
+    },
+    {
+      "anomaly_type": "numeric_outlier",
+      "key": "numeric_outlier|row=2373|col=bmi",
+      "prediction": {
+        "anomaly_type": "numeric_outlier",
+        "column": "bmi",
+        "issue_id": "bmi::numeric_outlier",
+        "issue_ids": [
+          "bmi::numeric_outlier"
+        ],
+        "key": "numeric_outlier|row=2373|col=bmi",
+        "row_index": 2373,
+        "value": "45.9"
+      }
+    },
+    {
+      "anomaly_type": "numeric_outlier",
+      "key": "numeric_outlier|row=2381|col=avg_glucose_level",
+      "prediction": {
+        "anomaly_type": "numeric_outlier",
+        "column": "avg_glucose_level",
+        "issue_id": "avg_glucose_level::numeric_outlier",
+        "issue_ids": [
+          "avg_glucose_level::numeric_outlier"
+        ],
+        "key": "numeric_outlier|row=2381|col=avg_glucose_level",
+        "row_index": 2381,
+        "value": "158.48"
+      }
+    },
+    {
+      "anomaly_type": "numeric_outlier",
+      "key": "numeric_outlier|row=2395|col=avg_glucose_level",
+      "prediction": {
+        "anomaly_type": "numeric_outlier",
+        "column": "avg_glucose_level",
+        "issue_id": "avg_glucose_level::numeric_outlier",
+        "issue_ids": [
+          "avg_glucose_level::numeric_outlier"
+        ],
+        "key": "numeric_outlier|row=2395|col=avg_glucose_level",
+        "row_index": 2395,
+        "value": "152.81"
+      }
+    },
+    {
+      "anomaly_type": "numeric_outlier",
+      "key": "numeric_outlier|row=2401|col=avg_glucose_level",
+      "prediction": {
+        "anomaly_type": "numeric_outlier",
+        "column": "avg_glucose_level",
+        "issue_id": "avg_glucose_level::numeric_outlier",
+        "issue_ids": [
+          "avg_glucose_level::numeric_outlier"
+        ],
+        "key": "numeric_outlier|row=2401|col=avg_glucose_level",
+        "row_index": 2401,
+        "value": "148.91"
+      }
+    },
+    {
+      "anomaly_type": "numeric_outlier",
+      "key": "numeric_outlier|row=2402|col=avg_glucose_level",
+      "prediction": {
+        "anomaly_type": "numeric_outlier",
+        "column": "avg_glucose_level",
+        "issue_id": "avg_glucose_level::numeric_outlier",
+        "issue_ids": [
+          "avg_glucose_level::numeric_outlier"
+        ],
+        "key": "numeric_outlier|row=2402|col=avg_glucose_level",
+        "row_index": 2402,
+        "value": "150.1"
+      }
+    },
+    {
+      "anomaly_type": "numeric_outlier",
+      "key": "numeric_outlier|row=2431|col=avg_glucose_level",
+      "prediction": {
+        "anomaly_type": "numeric_outlier",
+        "column": "avg_glucose_level",
+        "issue_id": "avg_glucose_level::numeric_outlier",
+        "issue_ids": [
+          "avg_glucose_level::numeric_outlier"
+        ],
+        "key": "numeric_outlier|row=2431|col=avg_glucose_level",
+        "row_index": 2431,
+        "value": "153.6"
+      }
+    },
+    {
+      "anomaly_type": "numeric_outlier",
+      "key": "numeric_outlier|row=2433|col=avg_glucose_level",
+      "prediction": {
+        "anomaly_type": "numeric_outlier",
+        "column": "avg_glucose_level",
+        "issue_id": "avg_glucose_level::numeric_outlier",
+        "issue_ids": [
+          "avg_glucose_level::numeric_outlier"
+        ],
+        "key": "numeric_outlier|row=2433|col=avg_glucose_level",
+        "row_index": 2433,
+        "value": "151.3"
+      }
+    },
+    {
+      "anomaly_type": "numeric_outlier",
+      "key": "numeric_outlier|row=2436|col=avg_glucose_level",
+      "prediction": {
+        "anomaly_type": "numeric_outlier",
+        "column": "avg_glucose_level",
+        "issue_id": "avg_glucose_level::numeric_outlier",
+        "issue_ids": [
+          "avg_glucose_level::numeric_outlier"
+        ],
+        "key": "numeric_outlier|row=2436|col=avg_glucose_level",
+        "row_index": 2436,
+        "value": "155.43"
+      }
+    },
+    {
+      "anomaly_type": "numeric_outlier",
+      "key": "numeric_outlier|row=2448|col=avg_glucose_level",
+      "prediction": {
+        "anomaly_type": "numeric_outlier",
+        "column": "avg_glucose_level",
+        "issue_id": "avg_glucose_level::numeric_outlier",
+        "issue_ids": [
+          "avg_glucose_level::numeric_outlier"
+        ],
+        "key": "numeric_outlier|row=2448|col=avg_glucose_level",
+        "row_index": 2448,
+        "value": "159.79"
+      }
+    },
+    {
+      "anomaly_type": "numeric_outlier",
+      "key": "numeric_outlier|row=2470|col=avg_glucose_level",
+      "prediction": {
+        "anomaly_type": "numeric_outlier",
+        "column": "avg_glucose_level",
+        "issue_id": "avg_glucose_level::numeric_outlier",
+        "issue_ids": [
+          "avg_glucose_level::numeric_outlier"
+        ],
+        "key": "numeric_outlier|row=2470|col=avg_glucose_level",
+        "row_index": 2470,
+        "value": "161.57"
+      }
+    },
+    {
+      "anomaly_type": "numeric_outlier",
+      "key": "numeric_outlier|row=2501|col=avg_glucose_level",
+      "prediction": {
+        "anomaly_type": "numeric_outlier",
+        "column": "avg_glucose_level",
+        "issue_id": "avg_glucose_level::numeric_outlier",
+        "issue_ids": [
+          "avg_glucose_level::numeric_outlier"
+        ],
+        "key": "numeric_outlier|row=2501|col=avg_glucose_level",
+        "row_index": 2501,
+        "value": "160.64"
+      }
+    },
+    {
+      "anomaly_type": "numeric_outlier",
+      "key": "numeric_outlier|row=2583|col=avg_glucose_level",
+      "prediction": {
+        "anomaly_type": "numeric_outlier",
+        "column": "avg_glucose_level",
+        "issue_id": "avg_glucose_level::numeric_outlier",
+        "issue_ids": [
+          "avg_glucose_level::numeric_outlier"
+        ],
+        "key": "numeric_outlier|row=2583|col=avg_glucose_level",
+        "row_index": 2583,
+        "value": "158.9"
+      }
+    },
+    {
+      "anomaly_type": "numeric_outlier",
+      "key": "numeric_outlier|row=2605|col=avg_glucose_level",
+      "prediction": {
+        "anomaly_type": "numeric_outlier",
+        "column": "avg_glucose_level",
+        "issue_id": "avg_glucose_level::numeric_outlier",
+        "issue_ids": [
+          "avg_glucose_level::numeric_outlier"
+        ],
+        "key": "numeric_outlier|row=2605|col=avg_glucose_level",
+        "row_index": 2605,
+        "value": "147.74"
+      }
+    },
+    {
+      "anomaly_type": "numeric_outlier",
+      "key": "numeric_outlier|row=2613|col=avg_glucose_level",
+      "prediction": {
+        "anomaly_type": "numeric_outlier",
+        "column": "avg_glucose_level",
+        "issue_id": "avg_glucose_level::numeric_outlier",
+        "issue_ids": [
+          "avg_glucose_level::numeric_outlier"
+        ],
+        "key": "numeric_outlier|row=2613|col=avg_glucose_level",
+        "row_index": 2613,
+        "value": "165.11"
+      }
+    },
+    {
+      "anomaly_type": "numeric_outlier",
+      "key": "numeric_outlier|row=2655|col=avg_glucose_level",
+      "prediction": {
+        "anomaly_type": "numeric_outlier",
+        "column": "avg_glucose_level",
+        "issue_id": "avg_glucose_level::numeric_outlier",
+        "issue_ids": [
+          "avg_glucose_level::numeric_outlier"
+        ],
+        "key": "numeric_outlier|row=2655|col=avg_glucose_level",
+        "row_index": 2655,
+        "value": "155.17"
+      }
+    },
+    {
+      "anomaly_type": "numeric_outlier",
+      "key": "numeric_outlier|row=2662|col=avg_glucose_level",
+      "prediction": {
+        "anomaly_type": "numeric_outlier",
+        "column": "avg_glucose_level",
+        "issue_id": "avg_glucose_level::numeric_outlier",
+        "issue_ids": [
+          "avg_glucose_level::numeric_outlier"
+        ],
+        "key": "numeric_outlier|row=2662|col=avg_glucose_level",
+        "row_index": 2662,
+        "value": "154.67"
+      }
+    },
+    {
+      "anomaly_type": "numeric_outlier",
+      "key": "numeric_outlier|row=2673|col=avg_glucose_level",
+      "prediction": {
+        "anomaly_type": "numeric_outlier",
+        "column": "avg_glucose_level",
+        "issue_id": "avg_glucose_level::numeric_outlier",
+        "issue_ids": [
+          "avg_glucose_level::numeric_outlier"
+        ],
+        "key": "numeric_outlier|row=2673|col=avg_glucose_level",
+        "row_index": 2673,
+        "value": "153.31"
+      }
+    },
+    {
+      "anomaly_type": "numeric_outlier",
+      "key": "numeric_outlier|row=2697|col=avg_glucose_level",
+      "prediction": {
+        "anomaly_type": "numeric_outlier",
+        "column": "avg_glucose_level",
+        "issue_id": "avg_glucose_level::numeric_outlier",
+        "issue_ids": [
+          "avg_glucose_level::numeric_outlier"
+        ],
+        "key": "numeric_outlier|row=2697|col=avg_glucose_level",
+        "row_index": 2697,
+        "value": "163.7"
+      }
+    },
+    {
+      "anomaly_type": "numeric_outlier",
+      "key": "numeric_outlier|row=2705|col=avg_glucose_level",
+      "prediction": {
+        "anomaly_type": "numeric_outlier",
+        "column": "avg_glucose_level",
+        "issue_id": "avg_glucose_level::numeric_outlier",
+        "issue_ids": [
+          "avg_glucose_level::numeric_outlier"
+        ],
+        "key": "numeric_outlier|row=2705|col=avg_glucose_level",
+        "row_index": 2705,
+        "value": "165.47"
+      }
+    },
+    {
+      "anomaly_type": "numeric_outlier",
+      "key": "numeric_outlier|row=2707|col=avg_glucose_level",
+      "prediction": {
+        "anomaly_type": "numeric_outlier",
+        "column": "avg_glucose_level",
+        "issue_id": "avg_glucose_level::numeric_outlier",
+        "issue_ids": [
+          "avg_glucose_level::numeric_outlier"
+        ],
+        "key": "numeric_outlier|row=2707|col=avg_glucose_level",
+        "row_index": 2707,
+        "value": "160"
+      }
+    },
+    {
+      "anomaly_type": "numeric_outlier",
+      "key": "numeric_outlier|row=2719|col=avg_glucose_level",
+      "prediction": {
+        "anomaly_type": "numeric_outlier",
+        "column": "avg_glucose_level",
+        "issue_id": "avg_glucose_level::numeric_outlier",
+        "issue_ids": [
+          "avg_glucose_level::numeric_outlier"
+        ],
+        "key": "numeric_outlier|row=2719|col=avg_glucose_level",
+        "row_index": 2719,
+        "value": "151.56"
+      }
+    },
+    {
+      "anomaly_type": "numeric_outlier",
+      "key": "numeric_outlier|row=2743|col=avg_glucose_level",
+      "prediction": {
+        "anomaly_type": "numeric_outlier",
+        "column": "avg_glucose_level",
+        "issue_id": "avg_glucose_level::numeric_outlier",
+        "issue_ids": [
+          "avg_glucose_level::numeric_outlier"
+        ],
+        "key": "numeric_outlier|row=2743|col=avg_glucose_level",
+        "row_index": 2743,
+        "value": "155.14"
+      }
+    },
+    {
+      "anomaly_type": "numeric_outlier",
+      "key": "numeric_outlier|row=2793|col=avg_glucose_level",
+      "prediction": {
+        "anomaly_type": "numeric_outlier",
+        "column": "avg_glucose_level",
+        "issue_id": "avg_glucose_level::numeric_outlier",
+        "issue_ids": [
+          "avg_glucose_level::numeric_outlier"
+        ],
+        "key": "numeric_outlier|row=2793|col=avg_glucose_level",
+        "row_index": 2793,
+        "value": "154.75"
+      }
+    },
+    {
+      "anomaly_type": "numeric_outlier",
+      "key": "numeric_outlier|row=2795|col=bmi",
+      "prediction": {
+        "anomaly_type": "numeric_outlier",
+        "column": "bmi",
+        "issue_id": "bmi::numeric_outlier",
+        "issue_ids": [
+          "bmi::numeric_outlier"
+        ],
+        "key": "numeric_outlier|row=2795|col=bmi",
+        "row_index": 2795,
+        "value": "46.2"
+      }
+    },
+    {
+      "anomaly_type": "numeric_outlier",
+      "key": "numeric_outlier|row=2820|col=avg_glucose_level",
+      "prediction": {
+        "anomaly_type": "numeric_outlier",
+        "column": "avg_glucose_level",
+        "issue_id": "avg_glucose_level::numeric_outlier",
+        "issue_ids": [
+          "avg_glucose_level::numeric_outlier"
+        ],
+        "key": "numeric_outlier|row=2820|col=avg_glucose_level",
+        "row_index": 2820,
+        "value": "152.02"
+      }
+    },
+    {
+      "anomaly_type": "numeric_outlier",
+      "key": "numeric_outlier|row=2836|col=avg_glucose_level",
+      "prediction": {
+        "anomaly_type": "numeric_outlier",
+        "column": "avg_glucose_level",
+        "issue_id": "avg_glucose_level::numeric_outlier",
+        "issue_ids": [
+          "avg_glucose_level::numeric_outlier"
+        ],
+        "key": "numeric_outlier|row=2836|col=avg_glucose_level",
+        "row_index": 2836,
+        "value": "154.03"
+      }
+    },
+    {
+      "anomaly_type": "numeric_outlier",
+      "key": "numeric_outlier|row=2852|col=avg_glucose_level",
+      "prediction": {
+        "anomaly_type": "numeric_outlier",
+        "column": "avg_glucose_level",
+        "issue_id": "avg_glucose_level::numeric_outlier",
+        "issue_ids": [
+          "avg_glucose_level::numeric_outlier"
+        ],
+        "key": "numeric_outlier|row=2852|col=avg_glucose_level",
+        "row_index": 2852,
+        "value": "160.76"
+      }
+    },
+    {
+      "anomaly_type": "numeric_outlier",
+      "key": "numeric_outlier|row=2853|col=avg_glucose_level",
+      "prediction": {
+        "anomaly_type": "numeric_outlier",
+        "column": "avg_glucose_level",
+        "issue_id": "avg_glucose_level::numeric_outlier",
+        "issue_ids": [
+          "avg_glucose_level::numeric_outlier"
+        ],
+        "key": "numeric_outlier|row=2853|col=avg_glucose_level",
+        "row_index": 2853,
+        "value": "150.27"
+      }
+    },
+    {
+      "anomaly_type": "numeric_outlier",
+      "key": "numeric_outlier|row=2943|col=avg_glucose_level",
+      "prediction": {
+        "anomaly_type": "numeric_outlier",
+        "column": "avg_glucose_level",
+        "issue_id": "avg_glucose_level::numeric_outlier",
+        "issue_ids": [
+          "avg_glucose_level::numeric_outlier"
+        ],
+        "key": "numeric_outlier|row=2943|col=avg_glucose_level",
+        "row_index": 2943,
+        "value": "156.45"
+      }
+    },
+    {
+      "anomaly_type": "numeric_outlier",
+      "key": "numeric_outlier|row=2963|col=avg_glucose_level",
+      "prediction": {
+        "anomaly_type": "numeric_outlier",
+        "column": "avg_glucose_level",
+        "issue_id": "avg_glucose_level::numeric_outlier",
+        "issue_ids": [
+          "avg_glucose_level::numeric_outlier"
+        ],
+        "key": "numeric_outlier|row=2963|col=avg_glucose_level",
+        "row_index": 2963,
+        "value": "161"
+      }
+    },
+    {
+      "anomaly_type": "numeric_outlier",
+      "key": "numeric_outlier|row=2978|col=avg_glucose_level",
+      "prediction": {
+        "anomaly_type": "numeric_outlier",
+        "column": "avg_glucose_level",
+        "issue_id": "avg_glucose_level::numeric_outlier",
+        "issue_ids": [
+          "avg_glucose_level::numeric_outlier"
+        ],
+        "key": "numeric_outlier|row=2978|col=avg_glucose_level",
+        "row_index": 2978,
+        "value": "150.45"
+      }
+    },
+    {
+      "anomaly_type": "numeric_outlier",
+      "key": "numeric_outlier|row=2983|col=avg_glucose_level",
+      "prediction": {
+        "anomaly_type": "numeric_outlier",
+        "column": "avg_glucose_level",
+        "issue_id": "avg_glucose_level::numeric_outlier",
+        "issue_ids": [
+          "avg_glucose_level::numeric_outlier"
+        ],
+        "key": "numeric_outlier|row=2983|col=avg_glucose_level",
+        "row_index": 2983,
+        "value": "154.08"
+      }
+    },
+    {
+      "anomaly_type": "numeric_outlier",
+      "key": "numeric_outlier|row=3032|col=avg_glucose_level",
+      "prediction": {
+        "anomaly_type": "numeric_outlier",
+        "column": "avg_glucose_level",
+        "issue_id": "avg_glucose_level::numeric_outlier",
+        "issue_ids": [
+          "avg_glucose_level::numeric_outlier"
+        ],
+        "key": "numeric_outlier|row=3032|col=avg_glucose_level",
+        "row_index": 3032,
+        "value": "149.15"
+      }
+    },
+    {
+      "anomaly_type": "numeric_outlier",
+      "key": "numeric_outlier|row=3047|col=avg_glucose_level",
+      "prediction": {
+        "anomaly_type": "numeric_outlier",
+        "column": "avg_glucose_level",
+        "issue_id": "avg_glucose_level::numeric_outlier",
+        "issue_ids": [
+          "avg_glucose_level::numeric_outlier"
+        ],
+        "key": "numeric_outlier|row=3047|col=avg_glucose_level",
+        "row_index": 3047,
+        "value": "161.95"
+      }
+    },
+    {
+      "anomaly_type": "numeric_outlier",
+      "key": "numeric_outlier|row=3056|col=avg_glucose_level",
+      "prediction": {
+        "anomaly_type": "numeric_outlier",
+        "column": "avg_glucose_level",
+        "issue_id": "avg_glucose_level::numeric_outlier",
+        "issue_ids": [
+          "avg_glucose_level::numeric_outlier"
+        ],
+        "key": "numeric_outlier|row=3056|col=avg_glucose_level",
+        "row_index": 3056,
+        "value": "156.43"
+      }
+    },
+    {
+      "anomaly_type": "numeric_outlier",
+      "key": "numeric_outlier|row=3081|col=avg_glucose_level",
+      "prediction": {
+        "anomaly_type": "numeric_outlier",
+        "column": "avg_glucose_level",
+        "issue_id": "avg_glucose_level::numeric_outlier",
+        "issue_ids": [
+          "avg_glucose_level::numeric_outlier"
+        ],
+        "key": "numeric_outlier|row=3081|col=avg_glucose_level",
+        "row_index": 3081,
+        "value": "165.36"
+      }
+    },
+    {
+      "anomaly_type": "numeric_outlier",
+      "key": "numeric_outlier|row=3085|col=avg_glucose_level",
+      "prediction": {
+        "anomaly_type": "numeric_outlier",
+        "column": "avg_glucose_level",
+        "issue_id": "avg_glucose_level::numeric_outlier",
+        "issue_ids": [
+          "avg_glucose_level::numeric_outlier"
+        ],
+        "key": "numeric_outlier|row=3085|col=avg_glucose_level",
+        "row_index": 3085,
+        "value": "159.39"
+      }
+    },
+    {
+      "anomaly_type": "numeric_outlier",
+      "key": "numeric_outlier|row=3119|col=avg_glucose_level",
+      "prediction": {
+        "anomaly_type": "numeric_outlier",
+        "column": "avg_glucose_level",
+        "issue_id": "avg_glucose_level::numeric_outlier",
+        "issue_ids": [
+          "avg_glucose_level::numeric_outlier"
+        ],
+        "key": "numeric_outlier|row=3119|col=avg_glucose_level",
+        "row_index": 3119,
+        "value": "155.32"
+      }
+    },
+    {
+      "anomaly_type": "numeric_outlier",
+      "key": "numeric_outlier|row=3124|col=avg_glucose_level",
+      "prediction": {
+        "anomaly_type": "numeric_outlier",
+        "column": "avg_glucose_level",
+        "issue_id": "avg_glucose_level::numeric_outlier",
+        "issue_ids": [
+          "avg_glucose_level::numeric_outlier"
+        ],
+        "key": "numeric_outlier|row=3124|col=avg_glucose_level",
+        "row_index": 3124,
+        "value": "152.38"
+      }
+    },
+    {
+      "anomaly_type": "numeric_outlier",
+      "key": "numeric_outlier|row=3135|col=avg_glucose_level",
+      "prediction": {
+        "anomaly_type": "numeric_outlier",
+        "column": "avg_glucose_level",
+        "issue_id": "avg_glucose_level::numeric_outlier",
+        "issue_ids": [
+          "avg_glucose_level::numeric_outlier"
+        ],
+        "key": "numeric_outlier|row=3135|col=avg_glucose_level",
+        "row_index": 3135,
+        "value": "160.83"
+      }
+    },
+    {
+      "anomaly_type": "numeric_outlier",
+      "key": "numeric_outlier|row=3138|col=avg_glucose_level",
+      "prediction": {
+        "anomaly_type": "numeric_outlier",
+        "column": "avg_glucose_level",
+        "issue_id": "avg_glucose_level::numeric_outlier",
+        "issue_ids": [
+          "avg_glucose_level::numeric_outlier"
+        ],
+        "key": "numeric_outlier|row=3138|col=avg_glucose_level",
+        "row_index": 3138,
+        "value": "157.57"
+      }
+    },
+    {
+      "anomaly_type": "numeric_outlier",
+      "key": "numeric_outlier|row=3152|col=avg_glucose_level",
+      "prediction": {
+        "anomaly_type": "numeric_outlier",
+        "column": "avg_glucose_level",
+        "issue_id": "avg_glucose_level::numeric_outlier",
+        "issue_ids": [
+          "avg_glucose_level::numeric_outlier"
+        ],
+        "key": "numeric_outlier|row=3152|col=avg_glucose_level",
+        "row_index": 3152,
+        "value": "168.15"
+      }
+    },
+    {
+      "anomaly_type": "numeric_outlier",
+      "key": "numeric_outlier|row=3155|col=avg_glucose_level",
+      "prediction": {
+        "anomaly_type": "numeric_outlier",
+        "column": "avg_glucose_level",
+        "issue_id": "avg_glucose_level::numeric_outlier",
+        "issue_ids": [
+          "avg_glucose_level::numeric_outlier"
+        ],
+        "key": "numeric_outlier|row=3155|col=avg_glucose_level",
+        "row_index": 3155,
+        "value": "157.01"
+      }
+    },
+    {
+      "anomaly_type": "numeric_outlier",
+      "key": "numeric_outlier|row=3212|col=avg_glucose_level",
+      "prediction": {
+        "anomaly_type": "numeric_outlier",
+        "column": "avg_glucose_level",
+        "issue_id": "avg_glucose_level::numeric_outlier",
+        "issue_ids": [
+          "avg_glucose_level::numeric_outlier"
+        ],
+        "key": "numeric_outlier|row=3212|col=avg_glucose_level",
+        "row_index": 3212,
+        "value": "167.31"
+      }
+    },
+    {
+      "anomaly_type": "numeric_outlier",
+      "key": "numeric_outlier|row=3218|col=avg_glucose_level",
+      "prediction": {
+        "anomaly_type": "numeric_outlier",
+        "column": "avg_glucose_level",
+        "issue_id": "avg_glucose_level::numeric_outlier",
+        "issue_ids": [
+          "avg_glucose_level::numeric_outlier"
+        ],
+        "key": "numeric_outlier|row=3218|col=avg_glucose_level",
+        "row_index": 3218,
+        "value": "156.69"
+      }
+    },
+    {
+      "anomaly_type": "numeric_outlier",
+      "key": "numeric_outlier|row=3222|col=avg_glucose_level",
+      "prediction": {
+        "anomaly_type": "numeric_outlier",
+        "column": "avg_glucose_level",
+        "issue_id": "avg_glucose_level::numeric_outlier",
+        "issue_ids": [
+          "avg_glucose_level::numeric_outlier"
+        ],
+        "key": "numeric_outlier|row=3222|col=avg_glucose_level",
+        "row_index": 3222,
+        "value": "149.17"
+      }
+    },
+    {
+      "anomaly_type": "numeric_outlier",
+      "key": "numeric_outlier|row=3266|col=avg_glucose_level",
+      "prediction": {
+        "anomaly_type": "numeric_outlier",
+        "column": "avg_glucose_level",
+        "issue_id": "avg_glucose_level::numeric_outlier",
+        "issue_ids": [
+          "avg_glucose_level::numeric_outlier"
+        ],
+        "key": "numeric_outlier|row=3266|col=avg_glucose_level",
+        "row_index": 3266,
+        "value": "156.57"
+      }
+    },
+    {
+      "anomaly_type": "numeric_outlier",
+      "key": "numeric_outlier|row=3267|col=avg_glucose_level",
+      "prediction": {
+        "anomaly_type": "numeric_outlier",
+        "column": "avg_glucose_level",
+        "issue_id": "avg_glucose_level::numeric_outlier",
+        "issue_ids": [
+          "avg_glucose_level::numeric_outlier"
+        ],
+        "key": "numeric_outlier|row=3267|col=avg_glucose_level",
+        "row_index": 3267,
+        "value": "162.24"
+      }
+    },
+    {
+      "anomaly_type": "numeric_outlier",
+      "key": "numeric_outlier|row=3326|col=avg_glucose_level",
+      "prediction": {
+        "anomaly_type": "numeric_outlier",
+        "column": "avg_glucose_level",
+        "issue_id": "avg_glucose_level::numeric_outlier",
+        "issue_ids": [
+          "avg_glucose_level::numeric_outlier"
+        ],
+        "key": "numeric_outlier|row=3326|col=avg_glucose_level",
+        "row_index": 3326,
+        "value": "167.66"
+      }
+    },
+    {
+      "anomaly_type": "numeric_outlier",
+      "key": "numeric_outlier|row=3339|col=avg_glucose_level",
+      "prediction": {
+        "anomaly_type": "numeric_outlier",
+        "column": "avg_glucose_level",
+        "issue_id": "avg_glucose_level::numeric_outlier",
+        "issue_ids": [
+          "avg_glucose_level::numeric_outlier"
+        ],
+        "key": "numeric_outlier|row=3339|col=avg_glucose_level",
+        "row_index": 3339,
+        "value": "157.01"
+      }
+    },
+    {
+      "anomaly_type": "numeric_outlier",
+      "key": "numeric_outlier|row=3349|col=avg_glucose_level",
+      "prediction": {
+        "anomaly_type": "numeric_outlier",
+        "column": "avg_glucose_level",
+        "issue_id": "avg_glucose_level::numeric_outlier",
+        "issue_ids": [
+          "avg_glucose_level::numeric_outlier"
+        ],
+        "key": "numeric_outlier|row=3349|col=avg_glucose_level",
+        "row_index": 3349,
+        "value": "154.6"
+      }
+    },
+    {
+      "anomaly_type": "numeric_outlier",
+      "key": "numeric_outlier|row=3357|col=avg_glucose_level",
+      "prediction": {
+        "anomaly_type": "numeric_outlier",
+        "column": "avg_glucose_level",
+        "issue_id": "avg_glucose_level::numeric_outlier",
+        "issue_ids": [
+          "avg_glucose_level::numeric_outlier"
+        ],
+        "key": "numeric_outlier|row=3357|col=avg_glucose_level",
+        "row_index": 3357,
+        "value": "167.41"
+      }
+    },
+    {
+      "anomaly_type": "numeric_outlier",
+      "key": "numeric_outlier|row=3423|col=avg_glucose_level",
+      "prediction": {
+        "anomaly_type": "numeric_outlier",
+        "column": "avg_glucose_level",
+        "issue_id": "avg_glucose_level::numeric_outlier",
+        "issue_ids": [
+          "avg_glucose_level::numeric_outlier"
+        ],
+        "key": "numeric_outlier|row=3423|col=avg_glucose_level",
+        "row_index": 3423,
+        "value": "150.74"
+      }
+    },
+    {
+      "anomaly_type": "numeric_outlier",
+      "key": "numeric_outlier|row=3428|col=avg_glucose_level",
+      "prediction": {
+        "anomaly_type": "numeric_outlier",
+        "column": "avg_glucose_level",
+        "issue_id": "avg_glucose_level::numeric_outlier",
+        "issue_ids": [
+          "avg_glucose_level::numeric_outlier"
+        ],
+        "key": "numeric_outlier|row=3428|col=avg_glucose_level",
+        "row_index": 3428,
+        "value": "164.7"
+      }
+    },
+    {
+      "anomaly_type": "numeric_outlier",
+      "key": "numeric_outlier|row=3450|col=avg_glucose_level",
+      "prediction": {
+        "anomaly_type": "numeric_outlier",
+        "column": "avg_glucose_level",
+        "issue_id": "avg_glucose_level::numeric_outlier",
+        "issue_ids": [
+          "avg_glucose_level::numeric_outlier"
+        ],
+        "key": "numeric_outlier|row=3450|col=avg_glucose_level",
+        "row_index": 3450,
+        "value": "162.93"
+      }
+    },
+    {
+      "anomaly_type": "numeric_outlier",
+      "key": "numeric_outlier|row=3515|col=avg_glucose_level",
+      "prediction": {
+        "anomaly_type": "numeric_outlier",
+        "column": "avg_glucose_level",
+        "issue_id": "avg_glucose_level::numeric_outlier",
+        "issue_ids": [
+          "avg_glucose_level::numeric_outlier"
+        ],
+        "key": "numeric_outlier|row=3515|col=avg_glucose_level",
+        "row_index": 3515,
+        "value": "151.33"
+      }
+    },
+    {
+      "anomaly_type": "numeric_outlier",
+      "key": "numeric_outlier|row=3526|col=avg_glucose_level",
+      "prediction": {
+        "anomaly_type": "numeric_outlier",
+        "column": "avg_glucose_level",
+        "issue_id": "avg_glucose_level::numeric_outlier",
+        "issue_ids": [
+          "avg_glucose_level::numeric_outlier"
+        ],
+        "key": "numeric_outlier|row=3526|col=avg_glucose_level",
+        "row_index": 3526,
+        "value": "164.67"
+      }
+    },
+    {
+      "anomaly_type": "numeric_outlier",
+      "key": "numeric_outlier|row=3549|col=avg_glucose_level",
+      "prediction": {
+        "anomaly_type": "numeric_outlier",
+        "column": "avg_glucose_level",
+        "issue_id": "avg_glucose_level::numeric_outlier",
+        "issue_ids": [
+          "avg_glucose_level::numeric_outlier"
+        ],
+        "key": "numeric_outlier|row=3549|col=avg_glucose_level",
+        "row_index": 3549,
+        "value": "149.42"
+      }
+    },
+    {
+      "anomaly_type": "numeric_outlier",
+      "key": "numeric_outlier|row=3554|col=avg_glucose_level",
+      "prediction": {
+        "anomaly_type": "numeric_outlier",
+        "column": "avg_glucose_level",
+        "issue_id": "avg_glucose_level::numeric_outlier",
+        "issue_ids": [
+          "avg_glucose_level::numeric_outlier"
+        ],
+        "key": "numeric_outlier|row=3554|col=avg_glucose_level",
+        "row_index": 3554,
+        "value": "151.26"
+      }
+    },
+    {
+      "anomaly_type": "numeric_outlier",
+      "key": "numeric_outlier|row=3564|col=avg_glucose_level",
+      "prediction": {
+        "anomaly_type": "numeric_outlier",
+        "column": "avg_glucose_level",
+        "issue_id": "avg_glucose_level::numeric_outlier",
+        "issue_ids": [
+          "avg_glucose_level::numeric_outlier"
+        ],
+        "key": "numeric_outlier|row=3564|col=avg_glucose_level",
+        "row_index": 3564,
+        "value": "158.93"
+      }
+    },
+    {
+      "anomaly_type": "numeric_outlier",
+      "key": "numeric_outlier|row=3621|col=avg_glucose_level",
+      "prediction": {
+        "anomaly_type": "numeric_outlier",
+        "column": "avg_glucose_level",
+        "issue_id": "avg_glucose_level::numeric_outlier",
+        "issue_ids": [
+          "avg_glucose_level::numeric_outlier"
+        ],
+        "key": "numeric_outlier|row=3621|col=avg_glucose_level",
+        "row_index": 3621,
+        "value": "165.99"
+      }
+    },
+    {
+      "anomaly_type": "numeric_outlier",
+      "key": "numeric_outlier|row=3662|col=bmi",
+      "prediction": {
+        "anomaly_type": "numeric_outlier",
+        "column": "bmi",
+        "issue_id": "bmi::numeric_outlier",
+        "issue_ids": [
+          "bmi::numeric_outlier"
+        ],
+        "key": "numeric_outlier|row=3662|col=bmi",
+        "row_index": 3662,
+        "value": "46"
+      }
+    },
+    {
+      "anomaly_type": "numeric_outlier",
+      "key": "numeric_outlier|row=3671|col=avg_glucose_level",
+      "prediction": {
+        "anomaly_type": "numeric_outlier",
+        "column": "avg_glucose_level",
+        "issue_id": "avg_glucose_level::numeric_outlier",
+        "issue_ids": [
+          "avg_glucose_level::numeric_outlier"
+        ],
+        "key": "numeric_outlier|row=3671|col=avg_glucose_level",
+        "row_index": 3671,
+        "value": "162.23"
+      }
+    },
+    {
+      "anomaly_type": "numeric_outlier",
+      "key": "numeric_outlier|row=3674|col=avg_glucose_level",
+      "prediction": {
+        "anomaly_type": "numeric_outlier",
+        "column": "avg_glucose_level",
+        "issue_id": "avg_glucose_level::numeric_outlier",
+        "issue_ids": [
+          "avg_glucose_level::numeric_outlier"
+        ],
+        "key": "numeric_outlier|row=3674|col=avg_glucose_level",
+        "row_index": 3674,
+        "value": "150"
+      }
+    },
+    {
+      "anomaly_type": "numeric_outlier",
+      "key": "numeric_outlier|row=3685|col=bmi",
+      "prediction": {
+        "anomaly_type": "numeric_outlier",
+        "column": "bmi",
+        "issue_id": "bmi::numeric_outlier",
+        "issue_ids": [
+          "bmi::numeric_outlier"
+        ],
+        "key": "numeric_outlier|row=3685|col=bmi",
+        "row_index": 3685,
+        "value": "46"
+      }
+    },
+    {
+      "anomaly_type": "numeric_outlier",
+      "key": "numeric_outlier|row=3697|col=avg_glucose_level",
+      "prediction": {
+        "anomaly_type": "numeric_outlier",
+        "column": "avg_glucose_level",
+        "issue_id": "avg_glucose_level::numeric_outlier",
+        "issue_ids": [
+          "avg_glucose_level::numeric_outlier"
+        ],
+        "key": "numeric_outlier|row=3697|col=avg_glucose_level",
+        "row_index": 3697,
+        "value": "162.96"
+      }
+    },
+    {
+      "anomaly_type": "numeric_outlier",
+      "key": "numeric_outlier|row=3698|col=avg_glucose_level",
+      "prediction": {
+        "anomaly_type": "numeric_outlier",
+        "column": "avg_glucose_level",
+        "issue_id": "avg_glucose_level::numeric_outlier",
+        "issue_ids": [
+          "avg_glucose_level::numeric_outlier"
+        ],
+        "key": "numeric_outlier|row=3698|col=avg_glucose_level",
+        "row_index": 3698,
+        "value": "167.59"
+      }
+    },
+    {
+      "anomaly_type": "numeric_outlier",
+      "key": "numeric_outlier|row=3700|col=avg_glucose_level",
+      "prediction": {
+        "anomaly_type": "numeric_outlier",
+        "column": "avg_glucose_level",
+        "issue_id": "avg_glucose_level::numeric_outlier",
+        "issue_ids": [
+          "avg_glucose_level::numeric_outlier"
+        ],
+        "key": "numeric_outlier|row=3700|col=avg_glucose_level",
+        "row_index": 3700,
+        "value": "149.13"
+      }
+    },
+    {
+      "anomaly_type": "numeric_outlier",
+      "key": "numeric_outlier|row=3703|col=avg_glucose_level",
+      "prediction": {
+        "anomaly_type": "numeric_outlier",
+        "column": "avg_glucose_level",
+        "issue_id": "avg_glucose_level::numeric_outlier",
+        "issue_ids": [
+          "avg_glucose_level::numeric_outlier"
+        ],
+        "key": "numeric_outlier|row=3703|col=avg_glucose_level",
+        "row_index": 3703,
+        "value": "153.48"
+      }
+    },
+    {
+      "anomaly_type": "numeric_outlier",
+      "key": "numeric_outlier|row=3706|col=avg_glucose_level",
+      "prediction": {
+        "anomaly_type": "numeric_outlier",
+        "column": "avg_glucose_level",
+        "issue_id": "avg_glucose_level::numeric_outlier",
+        "issue_ids": [
+          "avg_glucose_level::numeric_outlier"
+        ],
+        "key": "numeric_outlier|row=3706|col=avg_glucose_level",
+        "row_index": 3706,
+        "value": "168.06"
+      }
+    },
+    {
+      "anomaly_type": "numeric_outlier",
+      "key": "numeric_outlier|row=3712|col=avg_glucose_level",
+      "prediction": {
+        "anomaly_type": "numeric_outlier",
+        "column": "avg_glucose_level",
+        "issue_id": "avg_glucose_level::numeric_outlier",
+        "issue_ids": [
+          "avg_glucose_level::numeric_outlier"
+        ],
+        "key": "numeric_outlier|row=3712|col=avg_glucose_level",
+        "row_index": 3712,
+        "value": "152.84"
+      }
+    },
+    {
+      "anomaly_type": "numeric_outlier",
+      "key": "numeric_outlier|row=3780|col=avg_glucose_level",
+      "prediction": {
+        "anomaly_type": "numeric_outlier",
+        "column": "avg_glucose_level",
+        "issue_id": "avg_glucose_level::numeric_outlier",
+        "issue_ids": [
+          "avg_glucose_level::numeric_outlier"
+        ],
+        "key": "numeric_outlier|row=3780|col=avg_glucose_level",
+        "row_index": 3780,
+        "value": "152.56"
+      }
+    },
+    {
+      "anomaly_type": "numeric_outlier",
+      "key": "numeric_outlier|row=3790|col=avg_glucose_level",
+      "prediction": {
+        "anomaly_type": "numeric_outlier",
+        "column": "avg_glucose_level",
+        "issue_id": "avg_glucose_level::numeric_outlier",
+        "issue_ids": [
+          "avg_glucose_level::numeric_outlier"
+        ],
+        "key": "numeric_outlier|row=3790|col=avg_glucose_level",
+        "row_index": 3790,
+        "value": "148.72"
+      }
+    },
+    {
+      "anomaly_type": "numeric_outlier",
+      "key": "numeric_outlier|row=3796|col=avg_glucose_level",
+      "prediction": {
+        "anomaly_type": "numeric_outlier",
+        "column": "avg_glucose_level",
+        "issue_id": "avg_glucose_level::numeric_outlier",
+        "issue_ids": [
+          "avg_glucose_level::numeric_outlier"
+        ],
+        "key": "numeric_outlier|row=3796|col=avg_glucose_level",
+        "row_index": 3796,
+        "value": "156.82"
+      }
+    },
+    {
+      "anomaly_type": "numeric_outlier",
+      "key": "numeric_outlier|row=3808|col=avg_glucose_level",
+      "prediction": {
+        "anomaly_type": "numeric_outlier",
+        "column": "avg_glucose_level",
+        "issue_id": "avg_glucose_level::numeric_outlier",
+        "issue_ids": [
+          "avg_glucose_level::numeric_outlier"
+        ],
+        "key": "numeric_outlier|row=3808|col=avg_glucose_level",
+        "row_index": 3808,
+        "value": "164.77"
+      }
+    },
+    {
+      "anomaly_type": "numeric_outlier",
+      "key": "numeric_outlier|row=3851|col=avg_glucose_level",
+      "prediction": {
+        "anomaly_type": "numeric_outlier",
+        "column": "avg_glucose_level",
+        "issue_id": "avg_glucose_level::numeric_outlier",
+        "issue_ids": [
+          "avg_glucose_level::numeric_outlier"
+        ],
+        "key": "numeric_outlier|row=3851|col=avg_glucose_level",
+        "row_index": 3851,
+        "value": "162.3"
+      }
+    },
+    {
+      "anomaly_type": "numeric_outlier",
+      "key": "numeric_outlier|row=3875|col=avg_glucose_level",
+      "prediction": {
+        "anomaly_type": "numeric_outlier",
+        "column": "avg_glucose_level",
+        "issue_id": "avg_glucose_level::numeric_outlier",
+        "issue_ids": [
+          "avg_glucose_level::numeric_outlier"
+        ],
+        "key": "numeric_outlier|row=3875|col=avg_glucose_level",
+        "row_index": 3875,
+        "value": "148.24"
+      }
+    },
+    {
+      "anomaly_type": "numeric_outlier",
+      "key": "numeric_outlier|row=3896|col=bmi",
+      "prediction": {
+        "anomaly_type": "numeric_outlier",
+        "column": "bmi",
+        "issue_id": "bmi::numeric_outlier",
+        "issue_ids": [
+          "bmi::numeric_outlier"
+        ],
+        "key": "numeric_outlier|row=3896|col=bmi",
+        "row_index": 3896,
+        "value": "46.1"
+      }
+    },
+    {
+      "anomaly_type": "numeric_outlier",
+      "key": "numeric_outlier|row=3905|col=avg_glucose_level",
+      "prediction": {
+        "anomaly_type": "numeric_outlier",
+        "column": "avg_glucose_level",
+        "issue_id": "avg_glucose_level::numeric_outlier",
+        "issue_ids": [
+          "avg_glucose_level::numeric_outlier"
+        ],
+        "key": "numeric_outlier|row=3905|col=avg_glucose_level",
+        "row_index": 3905,
+        "value": "149.68"
+      }
+    },
+    {
+      "anomaly_type": "numeric_outlier",
+      "key": "numeric_outlier|row=3926|col=avg_glucose_level",
+      "prediction": {
+        "anomaly_type": "numeric_outlier",
+        "column": "avg_glucose_level",
+        "issue_id": "avg_glucose_level::numeric_outlier",
+        "issue_ids": [
+          "avg_glucose_level::numeric_outlier"
+        ],
+        "key": "numeric_outlier|row=3926|col=avg_glucose_level",
+        "row_index": 3926,
+        "value": "148.52"
+      }
+    },
+    {
+      "anomaly_type": "numeric_outlier",
+      "key": "numeric_outlier|row=3935|col=avg_glucose_level",
+      "prediction": {
+        "anomaly_type": "numeric_outlier",
+        "column": "avg_glucose_level",
+        "issue_id": "avg_glucose_level::numeric_outlier",
+        "issue_ids": [
+          "avg_glucose_level::numeric_outlier"
+        ],
+        "key": "numeric_outlier|row=3935|col=avg_glucose_level",
+        "row_index": 3935,
+        "value": "151.16"
+      }
+    },
+    {
+      "anomaly_type": "numeric_outlier",
+      "key": "numeric_outlier|row=3943|col=avg_glucose_level",
+      "prediction": {
+        "anomaly_type": "numeric_outlier",
+        "column": "avg_glucose_level",
+        "issue_id": "avg_glucose_level::numeric_outlier",
+        "issue_ids": [
+          "avg_glucose_level::numeric_outlier"
+        ],
+        "key": "numeric_outlier|row=3943|col=avg_glucose_level",
+        "row_index": 3943,
+        "value": "149.95"
+      }
+    },
+    {
+      "anomaly_type": "numeric_outlier",
+      "key": "numeric_outlier|row=3987|col=avg_glucose_level",
+      "prediction": {
+        "anomaly_type": "numeric_outlier",
+        "column": "avg_glucose_level",
+        "issue_id": "avg_glucose_level::numeric_outlier",
+        "issue_ids": [
+          "avg_glucose_level::numeric_outlier"
+        ],
+        "key": "numeric_outlier|row=3987|col=avg_glucose_level",
+        "row_index": 3987,
+        "value": "149.62"
+      }
+    },
+    {
+      "anomaly_type": "numeric_outlier",
+      "key": "numeric_outlier|row=4007|col=avg_glucose_level",
+      "prediction": {
+        "anomaly_type": "numeric_outlier",
+        "column": "avg_glucose_level",
+        "issue_id": "avg_glucose_level::numeric_outlier",
+        "issue_ids": [
+          "avg_glucose_level::numeric_outlier"
+        ],
+        "key": "numeric_outlier|row=4007|col=avg_glucose_level",
+        "row_index": 4007,
+        "value": "153.76"
+      }
+    },
+    {
+      "anomaly_type": "numeric_outlier",
+      "key": "numeric_outlier|row=4018|col=avg_glucose_level",
+      "prediction": {
+        "anomaly_type": "numeric_outlier",
+        "column": "avg_glucose_level",
+        "issue_id": "avg_glucose_level::numeric_outlier",
+        "issue_ids": [
+          "avg_glucose_level::numeric_outlier"
+        ],
+        "key": "numeric_outlier|row=4018|col=avg_glucose_level",
+        "row_index": 4018,
+        "value": "156.18"
+      }
+    },
+    {
+      "anomaly_type": "numeric_outlier",
+      "key": "numeric_outlier|row=4030|col=avg_glucose_level",
+      "prediction": {
+        "anomaly_type": "numeric_outlier",
+        "column": "avg_glucose_level",
+        "issue_id": "avg_glucose_level::numeric_outlier",
+        "issue_ids": [
+          "avg_glucose_level::numeric_outlier"
+        ],
+        "key": "numeric_outlier|row=4030|col=avg_glucose_level",
+        "row_index": 4030,
+        "value": "155.86"
+      }
+    },
+    {
+      "anomaly_type": "numeric_outlier",
+      "key": "numeric_outlier|row=4048|col=avg_glucose_level",
+      "prediction": {
+        "anomaly_type": "numeric_outlier",
+        "column": "avg_glucose_level",
+        "issue_id": "avg_glucose_level::numeric_outlier",
+        "issue_ids": [
+          "avg_glucose_level::numeric_outlier"
+        ],
+        "key": "numeric_outlier|row=4048|col=avg_glucose_level",
+        "row_index": 4048,
+        "value": "151.23"
+      }
+    },
+    {
+      "anomaly_type": "numeric_outlier",
+      "key": "numeric_outlier|row=4091|col=avg_glucose_level",
+      "prediction": {
+        "anomaly_type": "numeric_outlier",
+        "column": "avg_glucose_level",
+        "issue_id": "avg_glucose_level::numeric_outlier",
+        "issue_ids": [
+          "avg_glucose_level::numeric_outlier"
+        ],
+        "key": "numeric_outlier|row=4091|col=avg_glucose_level",
+        "row_index": 4091,
+        "value": "153.34"
+      }
+    },
+    {
+      "anomaly_type": "numeric_outlier",
+      "key": "numeric_outlier|row=4099|col=avg_glucose_level",
+      "prediction": {
+        "anomaly_type": "numeric_outlier",
+        "column": "avg_glucose_level",
+        "issue_id": "avg_glucose_level::numeric_outlier",
+        "issue_ids": [
+          "avg_glucose_level::numeric_outlier"
+        ],
+        "key": "numeric_outlier|row=4099|col=avg_glucose_level",
+        "row_index": 4099,
+        "value": "153.08"
+      }
+    },
+    {
+      "anomaly_type": "numeric_outlier",
+      "key": "numeric_outlier|row=4106|col=avg_glucose_level",
+      "prediction": {
+        "anomaly_type": "numeric_outlier",
+        "column": "avg_glucose_level",
+        "issue_id": "avg_glucose_level::numeric_outlier",
+        "issue_ids": [
+          "avg_glucose_level::numeric_outlier"
+        ],
+        "key": "numeric_outlier|row=4106|col=avg_glucose_level",
+        "row_index": 4106,
+        "value": "151.25"
+      }
+    },
+    {
+      "anomaly_type": "numeric_outlier",
+      "key": "numeric_outlier|row=4118|col=avg_glucose_level",
+      "prediction": {
+        "anomaly_type": "numeric_outlier",
+        "column": "avg_glucose_level",
+        "issue_id": "avg_glucose_level::numeric_outlier",
+        "issue_ids": [
+          "avg_glucose_level::numeric_outlier"
+        ],
+        "key": "numeric_outlier|row=4118|col=avg_glucose_level",
+        "row_index": 4118,
+        "value": "153.38"
+      }
+    },
+    {
+      "anomaly_type": "numeric_outlier",
+      "key": "numeric_outlier|row=4133|col=avg_glucose_level",
+      "prediction": {
+        "anomaly_type": "numeric_outlier",
+        "column": "avg_glucose_level",
+        "issue_id": "avg_glucose_level::numeric_outlier",
+        "issue_ids": [
+          "avg_glucose_level::numeric_outlier"
+        ],
+        "key": "numeric_outlier|row=4133|col=avg_glucose_level",
+        "row_index": 4133,
+        "value": "159.67"
+      }
+    },
+    {
+      "anomaly_type": "numeric_outlier",
+      "key": "numeric_outlier|row=4142|col=avg_glucose_level",
+      "prediction": {
+        "anomaly_type": "numeric_outlier",
+        "column": "avg_glucose_level",
+        "issue_id": "avg_glucose_level::numeric_outlier",
+        "issue_ids": [
+          "avg_glucose_level::numeric_outlier"
+        ],
+        "key": "numeric_outlier|row=4142|col=avg_glucose_level",
+        "row_index": 4142,
+        "value": "158.31"
+      }
+    },
+    {
+      "anomaly_type": "numeric_outlier",
+      "key": "numeric_outlier|row=4153|col=avg_glucose_level",
+      "prediction": {
+        "anomaly_type": "numeric_outlier",
+        "column": "avg_glucose_level",
+        "issue_id": "avg_glucose_level::numeric_outlier",
+        "issue_ids": [
+          "avg_glucose_level::numeric_outlier"
+        ],
+        "key": "numeric_outlier|row=4153|col=avg_glucose_level",
+        "row_index": 4153,
+        "value": "158.33"
+      }
+    },
+    {
+      "anomaly_type": "numeric_outlier",
+      "key": "numeric_outlier|row=4231|col=avg_glucose_level",
+      "prediction": {
+        "anomaly_type": "numeric_outlier",
+        "column": "avg_glucose_level",
+        "issue_id": "avg_glucose_level::numeric_outlier",
+        "issue_ids": [
+          "avg_glucose_level::numeric_outlier"
+        ],
+        "key": "numeric_outlier|row=4231|col=avg_glucose_level",
+        "row_index": 4231,
+        "value": "162.23"
+      }
+    },
+    {
+      "anomaly_type": "numeric_outlier",
+      "key": "numeric_outlier|row=4237|col=avg_glucose_level",
+      "prediction": {
+        "anomaly_type": "numeric_outlier",
+        "column": "avg_glucose_level",
+        "issue_id": "avg_glucose_level::numeric_outlier",
+        "issue_ids": [
+          "avg_glucose_level::numeric_outlier"
+        ],
+        "key": "numeric_outlier|row=4237|col=avg_glucose_level",
+        "row_index": 4237,
+        "value": "150.03"
+      }
+    },
+    {
+      "anomaly_type": "numeric_outlier",
+      "key": "numeric_outlier|row=430|col=avg_glucose_level",
+      "prediction": {
+        "anomaly_type": "numeric_outlier",
+        "column": "avg_glucose_level",
+        "issue_id": "avg_glucose_level::numeric_outlier",
+        "issue_ids": [
+          "avg_glucose_level::numeric_outlier"
+        ],
+        "key": "numeric_outlier|row=430|col=avg_glucose_level",
+        "row_index": 430,
+        "value": "158.89"
+      }
+    },
+    {
+      "anomaly_type": "numeric_outlier",
+      "key": "numeric_outlier|row=525|col=avg_glucose_level",
+      "prediction": {
+        "anomaly_type": "numeric_outlier",
+        "column": "avg_glucose_level",
+        "issue_id": "avg_glucose_level::numeric_outlier",
+        "issue_ids": [
+          "avg_glucose_level::numeric_outlier"
+        ],
+        "key": "numeric_outlier|row=525|col=avg_glucose_level",
+        "row_index": 525,
+        "value": "163.82"
+      }
+    },
+    {
+      "anomaly_type": "numeric_outlier",
+      "key": "numeric_outlier|row=818|col=bmi",
+      "prediction": {
+        "anomaly_type": "numeric_outlier",
+        "column": "bmi",
+        "issue_id": "bmi::numeric_outlier",
+        "issue_ids": [
+          "bmi::numeric_outlier"
+        ],
+        "key": "numeric_outlier|row=818|col=bmi",
+        "row_index": 818,
+        "value": "45.8"
+      }
+    }
+  ],
+  "milestone": "M2",
+  "scoring_policy": {
+    "event_matching": {
+      "cross_column_consistency": "anomaly_type + row_index",
+      "duplicate_record": "anomaly_type + source_row_id group",
+      "missing_values": "anomaly_type + row_index + column",
+      "numeric_outlier": "anomaly_type + row_index + column",
+      "rare_category": "anomaly_type + row_index + column"
+    },
+    "time_series_shift": "excluded from M2 scoring because M1 did not inject this anomaly type"
+  },
+  "summary": {
+    "false_negative_rows": 0,
+    "false_positive_rows": 122,
+    "truth_match_rows": 100
+  },
+  "truth_matches": [
+    {
+      "detected": true,
+      "key": "missing_values|row=1417|col=work_type",
+      "prediction": {
+        "anomaly_type": "missing_values",
+        "column": "work_type",
+        "issue_id": "work_type::missing_values",
+        "issue_ids": [
+          "work_type::missing_values"
+        ],
+        "key": "missing_values|row=1417|col=work_type",
+        "row_index": 1417,
+        "value": ""
+      },
+      "truth": {
+        "anomaly_type": "missing_values",
+        "column": "work_type",
+        "corrupted_value": "",
+        "expected_issue_type": "missing_values",
+        "injection_id": "m1-0006",
+        "key": "missing_values|row=1417|col=work_type",
+        "notes": "Cell was replaced with a missing value.",
+        "original_value": "Private",
+        "repairable": true,
+        "row_id": "m1-row-01417",
+        "row_index": 1417,
+        "source_row_id": "25404"
+      }
+    },
+    {
+      "detected": true,
+      "key": "missing_values|row=14|col=bmi",
+      "prediction": {
+        "anomaly_type": "missing_values",
+        "column": "bmi",
+        "issue_id": "bmi::missing_values",
+        "issue_ids": [
+          "bmi::missing_values"
+        ],
+        "key": "missing_values|row=14|col=bmi",
+        "row_index": 14,
+        "value": ""
+      },
+      "truth": {
+        "anomaly_type": "missing_values",
+        "column": "bmi",
+        "corrupted_value": "",
+        "expected_issue_type": "missing_values",
+        "injection_id": "m1-0002",
+        "key": "missing_values|row=14|col=bmi",
+        "notes": "Cell was replaced with a missing value.",
+        "original_value": "28.9",
+        "repairable": true,
+        "row_id": "m1-row-00014",
+        "row_index": 14,
+        "source_row_id": "354"
+      }
+    },
+    {
+      "detected": true,
+      "key": "missing_values|row=1517|col=avg_glucose_level",
+      "prediction": {
+        "anomaly_type": "missing_values",
+        "column": "avg_glucose_level",
+        "issue_id": "avg_glucose_level::missing_values",
+        "issue_ids": [
+          "avg_glucose_level::missing_values"
+        ],
+        "key": "missing_values|row=1517|col=avg_glucose_level",
+        "row_index": 1517,
+        "value": ""
+      },
+      "truth": {
+        "anomaly_type": "missing_values",
+        "column": "avg_glucose_level",
+        "corrupted_value": "",
+        "expected_issue_type": "missing_values",
+        "injection_id": "m1-0013",
+        "key": "missing_values|row=1517|col=avg_glucose_level",
+        "notes": "Cell was replaced with a missing value.",
+        "original_value": "92.15",
+        "repairable": true,
+        "row_id": "m1-row-01517",
+        "row_index": 1517,
+        "source_row_id": "27382"
+      }
+    },
+    {
+      "detected": true,
+      "key": "missing_values|row=1595|col=avg_glucose_level",
+      "prediction": {
+        "anomaly_type": "missing_values",
+        "column": "avg_glucose_level",
+        "issue_id": "avg_glucose_level::missing_values",
+        "issue_ids": [
+          "avg_glucose_level::missing_values"
+        ],
+        "key": "missing_values|row=1595|col=avg_glucose_level",
+        "row_index": 1595,
+        "value": ""
+      },
+      "truth": {
+        "anomaly_type": "missing_values",
+        "column": "avg_glucose_level",
+        "corrupted_value": "",
+        "expected_issue_type": "missing_values",
+        "injection_id": "m1-0026",
+        "key": "missing_values|row=1595|col=avg_glucose_level",
+        "notes": "Cell was replaced with a missing value.",
+        "original_value": "91.98",
+        "repairable": true,
+        "row_id": "m1-row-01595",
+        "row_index": 1595,
+        "source_row_id": "28500"
+      }
+    },
+    {
+      "detected": true,
+      "key": "missing_values|row=1757|col=smoking_status",
+      "prediction": {
+        "anomaly_type": "missing_values",
+        "column": "smoking_status",
+        "issue_id": "smoking_status::missing_values",
+        "issue_ids": [
+          "smoking_status::missing_values"
+        ],
+        "key": "missing_values|row=1757|col=smoking_status",
+        "row_index": 1757,
+        "value": ""
+      },
+      "truth": {
+        "anomaly_type": "missing_values",
+        "column": "smoking_status",
+        "corrupted_value": "",
+        "expected_issue_type": "missing_values",
+        "injection_id": "m1-0021",
+        "key": "missing_values|row=1757|col=smoking_status",
+        "notes": "Cell was replaced with a missing value.",
+        "original_value": "never smoked",
+        "repairable": true,
+        "row_id": "m1-row-01757",
+        "row_index": 1757,
+        "source_row_id": "31409"
+      }
+    },
+    {
+      "detected": true,
+      "key": "missing_values|row=1817|col=avg_glucose_level",
+      "prediction": {
+        "anomaly_type": "missing_values",
+        "column": "avg_glucose_level",
+        "issue_id": "avg_glucose_level::missing_values",
+        "issue_ids": [
+          "avg_glucose_level::missing_values"
+        ],
+        "key": "missing_values|row=1817|col=avg_glucose_level",
+        "row_index": 1817,
+        "value": ""
+      },
+      "truth": {
+        "anomaly_type": "missing_values",
+        "column": "avg_glucose_level",
+        "corrupted_value": "",
+        "expected_issue_type": "missing_values",
+        "injection_id": "m1-0024",
+        "key": "missing_values|row=1817|col=avg_glucose_level",
+        "notes": "Cell was replaced with a missing value.",
+        "original_value": "104.55",
+        "repairable": true,
+        "row_id": "m1-row-01817",
+        "row_index": 1817,
+        "source_row_id": "32352"
+      }
+    },
+    {
+      "detected": true,
+      "key": "missing_values|row=1871|col=avg_glucose_level",
+      "prediction": {
+        "anomaly_type": "missing_values",
+        "column": "avg_glucose_level",
+        "issue_id": "avg_glucose_level::missing_values",
+        "issue_ids": [
+          "avg_glucose_level::missing_values"
+        ],
+        "key": "missing_values|row=1871|col=avg_glucose_level",
+        "row_index": 1871,
+        "value": ""
+      },
+      "truth": {
+        "anomaly_type": "missing_values",
+        "column": "avg_glucose_level",
+        "corrupted_value": "",
+        "expected_issue_type": "missing_values",
+        "injection_id": "m1-0001",
+        "key": "missing_values|row=1871|col=avg_glucose_level",
+        "notes": "Cell was replaced with a missing value.",
+        "original_value": "79.44",
+        "repairable": true,
+        "row_id": "m1-row-01871",
+        "row_index": 1871,
+        "source_row_id": "33410"
+      }
+    },
+    {
+      "detected": true,
+      "key": "missing_values|row=2035|col=smoking_status",
+      "prediction": {
+        "anomaly_type": "missing_values",
+        "column": "smoking_status",
+        "issue_id": "smoking_status::missing_values",
+        "issue_ids": [
+          "smoking_status::missing_values"
+        ],
+        "key": "missing_values|row=2035|col=smoking_status",
+        "row_index": 2035,
+        "value": ""
+      },
+      "truth": {
+        "anomaly_type": "missing_values",
+        "column": "smoking_status",
+        "corrupted_value": "",
+        "expected_issue_type": "missing_values",
+        "injection_id": "m1-0022",
+        "key": "missing_values|row=2035|col=smoking_status",
+        "notes": "Cell was replaced with a missing value.",
+        "original_value": "Unknown",
+        "repairable": true,
+        "row_id": "m1-row-02035",
+        "row_index": 2035,
+        "source_row_id": "36471"
+      }
+    },
+    {
+      "detected": true,
+      "key": "missing_values|row=2050|col=smoking_status",
+      "prediction": {
+        "anomaly_type": "missing_values",
+        "column": "smoking_status",
+        "issue_id": "smoking_status::missing_values",
+        "issue_ids": [
+          "smoking_status::missing_values"
+        ],
+        "key": "missing_values|row=2050|col=smoking_status",
+        "row_index": 2050,
+        "value": ""
+      },
+      "truth": {
+        "anomaly_type": "missing_values",
+        "column": "smoking_status",
+        "corrupted_value": "",
+        "expected_issue_type": "missing_values",
+        "injection_id": "m1-0018",
+        "key": "missing_values|row=2050|col=smoking_status",
+        "notes": "Cell was replaced with a missing value.",
+        "original_value": "smokes",
+        "repairable": true,
+        "row_id": "m1-row-02050",
+        "row_index": 2050,
+        "source_row_id": "36698"
+      }
+    },
+    {
+      "detected": true,
+      "key": "missing_values|row=2076|col=bmi",
+      "prediction": {
+        "anomaly_type": "missing_values",
+        "column": "bmi",
+        "issue_id": "bmi::missing_values",
+        "issue_ids": [
+          "bmi::missing_values"
+        ],
+        "key": "missing_values|row=2076|col=bmi",
+        "row_index": 2076,
+        "value": ""
+      },
+      "truth": {
+        "anomaly_type": "missing_values",
+        "column": "bmi",
+        "corrupted_value": "",
+        "expected_issue_type": "missing_values",
+        "injection_id": "m1-0011",
+        "key": "missing_values|row=2076|col=bmi",
+        "notes": "Cell was replaced with a missing value.",
+        "original_value": "18.1",
+        "repairable": true,
+        "row_id": "m1-row-02076",
+        "row_index": 2076,
+        "source_row_id": "37025"
+      }
+    },
+    {
+      "detected": true,
+      "key": "missing_values|row=2421|col=smoking_status",
+      "prediction": {
+        "anomaly_type": "missing_values",
+        "column": "smoking_status",
+        "issue_id": "smoking_status::missing_values",
+        "issue_ids": [
+          "smoking_status::missing_values"
+        ],
+        "key": "missing_values|row=2421|col=smoking_status",
+        "row_index": 2421,
+        "value": ""
+      },
+      "truth": {
+        "anomaly_type": "missing_values",
+        "column": "smoking_status",
+        "corrupted_value": "",
+        "expected_issue_type": "missing_values",
+        "injection_id": "m1-0012",
+        "key": "missing_values|row=2421|col=smoking_status",
+        "notes": "Cell was replaced with a missing value.",
+        "original_value": "formerly smoked",
+        "repairable": true,
+        "row_id": "m1-row-02421",
+        "row_index": 2421,
+        "source_row_id": "42899"
+      }
+    },
+    {
+      "detected": true,
+      "key": "missing_values|row=263|col=bmi",
+      "prediction": {
+        "anomaly_type": "missing_values",
+        "column": "bmi",
+        "issue_id": "bmi::missing_values",
+        "issue_ids": [
+          "bmi::missing_values"
+        ],
+        "key": "missing_values|row=263|col=bmi",
+        "row_index": 263,
+        "value": ""
+      },
+      "truth": {
+        "anomaly_type": "missing_values",
+        "column": "bmi",
+        "corrupted_value": "",
+        "expected_issue_type": "missing_values",
+        "injection_id": "m1-0010",
+        "key": "missing_values|row=263|col=bmi",
+        "notes": "Cell was replaced with a missing value.",
+        "original_value": "23.4",
+        "repairable": true,
+        "row_id": "m1-row-00263",
+        "row_index": 263,
+        "source_row_id": "5046"
+      }
+    },
+    {
+      "detected": true,
+      "key": "missing_values|row=269|col=work_type",
+      "prediction": {
+        "anomaly_type": "missing_values",
+        "column": "work_type",
+        "issue_id": "work_type::missing_values",
+        "issue_ids": [
+          "work_type::missing_values"
+        ],
+        "key": "missing_values|row=269|col=work_type",
+        "row_index": 269,
+        "value": ""
+      },
+      "truth": {
+        "anomaly_type": "missing_values",
+        "column": "work_type",
+        "corrupted_value": "",
+        "expected_issue_type": "missing_values",
+        "injection_id": "m1-0009",
+        "key": "missing_values|row=269|col=work_type",
+        "notes": "Cell was replaced with a missing value.",
+        "original_value": "Private",
+        "repairable": true,
+        "row_id": "m1-row-00269",
+        "row_index": 269,
+        "source_row_id": "5173"
+      }
+    },
+    {
+      "detected": true,
+      "key": "missing_values|row=2895|col=smoking_status",
+      "prediction": {
+        "anomaly_type": "missing_values",
+        "column": "smoking_status",
+        "issue_id": "smoking_status::missing_values",
+        "issue_ids": [
+          "smoking_status::missing_values"
+        ],
+        "key": "missing_values|row=2895|col=smoking_status",
+        "row_index": 2895,
+        "value": ""
+      },
+      "truth": {
+        "anomaly_type": "missing_values",
+        "column": "smoking_status",
+        "corrupted_value": "",
+        "expected_issue_type": "missing_values",
+        "injection_id": "m1-0025",
+        "key": "missing_values|row=2895|col=smoking_status",
+        "notes": "Cell was replaced with a missing value.",
+        "original_value": "Unknown",
+        "repairable": true,
+        "row_id": "m1-row-02895",
+        "row_index": 2895,
+        "source_row_id": "50775"
+      }
+    },
+    {
+      "detected": true,
+      "key": "missing_values|row=2954|col=smoking_status",
+      "prediction": {
+        "anomaly_type": "missing_values",
+        "column": "smoking_status",
+        "issue_id": "smoking_status::missing_values",
+        "issue_ids": [
+          "smoking_status::missing_values"
+        ],
+        "key": "missing_values|row=2954|col=smoking_status",
+        "row_index": 2954,
+        "value": ""
+      },
+      "truth": {
+        "anomaly_type": "missing_values",
+        "column": "smoking_status",
+        "corrupted_value": "",
+        "expected_issue_type": "missing_values",
+        "injection_id": "m1-0030",
+        "key": "missing_values|row=2954|col=smoking_status",
+        "notes": "Cell was replaced with a missing value.",
+        "original_value": "Unknown",
+        "repairable": true,
+        "row_id": "m1-row-02954",
+        "row_index": 2954,
+        "source_row_id": "51762"
+      }
+    },
+    {
+      "detected": true,
+      "key": "missing_values|row=3163|col=bmi",
+      "prediction": {
+        "anomaly_type": "missing_values",
+        "column": "bmi",
+        "issue_id": "bmi::missing_values",
+        "issue_ids": [
+          "bmi::missing_values"
+        ],
+        "key": "missing_values|row=3163|col=bmi",
+        "row_index": 3163,
+        "value": ""
+      },
+      "truth": {
+        "anomaly_type": "missing_values",
+        "column": "bmi",
+        "corrupted_value": "",
+        "expected_issue_type": "missing_values",
+        "injection_id": "m1-0016",
+        "key": "missing_values|row=3163|col=bmi",
+        "notes": "Cell was replaced with a missing value.",
+        "original_value": "27.9",
+        "repairable": true,
+        "row_id": "m1-row-03163",
+        "row_index": 3163,
+        "source_row_id": "55232"
+      }
+    },
+    {
+      "detected": true,
+      "key": "missing_values|row=3210|col=bmi",
+      "prediction": {
+        "anomaly_type": "missing_values",
+        "column": "bmi",
+        "issue_id": "bmi::missing_values",
+        "issue_ids": [
+          "bmi::missing_values"
+        ],
+        "key": "missing_values|row=3210|col=bmi",
+        "row_index": 3210,
+        "value": ""
+      },
+      "truth": {
+        "anomaly_type": "missing_values",
+        "column": "bmi",
+        "corrupted_value": "",
+        "expected_issue_type": "missing_values",
+        "injection_id": "m1-0003",
+        "key": "missing_values|row=3210|col=bmi",
+        "notes": "Cell was replaced with a missing value.",
+        "original_value": "23.6",
+        "repairable": true,
+        "row_id": "m1-row-03210",
+        "row_index": 3210,
+        "source_row_id": "56021"
+      }
+    },
+    {
+      "detected": true,
+      "key": "missing_values|row=3334|col=smoking_status",
+      "prediction": {
+        "anomaly_type": "missing_values",
+        "column": "smoking_status",
+        "issue_id": "smoking_status::missing_values",
+        "issue_ids": [
+          "smoking_status::missing_values"
+        ],
+        "key": "missing_values|row=3334|col=smoking_status",
+        "row_index": 3334,
+        "value": ""
+      },
+      "truth": {
+        "anomaly_type": "missing_values",
+        "column": "smoking_status",
+        "corrupted_value": "",
+        "expected_issue_type": "missing_values",
+        "injection_id": "m1-0020",
+        "key": "missing_values|row=3334|col=smoking_status",
+        "notes": "Cell was replaced with a missing value.",
+        "original_value": "never smoked",
+        "repairable": true,
+        "row_id": "m1-row-03334",
+        "row_index": 3334,
+        "source_row_id": "57813"
+      }
+    },
+    {
+      "detected": true,
+      "key": "missing_values|row=358|col=bmi",
+      "prediction": {
+        "anomaly_type": "missing_values",
+        "column": "bmi",
+        "issue_id": "bmi::missing_values",
+        "issue_ids": [
+          "bmi::missing_values"
+        ],
+        "key": "missing_values|row=358|col=bmi",
+        "row_index": 358,
+        "value": ""
+      },
+      "truth": {
+        "anomaly_type": "missing_values",
+        "column": "bmi",
+        "corrupted_value": "",
+        "expected_issue_type": "missing_values",
+        "injection_id": "m1-0019",
+        "key": "missing_values|row=358|col=bmi",
+        "notes": "Cell was replaced with a missing value.",
+        "original_value": "20.8",
+        "repairable": true,
+        "row_id": "m1-row-00358",
+        "row_index": 358,
+        "source_row_id": "6625"
+      }
+    },
+    {
+      "detected": true,
+      "key": "missing_values|row=3604|col=smoking_status",
+      "prediction": {
+        "anomaly_type": "missing_values",
+        "column": "smoking_status",
+        "issue_id": "smoking_status::missing_values",
+        "issue_ids": [
+          "smoking_status::missing_values"
+        ],
+        "key": "missing_values|row=3604|col=smoking_status",
+        "row_index": 3604,
+        "value": ""
+      },
+      "truth": {
+        "anomaly_type": "missing_values",
+        "column": "smoking_status",
+        "corrupted_value": "",
+        "expected_issue_type": "missing_values",
+        "injection_id": "m1-0014",
+        "key": "missing_values|row=3604|col=smoking_status",
+        "notes": "Cell was replaced with a missing value.",
+        "original_value": "never smoked",
+        "repairable": true,
+        "row_id": "m1-row-03604",
+        "row_index": 3604,
+        "source_row_id": "62396"
+      }
+    },
+    {
+      "detected": true,
+      "key": "missing_values|row=367|col=avg_glucose_level",
+      "prediction": {
+        "anomaly_type": "missing_values",
+        "column": "avg_glucose_level",
+        "issue_id": "avg_glucose_level::missing_values",
+        "issue_ids": [
+          "avg_glucose_level::missing_values"
+        ],
+        "key": "missing_values|row=367|col=avg_glucose_level",
+        "row_index": 367,
+        "value": ""
+      },
+      "truth": {
+        "anomaly_type": "missing_values",
+        "column": "avg_glucose_level",
+        "corrupted_value": "",
+        "expected_issue_type": "missing_values",
+        "injection_id": "m1-0028",
+        "key": "missing_values|row=367|col=avg_glucose_level",
+        "notes": "Cell was replaced with a missing value.",
+        "original_value": "93.21",
+        "repairable": true,
+        "row_id": "m1-row-00367",
+        "row_index": 367,
+        "source_row_id": "6850"
+      }
+    },
+    {
+      "detected": true,
+      "key": "missing_values|row=378|col=bmi",
+      "prediction": {
+        "anomaly_type": "missing_values",
+        "column": "bmi",
+        "issue_id": "bmi::missing_values",
+        "issue_ids": [
+          "bmi::missing_values"
+        ],
+        "key": "missing_values|row=378|col=bmi",
+        "row_index": 378,
+        "value": ""
+      },
+      "truth": {
+        "anomaly_type": "missing_values",
+        "column": "bmi",
+        "corrupted_value": "",
+        "expected_issue_type": "missing_values",
+        "injection_id": "m1-0004",
+        "key": "missing_values|row=378|col=bmi",
+        "notes": "Cell was replaced with a missing value.",
+        "original_value": "23.6",
+        "repairable": true,
+        "row_id": "m1-row-00378",
+        "row_index": 378,
+        "source_row_id": "6976"
+      }
+    },
+    {
+      "detected": true,
+      "key": "missing_values|row=3812|col=bmi",
+      "prediction": {
+        "anomaly_type": "missing_values",
+        "column": "bmi",
+        "issue_id": "bmi::missing_values",
+        "issue_ids": [
+          "bmi::missing_values"
+        ],
+        "key": "missing_values|row=3812|col=bmi",
+        "row_index": 3812,
+        "value": ""
+      },
+      "truth": {
+        "anomaly_type": "missing_values",
+        "column": "bmi",
+        "corrupted_value": "",
+        "expected_issue_type": "missing_values",
+        "injection_id": "m1-0015",
+        "key": "missing_values|row=3812|col=bmi",
+        "notes": "Cell was replaced with a missing value.",
+        "original_value": "25.3",
+        "repairable": true,
+        "row_id": "m1-row-03812",
+        "row_index": 3812,
+        "source_row_id": "65849"
+      }
+    },
+    {
+      "detected": true,
+      "key": "missing_values|row=3824|col=work_type",
+      "prediction": {
+        "anomaly_type": "missing_values",
+        "column": "work_type",
+        "issue_id": "work_type::missing_values",
+        "issue_ids": [
+          "work_type::missing_values"
+        ],
+        "key": "missing_values|row=3824|col=work_type",
+        "row_index": 3824,
+        "value": ""
+      },
+      "truth": {
+        "anomaly_type": "missing_values",
+        "column": "work_type",
+        "corrupted_value": "",
+        "expected_issue_type": "missing_values",
+        "injection_id": "m1-0017",
+        "key": "missing_values|row=3824|col=work_type",
+        "notes": "Cell was replaced with a missing value.",
+        "original_value": "Self-employed",
+        "repairable": true,
+        "row_id": "m1-row-03824",
+        "row_index": 3824,
+        "source_row_id": "66051"
+      }
+    },
+    {
+      "detected": true,
+      "key": "missing_values|row=3938|col=smoking_status",
+      "prediction": {
+        "anomaly_type": "missing_values",
+        "column": "smoking_status",
+        "issue_id": "smoking_status::missing_values",
+        "issue_ids": [
+          "smoking_status::missing_values"
+        ],
+        "key": "missing_values|row=3938|col=smoking_status",
+        "row_index": 3938,
+        "value": ""
+      },
+      "truth": {
+        "anomaly_type": "missing_values",
+        "column": "smoking_status",
+        "corrupted_value": "",
+        "expected_issue_type": "missing_values",
+        "injection_id": "m1-0027",
+        "key": "missing_values|row=3938|col=smoking_status",
+        "notes": "Cell was replaced with a missing value.",
+        "original_value": "never smoked",
+        "repairable": true,
+        "row_id": "m1-row-03938",
+        "row_index": 3938,
+        "source_row_id": "68034"
+      }
+    },
+    {
+      "detected": true,
+      "key": "missing_values|row=4061|col=avg_glucose_level",
+      "prediction": {
+        "anomaly_type": "missing_values",
+        "column": "avg_glucose_level",
+        "issue_id": "avg_glucose_level::missing_values",
+        "issue_ids": [
+          "avg_glucose_level::missing_values"
+        ],
+        "key": "missing_values|row=4061|col=avg_glucose_level",
+        "row_index": 4061,
+        "value": ""
+      },
+      "truth": {
+        "anomaly_type": "missing_values",
+        "column": "avg_glucose_level",
+        "corrupted_value": "",
+        "expected_issue_type": "missing_values",
+        "injection_id": "m1-0007",
+        "key": "missing_values|row=4061|col=avg_glucose_level",
+        "notes": "Cell was replaced with a missing value.",
+        "original_value": "77.24",
+        "repairable": true,
+        "row_id": "m1-row-04061",
+        "row_index": 4061,
+        "source_row_id": "70081"
+      }
+    },
+    {
+      "detected": true,
+      "key": "missing_values|row=697|col=bmi",
+      "prediction": {
+        "anomaly_type": "missing_values",
+        "column": "bmi",
+        "issue_id": "bmi::missing_values",
+        "issue_ids": [
+          "bmi::missing_values"
+        ],
+        "key": "missing_values|row=697|col=bmi",
+        "row_index": 697,
+        "value": ""
+      },
+      "truth": {
+        "anomaly_type": "missing_values",
+        "column": "bmi",
+        "corrupted_value": "",
+        "expected_issue_type": "missing_values",
+        "injection_id": "m1-0005",
+        "key": "missing_values|row=697|col=bmi",
+        "notes": "Cell was replaced with a missing value.",
+        "original_value": "26.8",
+        "repairable": true,
+        "row_id": "m1-row-00697",
+        "row_index": 697,
+        "source_row_id": "12396"
+      }
+    },
+    {
+      "detected": true,
+      "key": "missing_values|row=70|col=work_type",
+      "prediction": {
+        "anomaly_type": "missing_values",
+        "column": "work_type",
+        "issue_id": "work_type::missing_values",
+        "issue_ids": [
+          "work_type::missing_values"
+        ],
+        "key": "missing_values|row=70|col=work_type",
+        "row_index": 70,
+        "value": ""
+      },
+      "truth": {
+        "anomaly_type": "missing_values",
+        "column": "work_type",
+        "corrupted_value": "",
+        "expected_issue_type": "missing_values",
+        "injection_id": "m1-0008",
+        "key": "missing_values|row=70|col=work_type",
+        "notes": "Cell was replaced with a missing value.",
+        "original_value": "Private",
+        "repairable": true,
+        "row_id": "m1-row-00070",
+        "row_index": 70,
+        "source_row_id": "1323"
+      }
+    },
+    {
+      "detected": true,
+      "key": "missing_values|row=723|col=avg_glucose_level",
+      "prediction": {
+        "anomaly_type": "missing_values",
+        "column": "avg_glucose_level",
+        "issue_id": "avg_glucose_level::missing_values",
+        "issue_ids": [
+          "avg_glucose_level::missing_values"
+        ],
+        "key": "missing_values|row=723|col=avg_glucose_level",
+        "row_index": 723,
+        "value": ""
+      },
+      "truth": {
+        "anomaly_type": "missing_values",
+        "column": "avg_glucose_level",
+        "corrupted_value": "",
+        "expected_issue_type": "missing_values",
+        "injection_id": "m1-0023",
+        "key": "missing_values|row=723|col=avg_glucose_level",
+        "notes": "Cell was replaced with a missing value.",
+        "original_value": "73.57",
+        "repairable": true,
+        "row_id": "m1-row-00723",
+        "row_index": 723,
+        "source_row_id": "12857"
+      }
+    },
+    {
+      "detected": true,
+      "key": "missing_values|row=969|col=avg_glucose_level",
+      "prediction": {
+        "anomaly_type": "missing_values",
+        "column": "avg_glucose_level",
+        "issue_id": "avg_glucose_level::missing_values",
+        "issue_ids": [
+          "avg_glucose_level::missing_values"
+        ],
+        "key": "missing_values|row=969|col=avg_glucose_level",
+        "row_index": 969,
+        "value": ""
+      },
+      "truth": {
+        "anomaly_type": "missing_values",
+        "column": "avg_glucose_level",
+        "corrupted_value": "",
+        "expected_issue_type": "missing_values",
+        "injection_id": "m1-0029",
+        "key": "missing_values|row=969|col=avg_glucose_level",
+        "notes": "Cell was replaced with a missing value.",
+        "original_value": "96.62",
+        "repairable": true,
+        "row_id": "m1-row-00969",
+        "row_index": 969,
+        "source_row_id": "16987"
+      }
+    },
+    {
+      "detected": true,
+      "key": "numeric_outlier|row=114|col=bmi",
+      "prediction": {
+        "anomaly_type": "numeric_outlier",
+        "column": "bmi",
+        "issue_id": "bmi::numeric_outlier",
+        "issue_ids": [
+          "bmi::numeric_outlier"
+        ],
+        "key": "numeric_outlier|row=114|col=bmi",
+        "row_index": 114,
+        "value": "95"
+      },
+      "truth": {
+        "anomaly_type": "numeric_outlier",
+        "column": "bmi",
+        "corrupted_value": "95",
+        "expected_issue_type": "numeric_outlier",
+        "injection_id": "m1-0034",
+        "key": "numeric_outlier|row=114|col=bmi",
+        "notes": "Numeric value was moved outside the clean subset range.",
+        "original_value": "26.7",
+        "repairable": true,
+        "row_id": "m1-row-00114",
+        "row_index": 114,
+        "source_row_id": "2532"
+      }
+    },
+    {
+      "detected": true,
+      "key": "numeric_outlier|row=1412|col=age",
+      "prediction": {
+        "anomaly_type": "numeric_outlier",
+        "column": "age",
+        "issue_id": "age::numeric_outlier",
+        "issue_ids": [
+          "age::numeric_outlier"
+        ],
+        "key": "numeric_outlier|row=1412|col=age",
+        "row_index": 1412,
+        "value": "140"
+      },
+      "truth": {
+        "anomaly_type": "numeric_outlier",
+        "column": "age",
+        "corrupted_value": "140",
+        "expected_issue_type": "numeric_outlier",
+        "injection_id": "m1-0051",
+        "key": "numeric_outlier|row=1412|col=age",
+        "notes": "Numeric value was moved outside the clean subset range.",
+        "original_value": "48",
+        "repairable": true,
+        "row_id": "m1-row-01412",
+        "row_index": 1412,
+        "source_row_id": "25283"
+      }
+    },
+    {
+      "detected": true,
+      "key": "numeric_outlier|row=148|col=bmi",
+      "prediction": {
+        "anomaly_type": "numeric_outlier",
+        "column": "bmi",
+        "issue_id": "bmi::numeric_outlier",
+        "issue_ids": [
+          "bmi::numeric_outlier"
+        ],
+        "key": "numeric_outlier|row=148|col=bmi",
+        "row_index": 148,
+        "value": "95"
+      },
+      "truth": {
+        "anomaly_type": "numeric_outlier",
+        "column": "bmi",
+        "corrupted_value": "95",
+        "expected_issue_type": "numeric_outlier",
+        "injection_id": "m1-0045",
+        "key": "numeric_outlier|row=148|col=bmi",
+        "notes": "Numeric value was moved outside the clean subset range.",
+        "original_value": "37.6",
+        "repairable": true,
+        "row_id": "m1-row-00148",
+        "row_index": 148,
+        "source_row_id": "3045"
+      }
+    },
+    {
+      "detected": true,
+      "key": "numeric_outlier|row=1545|col=avg_glucose_level",
+      "prediction": {
+        "anomaly_type": "numeric_outlier",
+        "column": "avg_glucose_level",
+        "issue_id": "avg_glucose_level::numeric_outlier",
+        "issue_ids": [
+          "avg_glucose_level::numeric_outlier"
+        ],
+        "key": "numeric_outlier|row=1545|col=avg_glucose_level",
+        "row_index": 1545,
+        "value": "420"
+      },
+      "truth": {
+        "anomaly_type": "numeric_outlier",
+        "column": "avg_glucose_level",
+        "corrupted_value": "420",
+        "expected_issue_type": "numeric_outlier",
+        "injection_id": "m1-0052",
+        "key": "numeric_outlier|row=1545|col=avg_glucose_level",
+        "notes": "Numeric value was moved outside the clean subset range.",
+        "original_value": "88.39",
+        "repairable": true,
+        "row_id": "m1-row-01545",
+        "row_index": 1545,
+        "source_row_id": "27794"
+      }
+    },
+    {
+      "detected": true,
+      "key": "numeric_outlier|row=1851|col=age",
+      "prediction": {
+        "anomaly_type": "numeric_outlier",
+        "column": "age",
+        "issue_id": "age::numeric_outlier",
+        "issue_ids": [
+          "age::numeric_outlier"
+        ],
+        "key": "numeric_outlier|row=1851|col=age",
+        "row_index": 1851,
+        "value": "140"
+      },
+      "truth": {
+        "anomaly_type": "numeric_outlier",
+        "column": "age",
+        "corrupted_value": "140",
+        "expected_issue_type": "numeric_outlier",
+        "injection_id": "m1-0040",
+        "key": "numeric_outlier|row=1851|col=age",
+        "notes": "Numeric value was moved outside the clean subset range.",
+        "original_value": "20",
+        "repairable": true,
+        "row_id": "m1-row-01851",
+        "row_index": 1851,
+        "source_row_id": "33085"
+      }
+    },
+    {
+      "detected": true,
+      "key": "numeric_outlier|row=1898|col=bmi",
+      "prediction": {
+        "anomaly_type": "numeric_outlier",
+        "column": "bmi",
+        "issue_id": "bmi::numeric_outlier",
+        "issue_ids": [
+          "bmi::numeric_outlier"
+        ],
+        "key": "numeric_outlier|row=1898|col=bmi",
+        "row_index": 1898,
+        "value": "95"
+      },
+      "truth": {
+        "anomaly_type": "numeric_outlier",
+        "column": "bmi",
+        "corrupted_value": "95",
+        "expected_issue_type": "numeric_outlier",
+        "injection_id": "m1-0038",
+        "key": "numeric_outlier|row=1898|col=bmi",
+        "notes": "Numeric value was moved outside the clean subset range.",
+        "original_value": "22.2",
+        "repairable": true,
+        "row_id": "m1-row-01898",
+        "row_index": 1898,
+        "source_row_id": "33924"
+      }
+    },
+    {
+      "detected": true,
+      "key": "numeric_outlier|row=2146|col=age",
+      "prediction": {
+        "anomaly_type": "numeric_outlier",
+        "column": "age",
+        "issue_id": "age::numeric_outlier",
+        "issue_ids": [
+          "age::numeric_outlier"
+        ],
+        "key": "numeric_outlier|row=2146|col=age",
+        "row_index": 2146,
+        "value": "140"
+      },
+      "truth": {
+        "anomaly_type": "numeric_outlier",
+        "column": "age",
+        "corrupted_value": "140",
+        "expected_issue_type": "numeric_outlier",
+        "injection_id": "m1-0032",
+        "key": "numeric_outlier|row=2146|col=age",
+        "notes": "Numeric value was moved outside the clean subset range.",
+        "original_value": "79",
+        "repairable": true,
+        "row_id": "m1-row-02146",
+        "row_index": 2146,
+        "source_row_id": "38184"
+      }
+    },
+    {
+      "detected": true,
+      "key": "numeric_outlier|row=255|col=age",
+      "prediction": {
+        "anomaly_type": "numeric_outlier",
+        "column": "age",
+        "issue_id": "age::numeric_outlier",
+        "issue_ids": [
+          "age::numeric_outlier"
+        ],
+        "key": "numeric_outlier|row=255|col=age",
+        "row_index": 255,
+        "value": "140"
+      },
+      "truth": {
+        "anomaly_type": "numeric_outlier",
+        "column": "age",
+        "corrupted_value": "140",
+        "expected_issue_type": "numeric_outlier",
+        "injection_id": "m1-0035",
+        "key": "numeric_outlier|row=255|col=age",
+        "notes": "Numeric value was moved outside the clean subset range.",
+        "original_value": "5",
+        "repairable": true,
+        "row_id": "m1-row-00255",
+        "row_index": 255,
+        "source_row_id": "4959"
+      }
+    },
+    {
+      "detected": true,
+      "key": "numeric_outlier|row=3020|col=avg_glucose_level",
+      "prediction": {
+        "anomaly_type": "numeric_outlier",
+        "column": "avg_glucose_level",
+        "issue_id": "avg_glucose_level::numeric_outlier",
+        "issue_ids": [
+          "avg_glucose_level::numeric_outlier"
+        ],
+        "key": "numeric_outlier|row=3020|col=avg_glucose_level",
+        "row_index": 3020,
+        "value": "420"
+      },
+      "truth": {
+        "anomaly_type": "numeric_outlier",
+        "column": "avg_glucose_level",
+        "corrupted_value": "420",
+        "expected_issue_type": "numeric_outlier",
+        "injection_id": "m1-0041",
+        "key": "numeric_outlier|row=3020|col=avg_glucose_level",
+        "notes": "Numeric value was moved outside the clean subset range.",
+        "original_value": "123.81",
+        "repairable": true,
+        "row_id": "m1-row-03020",
+        "row_index": 3020,
+        "source_row_id": "52790"
+      }
+    },
+    {
+      "detected": true,
+      "key": "numeric_outlier|row=330|col=age",
+      "prediction": {
+        "anomaly_type": "numeric_outlier",
+        "column": "age",
+        "issue_id": "age::numeric_outlier",
+        "issue_ids": [
+          "age::numeric_outlier"
+        ],
+        "key": "numeric_outlier|row=330|col=age",
+        "row_index": 330,
+        "value": "140"
+      },
+      "truth": {
+        "anomaly_type": "numeric_outlier",
+        "column": "age",
+        "corrupted_value": "140",
+        "expected_issue_type": "numeric_outlier",
+        "injection_id": "m1-0049",
+        "key": "numeric_outlier|row=330|col=age",
+        "notes": "Numeric value was moved outside the clean subset range.",
+        "original_value": "67",
+        "repairable": true,
+        "row_id": "m1-row-00330",
+        "row_index": 330,
+        "source_row_id": "6206"
+      }
+    },
+    {
+      "detected": true,
+      "key": "numeric_outlier|row=3396|col=bmi",
+      "prediction": {
+        "anomaly_type": "numeric_outlier",
+        "column": "bmi",
+        "issue_id": "bmi::numeric_outlier",
+        "issue_ids": [
+          "bmi::numeric_outlier"
+        ],
+        "key": "numeric_outlier|row=3396|col=bmi",
+        "row_index": 3396,
+        "value": "95"
+      },
+      "truth": {
+        "anomaly_type": "numeric_outlier",
+        "column": "bmi",
+        "corrupted_value": "95",
+        "expected_issue_type": "numeric_outlier",
+        "injection_id": "m1-0048",
+        "key": "numeric_outlier|row=3396|col=bmi",
+        "notes": "Numeric value was moved outside the clean subset range.",
+        "original_value": "23.4",
+        "repairable": true,
+        "row_id": "m1-row-03396",
+        "row_index": 3396,
+        "source_row_id": "59027"
+      }
+    },
+    {
+      "detected": true,
+      "key": "numeric_outlier|row=3502|col=avg_glucose_level",
+      "prediction": {
+        "anomaly_type": "numeric_outlier",
+        "column": "avg_glucose_level",
+        "issue_id": "avg_glucose_level::numeric_outlier",
+        "issue_ids": [
+          "avg_glucose_level::numeric_outlier"
+        ],
+        "key": "numeric_outlier|row=3502|col=avg_glucose_level",
+        "row_index": 3502,
+        "value": "420"
+      },
+      "truth": {
+        "anomaly_type": "numeric_outlier",
+        "column": "avg_glucose_level",
+        "corrupted_value": "420",
+        "expected_issue_type": "numeric_outlier",
+        "injection_id": "m1-0050",
+        "key": "numeric_outlier|row=3502|col=avg_glucose_level",
+        "notes": "Numeric value was moved outside the clean subset range.",
+        "original_value": "89.32",
+        "repairable": true,
+        "row_id": "m1-row-03502",
+        "row_index": 3502,
+        "source_row_id": "60732"
+      }
+    },
+    {
+      "detected": true,
+      "key": "numeric_outlier|row=3952|col=avg_glucose_level",
+      "prediction": {
+        "anomaly_type": "numeric_outlier",
+        "column": "avg_glucose_level",
+        "issue_id": "avg_glucose_level::numeric_outlier",
+        "issue_ids": [
+          "avg_glucose_level::numeric_outlier"
+        ],
+        "key": "numeric_outlier|row=3952|col=avg_glucose_level",
+        "row_index": 3952,
+        "value": "420"
+      },
+      "truth": {
+        "anomaly_type": "numeric_outlier",
+        "column": "avg_glucose_level",
+        "corrupted_value": "420",
+        "expected_issue_type": "numeric_outlier",
+        "injection_id": "m1-0054",
+        "key": "numeric_outlier|row=3952|col=avg_glucose_level",
+        "notes": "Numeric value was moved outside the clean subset range.",
+        "original_value": "59.17",
+        "repairable": true,
+        "row_id": "m1-row-03952",
+        "row_index": 3952,
+        "source_row_id": "68245"
+      }
+    },
+    {
+      "detected": true,
+      "key": "numeric_outlier|row=3978|col=avg_glucose_level",
+      "prediction": {
+        "anomaly_type": "numeric_outlier",
+        "column": "avg_glucose_level",
+        "issue_id": "avg_glucose_level::numeric_outlier",
+        "issue_ids": [
+          "avg_glucose_level::numeric_outlier"
+        ],
+        "key": "numeric_outlier|row=3978|col=avg_glucose_level",
+        "row_index": 3978,
+        "value": "420"
+      },
+      "truth": {
+        "anomaly_type": "numeric_outlier",
+        "column": "avg_glucose_level",
+        "corrupted_value": "420",
+        "expected_issue_type": "numeric_outlier",
+        "injection_id": "m1-0046",
+        "key": "numeric_outlier|row=3978|col=avg_glucose_level",
+        "notes": "Numeric value was moved outside the clean subset range.",
+        "original_value": "67.92",
+        "repairable": true,
+        "row_id": "m1-row-03978",
+        "row_index": 3978,
+        "source_row_id": "68601"
+      }
+    },
+    {
+      "detected": true,
+      "key": "numeric_outlier|row=4074|col=avg_glucose_level",
+      "prediction": {
+        "anomaly_type": "numeric_outlier",
+        "column": "avg_glucose_level",
+        "issue_id": "avg_glucose_level::numeric_outlier",
+        "issue_ids": [
+          "avg_glucose_level::numeric_outlier"
+        ],
+        "key": "numeric_outlier|row=4074|col=avg_glucose_level",
+        "row_index": 4074,
+        "value": "420"
+      },
+      "truth": {
+        "anomaly_type": "numeric_outlier",
+        "column": "avg_glucose_level",
+        "corrupted_value": "420",
+        "expected_issue_type": "numeric_outlier",
+        "injection_id": "m1-0042",
+        "key": "numeric_outlier|row=4074|col=avg_glucose_level",
+        "notes": "Numeric value was moved outside the clean subset range.",
+        "original_value": "112.72",
+        "repairable": true,
+        "row_id": "m1-row-04074",
+        "row_index": 4074,
+        "source_row_id": "70392"
+      }
+    },
+    {
+      "detected": true,
+      "key": "numeric_outlier|row=4135|col=avg_glucose_level",
+      "prediction": {
+        "anomaly_type": "numeric_outlier",
+        "column": "avg_glucose_level",
+        "issue_id": "avg_glucose_level::numeric_outlier",
+        "issue_ids": [
+          "avg_glucose_level::numeric_outlier"
+        ],
+        "key": "numeric_outlier|row=4135|col=avg_glucose_level",
+        "row_index": 4135,
+        "value": "420"
+      },
+      "truth": {
+        "anomaly_type": "numeric_outlier",
+        "column": "avg_glucose_level",
+        "corrupted_value": "420",
+        "expected_issue_type": "numeric_outlier",
+        "injection_id": "m1-0031",
+        "key": "numeric_outlier|row=4135|col=avg_glucose_level",
+        "notes": "Numeric value was moved outside the clean subset range.",
+        "original_value": "65.12",
+        "repairable": true,
+        "row_id": "m1-row-04135",
+        "row_index": 4135,
+        "source_row_id": "71420"
+      }
+    },
+    {
+      "detected": true,
+      "key": "numeric_outlier|row=4182|col=avg_glucose_level",
+      "prediction": {
+        "anomaly_type": "numeric_outlier",
+        "column": "avg_glucose_level",
+        "issue_id": "avg_glucose_level::numeric_outlier",
+        "issue_ids": [
+          "avg_glucose_level::numeric_outlier"
+        ],
+        "key": "numeric_outlier|row=4182|col=avg_glucose_level",
+        "row_index": 4182,
+        "value": "420"
+      },
+      "truth": {
+        "anomaly_type": "numeric_outlier",
+        "column": "avg_glucose_level",
+        "corrupted_value": "420",
+        "expected_issue_type": "numeric_outlier",
+        "injection_id": "m1-0037",
+        "key": "numeric_outlier|row=4182|col=avg_glucose_level",
+        "notes": "Numeric value was moved outside the clean subset range.",
+        "original_value": "107.47",
+        "repairable": true,
+        "row_id": "m1-row-04182",
+        "row_index": 4182,
+        "source_row_id": "72188"
+      }
+    },
+    {
+      "detected": true,
+      "key": "numeric_outlier|row=532|col=age",
+      "prediction": {
+        "anomaly_type": "numeric_outlier",
+        "column": "age",
+        "issue_id": "age::numeric_outlier",
+        "issue_ids": [
+          "age::numeric_outlier"
+        ],
+        "key": "numeric_outlier|row=532|col=age",
+        "row_index": 532,
+        "value": "140"
+      },
+      "truth": {
+        "anomaly_type": "numeric_outlier",
+        "column": "age",
+        "corrupted_value": "140",
+        "expected_issue_type": "numeric_outlier",
+        "injection_id": "m1-0047",
+        "key": "numeric_outlier|row=532|col=age",
+        "notes": "Numeric value was moved outside the clean subset range.",
+        "original_value": "6",
+        "repairable": true,
+        "row_id": "m1-row-00532",
+        "row_index": 532,
+        "source_row_id": "9612"
+      }
+    },
+    {
+      "detected": true,
+      "key": "numeric_outlier|row=704|col=age",
+      "prediction": {
+        "anomaly_type": "numeric_outlier",
+        "column": "age",
+        "issue_id": "age::numeric_outlier",
+        "issue_ids": [
+          "age::numeric_outlier"
+        ],
+        "key": "numeric_outlier|row=704|col=age",
+        "row_index": 704,
+        "value": "140"
+      },
+      "truth": {
+        "anomaly_type": "numeric_outlier",
+        "column": "age",
+        "corrupted_value": "140",
+        "expected_issue_type": "numeric_outlier",
+        "injection_id": "m1-0043",
+        "key": "numeric_outlier|row=704|col=age",
+        "notes": "Numeric value was moved outside the clean subset range.",
+        "original_value": "65",
+        "repairable": true,
+        "row_id": "m1-row-00704",
+        "row_index": 704,
+        "source_row_id": "12487"
+      }
+    },
+    {
+      "detected": true,
+      "key": "numeric_outlier|row=73|col=age",
+      "prediction": {
+        "anomaly_type": "numeric_outlier",
+        "column": "age",
+        "issue_id": "age::numeric_outlier",
+        "issue_ids": [
+          "age::numeric_outlier"
+        ],
+        "key": "numeric_outlier|row=73|col=age",
+        "row_index": 73,
+        "value": "140"
+      },
+      "truth": {
+        "anomaly_type": "numeric_outlier",
+        "column": "age",
+        "corrupted_value": "140",
+        "expected_issue_type": "numeric_outlier",
+        "injection_id": "m1-0053",
+        "key": "numeric_outlier|row=73|col=age",
+        "notes": "Numeric value was moved outside the clean subset range.",
+        "original_value": "17",
+        "repairable": true,
+        "row_id": "m1-row-00073",
+        "row_index": 73,
+        "source_row_id": "1451"
+      }
+    },
+    {
+      "detected": true,
+      "key": "numeric_outlier|row=765|col=bmi",
+      "prediction": {
+        "anomaly_type": "numeric_outlier",
+        "column": "bmi",
+        "issue_id": "bmi::numeric_outlier",
+        "issue_ids": [
+          "bmi::numeric_outlier"
+        ],
+        "key": "numeric_outlier|row=765|col=bmi",
+        "row_index": 765,
+        "value": "95"
+      },
+      "truth": {
+        "anomaly_type": "numeric_outlier",
+        "column": "bmi",
+        "corrupted_value": "95",
+        "expected_issue_type": "numeric_outlier",
+        "injection_id": "m1-0036",
+        "key": "numeric_outlier|row=765|col=bmi",
+        "notes": "Numeric value was moved outside the clean subset range.",
+        "original_value": "29.2",
+        "repairable": true,
+        "row_id": "m1-row-00765",
+        "row_index": 765,
+        "source_row_id": "13547"
+      }
+    },
+    {
+      "detected": true,
+      "key": "numeric_outlier|row=855|col=bmi",
+      "prediction": {
+        "anomaly_type": "numeric_outlier",
+        "column": "bmi",
+        "issue_id": "bmi::numeric_outlier",
+        "issue_ids": [
+          "bmi::numeric_outlier"
+        ],
+        "key": "numeric_outlier|row=855|col=bmi",
+        "row_index": 855,
+        "value": "95"
+      },
+      "truth": {
+        "anomaly_type": "numeric_outlier",
+        "column": "bmi",
+        "corrupted_value": "95",
+        "expected_issue_type": "numeric_outlier",
+        "injection_id": "m1-0039",
+        "key": "numeric_outlier|row=855|col=bmi",
+        "notes": "Numeric value was moved outside the clean subset range.",
+        "original_value": "24.9",
+        "repairable": true,
+        "row_id": "m1-row-00855",
+        "row_index": 855,
+        "source_row_id": "15104"
+      }
+    },
+    {
+      "detected": true,
+      "key": "numeric_outlier|row=956|col=avg_glucose_level",
+      "prediction": {
+        "anomaly_type": "numeric_outlier",
+        "column": "avg_glucose_level",
+        "issue_id": "avg_glucose_level::numeric_outlier",
+        "issue_ids": [
+          "avg_glucose_level::numeric_outlier"
+        ],
+        "key": "numeric_outlier|row=956|col=avg_glucose_level",
+        "row_index": 956,
+        "value": "420"
+      },
+      "truth": {
+        "anomaly_type": "numeric_outlier",
+        "column": "avg_glucose_level",
+        "corrupted_value": "420",
+        "expected_issue_type": "numeric_outlier",
+        "injection_id": "m1-0033",
+        "key": "numeric_outlier|row=956|col=avg_glucose_level",
+        "notes": "Numeric value was moved outside the clean subset range.",
+        "original_value": "77.92",
+        "repairable": true,
+        "row_id": "m1-row-00956",
+        "row_index": 956,
+        "source_row_id": "16837"
+      }
+    },
+    {
+      "detected": true,
+      "key": "numeric_outlier|row=978|col=age",
+      "prediction": {
+        "anomaly_type": "numeric_outlier",
+        "column": "age",
+        "issue_id": "age::numeric_outlier",
+        "issue_ids": [
+          "age::numeric_outlier"
+        ],
+        "key": "numeric_outlier|row=978|col=age",
+        "row_index": 978,
+        "value": "140"
+      },
+      "truth": {
+        "anomaly_type": "numeric_outlier",
+        "column": "age",
+        "corrupted_value": "140",
+        "expected_issue_type": "numeric_outlier",
+        "injection_id": "m1-0044",
+        "key": "numeric_outlier|row=978|col=age",
+        "notes": "Numeric value was moved outside the clean subset range.",
+        "original_value": "15",
+        "repairable": true,
+        "row_id": "m1-row-00978",
+        "row_index": 978,
+        "source_row_id": "17175"
+      }
+    },
+    {
+      "detected": true,
+      "key": "rare_category|row=1519|col=gender",
+      "prediction": {
+        "anomaly_type": "rare_category",
+        "column": "gender",
+        "issue_id": "gender::rare_category",
+        "issue_ids": [
+          "gender::rare_category"
+        ],
+        "key": "rare_category|row=1519|col=gender",
+        "row_index": 1519,
+        "value": "__M1_RARE_GENDER_014__"
+      },
+      "truth": {
+        "anomaly_type": "rare_category",
+        "column": "gender",
+        "corrupted_value": "__M1_RARE_GENDER_014__",
+        "expected_issue_type": "rare_category",
+        "injection_id": "m1-0069",
+        "key": "rare_category|row=1519|col=gender",
+        "notes": "Categorical value was replaced with a deterministic singleton category.",
+        "original_value": "Female",
+        "repairable": true,
+        "row_id": "m1-row-01519",
+        "row_index": 1519,
+        "source_row_id": "27435"
+      }
+    },
+    {
+      "detected": true,
+      "key": "rare_category|row=1681|col=smoking_status",
+      "prediction": {
+        "anomaly_type": "rare_category",
+        "column": "smoking_status",
+        "issue_id": "smoking_status::rare_category",
+        "issue_ids": [
+          "smoking_status::rare_category"
+        ],
+        "key": "rare_category|row=1681|col=smoking_status",
+        "row_index": 1681,
+        "value": "__M1_RARE_SMOKING_STATUS_005__"
+      },
+      "truth": {
+        "anomaly_type": "rare_category",
+        "column": "smoking_status",
+        "corrupted_value": "__M1_RARE_SMOKING_STATUS_005__",
+        "expected_issue_type": "rare_category",
+        "injection_id": "m1-0060",
+        "key": "rare_category|row=1681|col=smoking_status",
+        "notes": "Categorical value was replaced with a deterministic singleton category.",
+        "original_value": "never smoked",
+        "repairable": true,
+        "row_id": "m1-row-01681",
+        "row_index": 1681,
+        "source_row_id": "30214"
+      }
+    },
+    {
+      "detected": true,
+      "key": "rare_category|row=1836|col=smoking_status",
+      "prediction": {
+        "anomaly_type": "rare_category",
+        "column": "smoking_status",
+        "issue_id": "smoking_status::rare_category",
+        "issue_ids": [
+          "smoking_status::rare_category"
+        ],
+        "key": "rare_category|row=1836|col=smoking_status",
+        "row_index": 1836,
+        "value": "__M1_RARE_SMOKING_STATUS_013__"
+      },
+      "truth": {
+        "anomaly_type": "rare_category",
+        "column": "smoking_status",
+        "corrupted_value": "__M1_RARE_SMOKING_STATUS_013__",
+        "expected_issue_type": "rare_category",
+        "injection_id": "m1-0068",
+        "key": "rare_category|row=1836|col=smoking_status",
+        "notes": "Categorical value was replaced with a deterministic singleton category.",
+        "original_value": "smokes",
+        "repairable": true,
+        "row_id": "m1-row-01836",
+        "row_index": 1836,
+        "source_row_id": "32645"
+      }
+    },
+    {
+      "detected": true,
+      "key": "rare_category|row=1868|col=smoking_status",
+      "prediction": {
+        "anomaly_type": "rare_category",
+        "column": "smoking_status",
+        "issue_id": "smoking_status::rare_category",
+        "issue_ids": [
+          "smoking_status::rare_category"
+        ],
+        "key": "rare_category|row=1868|col=smoking_status",
+        "row_index": 1868,
+        "value": "__M1_RARE_SMOKING_STATUS_002__"
+      },
+      "truth": {
+        "anomaly_type": "rare_category",
+        "column": "smoking_status",
+        "corrupted_value": "__M1_RARE_SMOKING_STATUS_002__",
+        "expected_issue_type": "rare_category",
+        "injection_id": "m1-0057",
+        "key": "rare_category|row=1868|col=smoking_status",
+        "notes": "Categorical value was replaced with a deterministic singleton category.",
+        "original_value": "smokes",
+        "repairable": true,
+        "row_id": "m1-row-01868",
+        "row_index": 1868,
+        "source_row_id": "33400"
+      }
+    },
+    {
+      "detected": true,
+      "key": "rare_category|row=1940|col=work_type",
+      "prediction": {
+        "anomaly_type": "rare_category",
+        "column": "work_type",
+        "issue_id": "work_type::rare_category",
+        "issue_ids": [
+          "work_type::rare_category"
+        ],
+        "key": "rare_category|row=1940|col=work_type",
+        "row_index": 1940,
+        "value": "__M1_RARE_WORK_TYPE_017__"
+      },
+      "truth": {
+        "anomaly_type": "rare_category",
+        "column": "work_type",
+        "corrupted_value": "__M1_RARE_WORK_TYPE_017__",
+        "expected_issue_type": "rare_category",
+        "injection_id": "m1-0072",
+        "key": "rare_category|row=1940|col=work_type",
+        "notes": "Categorical value was replaced with a deterministic singleton category.",
+        "original_value": "children",
+        "repairable": true,
+        "row_id": "m1-row-01940",
+        "row_index": 1940,
+        "source_row_id": "34621"
+      }
+    },
+    {
+      "detected": true,
+      "key": "rare_category|row=2179|col=gender",
+      "prediction": {
+        "anomaly_type": "rare_category",
+        "column": "gender",
+        "issue_id": "gender::rare_category",
+        "issue_ids": [
+          "gender::rare_category"
+        ],
+        "key": "rare_category|row=2179|col=gender",
+        "row_index": 2179,
+        "value": "__M1_RARE_GENDER_011__"
+      },
+      "truth": {
+        "anomaly_type": "rare_category",
+        "column": "gender",
+        "corrupted_value": "__M1_RARE_GENDER_011__",
+        "expected_issue_type": "rare_category",
+        "injection_id": "m1-0066",
+        "key": "rare_category|row=2179|col=gender",
+        "notes": "Categorical value was replaced with a deterministic singleton category.",
+        "original_value": "Female",
+        "repairable": true,
+        "row_id": "m1-row-02179",
+        "row_index": 2179,
+        "source_row_id": "38673"
+      }
+    },
+    {
+      "detected": true,
+      "key": "rare_category|row=2232|col=smoking_status",
+      "prediction": {
+        "anomaly_type": "rare_category",
+        "column": "smoking_status",
+        "issue_id": "smoking_status::rare_category",
+        "issue_ids": [
+          "smoking_status::rare_category"
+        ],
+        "key": "rare_category|row=2232|col=smoking_status",
+        "row_index": 2232,
+        "value": "__M1_RARE_SMOKING_STATUS_008__"
+      },
+      "truth": {
+        "anomaly_type": "rare_category",
+        "column": "smoking_status",
+        "corrupted_value": "__M1_RARE_SMOKING_STATUS_008__",
+        "expected_issue_type": "rare_category",
+        "injection_id": "m1-0063",
+        "key": "rare_category|row=2232|col=smoking_status",
+        "notes": "Categorical value was replaced with a deterministic singleton category.",
+        "original_value": "formerly smoked",
+        "repairable": true,
+        "row_id": "m1-row-02232",
+        "row_index": 2232,
+        "source_row_id": "39708"
+      }
+    },
+    {
+      "detected": true,
+      "key": "rare_category|row=2456|col=work_type",
+      "prediction": {
+        "anomaly_type": "rare_category",
+        "column": "work_type",
+        "issue_id": "work_type::rare_category",
+        "issue_ids": [
+          "work_type::rare_category"
+        ],
+        "key": "rare_category|row=2456|col=work_type",
+        "row_index": 2456,
+        "value": "__M1_RARE_WORK_TYPE_012__"
+      },
+      "truth": {
+        "anomaly_type": "rare_category",
+        "column": "work_type",
+        "corrupted_value": "__M1_RARE_WORK_TYPE_012__",
+        "expected_issue_type": "rare_category",
+        "injection_id": "m1-0067",
+        "key": "rare_category|row=2456|col=work_type",
+        "notes": "Categorical value was replaced with a deterministic singleton category.",
+        "original_value": "Private",
+        "repairable": true,
+        "row_id": "m1-row-02456",
+        "row_index": 2456,
+        "source_row_id": "43507"
+      }
+    },
+    {
+      "detected": true,
+      "key": "rare_category|row=2463|col=work_type",
+      "prediction": {
+        "anomaly_type": "rare_category",
+        "column": "work_type",
+        "issue_id": "work_type::rare_category",
+        "issue_ids": [
+          "work_type::rare_category"
+        ],
+        "key": "rare_category|row=2463|col=work_type",
+        "row_index": 2463,
+        "value": "__M1_RARE_WORK_TYPE_016__"
+      },
+      "truth": {
+        "anomaly_type": "rare_category",
+        "column": "work_type",
+        "corrupted_value": "__M1_RARE_WORK_TYPE_016__",
+        "expected_issue_type": "rare_category",
+        "injection_id": "m1-0071",
+        "key": "rare_category|row=2463|col=work_type",
+        "notes": "Categorical value was replaced with a deterministic singleton category.",
+        "original_value": "Govt_job",
+        "repairable": true,
+        "row_id": "m1-row-02463",
+        "row_index": 2463,
+        "source_row_id": "43698"
+      }
+    },
+    {
+      "detected": true,
+      "key": "rare_category|row=263|col=work_type",
+      "prediction": {
+        "anomaly_type": "rare_category",
+        "column": "work_type",
+        "issue_id": "work_type::rare_category",
+        "issue_ids": [
+          "work_type::rare_category"
+        ],
+        "key": "rare_category|row=263|col=work_type",
+        "row_index": 263,
+        "value": "__M1_RARE_WORK_TYPE_015__"
+      },
+      "truth": {
+        "anomaly_type": "rare_category",
+        "column": "work_type",
+        "corrupted_value": "__M1_RARE_WORK_TYPE_015__",
+        "expected_issue_type": "rare_category",
+        "injection_id": "m1-0070",
+        "key": "rare_category|row=263|col=work_type",
+        "notes": "Categorical value was replaced with a deterministic singleton category.",
+        "original_value": "Self-employed",
+        "repairable": true,
+        "row_id": "m1-row-00263",
+        "row_index": 263,
+        "source_row_id": "5046"
+      }
+    },
+    {
+      "detected": true,
+      "key": "rare_category|row=266|col=smoking_status",
+      "prediction": {
+        "anomaly_type": "rare_category",
+        "column": "smoking_status",
+        "issue_id": "smoking_status::rare_category",
+        "issue_ids": [
+          "smoking_status::rare_category"
+        ],
+        "key": "rare_category|row=266|col=smoking_status",
+        "row_index": 266,
+        "value": "__M1_RARE_SMOKING_STATUS_010__"
+      },
+      "truth": {
+        "anomaly_type": "rare_category",
+        "column": "smoking_status",
+        "corrupted_value": "__M1_RARE_SMOKING_STATUS_010__",
+        "expected_issue_type": "rare_category",
+        "injection_id": "m1-0065",
+        "key": "rare_category|row=266|col=smoking_status",
+        "notes": "Categorical value was replaced with a deterministic singleton category.",
+        "original_value": "Unknown",
+        "repairable": true,
+        "row_id": "m1-row-00266",
+        "row_index": 266,
+        "source_row_id": "5121"
+      }
+    },
+    {
+      "detected": true,
+      "key": "rare_category|row=3440|col=gender",
+      "prediction": {
+        "anomaly_type": "rare_category",
+        "column": "gender",
+        "issue_id": "gender::rare_category",
+        "issue_ids": [
+          "gender::rare_category"
+        ],
+        "key": "rare_category|row=3440|col=gender",
+        "row_index": 3440,
+        "value": "__M1_RARE_GENDER_003__"
+      },
+      "truth": {
+        "anomaly_type": "rare_category",
+        "column": "gender",
+        "corrupted_value": "__M1_RARE_GENDER_003__",
+        "expected_issue_type": "rare_category",
+        "injection_id": "m1-0058",
+        "key": "rare_category|row=3440|col=gender",
+        "notes": "Categorical value was replaced with a deterministic singleton category.",
+        "original_value": "Female",
+        "repairable": true,
+        "row_id": "m1-row-03440",
+        "row_index": 3440,
+        "source_row_id": "59737"
+      }
+    },
+    {
+      "detected": true,
+      "key": "rare_category|row=3925|col=work_type",
+      "prediction": {
+        "anomaly_type": "rare_category",
+        "column": "work_type",
+        "issue_id": "work_type::rare_category",
+        "issue_ids": [
+          "work_type::rare_category"
+        ],
+        "key": "rare_category|row=3925|col=work_type",
+        "row_index": 3925,
+        "value": "__M1_RARE_WORK_TYPE_004__"
+      },
+      "truth": {
+        "anomaly_type": "rare_category",
+        "column": "work_type",
+        "corrupted_value": "__M1_RARE_WORK_TYPE_004__",
+        "expected_issue_type": "rare_category",
+        "injection_id": "m1-0059",
+        "key": "rare_category|row=3925|col=work_type",
+        "notes": "Categorical value was replaced with a deterministic singleton category.",
+        "original_value": "Private",
+        "repairable": true,
+        "row_id": "m1-row-03925",
+        "row_index": 3925,
+        "source_row_id": "67864"
+      }
+    },
+    {
+      "detected": true,
+      "key": "rare_category|row=4084|col=gender",
+      "prediction": {
+        "anomaly_type": "rare_category",
+        "column": "gender",
+        "issue_id": "gender::rare_category",
+        "issue_ids": [
+          "gender::rare_category"
+        ],
+        "key": "rare_category|row=4084|col=gender",
+        "row_index": 4084,
+        "value": "__M1_RARE_GENDER_007__"
+      },
+      "truth": {
+        "anomaly_type": "rare_category",
+        "column": "gender",
+        "corrupted_value": "__M1_RARE_GENDER_007__",
+        "expected_issue_type": "rare_category",
+        "injection_id": "m1-0062",
+        "key": "rare_category|row=4084|col=gender",
+        "notes": "Categorical value was replaced with a deterministic singleton category.",
+        "original_value": "Female",
+        "repairable": true,
+        "row_id": "m1-row-04084",
+        "row_index": 4084,
+        "source_row_id": "70610"
+      }
+    },
+    {
+      "detected": true,
+      "key": "rare_category|row=4099|col=smoking_status",
+      "prediction": {
+        "anomaly_type": "rare_category",
+        "column": "smoking_status",
+        "issue_id": "smoking_status::rare_category",
+        "issue_ids": [
+          "smoking_status::rare_category"
+        ],
+        "key": "rare_category|row=4099|col=smoking_status",
+        "row_index": 4099,
+        "value": "__M1_RARE_SMOKING_STATUS_009__"
+      },
+      "truth": {
+        "anomaly_type": "rare_category",
+        "column": "smoking_status",
+        "corrupted_value": "__M1_RARE_SMOKING_STATUS_009__",
+        "expected_issue_type": "rare_category",
+        "injection_id": "m1-0064",
+        "key": "rare_category|row=4099|col=smoking_status",
+        "notes": "Categorical value was replaced with a deterministic singleton category.",
+        "original_value": "Unknown",
+        "repairable": true,
+        "row_id": "m1-row-04099",
+        "row_index": 4099,
+        "source_row_id": "70874"
+      }
+    },
+    {
+      "detected": true,
+      "key": "rare_category|row=428|col=work_type",
+      "prediction": {
+        "anomaly_type": "rare_category",
+        "column": "work_type",
+        "issue_id": "work_type::rare_category",
+        "issue_ids": [
+          "work_type::rare_category"
+        ],
+        "key": "rare_category|row=428|col=work_type",
+        "row_index": 428,
+        "value": "__M1_RARE_WORK_TYPE_006__"
+      },
+      "truth": {
+        "anomaly_type": "rare_category",
+        "column": "work_type",
+        "corrupted_value": "__M1_RARE_WORK_TYPE_006__",
+        "expected_issue_type": "rare_category",
+        "injection_id": "m1-0061",
+        "key": "rare_category|row=428|col=work_type",
+        "notes": "Categorical value was replaced with a deterministic singleton category.",
+        "original_value": "Private",
+        "repairable": true,
+        "row_id": "m1-row-00428",
+        "row_index": 428,
+        "source_row_id": "7789"
+      }
+    },
+    {
+      "detected": true,
+      "key": "rare_category|row=686|col=smoking_status",
+      "prediction": {
+        "anomaly_type": "rare_category",
+        "column": "smoking_status",
+        "issue_id": "smoking_status::rare_category",
+        "issue_ids": [
+          "smoking_status::rare_category"
+        ],
+        "key": "rare_category|row=686|col=smoking_status",
+        "row_index": 686,
+        "value": "__M1_RARE_SMOKING_STATUS_001__"
+      },
+      "truth": {
+        "anomaly_type": "rare_category",
+        "column": "smoking_status",
+        "corrupted_value": "__M1_RARE_SMOKING_STATUS_001__",
+        "expected_issue_type": "rare_category",
+        "injection_id": "m1-0056",
+        "key": "rare_category|row=686|col=smoking_status",
+        "notes": "Categorical value was replaced with a deterministic singleton category.",
+        "original_value": "never smoked",
+        "repairable": true,
+        "row_id": "m1-row-00686",
+        "row_index": 686,
+        "source_row_id": "12204"
+      }
+    },
+    {
+      "detected": true,
+      "key": "rare_category|row=969|col=gender",
+      "prediction": {
+        "anomaly_type": "rare_category",
+        "column": "gender",
+        "issue_id": "gender::rare_category",
+        "issue_ids": [
+          "gender::rare_category"
+        ],
+        "key": "rare_category|row=969|col=gender",
+        "row_index": 969,
+        "value": "__M1_RARE_GENDER_000__"
+      },
+      "truth": {
+        "anomaly_type": "rare_category",
+        "column": "gender",
+        "corrupted_value": "__M1_RARE_GENDER_000__",
+        "expected_issue_type": "rare_category",
+        "injection_id": "m1-0055",
+        "key": "rare_category|row=969|col=gender",
+        "notes": "Categorical value was replaced with a deterministic singleton category.",
+        "original_value": "Female",
+        "repairable": true,
+        "row_id": "m1-row-00969",
+        "row_index": 969,
+        "source_row_id": "16987"
+      }
+    },
+    {
+      "detected": true,
+      "key": "duplicate_record|source_row_id=1116",
+      "prediction": {
+        "anomaly_type": "duplicate_record",
+        "issue_id": "row::duplicate_record",
+        "issue_ids": [
+          "row::duplicate_record"
+        ],
+        "key": "duplicate_record|source_row_id=1116",
+        "marked_row_count": 2,
+        "marked_row_indices": [
+          58,
+          4236
+        ],
+        "source_row_id": "1116"
+      },
+      "truth": {
+        "anomaly_type": "duplicate_record",
+        "column": "source_row_id",
+        "corrupted_value": "m1-dup-00008",
+        "expected_issue_type": "duplicate_record",
+        "injection_id": "m1-0097",
+        "key": "duplicate_record|source_row_id=1116",
+        "notes": "A duplicate row was appended with the same source_row_id.",
+        "original_value": "m1-row-00058",
+        "repairable": false,
+        "row_id": "m1-dup-00008",
+        "row_index": 4236,
+        "source_row_id": "1116"
+      }
+    },
+    {
+      "detected": true,
+      "key": "duplicate_record|source_row_id=17683",
+      "prediction": {
+        "anomaly_type": "duplicate_record",
+        "issue_id": "row::duplicate_record",
+        "issue_ids": [
+          "row::duplicate_record"
+        ],
+        "key": "duplicate_record|source_row_id=17683",
+        "marked_row_count": 2,
+        "marked_row_indices": [
+          1004,
+          4234
+        ],
+        "source_row_id": "17683"
+      },
+      "truth": {
+        "anomaly_type": "duplicate_record",
+        "column": "source_row_id",
+        "corrupted_value": "m1-dup-00006",
+        "expected_issue_type": "duplicate_record",
+        "injection_id": "m1-0095",
+        "key": "duplicate_record|source_row_id=17683",
+        "notes": "A duplicate row was appended with the same source_row_id.",
+        "original_value": "m1-row-01004",
+        "repairable": false,
+        "row_id": "m1-dup-00006",
+        "row_index": 4234,
+        "source_row_id": "17683"
+      }
+    },
+    {
+      "detected": true,
+      "key": "duplicate_record|source_row_id=19419",
+      "prediction": {
+        "anomaly_type": "duplicate_record",
+        "issue_id": "row::duplicate_record",
+        "issue_ids": [
+          "row::duplicate_record"
+        ],
+        "key": "duplicate_record|source_row_id=19419",
+        "marked_row_count": 2,
+        "marked_row_indices": [
+          1092,
+          4229
+        ],
+        "source_row_id": "19419"
+      },
+      "truth": {
+        "anomaly_type": "duplicate_record",
+        "column": "source_row_id",
+        "corrupted_value": "m1-dup-00001",
+        "expected_issue_type": "duplicate_record",
+        "injection_id": "m1-0090",
+        "key": "duplicate_record|source_row_id=19419",
+        "notes": "A duplicate row was appended with the same source_row_id.",
+        "original_value": "m1-row-01092",
+        "repairable": false,
+        "row_id": "m1-dup-00001",
+        "row_index": 4229,
+        "source_row_id": "19419"
+      }
+    },
+    {
+      "detected": true,
+      "key": "duplicate_record|source_row_id=32826",
+      "prediction": {
+        "anomaly_type": "duplicate_record",
+        "issue_id": "row::duplicate_record",
+        "issue_ids": [
+          "row::duplicate_record"
+        ],
+        "key": "duplicate_record|source_row_id=32826",
+        "marked_row_count": 2,
+        "marked_row_indices": [
+          1845,
+          4232
+        ],
+        "source_row_id": "32826"
+      },
+      "truth": {
+        "anomaly_type": "duplicate_record",
+        "column": "source_row_id",
+        "corrupted_value": "m1-dup-00004",
+        "expected_issue_type": "duplicate_record",
+        "injection_id": "m1-0093",
+        "key": "duplicate_record|source_row_id=32826",
+        "notes": "A duplicate row was appended with the same source_row_id.",
+        "original_value": "m1-row-01845",
+        "repairable": false,
+        "row_id": "m1-dup-00004",
+        "row_index": 4232,
+        "source_row_id": "32826"
+      }
+    },
+    {
+      "detected": true,
+      "key": "duplicate_record|source_row_id=35737",
+      "prediction": {
+        "anomaly_type": "duplicate_record",
+        "issue_id": "row::duplicate_record",
+        "issue_ids": [
+          "row::duplicate_record"
+        ],
+        "key": "duplicate_record|source_row_id=35737",
+        "marked_row_count": 2,
+        "marked_row_indices": [
+          2005,
+          4228
+        ],
+        "source_row_id": "35737"
+      },
+      "truth": {
+        "anomaly_type": "duplicate_record",
+        "column": "source_row_id",
+        "corrupted_value": "m1-dup-00000",
+        "expected_issue_type": "duplicate_record",
+        "injection_id": "m1-0089",
+        "key": "duplicate_record|source_row_id=35737",
+        "notes": "A duplicate row was appended with the same source_row_id.",
+        "original_value": "m1-row-02005",
+        "repairable": false,
+        "row_id": "m1-dup-00000",
+        "row_index": 4228,
+        "source_row_id": "35737"
+      }
+    },
+    {
+      "detected": true,
+      "key": "duplicate_record|source_row_id=38074",
+      "prediction": {
+        "anomaly_type": "duplicate_record",
+        "issue_id": "row::duplicate_record",
+        "issue_ids": [
+          "row::duplicate_record"
+        ],
+        "key": "duplicate_record|source_row_id=38074",
+        "marked_row_count": 2,
+        "marked_row_indices": [
+          2138,
+          4238
+        ],
+        "source_row_id": "38074"
+      },
+      "truth": {
+        "anomaly_type": "duplicate_record",
+        "column": "source_row_id",
+        "corrupted_value": "m1-dup-00010",
+        "expected_issue_type": "duplicate_record",
+        "injection_id": "m1-0099",
+        "key": "duplicate_record|source_row_id=38074",
+        "notes": "A duplicate row was appended with the same source_row_id.",
+        "original_value": "m1-row-02138",
+        "repairable": false,
+        "row_id": "m1-dup-00010",
+        "row_index": 4238,
+        "source_row_id": "38074"
+      }
+    },
+    {
+      "detected": true,
+      "key": "duplicate_record|source_row_id=40390",
+      "prediction": {
+        "anomaly_type": "duplicate_record",
+        "issue_id": "row::duplicate_record",
+        "issue_ids": [
+          "row::duplicate_record"
+        ],
+        "key": "duplicate_record|source_row_id=40390",
+        "marked_row_count": 2,
+        "marked_row_indices": [
+          2272,
+          4237
+        ],
+        "source_row_id": "40390"
+      },
+      "truth": {
+        "anomaly_type": "duplicate_record",
+        "column": "source_row_id",
+        "corrupted_value": "m1-dup-00009",
+        "expected_issue_type": "duplicate_record",
+        "injection_id": "m1-0098",
+        "key": "duplicate_record|source_row_id=40390",
+        "notes": "A duplicate row was appended with the same source_row_id.",
+        "original_value": "m1-row-02272",
+        "repairable": false,
+        "row_id": "m1-dup-00009",
+        "row_index": 4237,
+        "source_row_id": "40390"
+      }
+    },
+    {
+      "detected": true,
+      "key": "duplicate_record|source_row_id=41820",
+      "prediction": {
+        "anomaly_type": "duplicate_record",
+        "issue_id": "row::duplicate_record",
+        "issue_ids": [
+          "row::duplicate_record"
+        ],
+        "key": "duplicate_record|source_row_id=41820",
+        "marked_row_count": 2,
+        "marked_row_indices": [
+          2354,
+          4233
+        ],
+        "source_row_id": "41820"
+      },
+      "truth": {
+        "anomaly_type": "duplicate_record",
+        "column": "source_row_id",
+        "corrupted_value": "m1-dup-00005",
+        "expected_issue_type": "duplicate_record",
+        "injection_id": "m1-0094",
+        "key": "duplicate_record|source_row_id=41820",
+        "notes": "A duplicate row was appended with the same source_row_id.",
+        "original_value": "m1-row-02354",
+        "repairable": false,
+        "row_id": "m1-dup-00005",
+        "row_index": 4233,
+        "source_row_id": "41820"
+      }
+    },
+    {
+      "detected": true,
+      "key": "duplicate_record|source_row_id=52050",
+      "prediction": {
+        "anomaly_type": "duplicate_record",
+        "issue_id": "row::duplicate_record",
+        "issue_ids": [
+          "row::duplicate_record"
+        ],
+        "key": "duplicate_record|source_row_id=52050",
+        "marked_row_count": 2,
+        "marked_row_indices": [
+          2971,
+          4230
+        ],
+        "source_row_id": "52050"
+      },
+      "truth": {
+        "anomaly_type": "duplicate_record",
+        "column": "source_row_id",
+        "corrupted_value": "m1-dup-00002",
+        "expected_issue_type": "duplicate_record",
+        "injection_id": "m1-0091",
+        "key": "duplicate_record|source_row_id=52050",
+        "notes": "A duplicate row was appended with the same source_row_id.",
+        "original_value": "m1-row-02971",
+        "repairable": false,
+        "row_id": "m1-dup-00002",
+        "row_index": 4230,
+        "source_row_id": "52050"
+      }
+    },
+    {
+      "detected": true,
+      "key": "duplicate_record|source_row_id=53815",
+      "prediction": {
+        "anomaly_type": "duplicate_record",
+        "issue_id": "row::duplicate_record",
+        "issue_ids": [
+          "row::duplicate_record"
+        ],
+        "key": "duplicate_record|source_row_id=53815",
+        "marked_row_count": 2,
+        "marked_row_indices": [
+          3076,
+          4235
+        ],
+        "source_row_id": "53815"
+      },
+      "truth": {
+        "anomaly_type": "duplicate_record",
+        "column": "source_row_id",
+        "corrupted_value": "m1-dup-00007",
+        "expected_issue_type": "duplicate_record",
+        "injection_id": "m1-0096",
+        "key": "duplicate_record|source_row_id=53815",
+        "notes": "A duplicate row was appended with the same source_row_id.",
+        "original_value": "m1-row-03076",
+        "repairable": false,
+        "row_id": "m1-dup-00007",
+        "row_index": 4235,
+        "source_row_id": "53815"
+      }
+    },
+    {
+      "detected": true,
+      "key": "duplicate_record|source_row_id=63453",
+      "prediction": {
+        "anomaly_type": "duplicate_record",
+        "issue_id": "row::duplicate_record",
+        "issue_ids": [
+          "row::duplicate_record"
+        ],
+        "key": "duplicate_record|source_row_id=63453",
+        "marked_row_count": 2,
+        "marked_row_indices": [
+          3671,
+          4231
+        ],
+        "source_row_id": "63453"
+      },
+      "truth": {
+        "anomaly_type": "duplicate_record",
+        "column": "source_row_id",
+        "corrupted_value": "m1-dup-00003",
+        "expected_issue_type": "duplicate_record",
+        "injection_id": "m1-0092",
+        "key": "duplicate_record|source_row_id=63453",
+        "notes": "A duplicate row was appended with the same source_row_id.",
+        "original_value": "m1-row-03671",
+        "repairable": false,
+        "row_id": "m1-dup-00003",
+        "row_index": 4231,
+        "source_row_id": "63453"
+      }
+    },
+    {
+      "detected": true,
+      "key": "duplicate_record|source_row_id=68721",
+      "prediction": {
+        "anomaly_type": "duplicate_record",
+        "issue_id": "row::duplicate_record",
+        "issue_ids": [
+          "row::duplicate_record"
+        ],
+        "key": "duplicate_record|source_row_id=68721",
+        "marked_row_count": 2,
+        "marked_row_indices": [
+          3985,
+          4239
+        ],
+        "source_row_id": "68721"
+      },
+      "truth": {
+        "anomaly_type": "duplicate_record",
+        "column": "source_row_id",
+        "corrupted_value": "m1-dup-00011",
+        "expected_issue_type": "duplicate_record",
+        "injection_id": "m1-0100",
+        "key": "duplicate_record|source_row_id=68721",
+        "notes": "A duplicate row was appended with the same source_row_id.",
+        "original_value": "m1-row-03985",
+        "repairable": false,
+        "row_id": "m1-dup-00011",
+        "row_index": 4239,
+        "source_row_id": "68721"
+      }
+    },
+    {
+      "detected": true,
+      "key": "cross_column_consistency|row=105",
+      "prediction": {
+        "anomaly_type": "cross_column_consistency",
+        "column": "record_start_day,record_end_day",
+        "issue_id": "record_start_day::cross_column_consistency::record_start_before_end",
+        "issue_ids": [
+          "record_start_day::cross_column_consistency::record_start_before_end"
+        ],
+        "key": "cross_column_consistency|row=105",
+        "row_index": 105,
+        "values": {
+          "record_end_day": "120",
+          "record_start_day": "130"
+        }
+      },
+      "truth": {
+        "anomaly_type": "cross_column_consistency",
+        "column": "record_start_day,record_end_day",
+        "corrupted_value": "130>120",
+        "expected_issue_type": "cross_column_consistency",
+        "injection_id": "m1-0083",
+        "key": "cross_column_consistency|row=105",
+        "notes": "record_start_day was made larger than record_end_day.",
+        "original_value": "115<=120",
+        "repairable": false,
+        "row_id": "m1-row-00105",
+        "row_index": 105,
+        "source_row_id": "2390"
+      }
+    },
+    {
+      "detected": true,
+      "key": "cross_column_consistency|row=1105",
+      "prediction": {
+        "anomaly_type": "cross_column_consistency",
+        "column": "record_start_day,record_end_day",
+        "issue_id": "record_start_day::cross_column_consistency::record_start_before_end",
+        "issue_ids": [
+          "record_start_day::cross_column_consistency::record_start_before_end"
+        ],
+        "key": "cross_column_consistency|row=1105",
+        "row_index": 1105,
+        "values": {
+          "record_end_day": "40",
+          "record_start_day": "50"
+        }
+      },
+      "truth": {
+        "anomaly_type": "cross_column_consistency",
+        "column": "record_start_day,record_end_day",
+        "corrupted_value": "50>40",
+        "expected_issue_type": "cross_column_consistency",
+        "injection_id": "m1-0073",
+        "key": "cross_column_consistency|row=1105",
+        "notes": "record_start_day was made larger than record_end_day.",
+        "original_value": "35<=40",
+        "repairable": false,
+        "row_id": "m1-row-01105",
+        "row_index": 1105,
+        "source_row_id": "19692"
+      }
+    },
+    {
+      "detected": true,
+      "key": "cross_column_consistency|row=1148",
+      "prediction": {
+        "anomaly_type": "cross_column_consistency",
+        "column": "record_start_day,record_end_day",
+        "issue_id": "record_start_day::cross_column_consistency::record_start_before_end",
+        "issue_ids": [
+          "record_start_day::cross_column_consistency::record_start_before_end"
+        ],
+        "key": "cross_column_consistency|row=1148",
+        "row_index": 1148,
+        "values": {
+          "record_end_day": "83",
+          "record_start_day": "93"
+        }
+      },
+      "truth": {
+        "anomaly_type": "cross_column_consistency",
+        "column": "record_start_day,record_end_day",
+        "corrupted_value": "93>83",
+        "expected_issue_type": "cross_column_consistency",
+        "injection_id": "m1-0082",
+        "key": "cross_column_consistency|row=1148",
+        "notes": "record_start_day was made larger than record_end_day.",
+        "original_value": "78<=83",
+        "repairable": false,
+        "row_id": "m1-row-01148",
+        "row_index": 1148,
+        "source_row_id": "20421"
+      }
+    },
+    {
+      "detected": true,
+      "key": "cross_column_consistency|row=119",
+      "prediction": {
+        "anomaly_type": "cross_column_consistency",
+        "column": "record_start_day,record_end_day",
+        "issue_id": "record_start_day::cross_column_consistency::record_start_before_end",
+        "issue_ids": [
+          "record_start_day::cross_column_consistency::record_start_before_end"
+        ],
+        "key": "cross_column_consistency|row=119",
+        "row_index": 119,
+        "values": {
+          "record_end_day": "134",
+          "record_start_day": "144"
+        }
+      },
+      "truth": {
+        "anomaly_type": "cross_column_consistency",
+        "column": "record_start_day,record_end_day",
+        "corrupted_value": "144>134",
+        "expected_issue_type": "cross_column_consistency",
+        "injection_id": "m1-0075",
+        "key": "cross_column_consistency|row=119",
+        "notes": "record_start_day was made larger than record_end_day.",
+        "original_value": "129<=134",
+        "repairable": false,
+        "row_id": "m1-row-00119",
+        "row_index": 119,
+        "source_row_id": "2578"
+      }
+    },
+    {
+      "detected": true,
+      "key": "cross_column_consistency|row=128",
+      "prediction": {
+        "anomaly_type": "cross_column_consistency",
+        "column": "record_start_day,record_end_day",
+        "issue_id": "record_start_day::cross_column_consistency::record_start_before_end",
+        "issue_ids": [
+          "record_start_day::cross_column_consistency::record_start_before_end"
+        ],
+        "key": "cross_column_consistency|row=128",
+        "row_index": 128,
+        "values": {
+          "record_end_day": "23",
+          "record_start_day": "33"
+        }
+      },
+      "truth": {
+        "anomaly_type": "cross_column_consistency",
+        "column": "record_start_day,record_end_day",
+        "corrupted_value": "33>23",
+        "expected_issue_type": "cross_column_consistency",
+        "injection_id": "m1-0078",
+        "key": "cross_column_consistency|row=128",
+        "notes": "record_start_day was made larger than record_end_day.",
+        "original_value": "18<=23",
+        "repairable": false,
+        "row_id": "m1-row-00128",
+        "row_index": 128,
+        "source_row_id": "2751"
+      }
+    },
+    {
+      "detected": true,
+      "key": "cross_column_consistency|row=1632",
+      "prediction": {
+        "anomaly_type": "cross_column_consistency",
+        "column": "record_start_day,record_end_day",
+        "issue_id": "record_start_day::cross_column_consistency::record_start_before_end",
+        "issue_ids": [
+          "record_start_day::cross_column_consistency::record_start_before_end"
+        ],
+        "key": "cross_column_consistency|row=1632",
+        "row_index": 1632,
+        "values": {
+          "record_end_day": "87",
+          "record_start_day": "97"
+        }
+      },
+      "truth": {
+        "anomaly_type": "cross_column_consistency",
+        "column": "record_start_day,record_end_day",
+        "corrupted_value": "97>87",
+        "expected_issue_type": "cross_column_consistency",
+        "injection_id": "m1-0079",
+        "key": "cross_column_consistency|row=1632",
+        "notes": "record_start_day was made larger than record_end_day.",
+        "original_value": "82<=87",
+        "repairable": false,
+        "row_id": "m1-row-01632",
+        "row_index": 1632,
+        "source_row_id": "29229"
+      }
+    },
+    {
+      "detected": true,
+      "key": "cross_column_consistency|row=2207",
+      "prediction": {
+        "anomaly_type": "cross_column_consistency",
+        "column": "record_start_day,record_end_day",
+        "issue_id": "record_start_day::cross_column_consistency::record_start_before_end",
+        "issue_ids": [
+          "record_start_day::cross_column_consistency::record_start_before_end"
+        ],
+        "key": "cross_column_consistency|row=2207",
+        "row_index": 2207,
+        "values": {
+          "record_end_day": "62",
+          "record_start_day": "72"
+        }
+      },
+      "truth": {
+        "anomaly_type": "cross_column_consistency",
+        "column": "record_start_day,record_end_day",
+        "corrupted_value": "72>62",
+        "expected_issue_type": "cross_column_consistency",
+        "injection_id": "m1-0085",
+        "key": "cross_column_consistency|row=2207",
+        "notes": "record_start_day was made larger than record_end_day.",
+        "original_value": "57<=62",
+        "repairable": false,
+        "row_id": "m1-row-02207",
+        "row_index": 2207,
+        "source_row_id": "39229"
+      }
+    },
+    {
+      "detected": true,
+      "key": "cross_column_consistency|row=2230",
+      "prediction": {
+        "anomaly_type": "cross_column_consistency",
+        "column": "record_start_day,record_end_day",
+        "issue_id": "record_start_day::cross_column_consistency::record_start_before_end",
+        "issue_ids": [
+          "record_start_day::cross_column_consistency::record_start_before_end"
+        ],
+        "key": "cross_column_consistency|row=2230",
+        "row_index": 2230,
+        "values": {
+          "record_end_day": "85",
+          "record_start_day": "95"
+        }
+      },
+      "truth": {
+        "anomaly_type": "cross_column_consistency",
+        "column": "record_start_day,record_end_day",
+        "corrupted_value": "95>85",
+        "expected_issue_type": "cross_column_consistency",
+        "injection_id": "m1-0080",
+        "key": "cross_column_consistency|row=2230",
+        "notes": "record_start_day was made larger than record_end_day.",
+        "original_value": "80<=85",
+        "repairable": false,
+        "row_id": "m1-row-02230",
+        "row_index": 2230,
+        "source_row_id": "39683"
+      }
+    },
+    {
+      "detected": true,
+      "key": "cross_column_consistency|row=2457",
+      "prediction": {
+        "anomaly_type": "cross_column_consistency",
+        "column": "record_start_day,record_end_day",
+        "issue_id": "record_start_day::cross_column_consistency::record_start_before_end",
+        "issue_ids": [
+          "record_start_day::cross_column_consistency::record_start_before_end"
+        ],
+        "key": "cross_column_consistency|row=2457",
+        "row_index": 2457,
+        "values": {
+          "record_end_day": "72",
+          "record_start_day": "82"
+        }
+      },
+      "truth": {
+        "anomaly_type": "cross_column_consistency",
+        "column": "record_start_day,record_end_day",
+        "corrupted_value": "82>72",
+        "expected_issue_type": "cross_column_consistency",
+        "injection_id": "m1-0087",
+        "key": "cross_column_consistency|row=2457",
+        "notes": "record_start_day was made larger than record_end_day.",
+        "original_value": "67<=72",
+        "repairable": false,
+        "row_id": "m1-row-02457",
+        "row_index": 2457,
+        "source_row_id": "43510"
+      }
+    },
+    {
+      "detected": true,
+      "key": "cross_column_consistency|row=2555",
+      "prediction": {
+        "anomaly_type": "cross_column_consistency",
+        "column": "record_start_day,record_end_day",
+        "issue_id": "record_start_day::cross_column_consistency::record_start_before_end",
+        "issue_ids": [
+          "record_start_day::cross_column_consistency::record_start_before_end"
+        ],
+        "key": "cross_column_consistency|row=2555",
+        "row_index": 2555,
+        "values": {
+          "record_end_day": "50",
+          "record_start_day": "60"
+        }
+      },
+      "truth": {
+        "anomaly_type": "cross_column_consistency",
+        "column": "record_start_day,record_end_day",
+        "corrupted_value": "60>50",
+        "expected_issue_type": "cross_column_consistency",
+        "injection_id": "m1-0084",
+        "key": "cross_column_consistency|row=2555",
+        "notes": "record_start_day was made larger than record_end_day.",
+        "original_value": "45<=50",
+        "repairable": false,
+        "row_id": "m1-row-02555",
+        "row_index": 2555,
+        "source_row_id": "45357"
+      }
+    },
+    {
+      "detected": true,
+      "key": "cross_column_consistency|row=3026",
+      "prediction": {
+        "anomaly_type": "cross_column_consistency",
+        "column": "record_start_day,record_end_day",
+        "issue_id": "record_start_day::cross_column_consistency::record_start_before_end",
+        "issue_ids": [
+          "record_start_day::cross_column_consistency::record_start_before_end"
+        ],
+        "key": "cross_column_consistency|row=3026",
+        "row_index": 3026,
+        "values": {
+          "record_end_day": "41",
+          "record_start_day": "51"
+        }
+      },
+      "truth": {
+        "anomaly_type": "cross_column_consistency",
+        "column": "record_start_day,record_end_day",
+        "corrupted_value": "51>41",
+        "expected_issue_type": "cross_column_consistency",
+        "injection_id": "m1-0081",
+        "key": "cross_column_consistency|row=3026",
+        "notes": "record_start_day was made larger than record_end_day.",
+        "original_value": "36<=41",
+        "repairable": false,
+        "row_id": "m1-row-03026",
+        "row_index": 3026,
+        "source_row_id": "52847"
+      }
+    },
+    {
+      "detected": true,
+      "key": "cross_column_consistency|row=320",
+      "prediction": {
+        "anomaly_type": "cross_column_consistency",
+        "column": "record_start_day,record_end_day",
+        "issue_id": "record_start_day::cross_column_consistency::record_start_before_end",
+        "issue_ids": [
+          "record_start_day::cross_column_consistency::record_start_before_end"
+        ],
+        "key": "cross_column_consistency|row=320",
+        "row_index": 320,
+        "values": {
+          "record_end_day": "95",
+          "record_start_day": "105"
+        }
+      },
+      "truth": {
+        "anomaly_type": "cross_column_consistency",
+        "column": "record_start_day,record_end_day",
+        "corrupted_value": "105>95",
+        "expected_issue_type": "cross_column_consistency",
+        "injection_id": "m1-0077",
+        "key": "cross_column_consistency|row=320",
+        "notes": "record_start_day was made larger than record_end_day.",
+        "original_value": "90<=95",
+        "repairable": false,
+        "row_id": "m1-row-00320",
+        "row_index": 320,
+        "source_row_id": "6090"
+      }
+    },
+    {
+      "detected": true,
+      "key": "cross_column_consistency|row=3377",
+      "prediction": {
+        "anomaly_type": "cross_column_consistency",
+        "column": "record_start_day,record_end_day",
+        "issue_id": "record_start_day::cross_column_consistency::record_start_before_end",
+        "issue_ids": [
+          "record_start_day::cross_column_consistency::record_start_before_end"
+        ],
+        "key": "cross_column_consistency|row=3377",
+        "row_index": 3377,
+        "values": {
+          "record_end_day": "32",
+          "record_start_day": "42"
+        }
+      },
+      "truth": {
+        "anomaly_type": "cross_column_consistency",
+        "column": "record_start_day,record_end_day",
+        "corrupted_value": "42>32",
+        "expected_issue_type": "cross_column_consistency",
+        "injection_id": "m1-0086",
+        "key": "cross_column_consistency|row=3377",
+        "notes": "record_start_day was made larger than record_end_day.",
+        "original_value": "27<=32",
+        "repairable": false,
+        "row_id": "m1-row-03377",
+        "row_index": 3377,
+        "source_row_id": "58568"
+      }
+    },
+    {
+      "detected": true,
+      "key": "cross_column_consistency|row=3672",
+      "prediction": {
+        "anomaly_type": "cross_column_consistency",
+        "column": "record_start_day,record_end_day",
+        "issue_id": "record_start_day::cross_column_consistency::record_start_before_end",
+        "issue_ids": [
+          "record_start_day::cross_column_consistency::record_start_before_end"
+        ],
+        "key": "cross_column_consistency|row=3672",
+        "row_index": 3672,
+        "values": {
+          "record_end_day": "87",
+          "record_start_day": "97"
+        }
+      },
+      "truth": {
+        "anomaly_type": "cross_column_consistency",
+        "column": "record_start_day,record_end_day",
+        "corrupted_value": "97>87",
+        "expected_issue_type": "cross_column_consistency",
+        "injection_id": "m1-0076",
+        "key": "cross_column_consistency|row=3672",
+        "notes": "record_start_day was made larger than record_end_day.",
+        "original_value": "82<=87",
+        "repairable": false,
+        "row_id": "m1-row-03672",
+        "row_index": 3672,
+        "source_row_id": "63455"
+      }
+    },
+    {
+      "detected": true,
+      "key": "cross_column_consistency|row=458",
+      "prediction": {
+        "anomaly_type": "cross_column_consistency",
+        "column": "record_start_day,record_end_day",
+        "issue_id": "record_start_day::cross_column_consistency::record_start_before_end",
+        "issue_ids": [
+          "record_start_day::cross_column_consistency::record_start_before_end"
+        ],
+        "key": "cross_column_consistency|row=458",
+        "row_index": 458,
+        "values": {
+          "record_end_day": "113",
+          "record_start_day": "123"
+        }
+      },
+      "truth": {
+        "anomaly_type": "cross_column_consistency",
+        "column": "record_start_day,record_end_day",
+        "corrupted_value": "123>113",
+        "expected_issue_type": "cross_column_consistency",
+        "injection_id": "m1-0088",
+        "key": "cross_column_consistency|row=458",
+        "notes": "record_start_day was made larger than record_end_day.",
+        "original_value": "108<=113",
+        "repairable": false,
+        "row_id": "m1-row-00458",
+        "row_index": 458,
+        "source_row_id": "8203"
+      }
+    },
+    {
+      "detected": true,
+      "key": "cross_column_consistency|row=95",
+      "prediction": {
+        "anomaly_type": "cross_column_consistency",
+        "column": "record_start_day,record_end_day",
+        "issue_id": "record_start_day::cross_column_consistency::record_start_before_end",
+        "issue_ids": [
+          "record_start_day::cross_column_consistency::record_start_before_end"
+        ],
+        "key": "cross_column_consistency|row=95",
+        "row_index": 95,
+        "values": {
+          "record_end_day": "110",
+          "record_start_day": "120"
+        }
+      },
+      "truth": {
+        "anomaly_type": "cross_column_consistency",
+        "column": "record_start_day,record_end_day",
+        "corrupted_value": "120>110",
+        "expected_issue_type": "cross_column_consistency",
+        "injection_id": "m1-0074",
+        "key": "cross_column_consistency|row=95",
+        "notes": "record_start_day was made larger than record_end_day.",
+        "original_value": "105<=110",
+        "repairable": false,
+        "row_id": "m1-row-00095",
+        "row_index": 95,
+        "source_row_id": "2092"
+      }
+    }
+  ]
+}

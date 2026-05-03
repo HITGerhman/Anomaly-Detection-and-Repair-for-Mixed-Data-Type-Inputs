@@ -188,6 +188,30 @@
 
 ### M0：项目基线确认
 
+**状态：DONE**
+
+**完成说明：**
+
+已于 2026-05-03 完成当前项目基线确认，基线说明文档见 `PROJECT_BASELINE.md`。本次仅确认并记录当前可运行入口、环境状态、测试命令、已知问题和高风险模块；未执行 M1 及之后任务，未重构主架构，未引入新依赖。
+
+**验证命令：**
+
+```powershell
+git status --short --branch
+.\.venv-win\Scripts\python.exe --version
+.\.venv-win\Scripts\python.exe -m pytest --collect-only tests/python_engine -q
+.\.venv-win\Scripts\python.exe -m pytest tests/python_engine -q
+'{"task_id":"health-m0","action":"health","payload":{}}' | .\.venv-win\Scripts\python.exe appshell\core\python_engine\engine_main.py
+Push-Location appshell\backend; go test ./internal/engine ./internal/task ./cmd/wails; Pop-Location
+$env:PATH = (Resolve-Path '.\.venv-win\Scripts').Path + ';' + $env:PATH; Push-Location appshell\backend; go test ./internal/engine ./internal/task ./cmd/wails; Pop-Location
+node --version
+npm --version
+```
+
+**验证结果摘要：**
+
+Python engine 测试通过：`21 passed in 33.86s`。Engine health 返回 `status=ok`，并确认当前支持 `health/train/repair/scan_file/repair_batch/rollback_repair_batch`。Go 关键包在默认环境下因 Python 子进程入口返回 `exit status 9009` 失败，但临时将 `.\.venv-win\Scripts` 加入 `PATH` 后通过。Node 当前 `Access is denied`，npm 当前不可用，前端构建不纳入本次已通过基线。
+
 **目的：**
 
 确认当前项目的实际状态，明确哪些入口可运行、哪些测试可执行、哪些问题已知存在。
@@ -217,6 +241,29 @@
 
 ### M1：实验数据与异常注入体系
 
+**状态：DONE**
+
+**完成说明：**
+
+已于 2026-05-03 完成 M1 实验数据与异常注入体系建设，新增可复现生成脚本 `scripts/generate_m1_experiment_data.py`，基于 `data/raw/healthcare-dataset-stroke-data.csv` 生成 `data/experiments/m1_stroke/` 下的 clean、corrupted、ground truth、注入统计和说明文档。本次仅构造可控实验数据与真实注入记录，未执行 M2 及之后任务，未计算检测或修复指标，未修改核心算法、Python engine 协议、Go 后端或 Wails 前端，未引入新依赖。
+
+**验证命令：**
+
+```powershell
+.\.venv-win\Scripts\python.exe scripts\generate_m1_experiment_data.py --output-dir data\experiments\m1_stroke --seed 20260503
+.\.venv-win\Scripts\python.exe -m pytest tests/python_engine/test_m1_experiment_data.py -q
+.\.venv-win\Scripts\python.exe -m pytest tests/python_engine -q
+'{"task_id":"m1-scan","action":"scan_file","payload":{"csv_path":"data/experiments/m1_stroke/corrupted.csv","scan_config":{"enable_cross_column_consistency":true,"consistency_rules":[{"name":"record_start_before_end","type":"lte","left_col":"record_start_day","right_col":"record_end_day"}],"enable_duplicate_record":true,"duplicate_subset":["source_row_id"]}}}' | .\.venv-win\Scripts\python.exe appshell\core\python_engine\engine_main.py
+```
+
+**验证结果摘要：**
+
+- 生成器完成，`clean.csv` 为 4228 行、16 列，`corrupted.csv` 为 4240 行、16 列，`ground_truth.csv` 为 100 条注入记录。
+- 注入统计为：`missing_values=30`、`numeric_outlier=24`、`rare_category=18`、`duplicate_record=12`、`cross_column_consistency=16`。
+- M1 专项测试通过：`2 passed in 2.70s`。
+- Python engine 既有回归通过：`23 passed in 25.58s`。
+- scan smoke test 返回 `status=ok`，读取 4240 行、16 列，汇总 `issue_count=19`，包含缺失值、数值离群、稀有类别、重复记录和跨列一致性问题。
+
 **目的：**
 
 构造可用于评价的实验数据，使系统检测和修复结果有真实参照。
@@ -245,6 +292,30 @@
 ---
 
 ### M2：异常检测效果评估
+
+**状态：DONE**
+
+**完成说明：**
+
+已于 2026-05-03 完成 M2 异常检测效果评估，新增 `scripts/evaluate_m2_detection.py`，基于 M1 的 `data/experiments/m1_stroke/` 产物生成 `data/experiments/m2_stroke_detection/` 下的检测指标、匹配明细和评估报告。本次仅评估当前扫描器对 M1 五类注入异常的检测效果，未执行 M3 及之后任务，未计算修复效果，未修改核心算法、Python engine 协议、Go 后端或 Wails 前端，未引入新依赖。
+
+**验证命令：**
+
+```powershell
+.\.venv-win\Scripts\python.exe scripts\evaluate_m2_detection.py --m1-dir data\experiments\m1_stroke --output-dir data\experiments\m2_stroke_detection
+.\.venv-win\Scripts\python.exe -m pytest tests/python_engine/test_m2_detection_evaluation.py -q
+.\.venv-win\Scripts\python.exe -m pytest tests/python_engine -q
+git status --short --branch
+Select-String -Path .\GRADUATION_PROJECT_ROADMAP.md -Pattern '^\| M[0-6] \|'
+```
+
+**验证结果摘要：**
+
+- M2 评估脚本执行成功，生成 `detection_metrics.json`、`detection_matches.json` 和 `README.md`。
+- 总体检测指标：ground truth `100`，predicted `222`，TP `100`，FP `122`，FN `0`，precision `0.450450`，recall `1.000000`，F1 `0.621118`。
+- 分类型指标：`missing_values`、`rare_category`、`duplicate_record`、`cross_column_consistency` 均为 precision/recall/F1 `1.000000`；`numeric_outlier` 为 TP `24`、FP `122`、FN `0`、precision `0.164384`、recall `1.000000`、F1 `0.282353`。
+- M2 专项测试通过：`2 passed in 2.45s`。
+- Python engine 回归通过：`25 passed in 31.37s`。
 
 **目的：**
 
@@ -524,9 +595,9 @@ Codex 完成任务后，必须人工查看变更。重点检查：
 
 | Milestone | 名称 | 状态 | 说明 |
 |---|---|---|---|
-| M0 | 项目基线确认 | TODO | 待确认当前可运行入口、测试命令和风险区域 |
-| M1 | 实验数据与异常注入体系 | TODO | 待构造 clean/corrupted/ground truth 数据 |
-| M2 | 异常检测效果评估 | TODO | 待生成检测指标和报告 |
+| M0 | 项目基线确认 | DONE | 已完成当前可运行入口、环境状态、测试命令、已知问题和风险区域确认；详见 `PROJECT_BASELINE.md` |
+| M1 | 实验数据与异常注入体系 | DONE | 已生成可复现 clean/corrupted/ground truth 数据、注入统计和说明文档；详见 `data/experiments/m1_stroke/` |
+| M2 | 异常检测效果评估 | DONE | 已生成检测指标、ground truth 匹配明细和评估报告；详见 `data/experiments/m2_stroke_detection/` |
 | M3 | 异常修复效果评估 | TODO | 待生成修复指标和报告 |
 | M4 | 核心行为回归测试 | TODO | 待补齐扫描、修复、回滚等测试 |
 | M5 | 答辩演示流程收口 | TODO | 待形成主演示与备用演示方案 |

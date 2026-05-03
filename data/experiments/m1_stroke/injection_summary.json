@@ -1,0 +1,32 @@
+{
+  "clean_columns": 16,
+  "clean_rows": 4228,
+  "corrupted_columns": 16,
+  "corrupted_rows": 4240,
+  "dataset": "m1_stroke",
+  "expected_issue_counts": {
+    "cross_column_consistency": 16,
+    "duplicate_record": 12,
+    "missing_values": 30,
+    "numeric_outlier": 24,
+    "rare_category": 18
+  },
+  "ground_truth_rows": 100,
+  "injection_counts_by_type": {
+    "cross_column_consistency": 16,
+    "duplicate_record": 12,
+    "missing_values": 30,
+    "numeric_outlier": 24,
+    "rare_category": 18
+  },
+  "milestone": "M1",
+  "non_repairable_ground_truth_rows": 28,
+  "notes": [
+    "M1 only constructs experiment data and ground truth.",
+    "Detection and repair metrics are intentionally left for M2/M3.",
+    "No synthetic metric values are fabricated by this generator."
+  ],
+  "repairable_ground_truth_rows": 72,
+  "seed": 20260503,
+  "source_csv": "data\\raw\\healthcare-dataset-stroke-data.csv"
+}

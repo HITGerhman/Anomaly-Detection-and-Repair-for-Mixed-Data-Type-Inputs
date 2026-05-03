@@ -60,6 +60,11 @@ out/figma-verify/
 # ------------------------------
 *.csv
 *.xlsx
+# M1 graduation experiment data is small, reproducible, and required for later evaluation.
+!data/experiments/m1_stroke/clean.csv
+!data/experiments/m1_stroke/corrupted.csv
+!data/experiments/m1_stroke/ground_truth.csv
+
 scripts/langgraph.local.ps1
 #------
 #md
