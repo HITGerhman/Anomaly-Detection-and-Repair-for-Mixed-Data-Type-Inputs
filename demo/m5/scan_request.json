@@ -1,0 +1,25 @@
+{
+  "task_id": "m5-scan",
+  "action": "scan_file",
+  "payload": {
+    "csv_path": "data/experiments/m1_stroke/corrupted.csv",
+    "scan_config": {
+      "max_issues": 1000,
+      "preview_limit": 20,
+      "enable_time_series_shift": false,
+      "enable_cross_column_consistency": true,
+      "consistency_rules": [
+        {
+          "name": "record_start_before_end",
+          "type": "lte",
+          "left_col": "record_start_day",
+          "right_col": "record_end_day"
+        }
+      ],
+      "enable_duplicate_record": true,
+      "duplicate_subset": [
+        "source_row_id"
+      ]
+    }
+  }
+}

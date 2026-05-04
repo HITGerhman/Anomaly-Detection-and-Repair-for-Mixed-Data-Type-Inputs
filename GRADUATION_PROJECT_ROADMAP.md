@@ -346,6 +346,33 @@ Select-String -Path .\GRADUATION_PROJECT_ROADMAP.md -Pattern '^\| M[0-6] \|'
 
 ### M3：异常修复效果评估
 
+**状态：DONE**
+
+**完成说明：**
+
+已于 2026-05-04 完成 M3 异常修复效果评估，新增 `scripts/evaluate_m3_repair.py`，基于 M1 的 `data/experiments/m1_stroke/` 与 M2 的 `data/experiments/m2_stroke_detection/` 产物生成 `data/experiments/m3_stroke_repair/` 下的修复后数据、修复指标、逐条明细和评估报告。本次仅评估当前 `repair_batch` 对缺失值、数值离群和稀有类别的修复效果，未执行 M4 及之后任务，未修改核心算法、Python engine 协议、Go 后端或 Wails 前端，未引入新依赖。
+
+**验证命令：**
+
+```powershell
+.\.venv-win\Scripts\python.exe scripts\evaluate_m3_repair.py --m1-dir data\experiments\m1_stroke --m2-dir data\experiments\m2_stroke_detection --output-dir data\experiments\m3_stroke_repair
+.\.venv-win\Scripts\python.exe -m pytest tests/python_engine/test_m3_repair_evaluation.py -q
+.\.venv-win\Scripts\python.exe -m pytest tests/python_engine -q
+git status --short --branch
+Select-String -Path .\GRADUATION_PROJECT_ROADMAP.md -Pattern '^\| M[0-6] \|'
+```
+
+**验证结果摘要：**
+
+- M3 评估脚本执行成功，生成 `repaired.csv`、`repair_metrics.json`、`repair_details.json` 和 `README.md`。
+- 主评分口径为 M1 中 `repairable=True` 的 72 条真值；28 条不可自动修复真值单独记录为 manual review，其中 `cross_column_consistency=16`、`duplicate_record=12`。
+- 总体修复结果：72 条可修复真值均被修改，exact restored `17`，exact restoration rate `0.236111`，improved/exact `41`，improved/exact rate `0.569444`。
+- 分类型结果：`missing_values` exact `7/30`；`numeric_outlier` exact `0/24`，但 `24/24` 均降低绝对误差，平均误差从 `180.506667` 降至 `55.003698`；`rare_category` exact `10/18`。
+- 修复前扫描 issue count 为 `12`，修复后为 `4`，resolved issue count 为 `8`。
+- `repair_batch` 共修改 `194` 个单元格，其中 `72` 个对应可修复 ground truth，`122` 个为非 ground truth 单元格修改，主要来自 M2 已记录的 numeric outlier 误报副作用；本次只记录现象，不调参、不修改核心检测逻辑。
+- M3 专项测试通过：`2 passed in 4.25s`。
+- Python engine 回归通过：`27 passed in 45.52s`。
+
 **目的：**
 
 量化评估系统修复异常数据的能力。
@@ -375,6 +402,33 @@ Select-String -Path .\GRADUATION_PROJECT_ROADMAP.md -Pattern '^\| M[0-6] \|'
 ---
 
 ### M4：核心行为回归测试
+
+**状态：DONE**
+
+**完成说明：**
+
+已于 2026-05-04 完成 M4 核心行为回归测试补充，新增 `tests/python_engine/test_m4_core_regression.py`，围绕 Python engine 与算法核心路径建立固定输入、固定行为的回归测试。本次仅补充 Python 核心测试并运行 Go 既有关键包验证，未执行 M5 及之后任务，未新增 Go 测试，未重构主架构，未引入新依赖，未修改 Wails 前端。
+
+**验证命令：**
+
+```powershell
+.\.venv-win\Scripts\python.exe -m pytest tests\python_engine\test_m4_core_regression.py -q
+.\.venv-win\Scripts\python.exe -m pytest tests\python_engine -q
+$env:PATH = (Resolve-Path '.\.venv-win\Scripts').Path + ';' + $env:PATH
+Push-Location appshell\backend
+go test ./internal/engine ./internal/task ./cmd/wails
+Pop-Location
+git status --short --branch
+Select-String -Path .\GRADUATION_PROJECT_ROADMAP.md -Pattern '^\| M[0-6] \|'
+```
+
+**验证结果摘要：**
+
+- M4 专项测试通过：`6 passed, 12 warnings in 9.50s`。
+- Python engine 全量回归通过：`33 passed, 12 warnings in 38.29s`。
+- Go 既有关键包验证通过：`appshell/backend/internal/engine`、`appshell/backend/internal/task`、`appshell/backend/cmd/wails` 均为 `ok`。
+- 新增测试覆盖 `scan_file` 混合异常扫描合同、`repair_batch` 选中 issue 修复与 manual-review 跳过、`plan_only` 不落盘行为、`rollback_repair_batch` 恢复与错误 manifest、Gower/KNN 修复建议原始标签保留，以及缺失 CSV、非法 scan_config、非法 repair_strategy 等结构化错误响应。
+- 当前警告来自 `src/repair_module.py` 中 `pd.api.types.is_categorical_dtype` 的 pandas deprecation warning；本次 M4 只记录该现象，不在回归测试任务中修改核心逻辑。
 
 **目的：**
 
@@ -406,6 +460,35 @@ Select-String -Path .\GRADUATION_PROJECT_ROADMAP.md -Pattern '^\| M[0-6] \|'
 
 ### M5：答辩演示流程收口
 
+**状态：DONE**
+
+**完成说明：**
+
+已于 2026-05-04 完成 M5 答辩演示流程收口，新增 `DEFENSE_DEMO_RUNBOOK.md` 和 `demo/m5/` 演示请求材料。主演示路径采用 AppShell/Engine 能力链路，围绕 `data/experiments/m1_stroke/corrupted.csv` 展示扫描、批量修复、结果查看和回滚说明；命令行 Python engine 作为可靠兜底，Wails/前端作为可选展示。本次未执行 M6，未新增实验指标，未修改核心算法，未引入新依赖。
+
+**验证命令：**
+
+```powershell
+.\.venv-win\Scripts\python.exe appshell\core\python_engine\engine_main.py --input demo\m5\scan_request.json
+.\.venv-win\Scripts\python.exe appshell\core\python_engine\engine_main.py --input demo\m5\repair_request.json
+.\.venv-win\Scripts\python.exe appshell\core\python_engine\engine_main.py --input <临时rollback请求.json>
+.\.venv-win\Scripts\python.exe -m pytest tests\python_engine -q
+$env:PATH = (Resolve-Path '.\.venv-win\Scripts').Path + ';' + $env:PATH
+Push-Location appshell\backend
+go test ./internal/engine ./internal/task ./cmd/wails
+Pop-Location
+git status --short --branch
+Select-String -Path .\GRADUATION_PROJECT_ROADMAP.md -Pattern '^\| M[0-6] \|'
+```
+
+**验证结果摘要：**
+
+- scan 演示请求执行成功，`issue_count=12`，问题类型统计为 `numeric_outlier=3`、`duplicate_record=1`、`cross_column_consistency=1`、`missing_values=4`、`rare_category=3`。
+- repair 演示请求执行成功，`selected_issue_count=10`、`applied_issue_count=10`、`total_cells_modified=194`，输出到 `outputs/demo/m5/repair/corrupted.repaired.csv`，并生成 rollback manifest。
+- rollback 临时请求执行成功，使用 `restore_target=output_csv` 验证了回滚清单可恢复演示输出文件；之后已重跑 repair，使演示输出保持修复后状态。
+- Python engine 全量回归通过：`33 passed, 12 warnings in 52.81s`。
+- Go 既有关键包验证通过：`appshell/backend/internal/engine`、`appshell/backend/internal/task`、`appshell/backend/cmd/wails` 均为 `ok`。
+
 **目的：**
 
 形成清晰、稳定、可控的答辩演示路径。
@@ -435,6 +518,33 @@ Select-String -Path .\GRADUATION_PROJECT_ROADMAP.md -Pattern '^\| M[0-6] \|'
 ---
 
 ### M6：论文支撑材料整理
+
+**状态：DONE**
+
+**完成说明：**
+
+已于 2026-05-04 完成 M6 论文支撑材料整理，新增 `THESIS_SUPPORT_MATERIALS.md`。该文档基于 M0-M5 的真实产物整理研究背景、需求分析、系统架构、算法方法、实验设计、实验结果、系统测试、总结展望和仍需人工补充内容，可作为毕业论文初稿的结构化素材。本次未修改核心算法、Python engine 协议、Go 后端或 Wails 前端，未新增依赖，未新增实验指标，未重新生成 M1-M3 数据。
+
+**验证命令：**
+
+```powershell
+Get-Content -Raw -Encoding UTF8 .\THESIS_SUPPORT_MATERIALS.md
+Select-String -Path .\GRADUATION_PROJECT_ROADMAP.md -Pattern '^\| M[0-6] \|'
+git status --short --branch
+.\.venv-win\Scripts\python.exe -m pytest tests\python_engine -q
+$env:PATH = (Resolve-Path '.\.venv-win\Scripts').Path + ';' + $env:PATH
+Push-Location appshell\backend
+go test ./internal/engine ./internal/task ./cmd/wails
+Pop-Location
+```
+
+**验证结果：**
+
+- `THESIS_SUPPORT_MATERIALS.md` 已覆盖 M6 要求的论文素材类别，并明确标记学校格式、摘要、关键词、参考文献、图号和最终排版等仍需人工补充内容。
+- 文档中的实验数字来自 M1-M5 已验证材料，包括 M2 overall precision `0.450450`、recall `1.000000`、numeric outlier FP `122`，以及 M3 exact restoration rate `0.236111`、improved/exact rate `0.569444`。
+- 与远端最新 `origin/main` rebase 后，Python engine 回归通过：`41 passed, 12 warnings in 51.55s`。
+- 与远端最新 `origin/main` rebase 后，Go 关键包验证通过：`internal/engine`、`internal/task`、`cmd/wails` 均为 `ok`。
+- M0-M6 当前均已完成。
 
 **目的：**
 
@@ -598,10 +708,10 @@ Codex 完成任务后，必须人工查看变更。重点检查：
 | M0 | 项目基线确认 | DONE | 已完成当前可运行入口、环境状态、测试命令、已知问题和风险区域确认；详见 `PROJECT_BASELINE.md` |
 | M1 | 实验数据与异常注入体系 | DONE | 已生成可复现 clean/corrupted/ground truth 数据、注入统计和说明文档；详见 `data/experiments/m1_stroke/` |
 | M2 | 异常检测效果评估 | DONE | 已生成检测指标、ground truth 匹配明细和评估报告；详见 `data/experiments/m2_stroke_detection/` |
-| M3 | 异常修复效果评估 | TODO | 待生成修复指标和报告 |
-| M4 | 核心行为回归测试 | TODO | 待补齐扫描、修复、回滚等测试 |
-| M5 | 答辩演示流程收口 | TODO | 待形成主演示与备用演示方案 |
-| M6 | 论文支撑材料整理 | TODO | 待整理论文结构化素材 |
+| M3 | 异常修复效果评估 | DONE | 已生成修复后数据、修复指标、逐条明细和评估报告；详见 `data/experiments/m3_stroke_repair/` |
+| M4 | 核心行为回归测试 | DONE | 已补充 Python 核心回归测试，覆盖扫描、批量修复、Gower 修复、回滚和错误输入处理 |
+| M5 | 答辩演示流程收口 | DONE | 已形成 AppShell/Engine 主演示 runbook、备用演示方案和可复用 JSON 请求 |
+| M6 | 论文支撑材料整理 | DONE | 已形成可改写进毕业论文初稿的结构化支撑材料；详见 `THESIS_SUPPORT_MATERIALS.md` |
 
 ---
 

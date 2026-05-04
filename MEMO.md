@@ -1,6 +1,6 @@
 ﻿# MEMO
 
-Last updated: 2026-05-03 19:02:57
+Last updated: 2026-05-04 11:20:27 +08:00
 
 ## 椤圭洰鎬荤洰鏍?
 - 灏嗏€滄贩鍚堟暟鎹被鍨嬪紓甯告娴嬩笌淇鈥濋」鐩粠绠楁硶鍘熷瀷鎺ㄨ繘涓哄彲浜や粯銆佸彲婕旂ず銆佸彲娴嬭瘯鐨勬闈㈠簲鐢ㄣ€?- 浠?`appshell/` 浣滀负浜у搧鍖栦富璺緞锛屽舰鎴?`Python Engine + Go Backend + Wails Frontend` 鐨勭ǔ瀹氭灦鏋勩€?- 淇濈暀 `app.py` 浣滀负鏃х増 Streamlit 婕旂ず鍏ュ彛锛岀敤浜庣畻娉曢獙璇併€佺粨鏋滃鐓у拰绛旇京灞曠ず銆?- 閫愭琛ラ綈鐪熷疄鐢ㄦ埛闂幆锛氬鍏?CSV -> 璁粌/鎵弿 -> 闂绛涢€?-> 鎵归噺淇 -> 鍥炴粴 -> 鍘嗗彶鏌ョ湅銆?- 鍦ㄤ繚鐣欑幇鏈夌畻娉曡祫浜т笌宸ョ▼楠ㄦ灦鐨勫墠鎻愪笅锛岄€愭鍗囩骇涓衡€滃 agent 鍐崇瓥灞?+ 纭畾鎬у伐鍏峰眰鈥濈殑鏅鸿兘鍖栦骇鍝併€?- 鏈€缁堢洰鏍囨槸璁╃敤鎴峰敖閲忓彧闇€閫夋嫨鏂囦欢锛屽嵆鍙嚜鍔ㄨ幏寰楁壂鎻忋€佷慨澶嶃€侀獙璇併€佸洖婊氫繚鎶ゅ拰鍥捐〃鍖栬В閲婄粨鏋溿€?
@@ -693,3 +693,164 @@ Last updated: 2026-05-03 19:02:57
   - 当前已有未跟踪项 `out/figma-verify/` 与 `scripts/langgraph.local.ps1` 未处理，保持原样。
 - 我们目前已完成的步骤：已完成 M0 项目基线确认、M1 可复现实验数据构造，以及 M2 检测指标、匹配明细、评估报告、专项测试和路线图状态更新。
 - 我们当前正在努力解决的问题：继续把项目收束为可证明的毕业设计交付物；下一步只有在明确执行 M3 时，才应基于本次检测结果进一步评估修复效果。
+
+## Update 2026-05-04 08:40:56
+
+- 改动日期：2026-05-04 08:40:56 +08:00
+- 改动内容简述：执行毕业设计路线图 M3“异常修复效果评估”，新增修复评估脚本、M3 专项测试和 `data/experiments/m3_stroke_repair/` 评估产物，并在路线图中更新 M3 状态、说明和验证命令；本次不执行 M4 及之后任务，不修改核心算法、Python engine 协议、Go 后端或 Wails 前端，不引入新依赖。
+- 最终目标：基于 M1 的可控注入数据和 M2 的检测结果，量化当前 `repair_batch` 对异常数据的修复效果，形成可写入论文和答辩材料的修复指标、前后对比和局限说明。
+- 当前采用的方法：
+  - 使用 `.venv-win` Python 环境运行 M3 评估。
+  - 主评分口径采用 M1 中 `repairable=True` 的 72 条 ground truth；`cross_column_consistency` 与 `duplicate_record` 作为当前规则修复不支持的 manual review 项单独统计。
+  - 从 M2 `scan_issues` 中选择 `missing_values`、`numeric_outlier`、`rare_category` 的 issue_id，调用现有 `engine_core.action_repair_batch`，不改对外协议。
+  - 使用与 M2 一致的扫描配置：关闭 `time_series_shift`，启用 `record_start_day <= record_end_day` 跨列规则和 `duplicate_subset=["source_row_id"]`。
+  - `enable_rollback=false`，避免生成含时间和 UUID 的非确定性实验产物。
+- 相关模块/文件：
+  - `.gitignore`
+  - `scripts/evaluate_m3_repair.py`
+  - `tests/python_engine/test_m3_repair_evaluation.py`
+  - `data/experiments/m3_stroke_repair/repaired.csv`
+  - `data/experiments/m3_stroke_repair/repair_metrics.json`
+  - `data/experiments/m3_stroke_repair/repair_details.json`
+  - `data/experiments/m3_stroke_repair/README.md`
+  - `GRADUATION_PROJECT_ROADMAP.md`
+  - `MEMO.md`
+- 已完成的步骤 / 已解决的问题 / 新增功能：
+  - 新增 `scripts/evaluate_m3_repair.py`，支持从 M1/M2 目录读取实验数据和检测结果，自动选择可修复 issue_id，执行批量修复并计算修复指标。
+  - 已生成 `repaired.csv`，保留与 `corrupted.csv` 相同的 4240 行、16 列。
+  - 已生成 `repair_metrics.json`，包含总体修复指标、分类型指标、before/after issue count、修复策略、输入摘要和 side effect 统计。
+  - 已生成 `repair_details.json`，包含 72 条可修复 ground truth 的逐条修复结果、28 条不可自动修复真值的 skipped 明细，以及 194 个变更单元格明细。
+  - 已生成 `README.md`，整理可用于论文/答辩的修复评估口径、指标表、修复前后扫描摘要和局限说明。
+  - 新增 `tests/python_engine/test_m3_repair_evaluation.py`，覆盖输出文件、JSON 结构、主口径计数、manual review 计数、before/after 一致性和重复运行稳定性。
+  - 已在 `.gitignore` 中为 M3 的 `repaired.csv` 添加例外，避免被全局 `*.csv` 规则忽略。
+  - 已在 `GRADUATION_PROJECT_ROADMAP.md` 中将 M3 状态更新为 `DONE`，并补充完成说明、验证命令和结果摘要；M4-M6 仍保持 `TODO`。
+- 修复评估结果：
+  - 主口径：repairable ground truth `72`，repairable changed `72`，exact restored `17`，exact restoration rate `0.236111`，improved/exact `41`，improved/exact rate `0.569444`。
+  - `missing_values`：30 条均被修改，exact restored `7`，exact restoration rate `0.233333`。
+  - `numeric_outlier`：24 条均被修改，exact restored `0`，但 `24/24` 均降低绝对误差；平均误差从 `180.506667` 降至 `55.003698`，平均误差改善 `125.502969`。
+  - `rare_category`：18 条均被修改，exact restored `10`，exact restoration rate `0.555556`。
+  - 不可自动修复真值：`cross_column_consistency=16`、`duplicate_record=12`，本次记录为 manual review，不计入主失败。
+  - 修复前扫描 issue count 为 `12`，修复后为 `4`，resolved issue count 为 `8`。
+  - `repair_batch` 总计修改 `194` 个单元格，其中 `122` 个为非 ground truth 单元格修改，主要来自 M2 已记录的 numeric outlier 误报副作用；本次只记录现象，不调参、不修改核心检测逻辑。
+- 验证结果：
+  - `.\.venv-win\Scripts\python.exe scripts\evaluate_m3_repair.py --m1-dir data\experiments\m1_stroke --m2-dir data\experiments\m2_stroke_detection --output-dir data\experiments\m3_stroke_repair` 执行成功。
+  - `.\.venv-win\Scripts\python.exe -m pytest tests/python_engine/test_m3_repair_evaluation.py -q` 通过：`2 passed in 4.25s`。
+  - `.\.venv-win\Scripts\python.exe -m pytest tests/python_engine -q` 通过：`27 passed in 45.52s`。
+- 当前问题 / 待处理事项：
+  - M3 只完成修复效果评估；核心行为回归测试留给 M4。
+  - 当前 numeric outlier 误报会带来额外修复副作用，后续若要降低 side effect，应在独立任务中讨论检测阈值或修复选择策略，不混入本次 M3。
+  - `cross_column_consistency` 与 `duplicate_record` 当前更适合人工确认或后续专门规则，不属于当前自动修复主能力。
+  - 本次未处理默认 Python PATH、Node/npm 和前端构建环境问题，这些仍沿用 M0 记录的基线结论。
+  - 当前已有未跟踪项 `out/figma-verify/` 与 `scripts/langgraph.local.ps1` 未处理，保持原样。
+- 我们目前已完成的步骤：已完成 M0 项目基线确认、M1 可复现实验数据构造、M2 检测效果评估，以及 M3 修复指标、逐条明细、修复后数据、评估报告、专项测试草案和路线图状态更新。
+- 我们当前正在努力解决的问题：继续把项目收束为可证明的毕业设计交付物；下一步只有在明确执行 M4 时，才应补齐扫描、修复、回滚等核心行为回归测试。
+
+## Update 2026-05-04 08:54:54
+
+- 改动日期：2026-05-04 08:54:54 +08:00
+- 改动内容简述：执行毕业设计路线图 M4“核心行为回归测试”，新增 Python 核心回归测试文件，并在路线图中更新 M4 状态、说明和验证命令；本次不执行 M5 及之后任务，不新增 Go 测试，不修改 Wails 前端，不重构主架构，不引入新依赖。
+- 最终目标：为异常扫描、批量修复、Gower/KNN 修复、回滚和错误输入处理建立更明确的自动化回归保护网，降低后续修改破坏核心路径的风险。
+- 当前采用的方法：
+  - 使用 `.venv-win` Python 环境运行新增 M4 专项测试和 Python engine 全量回归。
+  - 新增测试使用临时目录和内联小型 CSV，不新增新的实验数据产物。
+  - Python 核心测试聚焦固定输入、固定行为的合同断言，不重复 M1-M3 的指标评估。
+  - Go 侧只运行 M0 已确认的既有关键包验证，并在命令中临时把 `.\.venv-win\Scripts` 加入 `PATH`。
+- 相关模块/文件：
+  - `tests/python_engine/test_m4_core_regression.py`
+  - `GRADUATION_PROJECT_ROADMAP.md`
+  - `MEMO.md`
+- 已完成的步骤 / 已解决的问题 / 新增功能：
+  - 新增 `tests/python_engine/test_m4_core_regression.py`。
+  - 固定覆盖 `scan_file` 对缺失值、数值离群、稀有类别、跨列一致性和重复记录的扫描行为，并断言 issue 字段、scan summary 和配置透传。
+  - 覆盖 `repair_batch` 对 selected issue 的修复、`write_output=false` 不落盘、unsupported/manual-review issue 进入 skipped。
+  - 覆盖 `plan_only=true` 即使请求 `write_output=true` 也不写文件，同时仍返回真实 comparison。
+  - 覆盖 `rollback_repair_batch` 能根据 rollback manifest 恢复 `source_csv`，并补充 missing/invalid manifest 的结构化错误响应。
+  - 覆盖 `src.repair_module.AnomalyRepairer` 的 Gower/KNN 修复建议，确认混合类型数据会返回原始类别标签而不是编码值，并能生成数值字段建议。
+  - 覆盖缺失 CSV、非法 `scan_config`、非法 `repair_strategy` 等错误输入的结构化错误码。
+  - 已在 `GRADUATION_PROJECT_ROADMAP.md` 中将 M4 状态更新为 `DONE`，并补充完成说明、验证命令和结果摘要；M5-M6 仍保持 `TODO`。
+- 验证结果：
+  - `.\.venv-win\Scripts\python.exe -m pytest tests\python_engine\test_m4_core_regression.py -q` 通过：`6 passed, 12 warnings in 9.50s`。
+  - `.\.venv-win\Scripts\python.exe -m pytest tests\python_engine -q` 通过：`33 passed, 12 warnings in 38.29s`。
+  - `$env:PATH = (Resolve-Path '.\.venv-win\Scripts').Path + ';' + $env:PATH; Push-Location appshell\backend; go test ./internal/engine ./internal/task ./cmd/wails; Pop-Location` 通过：`internal/engine`、`internal/task`、`cmd/wails` 均为 `ok`。
+- 当前问题 / 待处理事项：
+  - M4 只完成核心行为回归测试；答辩演示流程收口留给 M5。
+  - M4 测试暴露 `src/repair_module.py` 中 `pd.api.types.is_categorical_dtype` 的 pandas deprecation warning；当前不影响测试通过，本次只记录，不在 M4 中修改核心逻辑。
+  - 本次未处理默认 Python PATH、Node/npm 和前端构建环境问题，这些仍沿用 M0 记录的基线结论。
+  - 当前已有未跟踪项 `out/figma-verify/` 与 `scripts/langgraph.local.ps1` 未处理，保持原样。
+- 我们目前已完成的步骤：已完成 M0 项目基线确认、M1 可复现实验数据构造、M2 检测效果评估、M3 修复效果评估，以及 M4 核心行为回归测试补充和路线图状态更新。
+- 我们当前正在努力解决的问题：继续把项目收束为可证明、可复现、可测试、可演示、可写论文的毕业设计交付物；下一步只有在明确执行 M5 时，才应整理答辩主演示与备用演示流程。
+
+## Update 2026-05-04 10:27:48
+
+- 改动日期：2026-05-04 10:27:48 +08:00
+- 改动内容简述：执行毕业设计路线图 M5“答辩演示流程收口”，新增答辩演示 runbook 和 `demo/m5/` 可复用 JSON 请求材料，并在路线图中更新 M5 状态、说明和验证命令；本次不执行 M6，不新增实验指标，不修改核心算法、Python engine 协议、Go 后端或 Wails 前端，不引入新依赖。
+- 最终目标：形成一条稳定、短、可控的 3-5 分钟答辩主演示流程，让现场可以围绕 AppShell/Engine 能力展示“选择数据 -> 发现异常 -> 修复异常 -> 查看结果 -> 说明回滚”的闭环，并在前端或 Node/npm 环境不可用时仍有命令行兜底。
+- 当前采用的方法：
+  - 使用 M1-M3 已生成的实验资产作为演示依据，不重新计算新指标。
+  - 主路径采用 `.venv-win` Python 直接调用 `appshell/core/python_engine/engine_main.py`，Wails/前端仅作为可选展示。
+  - 扫描、修复、回滚分别沉淀为固定 JSON 请求，降低现场手敲参数和环境波动风险。
+  - 演示输出写入 `outputs/demo/m5/`，作为运行产物而不是新的必交数据资产。
+- 相关模块/文件：
+  - `DEFENSE_DEMO_RUNBOOK.md`
+  - `demo/m5/scan_request.json`
+  - `demo/m5/repair_request.json`
+  - `demo/m5/rollback_request.template.json`
+  - `demo/m5/README.md`
+  - `GRADUATION_PROJECT_ROADMAP.md`
+  - `MEMO.md`
+- 已完成的步骤 / 已解决的问题 / 新增功能：
+  - 新增 `DEFENSE_DEMO_RUNBOOK.md`，整理 3-5 分钟主演示脚本、讲解口径、指标引用、回滚说明和失败兜底方案。
+  - 新增 `demo/m5/scan_request.json`，固定扫描 `data/experiments/m1_stroke/corrupted.csv`，使用 M2/M3 一致的 scan_config。
+  - 新增 `demo/m5/repair_request.json`，固定选择 M2 已知可修复 issue_id，输出到 `outputs/demo/m5/repair/`，并启用 rollback manifest。
+  - 新增 `demo/m5/rollback_request.template.json`，说明将 repair 输出中的 `manifest_path` 填入后可恢复演示输出文件。
+  - 新增 `demo/m5/README.md`，记录演示请求运行命令和预期关键字段。
+  - 已在 `GRADUATION_PROJECT_ROADMAP.md` 中将 M5 状态更新为 `DONE`，并补充完成说明、验证命令和结果摘要；M6 仍保持 `TODO`。
+- 验证结果：
+  - `.\.venv-win\Scripts\python.exe appshell\core\python_engine\engine_main.py --input demo\m5\scan_request.json` 执行成功，返回 `issue_count=12`，其中 `numeric_outlier=3`、`duplicate_record=1`、`cross_column_consistency=1`、`missing_values=4`、`rare_category=3`。
+  - `.\.venv-win\Scripts\python.exe appshell\core\python_engine\engine_main.py --input demo\m5\repair_request.json` 执行成功，`selected_issue_count=10`，`applied_issue_count=10`，`total_cells_modified=194`，输出 `outputs/demo/m5/repair/corrupted.repaired.csv` 并生成 rollback manifest。
+  - rollback 临时请求验证成功，使用 `restore_target=output_csv` 恢复演示输出文件；第一次临时请求因 PowerShell `Set-Content -Encoding UTF8` 写入 BOM 导致 `INVALID_JSON`，随后改用无 BOM 写法通过验证。验证后已重新执行 repair 请求，保留修复后演示输出。
+  - `.\.venv-win\Scripts\python.exe -m pytest tests\python_engine -q` 通过：`33 passed, 12 warnings in 52.81s`。
+  - `$env:PATH = (Resolve-Path '.\.venv-win\Scripts').Path + ';' + $env:PATH; Push-Location appshell\backend; go test ./internal/engine ./internal/task ./cmd/wails; Pop-Location` 通过：`internal/engine`、`internal/task`、`cmd/wails` 均为 `ok`。
+- 当前问题 / 待处理事项：
+  - M5 只完成答辩演示流程收口；论文支撑材料整理留给 M6。
+  - Node/npm 仍沿用 M0 基线结论，不作为 M5 必需演示前提。
+  - Wails/前端展示仍建议作为可选项，命令行 Python engine 是本次确认的可靠兜底路径。
+  - `src/repair_module.py` 中 pandas deprecation warning 仍存在，不影响当前测试通过，本次不修改核心逻辑。
+  - 当前已有未跟踪项 `out/figma-verify/` 与 `scripts/langgraph.local.ps1` 未处理，保持原样。
+- 我们目前已完成的步骤：已完成 M0 项目基线确认、M1 可复现实验数据构造、M2 检测效果评估、M3 修复效果评估、M4 核心行为回归测试，以及 M5 答辩主演示 runbook、演示请求材料、备用方案和路线图状态更新。
+- 我们当前正在努力解决的问题：继续把项目收束为可证明、可复现、可测试、可演示、可写论文的毕业设计交付物；下一步只有在明确执行 M6 时，才应整理论文结构化支撑材料。
+
+## Update 2026-05-04 10:57:05
+
+- 改动日期：2026-05-04 10:57:05 +08:00
+- 改动内容简述：执行毕业设计路线图 M6“论文支撑材料整理”，新增论文支撑材料文档，并在路线图中更新 M6 状态、说明和验证命令；本次不修改核心算法、Python engine 协议、Go 后端或 Wails 前端，不引入新依赖，不新增实验指标，不重新生成 M1-M3 数据。
+- 最终目标：把 M0-M5 已形成的真实项目事实、系统设计、实验结果、测试结果和演示口径整理为可直接改写进毕业论文初稿的中文 Markdown 素材，同时明确哪些内容仍需人工按学校要求补充。
+- 当前采用的方法：
+  - 使用 M0-M5 的已验证材料作为事实来源，包括 `PROJECT_BASELINE.md`、M1-M3 实验报告、M4 测试记录和 M5 演示 runbook。
+  - 将论文素材按研究背景、需求分析、系统架构、算法方法、实验设计、实验结果、系统测试、总结展望和人工补充项组织。
+  - 对数值离群误报、修复副作用、Node/npm 不可靠、Windows clean install 未验证等局限如实记录，不包装成已解决能力。
+- 相关模块/文件：
+  - `THESIS_SUPPORT_MATERIALS.md`
+  - `GRADUATION_PROJECT_ROADMAP.md`
+  - `MEMO.md`
+- 已完成的步骤 / 已解决的问题 / 新增功能：
+  - 新增 `THESIS_SUPPORT_MATERIALS.md`，作为 M6 主论文支撑文档。
+  - 整理研究背景与问题定义，明确项目目标是混合类型表格数据异常检测、修复、评估和回滚闭环。
+  - 整理需求分析和系统架构，说明 `app.py` legacy demo、Python engine、Go backend、Wails/frontend 和实验报告目录的角色。
+  - 整理算法方法说明，覆盖缺失值、数值离群、稀有类别、重复记录、跨列一致性、Gower/KNN 修复和规则型批量修复。
+  - 整理实验设计和结果摘要，引用 M1 注入统计、M2 检测指标和 M3 修复指标。
+  - 整理系统测试说明，引用 M4/M5 验证结果，并保留 Node/npm、Windows 安装包和 pandas warning 等边界。
+  - 整理总结与展望、论文目录建议和仍需人工补充清单。
+  - 已在 `GRADUATION_PROJECT_ROADMAP.md` 中将 M6 状态更新为 `DONE`，并补充完成说明、验证命令和结果摘要；M0-M6 当前均为 `DONE`。
+- 验证结果：
+  - `Get-Content -Raw -Encoding UTF8 .\THESIS_SUPPORT_MATERIALS.md` 可正常读取新增文档。
+  - `Select-String -Path .\GRADUATION_PROJECT_ROADMAP.md -Pattern '^\| M[0-6] \|'` 确认 M0-M6 均为 `DONE`。
+  - 与远端最新 `origin/main` rebase 后，`.\.venv-win\Scripts\python.exe -m pytest tests\python_engine -q` 通过：`41 passed, 12 warnings in 51.55s`。
+  - 与远端最新 `origin/main` rebase 后，`$env:PATH = (Resolve-Path '.\.venv-win\Scripts').Path + ';' + $env:PATH; Push-Location appshell\backend; go test ./internal/engine ./internal/task ./cmd/wails; Pop-Location` 通过：`internal/engine`、`internal/task`、`cmd/wails` 均为 `ok`。
+- 当前问题 / 待处理事项：
+  - M6 形成的是论文支撑素材，不是最终论文定稿；摘要、关键词、参考文献、学校模板、图号表号、最终截图和 Word 排版仍需人工或单独任务完成。
+  - 根目录 `README.md` 与 AppShell 当前能力仍存在文档漂移，本次按计划未更新 README。
+  - Node/npm 和 Windows clean-machine 安装包验证仍不是已完成能力。
+  - 当前已有未跟踪项 `out/figma-verify/` 与 `scripts/langgraph.local.ps1` 未处理，保持原样。
+- 我们目前已完成的步骤：已完成 M0 项目基线确认、M1 可复现实验数据构造、M2 检测效果评估、M3 修复效果评估、M4 核心行为回归测试、M5 答辩演示流程收口，以及 M6 论文支撑材料整理。
+- 我们当前正在努力解决的问题：把项目收束为可证明、可复现、可测试、可演示、可写论文的毕业设计交付状态；当前路线图 M0-M6 已全部形成对应产物，后续重点转为人工审查 diff、补论文格式和按学校要求整理终稿。

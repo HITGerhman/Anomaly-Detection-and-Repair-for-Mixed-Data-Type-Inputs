@@ -66,6 +66,8 @@ out/figma-verify/
 !data/experiments/m1_stroke/ground_truth.csv
 
 scripts/langgraph.local.ps1
+# M3 repaired output is a small evaluation artifact required by the repair report.
+!data/experiments/m3_stroke_repair/repaired.csv
 #------
 #md
 #-------

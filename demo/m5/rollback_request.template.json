@@ -1,0 +1,8 @@
+{
+  "task_id": "m5-rollback",
+  "action": "rollback_repair_batch",
+  "payload": {
+    "manifest_path": "<paste result.rollback.manifest_path from the repair output here>",
+    "restore_target": "output_csv"
+  }
+}

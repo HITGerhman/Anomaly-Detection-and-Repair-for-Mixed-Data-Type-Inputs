@@ -1,0 +1,54 @@
+{
+  "task_id": "m5-repair",
+  "action": "repair_batch",
+  "payload": {
+    "csv_path": "data/experiments/m1_stroke/corrupted.csv",
+    "issue_ids": [
+      "avg_glucose_level::missing_values",
+      "bmi::missing_values",
+      "smoking_status::missing_values",
+      "work_type::missing_values",
+      "age::numeric_outlier",
+      "avg_glucose_level::numeric_outlier",
+      "bmi::numeric_outlier",
+      "gender::rare_category",
+      "smoking_status::rare_category",
+      "work_type::rare_category"
+    ],
+    "scan_config": {
+      "max_issues": 1000,
+      "preview_limit": 20,
+      "enable_time_series_shift": false,
+      "enable_cross_column_consistency": true,
+      "consistency_rules": [
+        {
+          "name": "record_start_before_end",
+          "type": "lte",
+          "left_col": "record_start_day",
+          "right_col": "record_end_day"
+        }
+      ],
+      "enable_duplicate_record": true,
+      "duplicate_subset": [
+        "source_row_id"
+      ]
+    },
+    "repair_strategy": {
+      "conflict_policy": "first_wins",
+      "issue_priority": [
+        "missing_values",
+        "numeric_outlier",
+        "rare_category"
+      ],
+      "missing_numeric": "median",
+      "missing_categorical": "mode",
+      "outlier": "clip",
+      "rare_category": "mode",
+      "preview_limit": 20
+    },
+    "write_output": true,
+    "output_dir": "outputs/demo/m5/repair",
+    "enable_rollback": true,
+    "rollback_dir": "outputs/demo/m5/repair/.rollback"
+  }
+}

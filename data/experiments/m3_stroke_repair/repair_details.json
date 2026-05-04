@@ -1,0 +1,4206 @@
+{
+  "changed_cells": [
+    {
+      "after": "27.5",
+      "before": "",
+      "column": "bmi",
+      "is_ground_truth_repairable_cell": true,
+      "row_index": 14
+    },
+    {
+      "after": "Private",
+      "before": "",
+      "column": "work_type",
+      "is_ground_truth_repairable_cell": true,
+      "row_index": 70
+    },
+    {
+      "after": "110.5",
+      "before": "140",
+      "column": "age",
+      "is_ground_truth_repairable_cell": true,
+      "row_index": 73
+    },
+    {
+      "after": "45.675",
+      "before": "95",
+      "column": "bmi",
+      "is_ground_truth_repairable_cell": true,
+      "row_index": 114
+    },
+    {
+      "after": "45.675",
+      "before": "95",
+      "column": "bmi",
+      "is_ground_truth_repairable_cell": true,
+      "row_index": 148
+    },
+    {
+      "after": "147.70874999999998",
+      "before": "157.77",
+      "column": "avg_glucose_level",
+      "is_ground_truth_repairable_cell": false,
+      "row_index": 149
+    },
+    {
+      "after": "110.5",
+      "before": "140",
+      "column": "age",
+      "is_ground_truth_repairable_cell": true,
+      "row_index": 255
+    },
+    {
+      "after": "Private",
+      "before": "__M1_RARE_WORK_TYPE_015__",
+      "column": "work_type",
+      "is_ground_truth_repairable_cell": true,
+      "row_index": 263
+    },
+    {
+      "after": "27.5",
+      "before": "",
+      "column": "bmi",
+      "is_ground_truth_repairable_cell": true,
+      "row_index": 263
+    },
+    {
+      "after": "never smoked",
+      "before": "__M1_RARE_SMOKING_STATUS_010__",
+      "column": "smoking_status",
+      "is_ground_truth_repairable_cell": true,
+      "row_index": 266
+    },
+    {
+      "after": "Private",
+      "before": "",
+      "column": "work_type",
+      "is_ground_truth_repairable_cell": true,
+      "row_index": 269
+    },
+    {
+      "after": "110.5",
+      "before": "140",
+      "column": "age",
+      "is_ground_truth_repairable_cell": true,
+      "row_index": 330
+    },
+    {
+      "after": "27.5",
+      "before": "",
+      "column": "bmi",
+      "is_ground_truth_repairable_cell": true,
+      "row_index": 358
+    },
+    {
+      "after": "88.185",
+      "before": "",
+      "column": "avg_glucose_level",
+      "is_ground_truth_repairable_cell": true,
+      "row_index": 367
+    },
+    {
+      "after": "27.5",
+      "before": "",
+      "column": "bmi",
+      "is_ground_truth_repairable_cell": true,
+      "row_index": 378
+    },
+    {
+      "after": "Private",
+      "before": "__M1_RARE_WORK_TYPE_006__",
+      "column": "work_type",
+      "is_ground_truth_repairable_cell": true,
+      "row_index": 428
+    },
+    {
+      "after": "147.70874999999998",
+      "before": "158.89",
+      "column": "avg_glucose_level",
+      "is_ground_truth_repairable_cell": false,
+      "row_index": 430
+    },
+    {
+      "after": "147.70874999999998",
+      "before": "163.82",
+      "column": "avg_glucose_level",
+      "is_ground_truth_repairable_cell": false,
+      "row_index": 525
+    },
+    {
+      "after": "110.5",
+      "before": "140",
+      "column": "age",
+      "is_ground_truth_repairable_cell": true,
+      "row_index": 532
+    },
+    {
+      "after": "never smoked",
+      "before": "__M1_RARE_SMOKING_STATUS_001__",
+      "column": "smoking_status",
+      "is_ground_truth_repairable_cell": true,
+      "row_index": 686
+    },
+    {
+      "after": "27.5",
+      "before": "",
+      "column": "bmi",
+      "is_ground_truth_repairable_cell": true,
+      "row_index": 697
+    },
+    {
+      "after": "110.5",
+      "before": "140",
+      "column": "age",
+      "is_ground_truth_repairable_cell": true,
+      "row_index": 704
+    },
+    {
+      "after": "88.185",
+      "before": "",
+      "column": "avg_glucose_level",
+      "is_ground_truth_repairable_cell": true,
+      "row_index": 723
+    },
+    {
+      "after": "45.675",
+      "before": "95",
+      "column": "bmi",
+      "is_ground_truth_repairable_cell": true,
+      "row_index": 765
+    },
+    {
+      "after": "45.675",
+      "before": "45.8",
+      "column": "bmi",
+      "is_ground_truth_repairable_cell": false,
+      "row_index": 818
+    },
+    {
+      "after": "45.675",
+      "before": "95",
+      "column": "bmi",
+      "is_ground_truth_repairable_cell": true,
+      "row_index": 855
+    },
+    {
+      "after": "147.70874999999998",
+      "before": "420",
+      "column": "avg_glucose_level",
+      "is_ground_truth_repairable_cell": true,
+      "row_index": 956
+    },
+    {
+      "after": "Female",
+      "before": "__M1_RARE_GENDER_000__",
+      "column": "gender",
+      "is_ground_truth_repairable_cell": true,
+      "row_index": 969
+    },
+    {
+      "after": "88.185",
+      "before": "",
+      "column": "avg_glucose_level",
+      "is_ground_truth_repairable_cell": true,
+      "row_index": 969
+    },
+    {
+      "after": "110.5",
+      "before": "140",
+      "column": "age",
+      "is_ground_truth_repairable_cell": true,
+      "row_index": 978
+    },
+    {
+      "after": "147.70874999999998",
+      "before": "153.24",
+      "column": "avg_glucose_level",
+      "is_ground_truth_repairable_cell": false,
+      "row_index": 1315
+    },
+    {
+      "after": "110.5",
+      "before": "140",
+      "column": "age",
+      "is_ground_truth_repairable_cell": true,
+      "row_index": 1412
+    },
+    {
+      "after": "Private",
+      "before": "",
+      "column": "work_type",
+      "is_ground_truth_repairable_cell": true,
+      "row_index": 1417
+    },
+    {
+      "after": "147.70874999999998",
+      "before": "160.94",
+      "column": "avg_glucose_level",
+      "is_ground_truth_repairable_cell": false,
+      "row_index": 1419
+    },
+    {
+      "after": "45.675",
+      "before": "45.9",
+      "column": "bmi",
+      "is_ground_truth_repairable_cell": false,
+      "row_index": 1479
+    },
+    {
+      "after": "88.185",
+      "before": "",
+      "column": "avg_glucose_level",
+      "is_ground_truth_repairable_cell": true,
+      "row_index": 1517
+    },
+    {
+      "after": "Female",
+      "before": "__M1_RARE_GENDER_014__",
+      "column": "gender",
+      "is_ground_truth_repairable_cell": true,
+      "row_index": 1519
+    },
+    {
+      "after": "147.70874999999998",
+      "before": "420",
+      "column": "avg_glucose_level",
+      "is_ground_truth_repairable_cell": true,
+      "row_index": 1545
+    },
+    {
+      "after": "88.185",
+      "before": "",
+      "column": "avg_glucose_level",
+      "is_ground_truth_repairable_cell": true,
+      "row_index": 1595
+    },
+    {
+      "after": "45.675",
+      "before": "46.1",
+      "column": "bmi",
+      "is_ground_truth_repairable_cell": false,
+      "row_index": 1624
+    },
+    {
+      "after": "147.70874999999998",
+      "before": "163.17",
+      "column": "avg_glucose_level",
+      "is_ground_truth_repairable_cell": false,
+      "row_index": 1675
+    },
+    {
+      "after": "never smoked",
+      "before": "__M1_RARE_SMOKING_STATUS_005__",
+      "column": "smoking_status",
+      "is_ground_truth_repairable_cell": true,
+      "row_index": 1681
+    },
+    {
+      "after": "45.675",
+      "before": "46.2",
+      "column": "bmi",
+      "is_ground_truth_repairable_cell": false,
+      "row_index": 1682
+    },
+    {
+      "after": "never smoked",
+      "before": "",
+      "column": "smoking_status",
+      "is_ground_truth_repairable_cell": true,
+      "row_index": 1757
+    },
+    {
+      "after": "88.185",
+      "before": "",
+      "column": "avg_glucose_level",
+      "is_ground_truth_repairable_cell": true,
+      "row_index": 1817
+    },
+    {
+      "after": "never smoked",
+      "before": "__M1_RARE_SMOKING_STATUS_013__",
+      "column": "smoking_status",
+      "is_ground_truth_repairable_cell": true,
+      "row_index": 1836
+    },
+    {
+      "after": "110.5",
+      "before": "140",
+      "column": "age",
+      "is_ground_truth_repairable_cell": true,
+      "row_index": 1851
+    },
+    {
+      "after": "never smoked",
+      "before": "__M1_RARE_SMOKING_STATUS_002__",
+      "column": "smoking_status",
+      "is_ground_truth_repairable_cell": true,
+      "row_index": 1868
+    },
+    {
+      "after": "88.185",
+      "before": "",
+      "column": "avg_glucose_level",
+      "is_ground_truth_repairable_cell": true,
+      "row_index": 1871
+    },
+    {
+      "after": "45.675",
+      "before": "95",
+      "column": "bmi",
+      "is_ground_truth_repairable_cell": true,
+      "row_index": 1898
+    },
+    {
+      "after": "Private",
+      "before": "__M1_RARE_WORK_TYPE_017__",
+      "column": "work_type",
+      "is_ground_truth_repairable_cell": true,
+      "row_index": 1940
+    },
+    {
+      "after": "147.70874999999998",
+      "before": "167.16",
+      "column": "avg_glucose_level",
+      "is_ground_truth_repairable_cell": false,
+      "row_index": 2013
+    },
+    {
+      "after": "147.70874999999998",
+      "before": "155.23",
+      "column": "avg_glucose_level",
+      "is_ground_truth_repairable_cell": false,
+      "row_index": 2034
+    },
+    {
+      "after": "never smoked",
+      "before": "",
+      "column": "smoking_status",
+      "is_ground_truth_repairable_cell": true,
+      "row_index": 2035
+    },
+    {
+      "after": "147.70874999999998",
+      "before": "162.72",
+      "column": "avg_glucose_level",
+      "is_ground_truth_repairable_cell": false,
+      "row_index": 2044
+    },
+    {
+      "after": "never smoked",
+      "before": "",
+      "column": "smoking_status",
+      "is_ground_truth_repairable_cell": true,
+      "row_index": 2050
+    },
+    {
+      "after": "147.70874999999998",
+      "before": "162.14",
+      "column": "avg_glucose_level",
+      "is_ground_truth_repairable_cell": false,
+      "row_index": 2064
+    },
+    {
+      "after": "27.5",
+      "before": "",
+      "column": "bmi",
+      "is_ground_truth_repairable_cell": true,
+      "row_index": 2076
+    },
+    {
+      "after": "147.70874999999998",
+      "before": "166.29",
+      "column": "avg_glucose_level",
+      "is_ground_truth_repairable_cell": false,
+      "row_index": 2105
+    },
+    {
+      "after": "147.70874999999998",
+      "before": "166.38",
+      "column": "avg_glucose_level",
+      "is_ground_truth_repairable_cell": false,
+      "row_index": 2116
+    },
+    {
+      "after": "147.70874999999998",
+      "before": "163.02",
+      "column": "avg_glucose_level",
+      "is_ground_truth_repairable_cell": false,
+      "row_index": 2137
+    },
+    {
+      "after": "110.5",
+      "before": "140",
+      "column": "age",
+      "is_ground_truth_repairable_cell": true,
+      "row_index": 2146
+    },
+    {
+      "after": "Female",
+      "before": "__M1_RARE_GENDER_011__",
+      "column": "gender",
+      "is_ground_truth_repairable_cell": true,
+      "row_index": 2179
+    },
+    {
+      "after": "147.70874999999998",
+      "before": "152.87",
+      "column": "avg_glucose_level",
+      "is_ground_truth_repairable_cell": false,
+      "row_index": 2180
+    },
+    {
+      "after": "147.70874999999998",
+      "before": "159.7",
+      "column": "avg_glucose_level",
+      "is_ground_truth_repairable_cell": false,
+      "row_index": 2194
+    },
+    {
+      "after": "147.70874999999998",
+      "before": "151.25",
+      "column": "avg_glucose_level",
+      "is_ground_truth_repairable_cell": false,
+      "row_index": 2212
+    },
+    {
+      "after": "never smoked",
+      "before": "__M1_RARE_SMOKING_STATUS_008__",
+      "column": "smoking_status",
+      "is_ground_truth_repairable_cell": true,
+      "row_index": 2232
+    },
+    {
+      "after": "147.70874999999998",
+      "before": "157.67",
+      "column": "avg_glucose_level",
+      "is_ground_truth_repairable_cell": false,
+      "row_index": 2248
+    },
+    {
+      "after": "147.70874999999998",
+      "before": "149.75",
+      "column": "avg_glucose_level",
+      "is_ground_truth_repairable_cell": false,
+      "row_index": 2264
+    },
+    {
+      "after": "147.70874999999998",
+      "before": "150.03",
+      "column": "avg_glucose_level",
+      "is_ground_truth_repairable_cell": false,
+      "row_index": 2272
+    },
+    {
+      "after": "147.70874999999998",
+      "before": "156.7",
+      "column": "avg_glucose_level",
+      "is_ground_truth_repairable_cell": false,
+      "row_index": 2285
+    },
+    {
+      "after": "147.70874999999998",
+      "before": "159.39",
+      "column": "avg_glucose_level",
+      "is_ground_truth_repairable_cell": false,
+      "row_index": 2349
+    },
+    {
+      "after": "147.70874999999998",
+      "before": "149.9",
+      "column": "avg_glucose_level",
+      "is_ground_truth_repairable_cell": false,
+      "row_index": 2360
+    },
+    {
+      "after": "45.675",
+      "before": "45.9",
+      "column": "bmi",
+      "is_ground_truth_repairable_cell": false,
+      "row_index": 2373
+    },
+    {
+      "after": "147.70874999999998",
+      "before": "158.48",
+      "column": "avg_glucose_level",
+      "is_ground_truth_repairable_cell": false,
+      "row_index": 2381
+    },
+    {
+      "after": "147.70874999999998",
+      "before": "152.81",
+      "column": "avg_glucose_level",
+      "is_ground_truth_repairable_cell": false,
+      "row_index": 2395
+    },
+    {
+      "after": "147.70874999999998",
+      "before": "148.91",
+      "column": "avg_glucose_level",
+      "is_ground_truth_repairable_cell": false,
+      "row_index": 2401
+    },
+    {
+      "after": "147.70874999999998",
+      "before": "150.1",
+      "column": "avg_glucose_level",
+      "is_ground_truth_repairable_cell": false,
+      "row_index": 2402
+    },
+    {
+      "after": "never smoked",
+      "before": "",
+      "column": "smoking_status",
+      "is_ground_truth_repairable_cell": true,
+      "row_index": 2421
+    },
+    {
+      "after": "147.70874999999998",
+      "before": "153.6",
+      "column": "avg_glucose_level",
+      "is_ground_truth_repairable_cell": false,
+      "row_index": 2431
+    },
+    {
+      "after": "147.70874999999998",
+      "before": "151.3",
+      "column": "avg_glucose_level",
+      "is_ground_truth_repairable_cell": false,
+      "row_index": 2433
+    },
+    {
+      "after": "147.70874999999998",
+      "before": "155.43",
+      "column": "avg_glucose_level",
+      "is_ground_truth_repairable_cell": false,
+      "row_index": 2436
+    },
+    {
+      "after": "147.70874999999998",
+      "before": "159.79",
+      "column": "avg_glucose_level",
+      "is_ground_truth_repairable_cell": false,
+      "row_index": 2448
+    },
+    {
+      "after": "Private",
+      "before": "__M1_RARE_WORK_TYPE_012__",
+      "column": "work_type",
+      "is_ground_truth_repairable_cell": true,
+      "row_index": 2456
+    },
+    {
+      "after": "Private",
+      "before": "__M1_RARE_WORK_TYPE_016__",
+      "column": "work_type",
+      "is_ground_truth_repairable_cell": true,
+      "row_index": 2463
+    },
+    {
+      "after": "147.70874999999998",
+      "before": "161.57",
+      "column": "avg_glucose_level",
+      "is_ground_truth_repairable_cell": false,
+      "row_index": 2470
+    },
+    {
+      "after": "147.70874999999998",
+      "before": "160.64",
+      "column": "avg_glucose_level",
+      "is_ground_truth_repairable_cell": false,
+      "row_index": 2501
+    },
+    {
+      "after": "147.70874999999998",
+      "before": "158.9",
+      "column": "avg_glucose_level",
+      "is_ground_truth_repairable_cell": false,
+      "row_index": 2583
+    },
+    {
+      "after": "147.70874999999998",
+      "before": "147.74",
+      "column": "avg_glucose_level",
+      "is_ground_truth_repairable_cell": false,
+      "row_index": 2605
+    },
+    {
+      "after": "147.70874999999998",
+      "before": "165.11",
+      "column": "avg_glucose_level",
+      "is_ground_truth_repairable_cell": false,
+      "row_index": 2613
+    },
+    {
+      "after": "147.70874999999998",
+      "before": "155.17",
+      "column": "avg_glucose_level",
+      "is_ground_truth_repairable_cell": false,
+      "row_index": 2655
+    },
+    {
+      "after": "147.70874999999998",
+      "before": "154.67",
+      "column": "avg_glucose_level",
+      "is_ground_truth_repairable_cell": false,
+      "row_index": 2662
+    },
+    {
+      "after": "147.70874999999998",
+      "before": "153.31",
+      "column": "avg_glucose_level",
+      "is_ground_truth_repairable_cell": false,
+      "row_index": 2673
+    },
+    {
+      "after": "147.70874999999998",
+      "before": "163.7",
+      "column": "avg_glucose_level",
+      "is_ground_truth_repairable_cell": false,
+      "row_index": 2697
+    },
+    {
+      "after": "147.70874999999998",
+      "before": "165.47",
+      "column": "avg_glucose_level",
+      "is_ground_truth_repairable_cell": false,
+      "row_index": 2705
+    },
+    {
+      "after": "147.70874999999998",
+      "before": "160",
+      "column": "avg_glucose_level",
+      "is_ground_truth_repairable_cell": false,
+      "row_index": 2707
+    },
+    {
+      "after": "147.70874999999998",
+      "before": "151.56",
+      "column": "avg_glucose_level",
+      "is_ground_truth_repairable_cell": false,
+      "row_index": 2719
+    },
+    {
+      "after": "147.70874999999998",
+      "before": "155.14",
+      "column": "avg_glucose_level",
+      "is_ground_truth_repairable_cell": false,
+      "row_index": 2743
+    },
+    {
+      "after": "147.70874999999998",
+      "before": "154.75",
+      "column": "avg_glucose_level",
+      "is_ground_truth_repairable_cell": false,
+      "row_index": 2793
+    },
+    {
+      "after": "45.675",
+      "before": "46.2",
+      "column": "bmi",
+      "is_ground_truth_repairable_cell": false,
+      "row_index": 2795
+    },
+    {
+      "after": "147.70874999999998",
+      "before": "152.02",
+      "column": "avg_glucose_level",
+      "is_ground_truth_repairable_cell": false,
+      "row_index": 2820
+    },
+    {
+      "after": "147.70874999999998",
+      "before": "154.03",
+      "column": "avg_glucose_level",
+      "is_ground_truth_repairable_cell": false,
+      "row_index": 2836
+    },
+    {
+      "after": "147.70874999999998",
+      "before": "160.76",
+      "column": "avg_glucose_level",
+      "is_ground_truth_repairable_cell": false,
+      "row_index": 2852
+    },
+    {
+      "after": "147.70874999999998",
+      "before": "150.27",
+      "column": "avg_glucose_level",
+      "is_ground_truth_repairable_cell": false,
+      "row_index": 2853
+    },
+    {
+      "after": "never smoked",
+      "before": "",
+      "column": "smoking_status",
+      "is_ground_truth_repairable_cell": true,
+      "row_index": 2895
+    },
+    {
+      "after": "147.70874999999998",
+      "before": "156.45",
+      "column": "avg_glucose_level",
+      "is_ground_truth_repairable_cell": false,
+      "row_index": 2943
+    },
+    {
+      "after": "never smoked",
+      "before": "",
+      "column": "smoking_status",
+      "is_ground_truth_repairable_cell": true,
+      "row_index": 2954
+    },
+    {
+      "after": "147.70874999999998",
+      "before": "161",
+      "column": "avg_glucose_level",
+      "is_ground_truth_repairable_cell": false,
+      "row_index": 2963
+    },
+    {
+      "after": "147.70874999999998",
+      "before": "150.45",
+      "column": "avg_glucose_level",
+      "is_ground_truth_repairable_cell": false,
+      "row_index": 2978
+    },
+    {
+      "after": "147.70874999999998",
+      "before": "154.08",
+      "column": "avg_glucose_level",
+      "is_ground_truth_repairable_cell": false,
+      "row_index": 2983
+    },
+    {
+      "after": "147.70874999999998",
+      "before": "420",
+      "column": "avg_glucose_level",
+      "is_ground_truth_repairable_cell": true,
+      "row_index": 3020
+    },
+    {
+      "after": "147.70874999999998",
+      "before": "149.15",
+      "column": "avg_glucose_level",
+      "is_ground_truth_repairable_cell": false,
+      "row_index": 3032
+    },
+    {
+      "after": "147.70874999999998",
+      "before": "161.95",
+      "column": "avg_glucose_level",
+      "is_ground_truth_repairable_cell": false,
+      "row_index": 3047
+    },
+    {
+      "after": "147.70874999999998",
+      "before": "156.43",
+      "column": "avg_glucose_level",
+      "is_ground_truth_repairable_cell": false,
+      "row_index": 3056
+    },
+    {
+      "after": "147.70874999999998",
+      "before": "165.36",
+      "column": "avg_glucose_level",
+      "is_ground_truth_repairable_cell": false,
+      "row_index": 3081
+    },
+    {
+      "after": "147.70874999999998",
+      "before": "159.39",
+      "column": "avg_glucose_level",
+      "is_ground_truth_repairable_cell": false,
+      "row_index": 3085
+    },
+    {
+      "after": "147.70874999999998",
+      "before": "155.32",
+      "column": "avg_glucose_level",
+      "is_ground_truth_repairable_cell": false,
+      "row_index": 3119
+    },
+    {
+      "after": "147.70874999999998",
+      "before": "152.38",
+      "column": "avg_glucose_level",
+      "is_ground_truth_repairable_cell": false,
+      "row_index": 3124
+    },
+    {
+      "after": "147.70874999999998",
+      "before": "160.83",
+      "column": "avg_glucose_level",
+      "is_ground_truth_repairable_cell": false,
+      "row_index": 3135
+    },
+    {
+      "after": "147.70874999999998",
+      "before": "157.57",
+      "column": "avg_glucose_level",
+      "is_ground_truth_repairable_cell": false,
+      "row_index": 3138
+    },
+    {
+      "after": "147.70874999999998",
+      "before": "168.15",
+      "column": "avg_glucose_level",
+      "is_ground_truth_repairable_cell": false,
+      "row_index": 3152
+    },
+    {
+      "after": "147.70874999999998",
+      "before": "157.01",
+      "column": "avg_glucose_level",
+      "is_ground_truth_repairable_cell": false,
+      "row_index": 3155
+    },
+    {
+      "after": "27.5",
+      "before": "",
+      "column": "bmi",
+      "is_ground_truth_repairable_cell": true,
+      "row_index": 3163
+    },
+    {
+      "after": "27.5",
+      "before": "",
+      "column": "bmi",
+      "is_ground_truth_repairable_cell": true,
+      "row_index": 3210
+    },
+    {
+      "after": "147.70874999999998",
+      "before": "167.31",
+      "column": "avg_glucose_level",
+      "is_ground_truth_repairable_cell": false,
+      "row_index": 3212
+    },
+    {
+      "after": "147.70874999999998",
+      "before": "156.69",
+      "column": "avg_glucose_level",
+      "is_ground_truth_repairable_cell": false,
+      "row_index": 3218
+    },
+    {
+      "after": "147.70874999999998",
+      "before": "149.17",
+      "column": "avg_glucose_level",
+      "is_ground_truth_repairable_cell": false,
+      "row_index": 3222
+    },
+    {
+      "after": "147.70874999999998",
+      "before": "156.57",
+      "column": "avg_glucose_level",
+      "is_ground_truth_repairable_cell": false,
+      "row_index": 3266
+    },
+    {
+      "after": "147.70874999999998",
+      "before": "162.24",
+      "column": "avg_glucose_level",
+      "is_ground_truth_repairable_cell": false,
+      "row_index": 3267
+    },
+    {
+      "after": "147.70874999999998",
+      "before": "167.66",
+      "column": "avg_glucose_level",
+      "is_ground_truth_repairable_cell": false,
+      "row_index": 3326
+    },
+    {
+      "after": "never smoked",
+      "before": "",
+      "column": "smoking_status",
+      "is_ground_truth_repairable_cell": true,
+      "row_index": 3334
+    },
+    {
+      "after": "147.70874999999998",
+      "before": "157.01",
+      "column": "avg_glucose_level",
+      "is_ground_truth_repairable_cell": false,
+      "row_index": 3339
+    },
+    {
+      "after": "147.70874999999998",
+      "before": "154.6",
+      "column": "avg_glucose_level",
+      "is_ground_truth_repairable_cell": false,
+      "row_index": 3349
+    },
+    {
+      "after": "147.70874999999998",
+      "before": "167.41",
+      "column": "avg_glucose_level",
+      "is_ground_truth_repairable_cell": false,
+      "row_index": 3357
+    },
+    {
+      "after": "45.675",
+      "before": "95",
+      "column": "bmi",
+      "is_ground_truth_repairable_cell": true,
+      "row_index": 3396
+    },
+    {
+      "after": "147.70874999999998",
+      "before": "150.74",
+      "column": "avg_glucose_level",
+      "is_ground_truth_repairable_cell": false,
+      "row_index": 3423
+    },
+    {
+      "after": "147.70874999999998",
+      "before": "164.7",
+      "column": "avg_glucose_level",
+      "is_ground_truth_repairable_cell": false,
+      "row_index": 3428
+    },
+    {
+      "after": "Female",
+      "before": "__M1_RARE_GENDER_003__",
+      "column": "gender",
+      "is_ground_truth_repairable_cell": true,
+      "row_index": 3440
+    },
+    {
+      "after": "147.70874999999998",
+      "before": "162.93",
+      "column": "avg_glucose_level",
+      "is_ground_truth_repairable_cell": false,
+      "row_index": 3450
+    },
+    {
+      "after": "147.70874999999998",
+      "before": "420",
+      "column": "avg_glucose_level",
+      "is_ground_truth_repairable_cell": true,
+      "row_index": 3502
+    },
+    {
+      "after": "147.70874999999998",
+      "before": "151.33",
+      "column": "avg_glucose_level",
+      "is_ground_truth_repairable_cell": false,
+      "row_index": 3515
+    },
+    {
+      "after": "147.70874999999998",
+      "before": "164.67",
+      "column": "avg_glucose_level",
+      "is_ground_truth_repairable_cell": false,
+      "row_index": 3526
+    },
+    {
+      "after": "147.70874999999998",
+      "before": "149.42",
+      "column": "avg_glucose_level",
+      "is_ground_truth_repairable_cell": false,
+      "row_index": 3549
+    },
+    {
+      "after": "147.70874999999998",
+      "before": "151.26",
+      "column": "avg_glucose_level",
+      "is_ground_truth_repairable_cell": false,
+      "row_index": 3554
+    },
+    {
+      "after": "147.70874999999998",
+      "before": "158.93",
+      "column": "avg_glucose_level",
+      "is_ground_truth_repairable_cell": false,
+      "row_index": 3564
+    },
+    {
+      "after": "never smoked",
+      "before": "",
+      "column": "smoking_status",
+      "is_ground_truth_repairable_cell": true,
+      "row_index": 3604
+    },
+    {
+      "after": "147.70874999999998",
+      "before": "165.99",
+      "column": "avg_glucose_level",
+      "is_ground_truth_repairable_cell": false,
+      "row_index": 3621
+    },
+    {
+      "after": "45.675",
+      "before": "46",
+      "column": "bmi",
+      "is_ground_truth_repairable_cell": false,
+      "row_index": 3662
+    },
+    {
+      "after": "147.70874999999998",
+      "before": "162.23",
+      "column": "avg_glucose_level",
+      "is_ground_truth_repairable_cell": false,
+      "row_index": 3671
+    },
+    {
+      "after": "147.70874999999998",
+      "before": "150",
+      "column": "avg_glucose_level",
+      "is_ground_truth_repairable_cell": false,
+      "row_index": 3674
+    },
+    {
+      "after": "45.675",
+      "before": "46",
+      "column": "bmi",
+      "is_ground_truth_repairable_cell": false,
+      "row_index": 3685
+    },
+    {
+      "after": "147.70874999999998",
+      "before": "162.96",
+      "column": "avg_glucose_level",
+      "is_ground_truth_repairable_cell": false,
+      "row_index": 3697
+    },
+    {
+      "after": "147.70874999999998",
+      "before": "167.59",
+      "column": "avg_glucose_level",
+      "is_ground_truth_repairable_cell": false,
+      "row_index": 3698
+    },
+    {
+      "after": "147.70874999999998",
+      "before": "149.13",
+      "column": "avg_glucose_level",
+      "is_ground_truth_repairable_cell": false,
+      "row_index": 3700
+    },
+    {
+      "after": "147.70874999999998",
+      "before": "153.48",
+      "column": "avg_glucose_level",
+      "is_ground_truth_repairable_cell": false,
+      "row_index": 3703
+    },
+    {
+      "after": "147.70874999999998",
+      "before": "168.06",
+      "column": "avg_glucose_level",
+      "is_ground_truth_repairable_cell": false,
+      "row_index": 3706
+    },
+    {
+      "after": "147.70874999999998",
+      "before": "152.84",
+      "column": "avg_glucose_level",
+      "is_ground_truth_repairable_cell": false,
+      "row_index": 3712
+    },
+    {
+      "after": "147.70874999999998",
+      "before": "152.56",
+      "column": "avg_glucose_level",
+      "is_ground_truth_repairable_cell": false,
+      "row_index": 3780
+    },
+    {
+      "after": "147.70874999999998",
+      "before": "148.72",
+      "column": "avg_glucose_level",
+      "is_ground_truth_repairable_cell": false,
+      "row_index": 3790
+    },
+    {
+      "after": "147.70874999999998",
+      "before": "156.82",
+      "column": "avg_glucose_level",
+      "is_ground_truth_repairable_cell": false,
+      "row_index": 3796
+    },
+    {
+      "after": "147.70874999999998",
+      "before": "164.77",
+      "column": "avg_glucose_level",
+      "is_ground_truth_repairable_cell": false,
+      "row_index": 3808
+    },
+    {
+      "after": "27.5",
+      "before": "",
+      "column": "bmi",
+      "is_ground_truth_repairable_cell": true,
+      "row_index": 3812
+    },
+    {
+      "after": "Private",
+      "before": "",
+      "column": "work_type",
+      "is_ground_truth_repairable_cell": true,
+      "row_index": 3824
+    },
+    {
+      "after": "147.70874999999998",
+      "before": "162.3",
+      "column": "avg_glucose_level",
+      "is_ground_truth_repairable_cell": false,
+      "row_index": 3851
+    },
+    {
+      "after": "147.70874999999998",
+      "before": "148.24",
+      "column": "avg_glucose_level",
+      "is_ground_truth_repairable_cell": false,
+      "row_index": 3875
+    },
+    {
+      "after": "45.675",
+      "before": "46.1",
+      "column": "bmi",
+      "is_ground_truth_repairable_cell": false,
+      "row_index": 3896
+    },
+    {
+      "after": "147.70874999999998",
+      "before": "149.68",
+      "column": "avg_glucose_level",
+      "is_ground_truth_repairable_cell": false,
+      "row_index": 3905
+    },
+    {
+      "after": "Private",
+      "before": "__M1_RARE_WORK_TYPE_004__",
+      "column": "work_type",
+      "is_ground_truth_repairable_cell": true,
+      "row_index": 3925
+    },
+    {
+      "after": "147.70874999999998",
+      "before": "148.52",
+      "column": "avg_glucose_level",
+      "is_ground_truth_repairable_cell": false,
+      "row_index": 3926
+    },
+    {
+      "after": "147.70874999999998",
+      "before": "151.16",
+      "column": "avg_glucose_level",
+      "is_ground_truth_repairable_cell": false,
+      "row_index": 3935
+    },
+    {
+      "after": "never smoked",
+      "before": "",
+      "column": "smoking_status",
+      "is_ground_truth_repairable_cell": true,
+      "row_index": 3938
+    },
+    {
+      "after": "147.70874999999998",
+      "before": "149.95",
+      "column": "avg_glucose_level",
+      "is_ground_truth_repairable_cell": false,
+      "row_index": 3943
+    },
+    {
+      "after": "147.70874999999998",
+      "before": "420",
+      "column": "avg_glucose_level",
+      "is_ground_truth_repairable_cell": true,
+      "row_index": 3952
+    },
+    {
+      "after": "147.70874999999998",
+      "before": "420",
+      "column": "avg_glucose_level",
+      "is_ground_truth_repairable_cell": true,
+      "row_index": 3978
+    },
+    {
+      "after": "147.70874999999998",
+      "before": "149.62",
+      "column": "avg_glucose_level",
+      "is_ground_truth_repairable_cell": false,
+      "row_index": 3987
+    },
+    {
+      "after": "147.70874999999998",
+      "before": "153.76",
+      "column": "avg_glucose_level",
+      "is_ground_truth_repairable_cell": false,
+      "row_index": 4007
+    },
+    {
+      "after": "147.70874999999998",
+      "before": "156.18",
+      "column": "avg_glucose_level",
+      "is_ground_truth_repairable_cell": false,
+      "row_index": 4018
+    },
+    {
+      "after": "147.70874999999998",
+      "before": "155.86",
+      "column": "avg_glucose_level",
+      "is_ground_truth_repairable_cell": false,
+      "row_index": 4030
+    },
+    {
+      "after": "147.70874999999998",
+      "before": "151.23",
+      "column": "avg_glucose_level",
+      "is_ground_truth_repairable_cell": false,
+      "row_index": 4048
+    },
+    {
+      "after": "88.185",
+      "before": "",
+      "column": "avg_glucose_level",
+      "is_ground_truth_repairable_cell": true,
+      "row_index": 4061
+    },
+    {
+      "after": "147.70874999999998",
+      "before": "420",
+      "column": "avg_glucose_level",
+      "is_ground_truth_repairable_cell": true,
+      "row_index": 4074
+    },
+    {
+      "after": "Female",
+      "before": "__M1_RARE_GENDER_007__",
+      "column": "gender",
+      "is_ground_truth_repairable_cell": true,
+      "row_index": 4084
+    },
+    {
+      "after": "147.70874999999998",
+      "before": "153.34",
+      "column": "avg_glucose_level",
+      "is_ground_truth_repairable_cell": false,
+      "row_index": 4091
+    },
+    {
+      "after": "147.70874999999998",
+      "before": "153.08",
+      "column": "avg_glucose_level",
+      "is_ground_truth_repairable_cell": false,
+      "row_index": 4099
+    },
+    {
+      "after": "never smoked",
+      "before": "__M1_RARE_SMOKING_STATUS_009__",
+      "column": "smoking_status",
+      "is_ground_truth_repairable_cell": true,
+      "row_index": 4099
+    },
+    {
+      "after": "147.70874999999998",
+      "before": "151.25",
+      "column": "avg_glucose_level",
+      "is_ground_truth_repairable_cell": false,
+      "row_index": 4106
+    },
+    {
+      "after": "147.70874999999998",
+      "before": "153.38",
+      "column": "avg_glucose_level",
+      "is_ground_truth_repairable_cell": false,
+      "row_index": 4118
+    },
+    {
+      "after": "147.70874999999998",
+      "before": "159.67",
+      "column": "avg_glucose_level",
+      "is_ground_truth_repairable_cell": false,
+      "row_index": 4133
+    },
+    {
+      "after": "147.70874999999998",
+      "before": "420",
+      "column": "avg_glucose_level",
+      "is_ground_truth_repairable_cell": true,
+      "row_index": 4135
+    },
+    {
+      "after": "147.70874999999998",
+      "before": "158.31",
+      "column": "avg_glucose_level",
+      "is_ground_truth_repairable_cell": false,
+      "row_index": 4142
+    },
+    {
+      "after": "147.70874999999998",
+      "before": "158.33",
+      "column": "avg_glucose_level",
+      "is_ground_truth_repairable_cell": false,
+      "row_index": 4153
+    },
+    {
+      "after": "147.70874999999998",
+      "before": "420",
+      "column": "avg_glucose_level",
+      "is_ground_truth_repairable_cell": true,
+      "row_index": 4182
+    },
+    {
+      "after": "147.70874999999998",
+      "before": "162.23",
+      "column": "avg_glucose_level",
+      "is_ground_truth_repairable_cell": false,
+      "row_index": 4231
+    },
+    {
+      "after": "147.70874999999998",
+      "before": "150.03",
+      "column": "avg_glucose_level",
+      "is_ground_truth_repairable_cell": false,
+      "row_index": 4237
+    }
+  ],
+  "dataset": "m3_stroke_repair",
+  "milestone": "M3",
+  "non_ground_truth_changed_cells": [
+    {
+      "after": "147.70874999999998",
+      "before": "157.77",
+      "column": "avg_glucose_level",
+      "is_ground_truth_repairable_cell": false,
+      "row_index": 149
+    },
+    {
+      "after": "147.70874999999998",
+      "before": "158.89",
+      "column": "avg_glucose_level",
+      "is_ground_truth_repairable_cell": false,
+      "row_index": 430
+    },
+    {
+      "after": "147.70874999999998",
+      "before": "163.82",
+      "column": "avg_glucose_level",
+      "is_ground_truth_repairable_cell": false,
+      "row_index": 525
+    },
+    {
+      "after": "45.675",
+      "before": "45.8",
+      "column": "bmi",
+      "is_ground_truth_repairable_cell": false,
+      "row_index": 818
+    },
+    {
+      "after": "147.70874999999998",
+      "before": "153.24",
+      "column": "avg_glucose_level",
+      "is_ground_truth_repairable_cell": false,
+      "row_index": 1315
+    },
+    {
+      "after": "147.70874999999998",
+      "before": "160.94",
+      "column": "avg_glucose_level",
+      "is_ground_truth_repairable_cell": false,
+      "row_index": 1419
+    },
+    {
+      "after": "45.675",
+      "before": "45.9",
+      "column": "bmi",
+      "is_ground_truth_repairable_cell": false,
+      "row_index": 1479
+    },
+    {
+      "after": "45.675",
+      "before": "46.1",
+      "column": "bmi",
+      "is_ground_truth_repairable_cell": false,
+      "row_index": 1624
+    },
+    {
+      "after": "147.70874999999998",
+      "before": "163.17",
+      "column": "avg_glucose_level",
+      "is_ground_truth_repairable_cell": false,
+      "row_index": 1675
+    },
+    {
+      "after": "45.675",
+      "before": "46.2",
+      "column": "bmi",
+      "is_ground_truth_repairable_cell": false,
+      "row_index": 1682
+    },
+    {
+      "after": "147.70874999999998",
+      "before": "167.16",
+      "column": "avg_glucose_level",
+      "is_ground_truth_repairable_cell": false,
+      "row_index": 2013
+    },
+    {
+      "after": "147.70874999999998",
+      "before": "155.23",
+      "column": "avg_glucose_level",
+      "is_ground_truth_repairable_cell": false,
+      "row_index": 2034
+    },
+    {
+      "after": "147.70874999999998",
+      "before": "162.72",
+      "column": "avg_glucose_level",
+      "is_ground_truth_repairable_cell": false,
+      "row_index": 2044
+    },
+    {
+      "after": "147.70874999999998",
+      "before": "162.14",
+      "column": "avg_glucose_level",
+      "is_ground_truth_repairable_cell": false,
+      "row_index": 2064
+    },
+    {
+      "after": "147.70874999999998",
+      "before": "166.29",
+      "column": "avg_glucose_level",
+      "is_ground_truth_repairable_cell": false,
+      "row_index": 2105
+    },
+    {
+      "after": "147.70874999999998",
+      "before": "166.38",
+      "column": "avg_glucose_level",
+      "is_ground_truth_repairable_cell": false,
+      "row_index": 2116
+    },
+    {
+      "after": "147.70874999999998",
+      "before": "163.02",
+      "column": "avg_glucose_level",
+      "is_ground_truth_repairable_cell": false,
+      "row_index": 2137
+    },
+    {
+      "after": "147.70874999999998",
+      "before": "152.87",
+      "column": "avg_glucose_level",
+      "is_ground_truth_repairable_cell": false,
+      "row_index": 2180
+    },
+    {
+      "after": "147.70874999999998",
+      "before": "159.7",
+      "column": "avg_glucose_level",
+      "is_ground_truth_repairable_cell": false,
+      "row_index": 2194
+    },
+    {
+      "after": "147.70874999999998",
+      "before": "151.25",
+      "column": "avg_glucose_level",
+      "is_ground_truth_repairable_cell": false,
+      "row_index": 2212
+    },
+    {
+      "after": "147.70874999999998",
+      "before": "157.67",
+      "column": "avg_glucose_level",
+      "is_ground_truth_repairable_cell": false,
+      "row_index": 2248
+    },
+    {
+      "after": "147.70874999999998",
+      "before": "149.75",
+      "column": "avg_glucose_level",
+      "is_ground_truth_repairable_cell": false,
+      "row_index": 2264
+    },
+    {
+      "after": "147.70874999999998",
+      "before": "150.03",
+      "column": "avg_glucose_level",
+      "is_ground_truth_repairable_cell": false,
+      "row_index": 2272
+    },
+    {
+      "after": "147.70874999999998",
+      "before": "156.7",
+      "column": "avg_glucose_level",
+      "is_ground_truth_repairable_cell": false,
+      "row_index": 2285
+    },
+    {
+      "after": "147.70874999999998",
+      "before": "159.39",
+      "column": "avg_glucose_level",
+      "is_ground_truth_repairable_cell": false,
+      "row_index": 2349
+    },
+    {
+      "after": "147.70874999999998",
+      "before": "149.9",
+      "column": "avg_glucose_level",
+      "is_ground_truth_repairable_cell": false,
+      "row_index": 2360
+    },
+    {
+      "after": "45.675",
+      "before": "45.9",
+      "column": "bmi",
+      "is_ground_truth_repairable_cell": false,
+      "row_index": 2373
+    },
+    {
+      "after": "147.70874999999998",
+      "before": "158.48",
+      "column": "avg_glucose_level",
+      "is_ground_truth_repairable_cell": false,
+      "row_index": 2381
+    },
+    {
+      "after": "147.70874999999998",
+      "before": "152.81",
+      "column": "avg_glucose_level",
+      "is_ground_truth_repairable_cell": false,
+      "row_index": 2395
+    },
+    {
+      "after": "147.70874999999998",
+      "before": "148.91",
+      "column": "avg_glucose_level",
+      "is_ground_truth_repairable_cell": false,
+      "row_index": 2401
+    },
+    {
+      "after": "147.70874999999998",
+      "before": "150.1",
+      "column": "avg_glucose_level",
+      "is_ground_truth_repairable_cell": false,
+      "row_index": 2402
+    },
+    {
+      "after": "147.70874999999998",
+      "before": "153.6",
+      "column": "avg_glucose_level",
+      "is_ground_truth_repairable_cell": false,
+      "row_index": 2431
+    },
+    {
+      "after": "147.70874999999998",
+      "before": "151.3",
+      "column": "avg_glucose_level",
+      "is_ground_truth_repairable_cell": false,
+      "row_index": 2433
+    },
+    {
+      "after": "147.70874999999998",
+      "before": "155.43",
+      "column": "avg_glucose_level",
+      "is_ground_truth_repairable_cell": false,
+      "row_index": 2436
+    },
+    {
+      "after": "147.70874999999998",
+      "before": "159.79",
+      "column": "avg_glucose_level",
+      "is_ground_truth_repairable_cell": false,
+      "row_index": 2448
+    },
+    {
+      "after": "147.70874999999998",
+      "before": "161.57",
+      "column": "avg_glucose_level",
+      "is_ground_truth_repairable_cell": false,
+      "row_index": 2470
+    },
+    {
+      "after": "147.70874999999998",
+      "before": "160.64",
+      "column": "avg_glucose_level",
+      "is_ground_truth_repairable_cell": false,
+      "row_index": 2501
+    },
+    {
+      "after": "147.70874999999998",
+      "before": "158.9",
+      "column": "avg_glucose_level",
+      "is_ground_truth_repairable_cell": false,
+      "row_index": 2583
+    },
+    {
+      "after": "147.70874999999998",
+      "before": "147.74",
+      "column": "avg_glucose_level",
+      "is_ground_truth_repairable_cell": false,
+      "row_index": 2605
+    },
+    {
+      "after": "147.70874999999998",
+      "before": "165.11",
+      "column": "avg_glucose_level",
+      "is_ground_truth_repairable_cell": false,
+      "row_index": 2613
+    },
+    {
+      "after": "147.70874999999998",
+      "before": "155.17",
+      "column": "avg_glucose_level",
+      "is_ground_truth_repairable_cell": false,
+      "row_index": 2655
+    },
+    {
+      "after": "147.70874999999998",
+      "before": "154.67",
+      "column": "avg_glucose_level",
+      "is_ground_truth_repairable_cell": false,
+      "row_index": 2662
+    },
+    {
+      "after": "147.70874999999998",
+      "before": "153.31",
+      "column": "avg_glucose_level",
+      "is_ground_truth_repairable_cell": false,
+      "row_index": 2673
+    },
+    {
+      "after": "147.70874999999998",
+      "before": "163.7",
+      "column": "avg_glucose_level",
+      "is_ground_truth_repairable_cell": false,
+      "row_index": 2697
+    },
+    {
+      "after": "147.70874999999998",
+      "before": "165.47",
+      "column": "avg_glucose_level",
+      "is_ground_truth_repairable_cell": false,
+      "row_index": 2705
+    },
+    {
+      "after": "147.70874999999998",
+      "before": "160",
+      "column": "avg_glucose_level",
+      "is_ground_truth_repairable_cell": false,
+      "row_index": 2707
+    },
+    {
+      "after": "147.70874999999998",
+      "before": "151.56",
+      "column": "avg_glucose_level",
+      "is_ground_truth_repairable_cell": false,
+      "row_index": 2719
+    },
+    {
+      "after": "147.70874999999998",
+      "before": "155.14",
+      "column": "avg_glucose_level",
+      "is_ground_truth_repairable_cell": false,
+      "row_index": 2743
+    },
+    {
+      "after": "147.70874999999998",
+      "before": "154.75",
+      "column": "avg_glucose_level",
+      "is_ground_truth_repairable_cell": false,
+      "row_index": 2793
+    },
+    {
+      "after": "45.675",
+      "before": "46.2",
+      "column": "bmi",
+      "is_ground_truth_repairable_cell": false,
+      "row_index": 2795
+    },
+    {
+      "after": "147.70874999999998",
+      "before": "152.02",
+      "column": "avg_glucose_level",
+      "is_ground_truth_repairable_cell": false,
+      "row_index": 2820
+    },
+    {
+      "after": "147.70874999999998",
+      "before": "154.03",
+      "column": "avg_glucose_level",
+      "is_ground_truth_repairable_cell": false,
+      "row_index": 2836
+    },
+    {
+      "after": "147.70874999999998",
+      "before": "160.76",
+      "column": "avg_glucose_level",
+      "is_ground_truth_repairable_cell": false,
+      "row_index": 2852
+    },
+    {
+      "after": "147.70874999999998",
+      "before": "150.27",
+      "column": "avg_glucose_level",
+      "is_ground_truth_repairable_cell": false,
+      "row_index": 2853
+    },
+    {
+      "after": "147.70874999999998",
+      "before": "156.45",
+      "column": "avg_glucose_level",
+      "is_ground_truth_repairable_cell": false,
+      "row_index": 2943
+    },
+    {
+      "after": "147.70874999999998",
+      "before": "161",
+      "column": "avg_glucose_level",
+      "is_ground_truth_repairable_cell": false,
+      "row_index": 2963
+    },
+    {
+      "after": "147.70874999999998",
+      "before": "150.45",
+      "column": "avg_glucose_level",
+      "is_ground_truth_repairable_cell": false,
+      "row_index": 2978
+    },
+    {
+      "after": "147.70874999999998",
+      "before": "154.08",
+      "column": "avg_glucose_level",
+      "is_ground_truth_repairable_cell": false,
+      "row_index": 2983
+    },
+    {
+      "after": "147.70874999999998",
+      "before": "149.15",
+      "column": "avg_glucose_level",
+      "is_ground_truth_repairable_cell": false,
+      "row_index": 3032
+    },
+    {
+      "after": "147.70874999999998",
+      "before": "161.95",
+      "column": "avg_glucose_level",
+      "is_ground_truth_repairable_cell": false,
+      "row_index": 3047
+    },
+    {
+      "after": "147.70874999999998",
+      "before": "156.43",
+      "column": "avg_glucose_level",
+      "is_ground_truth_repairable_cell": false,
+      "row_index": 3056
+    },
+    {
+      "after": "147.70874999999998",
+      "before": "165.36",
+      "column": "avg_glucose_level",
+      "is_ground_truth_repairable_cell": false,
+      "row_index": 3081
+    },
+    {
+      "after": "147.70874999999998",
+      "before": "159.39",
+      "column": "avg_glucose_level",
+      "is_ground_truth_repairable_cell": false,
+      "row_index": 3085
+    },
+    {
+      "after": "147.70874999999998",
+      "before": "155.32",
+      "column": "avg_glucose_level",
+      "is_ground_truth_repairable_cell": false,
+      "row_index": 3119
+    },
+    {
+      "after": "147.70874999999998",
+      "before": "152.38",
+      "column": "avg_glucose_level",
+      "is_ground_truth_repairable_cell": false,
+      "row_index": 3124
+    },
+    {
+      "after": "147.70874999999998",
+      "before": "160.83",
+      "column": "avg_glucose_level",
+      "is_ground_truth_repairable_cell": false,
+      "row_index": 3135
+    },
+    {
+      "after": "147.70874999999998",
+      "before": "157.57",
+      "column": "avg_glucose_level",
+      "is_ground_truth_repairable_cell": false,
+      "row_index": 3138
+    },
+    {
+      "after": "147.70874999999998",
+      "before": "168.15",
+      "column": "avg_glucose_level",
+      "is_ground_truth_repairable_cell": false,
+      "row_index": 3152
+    },
+    {
+      "after": "147.70874999999998",
+      "before": "157.01",
+      "column": "avg_glucose_level",
+      "is_ground_truth_repairable_cell": false,
+      "row_index": 3155
+    },
+    {
+      "after": "147.70874999999998",
+      "before": "167.31",
+      "column": "avg_glucose_level",
+      "is_ground_truth_repairable_cell": false,
+      "row_index": 3212
+    },
+    {
+      "after": "147.70874999999998",
+      "before": "156.69",
+      "column": "avg_glucose_level",
+      "is_ground_truth_repairable_cell": false,
+      "row_index": 3218
+    },
+    {
+      "after": "147.70874999999998",
+      "before": "149.17",
+      "column": "avg_glucose_level",
+      "is_ground_truth_repairable_cell": false,
+      "row_index": 3222
+    },
+    {
+      "after": "147.70874999999998",
+      "before": "156.57",
+      "column": "avg_glucose_level",
+      "is_ground_truth_repairable_cell": false,
+      "row_index": 3266
+    },
+    {
+      "after": "147.70874999999998",
+      "before": "162.24",
+      "column": "avg_glucose_level",
+      "is_ground_truth_repairable_cell": false,
+      "row_index": 3267
+    },
+    {
+      "after": "147.70874999999998",
+      "before": "167.66",
+      "column": "avg_glucose_level",
+      "is_ground_truth_repairable_cell": false,
+      "row_index": 3326
+    },
+    {
+      "after": "147.70874999999998",
+      "before": "157.01",
+      "column": "avg_glucose_level",
+      "is_ground_truth_repairable_cell": false,
+      "row_index": 3339
+    },
+    {
+      "after": "147.70874999999998",
+      "before": "154.6",
+      "column": "avg_glucose_level",
+      "is_ground_truth_repairable_cell": false,
+      "row_index": 3349
+    },
+    {
+      "after": "147.70874999999998",
+      "before": "167.41",
+      "column": "avg_glucose_level",
+      "is_ground_truth_repairable_cell": false,
+      "row_index": 3357
+    },
+    {
+      "after": "147.70874999999998",
+      "before": "150.74",
+      "column": "avg_glucose_level",
+      "is_ground_truth_repairable_cell": false,
+      "row_index": 3423
+    },
+    {
+      "after": "147.70874999999998",
+      "before": "164.7",
+      "column": "avg_glucose_level",
+      "is_ground_truth_repairable_cell": false,
+      "row_index": 3428
+    },
+    {
+      "after": "147.70874999999998",
+      "before": "162.93",
+      "column": "avg_glucose_level",
+      "is_ground_truth_repairable_cell": false,
+      "row_index": 3450
+    },
+    {
+      "after": "147.70874999999998",
+      "before": "151.33",
+      "column": "avg_glucose_level",
+      "is_ground_truth_repairable_cell": false,
+      "row_index": 3515
+    },
+    {
+      "after": "147.70874999999998",
+      "before": "164.67",
+      "column": "avg_glucose_level",
+      "is_ground_truth_repairable_cell": false,
+      "row_index": 3526
+    },
+    {
+      "after": "147.70874999999998",
+      "before": "149.42",
+      "column": "avg_glucose_level",
+      "is_ground_truth_repairable_cell": false,
+      "row_index": 3549
+    },
+    {
+      "after": "147.70874999999998",
+      "before": "151.26",
+      "column": "avg_glucose_level",
+      "is_ground_truth_repairable_cell": false,
+      "row_index": 3554
+    },
+    {
+      "after": "147.70874999999998",
+      "before": "158.93",
+      "column": "avg_glucose_level",
+      "is_ground_truth_repairable_cell": false,
+      "row_index": 3564
+    },
+    {
+      "after": "147.70874999999998",
+      "before": "165.99",
+      "column": "avg_glucose_level",
+      "is_ground_truth_repairable_cell": false,
+      "row_index": 3621
+    },
+    {
+      "after": "45.675",
+      "before": "46",
+      "column": "bmi",
+      "is_ground_truth_repairable_cell": false,
+      "row_index": 3662
+    },
+    {
+      "after": "147.70874999999998",
+      "before": "162.23",
+      "column": "avg_glucose_level",
+      "is_ground_truth_repairable_cell": false,
+      "row_index": 3671
+    },
+    {
+      "after": "147.70874999999998",
+      "before": "150",
+      "column": "avg_glucose_level",
+      "is_ground_truth_repairable_cell": false,
+      "row_index": 3674
+    },
+    {
+      "after": "45.675",
+      "before": "46",
+      "column": "bmi",
+      "is_ground_truth_repairable_cell": false,
+      "row_index": 3685
+    },
+    {
+      "after": "147.70874999999998",
+      "before": "162.96",
+      "column": "avg_glucose_level",
+      "is_ground_truth_repairable_cell": false,
+      "row_index": 3697
+    },
+    {
+      "after": "147.70874999999998",
+      "before": "167.59",
+      "column": "avg_glucose_level",
+      "is_ground_truth_repairable_cell": false,
+      "row_index": 3698
+    },
+    {
+      "after": "147.70874999999998",
+      "before": "149.13",
+      "column": "avg_glucose_level",
+      "is_ground_truth_repairable_cell": false,
+      "row_index": 3700
+    },
+    {
+      "after": "147.70874999999998",
+      "before": "153.48",
+      "column": "avg_glucose_level",
+      "is_ground_truth_repairable_cell": false,
+      "row_index": 3703
+    },
+    {
+      "after": "147.70874999999998",
+      "before": "168.06",
+      "column": "avg_glucose_level",
+      "is_ground_truth_repairable_cell": false,
+      "row_index": 3706
+    },
+    {
+      "after": "147.70874999999998",
+      "before": "152.84",
+      "column": "avg_glucose_level",
+      "is_ground_truth_repairable_cell": false,
+      "row_index": 3712
+    },
+    {
+      "after": "147.70874999999998",
+      "before": "152.56",
+      "column": "avg_glucose_level",
+      "is_ground_truth_repairable_cell": false,
+      "row_index": 3780
+    },
+    {
+      "after": "147.70874999999998",
+      "before": "148.72",
+      "column": "avg_glucose_level",
+      "is_ground_truth_repairable_cell": false,
+      "row_index": 3790
+    },
+    {
+      "after": "147.70874999999998",
+      "before": "156.82",
+      "column": "avg_glucose_level",
+      "is_ground_truth_repairable_cell": false,
+      "row_index": 3796
+    },
+    {
+      "after": "147.70874999999998",
+      "before": "164.77",
+      "column": "avg_glucose_level",
+      "is_ground_truth_repairable_cell": false,
+      "row_index": 3808
+    },
+    {
+      "after": "147.70874999999998",
+      "before": "162.3",
+      "column": "avg_glucose_level",
+      "is_ground_truth_repairable_cell": false,
+      "row_index": 3851
+    },
+    {
+      "after": "147.70874999999998",
+      "before": "148.24",
+      "column": "avg_glucose_level",
+      "is_ground_truth_repairable_cell": false,
+      "row_index": 3875
+    },
+    {
+      "after": "45.675",
+      "before": "46.1",
+      "column": "bmi",
+      "is_ground_truth_repairable_cell": false,
+      "row_index": 3896
+    },
+    {
+      "after": "147.70874999999998",
+      "before": "149.68",
+      "column": "avg_glucose_level",
+      "is_ground_truth_repairable_cell": false,
+      "row_index": 3905
+    },
+    {
+      "after": "147.70874999999998",
+      "before": "148.52",
+      "column": "avg_glucose_level",
+      "is_ground_truth_repairable_cell": false,
+      "row_index": 3926
+    },
+    {
+      "after": "147.70874999999998",
+      "before": "151.16",
+      "column": "avg_glucose_level",
+      "is_ground_truth_repairable_cell": false,
+      "row_index": 3935
+    },
+    {
+      "after": "147.70874999999998",
+      "before": "149.95",
+      "column": "avg_glucose_level",
+      "is_ground_truth_repairable_cell": false,
+      "row_index": 3943
+    },
+    {
+      "after": "147.70874999999998",
+      "before": "149.62",
+      "column": "avg_glucose_level",
+      "is_ground_truth_repairable_cell": false,
+      "row_index": 3987
+    },
+    {
+      "after": "147.70874999999998",
+      "before": "153.76",
+      "column": "avg_glucose_level",
+      "is_ground_truth_repairable_cell": false,
+      "row_index": 4007
+    },
+    {
+      "after": "147.70874999999998",
+      "before": "156.18",
+      "column": "avg_glucose_level",
+      "is_ground_truth_repairable_cell": false,
+      "row_index": 4018
+    },
+    {
+      "after": "147.70874999999998",
+      "before": "155.86",
+      "column": "avg_glucose_level",
+      "is_ground_truth_repairable_cell": false,
+      "row_index": 4030
+    },
+    {
+      "after": "147.70874999999998",
+      "before": "151.23",
+      "column": "avg_glucose_level",
+      "is_ground_truth_repairable_cell": false,
+      "row_index": 4048
+    },
+    {
+      "after": "147.70874999999998",
+      "before": "153.34",
+      "column": "avg_glucose_level",
+      "is_ground_truth_repairable_cell": false,
+      "row_index": 4091
+    },
+    {
+      "after": "147.70874999999998",
+      "before": "153.08",
+      "column": "avg_glucose_level",
+      "is_ground_truth_repairable_cell": false,
+      "row_index": 4099
+    },
+    {
+      "after": "147.70874999999998",
+      "before": "151.25",
+      "column": "avg_glucose_level",
+      "is_ground_truth_repairable_cell": false,
+      "row_index": 4106
+    },
+    {
+      "after": "147.70874999999998",
+      "before": "153.38",
+      "column": "avg_glucose_level",
+      "is_ground_truth_repairable_cell": false,
+      "row_index": 4118
+    },
+    {
+      "after": "147.70874999999998",
+      "before": "159.67",
+      "column": "avg_glucose_level",
+      "is_ground_truth_repairable_cell": false,
+      "row_index": 4133
+    },
+    {
+      "after": "147.70874999999998",
+      "before": "158.31",
+      "column": "avg_glucose_level",
+      "is_ground_truth_repairable_cell": false,
+      "row_index": 4142
+    },
+    {
+      "after": "147.70874999999998",
+      "before": "158.33",
+      "column": "avg_glucose_level",
+      "is_ground_truth_repairable_cell": false,
+      "row_index": 4153
+    },
+    {
+      "after": "147.70874999999998",
+      "before": "162.23",
+      "column": "avg_glucose_level",
+      "is_ground_truth_repairable_cell": false,
+      "row_index": 4231
+    },
+    {
+      "after": "147.70874999999998",
+      "before": "150.03",
+      "column": "avg_glucose_level",
+      "is_ground_truth_repairable_cell": false,
+      "row_index": 4237
+    }
+  ],
+  "repairable_truth_results": [
+    {
+      "after_abs_error": 8.745,
+      "after_value": "88.185",
+      "anomaly_type": "missing_values",
+      "before_abs_error": null,
+      "before_value": "",
+      "changed": true,
+      "column": "avg_glucose_level",
+      "corrupted_value": "",
+      "exact_restored": false,
+      "expected_issue_type": "missing_values",
+      "improved": false,
+      "improved_or_exact": false,
+      "injection_id": "m1-0001",
+      "notes": "Cell was replaced with a missing value.",
+      "original_value": "79.44",
+      "repairable": true,
+      "row_id": "m1-row-01871",
+      "row_index": 1871,
+      "source_row_id": "33410",
+      "status": "changed_not_improved"
+    },
+    {
+      "after_abs_error": 1.4,
+      "after_value": "27.5",
+      "anomaly_type": "missing_values",
+      "before_abs_error": null,
+      "before_value": "",
+      "changed": true,
+      "column": "bmi",
+      "corrupted_value": "",
+      "exact_restored": false,
+      "expected_issue_type": "missing_values",
+      "improved": false,
+      "improved_or_exact": false,
+      "injection_id": "m1-0002",
+      "notes": "Cell was replaced with a missing value.",
+      "original_value": "28.9",
+      "repairable": true,
+      "row_id": "m1-row-00014",
+      "row_index": 14,
+      "source_row_id": "354",
+      "status": "changed_not_improved"
+    },
+    {
+      "after_abs_error": 3.9,
+      "after_value": "27.5",
+      "anomaly_type": "missing_values",
+      "before_abs_error": null,
+      "before_value": "",
+      "changed": true,
+      "column": "bmi",
+      "corrupted_value": "",
+      "exact_restored": false,
+      "expected_issue_type": "missing_values",
+      "improved": false,
+      "improved_or_exact": false,
+      "injection_id": "m1-0003",
+      "notes": "Cell was replaced with a missing value.",
+      "original_value": "23.6",
+      "repairable": true,
+      "row_id": "m1-row-03210",
+      "row_index": 3210,
+      "source_row_id": "56021",
+      "status": "changed_not_improved"
+    },
+    {
+      "after_abs_error": 3.9,
+      "after_value": "27.5",
+      "anomaly_type": "missing_values",
+      "before_abs_error": null,
+      "before_value": "",
+      "changed": true,
+      "column": "bmi",
+      "corrupted_value": "",
+      "exact_restored": false,
+      "expected_issue_type": "missing_values",
+      "improved": false,
+      "improved_or_exact": false,
+      "injection_id": "m1-0004",
+      "notes": "Cell was replaced with a missing value.",
+      "original_value": "23.6",
+      "repairable": true,
+      "row_id": "m1-row-00378",
+      "row_index": 378,
+      "source_row_id": "6976",
+      "status": "changed_not_improved"
+    },
+    {
+      "after_abs_error": 0.7,
+      "after_value": "27.5",
+      "anomaly_type": "missing_values",
+      "before_abs_error": null,
+      "before_value": "",
+      "changed": true,
+      "column": "bmi",
+      "corrupted_value": "",
+      "exact_restored": false,
+      "expected_issue_type": "missing_values",
+      "improved": false,
+      "improved_or_exact": false,
+      "injection_id": "m1-0005",
+      "notes": "Cell was replaced with a missing value.",
+      "original_value": "26.8",
+      "repairable": true,
+      "row_id": "m1-row-00697",
+      "row_index": 697,
+      "source_row_id": "12396",
+      "status": "changed_not_improved"
+    },
+    {
+      "after_abs_error": null,
+      "after_value": "Private",
+      "anomaly_type": "missing_values",
+      "before_abs_error": null,
+      "before_value": "",
+      "changed": true,
+      "column": "work_type",
+      "corrupted_value": "",
+      "exact_restored": true,
+      "expected_issue_type": "missing_values",
+      "improved": false,
+      "improved_or_exact": true,
+      "injection_id": "m1-0006",
+      "notes": "Cell was replaced with a missing value.",
+      "original_value": "Private",
+      "repairable": true,
+      "row_id": "m1-row-01417",
+      "row_index": 1417,
+      "source_row_id": "25404",
+      "status": "exact_restored"
+    },
+    {
+      "after_abs_error": 10.945,
+      "after_value": "88.185",
+      "anomaly_type": "missing_values",
+      "before_abs_error": null,
+      "before_value": "",
+      "changed": true,
+      "column": "avg_glucose_level",
+      "corrupted_value": "",
+      "exact_restored": false,
+      "expected_issue_type": "missing_values",
+      "improved": false,
+      "improved_or_exact": false,
+      "injection_id": "m1-0007",
+      "notes": "Cell was replaced with a missing value.",
+      "original_value": "77.24",
+      "repairable": true,
+      "row_id": "m1-row-04061",
+      "row_index": 4061,
+      "source_row_id": "70081",
+      "status": "changed_not_improved"
+    },
+    {
+      "after_abs_error": null,
+      "after_value": "Private",
+      "anomaly_type": "missing_values",
+      "before_abs_error": null,
+      "before_value": "",
+      "changed": true,
+      "column": "work_type",
+      "corrupted_value": "",
+      "exact_restored": true,
+      "expected_issue_type": "missing_values",
+      "improved": false,
+      "improved_or_exact": true,
+      "injection_id": "m1-0008",
+      "notes": "Cell was replaced with a missing value.",
+      "original_value": "Private",
+      "repairable": true,
+      "row_id": "m1-row-00070",
+      "row_index": 70,
+      "source_row_id": "1323",
+      "status": "exact_restored"
+    },
+    {
+      "after_abs_error": null,
+      "after_value": "Private",
+      "anomaly_type": "missing_values",
+      "before_abs_error": null,
+      "before_value": "",
+      "changed": true,
+      "column": "work_type",
+      "corrupted_value": "",
+      "exact_restored": true,
+      "expected_issue_type": "missing_values",
+      "improved": false,
+      "improved_or_exact": true,
+      "injection_id": "m1-0009",
+      "notes": "Cell was replaced with a missing value.",
+      "original_value": "Private",
+      "repairable": true,
+      "row_id": "m1-row-00269",
+      "row_index": 269,
+      "source_row_id": "5173",
+      "status": "exact_restored"
+    },
+    {
+      "after_abs_error": 4.1,
+      "after_value": "27.5",
+      "anomaly_type": "missing_values",
+      "before_abs_error": null,
+      "before_value": "",
+      "changed": true,
+      "column": "bmi",
+      "corrupted_value": "",
+      "exact_restored": false,
+      "expected_issue_type": "missing_values",
+      "improved": false,
+      "improved_or_exact": false,
+      "injection_id": "m1-0010",
+      "notes": "Cell was replaced with a missing value.",
+      "original_value": "23.4",
+      "repairable": true,
+      "row_id": "m1-row-00263",
+      "row_index": 263,
+      "source_row_id": "5046",
+      "status": "changed_not_improved"
+    },
+    {
+      "after_abs_error": 9.4,
+      "after_value": "27.5",
+      "anomaly_type": "missing_values",
+      "before_abs_error": null,
+      "before_value": "",
+      "changed": true,
+      "column": "bmi",
+      "corrupted_value": "",
+      "exact_restored": false,
+      "expected_issue_type": "missing_values",
+      "improved": false,
+      "improved_or_exact": false,
+      "injection_id": "m1-0011",
+      "notes": "Cell was replaced with a missing value.",
+      "original_value": "18.1",
+      "repairable": true,
+      "row_id": "m1-row-02076",
+      "row_index": 2076,
+      "source_row_id": "37025",
+      "status": "changed_not_improved"
+    },
+    {
+      "after_abs_error": null,
+      "after_value": "never smoked",
+      "anomaly_type": "missing_values",
+      "before_abs_error": null,
+      "before_value": "",
+      "changed": true,
+      "column": "smoking_status",
+      "corrupted_value": "",
+      "exact_restored": false,
+      "expected_issue_type": "missing_values",
+      "improved": false,
+      "improved_or_exact": false,
+      "injection_id": "m1-0012",
+      "notes": "Cell was replaced with a missing value.",
+      "original_value": "formerly smoked",
+      "repairable": true,
+      "row_id": "m1-row-02421",
+      "row_index": 2421,
+      "source_row_id": "42899",
+      "status": "changed_not_improved"
+    },
+    {
+      "after_abs_error": 3.965,
+      "after_value": "88.185",
+      "anomaly_type": "missing_values",
+      "before_abs_error": null,
+      "before_value": "",
+      "changed": true,
+      "column": "avg_glucose_level",
+      "corrupted_value": "",
+      "exact_restored": false,
+      "expected_issue_type": "missing_values",
+      "improved": false,
+      "improved_or_exact": false,
+      "injection_id": "m1-0013",
+      "notes": "Cell was replaced with a missing value.",
+      "original_value": "92.15",
+      "repairable": true,
+      "row_id": "m1-row-01517",
+      "row_index": 1517,
+      "source_row_id": "27382",
+      "status": "changed_not_improved"
+    },
+    {
+      "after_abs_error": null,
+      "after_value": "never smoked",
+      "anomaly_type": "missing_values",
+      "before_abs_error": null,
+      "before_value": "",
+      "changed": true,
+      "column": "smoking_status",
+      "corrupted_value": "",
+      "exact_restored": true,
+      "expected_issue_type": "missing_values",
+      "improved": false,
+      "improved_or_exact": true,
+      "injection_id": "m1-0014",
+      "notes": "Cell was replaced with a missing value.",
+      "original_value": "never smoked",
+      "repairable": true,
+      "row_id": "m1-row-03604",
+      "row_index": 3604,
+      "source_row_id": "62396",
+      "status": "exact_restored"
+    },
+    {
+      "after_abs_error": 2.2,
+      "after_value": "27.5",
+      "anomaly_type": "missing_values",
+      "before_abs_error": null,
+      "before_value": "",
+      "changed": true,
+      "column": "bmi",
+      "corrupted_value": "",
+      "exact_restored": false,
+      "expected_issue_type": "missing_values",
+      "improved": false,
+      "improved_or_exact": false,
+      "injection_id": "m1-0015",
+      "notes": "Cell was replaced with a missing value.",
+      "original_value": "25.3",
+      "repairable": true,
+      "row_id": "m1-row-03812",
+      "row_index": 3812,
+      "source_row_id": "65849",
+      "status": "changed_not_improved"
+    },
+    {
+      "after_abs_error": 0.4,
+      "after_value": "27.5",
+      "anomaly_type": "missing_values",
+      "before_abs_error": null,
+      "before_value": "",
+      "changed": true,
+      "column": "bmi",
+      "corrupted_value": "",
+      "exact_restored": false,
+      "expected_issue_type": "missing_values",
+      "improved": false,
+      "improved_or_exact": false,
+      "injection_id": "m1-0016",
+      "notes": "Cell was replaced with a missing value.",
+      "original_value": "27.9",
+      "repairable": true,
+      "row_id": "m1-row-03163",
+      "row_index": 3163,
+      "source_row_id": "55232",
+      "status": "changed_not_improved"
+    },
+    {
+      "after_abs_error": null,
+      "after_value": "Private",
+      "anomaly_type": "missing_values",
+      "before_abs_error": null,
+      "before_value": "",
+      "changed": true,
+      "column": "work_type",
+      "corrupted_value": "",
+      "exact_restored": false,
+      "expected_issue_type": "missing_values",
+      "improved": false,
+      "improved_or_exact": false,
+      "injection_id": "m1-0017",
+      "notes": "Cell was replaced with a missing value.",
+      "original_value": "Self-employed",
+      "repairable": true,
+      "row_id": "m1-row-03824",
+      "row_index": 3824,
+      "source_row_id": "66051",
+      "status": "changed_not_improved"
+    },
+    {
+      "after_abs_error": null,
+      "after_value": "never smoked",
+      "anomaly_type": "missing_values",
+      "before_abs_error": null,
+      "before_value": "",
+      "changed": true,
+      "column": "smoking_status",
+      "corrupted_value": "",
+      "exact_restored": false,
+      "expected_issue_type": "missing_values",
+      "improved": false,
+      "improved_or_exact": false,
+      "injection_id": "m1-0018",
+      "notes": "Cell was replaced with a missing value.",
+      "original_value": "smokes",
+      "repairable": true,
+      "row_id": "m1-row-02050",
+      "row_index": 2050,
+      "source_row_id": "36698",
+      "status": "changed_not_improved"
+    },
+    {
+      "after_abs_error": 6.7,
+      "after_value": "27.5",
+      "anomaly_type": "missing_values",
+      "before_abs_error": null,
+      "before_value": "",
+      "changed": true,
+      "column": "bmi",
+      "corrupted_value": "",
+      "exact_restored": false,
+      "expected_issue_type": "missing_values",
+      "improved": false,
+      "improved_or_exact": false,
+      "injection_id": "m1-0019",
+      "notes": "Cell was replaced with a missing value.",
+      "original_value": "20.8",
+      "repairable": true,
+      "row_id": "m1-row-00358",
+      "row_index": 358,
+      "source_row_id": "6625",
+      "status": "changed_not_improved"
+    },
+    {
+      "after_abs_error": null,
+      "after_value": "never smoked",
+      "anomaly_type": "missing_values",
+      "before_abs_error": null,
+      "before_value": "",
+      "changed": true,
+      "column": "smoking_status",
+      "corrupted_value": "",
+      "exact_restored": true,
+      "expected_issue_type": "missing_values",
+      "improved": false,
+      "improved_or_exact": true,
+      "injection_id": "m1-0020",
+      "notes": "Cell was replaced with a missing value.",
+      "original_value": "never smoked",
+      "repairable": true,
+      "row_id": "m1-row-03334",
+      "row_index": 3334,
+      "source_row_id": "57813",
+      "status": "exact_restored"
+    },
+    {
+      "after_abs_error": null,
+      "after_value": "never smoked",
+      "anomaly_type": "missing_values",
+      "before_abs_error": null,
+      "before_value": "",
+      "changed": true,
+      "column": "smoking_status",
+      "corrupted_value": "",
+      "exact_restored": true,
+      "expected_issue_type": "missing_values",
+      "improved": false,
+      "improved_or_exact": true,
+      "injection_id": "m1-0021",
+      "notes": "Cell was replaced with a missing value.",
+      "original_value": "never smoked",
+      "repairable": true,
+      "row_id": "m1-row-01757",
+      "row_index": 1757,
+      "source_row_id": "31409",
+      "status": "exact_restored"
+    },
+    {
+      "after_abs_error": null,
+      "after_value": "never smoked",
+      "anomaly_type": "missing_values",
+      "before_abs_error": null,
+      "before_value": "",
+      "changed": true,
+      "column": "smoking_status",
+      "corrupted_value": "",
+      "exact_restored": false,
+      "expected_issue_type": "missing_values",
+      "improved": false,
+      "improved_or_exact": false,
+      "injection_id": "m1-0022",
+      "notes": "Cell was replaced with a missing value.",
+      "original_value": "Unknown",
+      "repairable": true,
+      "row_id": "m1-row-02035",
+      "row_index": 2035,
+      "source_row_id": "36471",
+      "status": "changed_not_improved"
+    },
+    {
+      "after_abs_error": 14.615,
+      "after_value": "88.185",
+      "anomaly_type": "missing_values",
+      "before_abs_error": null,
+      "before_value": "",
+      "changed": true,
+      "column": "avg_glucose_level",
+      "corrupted_value": "",
+      "exact_restored": false,
+      "expected_issue_type": "missing_values",
+      "improved": false,
+      "improved_or_exact": false,
+      "injection_id": "m1-0023",
+      "notes": "Cell was replaced with a missing value.",
+      "original_value": "73.57",
+      "repairable": true,
+      "row_id": "m1-row-00723",
+      "row_index": 723,
+      "source_row_id": "12857",
+      "status": "changed_not_improved"
+    },
+    {
+      "after_abs_error": 16.365,
+      "after_value": "88.185",
+      "anomaly_type": "missing_values",
+      "before_abs_error": null,
+      "before_value": "",
+      "changed": true,
+      "column": "avg_glucose_level",
+      "corrupted_value": "",
+      "exact_restored": false,
+      "expected_issue_type": "missing_values",
+      "improved": false,
+      "improved_or_exact": false,
+      "injection_id": "m1-0024",
+      "notes": "Cell was replaced with a missing value.",
+      "original_value": "104.55",
+      "repairable": true,
+      "row_id": "m1-row-01817",
+      "row_index": 1817,
+      "source_row_id": "32352",
+      "status": "changed_not_improved"
+    },
+    {
+      "after_abs_error": null,
+      "after_value": "never smoked",
+      "anomaly_type": "missing_values",
+      "before_abs_error": null,
+      "before_value": "",
+      "changed": true,
+      "column": "smoking_status",
+      "corrupted_value": "",
+      "exact_restored": false,
+      "expected_issue_type": "missing_values",
+      "improved": false,
+      "improved_or_exact": false,
+      "injection_id": "m1-0025",
+      "notes": "Cell was replaced with a missing value.",
+      "original_value": "Unknown",
+      "repairable": true,
+      "row_id": "m1-row-02895",
+      "row_index": 2895,
+      "source_row_id": "50775",
+      "status": "changed_not_improved"
+    },
+    {
+      "after_abs_error": 3.795,
+      "after_value": "88.185",
+      "anomaly_type": "missing_values",
+      "before_abs_error": null,
+      "before_value": "",
+      "changed": true,
+      "column": "avg_glucose_level",
+      "corrupted_value": "",
+      "exact_restored": false,
+      "expected_issue_type": "missing_values",
+      "improved": false,
+      "improved_or_exact": false,
+      "injection_id": "m1-0026",
+      "notes": "Cell was replaced with a missing value.",
+      "original_value": "91.98",
+      "repairable": true,
+      "row_id": "m1-row-01595",
+      "row_index": 1595,
+      "source_row_id": "28500",
+      "status": "changed_not_improved"
+    },
+    {
+      "after_abs_error": null,
+      "after_value": "never smoked",
+      "anomaly_type": "missing_values",
+      "before_abs_error": null,
+      "before_value": "",
+      "changed": true,
+      "column": "smoking_status",
+      "corrupted_value": "",
+      "exact_restored": true,
+      "expected_issue_type": "missing_values",
+      "improved": false,
+      "improved_or_exact": true,
+      "injection_id": "m1-0027",
+      "notes": "Cell was replaced with a missing value.",
+      "original_value": "never smoked",
+      "repairable": true,
+      "row_id": "m1-row-03938",
+      "row_index": 3938,
+      "source_row_id": "68034",
+      "status": "exact_restored"
+    },
+    {
+      "after_abs_error": 5.025,
+      "after_value": "88.185",
+      "anomaly_type": "missing_values",
+      "before_abs_error": null,
+      "before_value": "",
+      "changed": true,
+      "column": "avg_glucose_level",
+      "corrupted_value": "",
+      "exact_restored": false,
+      "expected_issue_type": "missing_values",
+      "improved": false,
+      "improved_or_exact": false,
+      "injection_id": "m1-0028",
+      "notes": "Cell was replaced with a missing value.",
+      "original_value": "93.21",
+      "repairable": true,
+      "row_id": "m1-row-00367",
+      "row_index": 367,
+      "source_row_id": "6850",
+      "status": "changed_not_improved"
+    },
+    {
+      "after_abs_error": 8.435,
+      "after_value": "88.185",
+      "anomaly_type": "missing_values",
+      "before_abs_error": null,
+      "before_value": "",
+      "changed": true,
+      "column": "avg_glucose_level",
+      "corrupted_value": "",
+      "exact_restored": false,
+      "expected_issue_type": "missing_values",
+      "improved": false,
+      "improved_or_exact": false,
+      "injection_id": "m1-0029",
+      "notes": "Cell was replaced with a missing value.",
+      "original_value": "96.62",
+      "repairable": true,
+      "row_id": "m1-row-00969",
+      "row_index": 969,
+      "source_row_id": "16987",
+      "status": "changed_not_improved"
+    },
+    {
+      "after_abs_error": null,
+      "after_value": "never smoked",
+      "anomaly_type": "missing_values",
+      "before_abs_error": null,
+      "before_value": "",
+      "changed": true,
+      "column": "smoking_status",
+      "corrupted_value": "",
+      "exact_restored": false,
+      "expected_issue_type": "missing_values",
+      "improved": false,
+      "improved_or_exact": false,
+      "injection_id": "m1-0030",
+      "notes": "Cell was replaced with a missing value.",
+      "original_value": "Unknown",
+      "repairable": true,
+      "row_id": "m1-row-02954",
+      "row_index": 2954,
+      "source_row_id": "51762",
+      "status": "changed_not_improved"
+    },
+    {
+      "after_abs_error": 82.58875,
+      "after_value": "147.70874999999998",
+      "anomaly_type": "numeric_outlier",
+      "before_abs_error": 354.88,
+      "before_value": "420",
+      "changed": true,
+      "column": "avg_glucose_level",
+      "corrupted_value": "420",
+      "exact_restored": false,
+      "expected_issue_type": "numeric_outlier",
+      "improved": true,
+      "improved_or_exact": true,
+      "injection_id": "m1-0031",
+      "notes": "Numeric value was moved outside the clean subset range.",
+      "original_value": "65.12",
+      "repairable": true,
+      "row_id": "m1-row-04135",
+      "row_index": 4135,
+      "source_row_id": "71420",
+      "status": "improved_not_exact"
+    },
+    {
+      "after_abs_error": 31.5,
+      "after_value": "110.5",
+      "anomaly_type": "numeric_outlier",
+      "before_abs_error": 61.0,
+      "before_value": "140",
+      "changed": true,
+      "column": "age",
+      "corrupted_value": "140",
+      "exact_restored": false,
+      "expected_issue_type": "numeric_outlier",
+      "improved": true,
+      "improved_or_exact": true,
+      "injection_id": "m1-0032",
+      "notes": "Numeric value was moved outside the clean subset range.",
+      "original_value": "79",
+      "repairable": true,
+      "row_id": "m1-row-02146",
+      "row_index": 2146,
+      "source_row_id": "38184",
+      "status": "improved_not_exact"
+    },
+    {
+      "after_abs_error": 69.78875,
+      "after_value": "147.70874999999998",
+      "anomaly_type": "numeric_outlier",
+      "before_abs_error": 342.08,
+      "before_value": "420",
+      "changed": true,
+      "column": "avg_glucose_level",
+      "corrupted_value": "420",
+      "exact_restored": false,
+      "expected_issue_type": "numeric_outlier",
+      "improved": true,
+      "improved_or_exact": true,
+      "injection_id": "m1-0033",
+      "notes": "Numeric value was moved outside the clean subset range.",
+      "original_value": "77.92",
+      "repairable": true,
+      "row_id": "m1-row-00956",
+      "row_index": 956,
+      "source_row_id": "16837",
+      "status": "improved_not_exact"
+    },
+    {
+      "after_abs_error": 18.975,
+      "after_value": "45.675",
+      "anomaly_type": "numeric_outlier",
+      "before_abs_error": 68.3,
+      "before_value": "95",
+      "changed": true,
+      "column": "bmi",
+      "corrupted_value": "95",
+      "exact_restored": false,
+      "expected_issue_type": "numeric_outlier",
+      "improved": true,
+      "improved_or_exact": true,
+      "injection_id": "m1-0034",
+      "notes": "Numeric value was moved outside the clean subset range.",
+      "original_value": "26.7",
+      "repairable": true,
+      "row_id": "m1-row-00114",
+      "row_index": 114,
+      "source_row_id": "2532",
+      "status": "improved_not_exact"
+    },
+    {
+      "after_abs_error": 105.5,
+      "after_value": "110.5",
+      "anomaly_type": "numeric_outlier",
+      "before_abs_error": 135.0,
+      "before_value": "140",
+      "changed": true,
+      "column": "age",
+      "corrupted_value": "140",
+      "exact_restored": false,
+      "expected_issue_type": "numeric_outlier",
+      "improved": true,
+      "improved_or_exact": true,
+      "injection_id": "m1-0035",
+      "notes": "Numeric value was moved outside the clean subset range.",
+      "original_value": "5",
+      "repairable": true,
+      "row_id": "m1-row-00255",
+      "row_index": 255,
+      "source_row_id": "4959",
+      "status": "improved_not_exact"
+    },
+    {
+      "after_abs_error": 16.475,
+      "after_value": "45.675",
+      "anomaly_type": "numeric_outlier",
+      "before_abs_error": 65.8,
+      "before_value": "95",
+      "changed": true,
+      "column": "bmi",
+      "corrupted_value": "95",
+      "exact_restored": false,
+      "expected_issue_type": "numeric_outlier",
+      "improved": true,
+      "improved_or_exact": true,
+      "injection_id": "m1-0036",
+      "notes": "Numeric value was moved outside the clean subset range.",
+      "original_value": "29.2",
+      "repairable": true,
+      "row_id": "m1-row-00765",
+      "row_index": 765,
+      "source_row_id": "13547",
+      "status": "improved_not_exact"
+    },
+    {
+      "after_abs_error": 40.23875,
+      "after_value": "147.70874999999998",
+      "anomaly_type": "numeric_outlier",
+      "before_abs_error": 312.53,
+      "before_value": "420",
+      "changed": true,
+      "column": "avg_glucose_level",
+      "corrupted_value": "420",
+      "exact_restored": false,
+      "expected_issue_type": "numeric_outlier",
+      "improved": true,
+      "improved_or_exact": true,
+      "injection_id": "m1-0037",
+      "notes": "Numeric value was moved outside the clean subset range.",
+      "original_value": "107.47",
+      "repairable": true,
+      "row_id": "m1-row-04182",
+      "row_index": 4182,
+      "source_row_id": "72188",
+      "status": "improved_not_exact"
+    },
+    {
+      "after_abs_error": 23.475,
+      "after_value": "45.675",
+      "anomaly_type": "numeric_outlier",
+      "before_abs_error": 72.8,
+      "before_value": "95",
+      "changed": true,
+      "column": "bmi",
+      "corrupted_value": "95",
+      "exact_restored": false,
+      "expected_issue_type": "numeric_outlier",
+      "improved": true,
+      "improved_or_exact": true,
+      "injection_id": "m1-0038",
+      "notes": "Numeric value was moved outside the clean subset range.",
+      "original_value": "22.2",
+      "repairable": true,
+      "row_id": "m1-row-01898",
+      "row_index": 1898,
+      "source_row_id": "33924",
+      "status": "improved_not_exact"
+    },
+    {
+      "after_abs_error": 20.775,
+      "after_value": "45.675",
+      "anomaly_type": "numeric_outlier",
+      "before_abs_error": 70.1,
+      "before_value": "95",
+      "changed": true,
+      "column": "bmi",
+      "corrupted_value": "95",
+      "exact_restored": false,
+      "expected_issue_type": "numeric_outlier",
+      "improved": true,
+      "improved_or_exact": true,
+      "injection_id": "m1-0039",
+      "notes": "Numeric value was moved outside the clean subset range.",
+      "original_value": "24.9",
+      "repairable": true,
+      "row_id": "m1-row-00855",
+      "row_index": 855,
+      "source_row_id": "15104",
+      "status": "improved_not_exact"
+    },
+    {
+      "after_abs_error": 90.5,
+      "after_value": "110.5",
+      "anomaly_type": "numeric_outlier",
+      "before_abs_error": 120.0,
+      "before_value": "140",
+      "changed": true,
+      "column": "age",
+      "corrupted_value": "140",
+      "exact_restored": false,
+      "expected_issue_type": "numeric_outlier",
+      "improved": true,
+      "improved_or_exact": true,
+      "injection_id": "m1-0040",
+      "notes": "Numeric value was moved outside the clean subset range.",
+      "original_value": "20",
+      "repairable": true,
+      "row_id": "m1-row-01851",
+      "row_index": 1851,
+      "source_row_id": "33085",
+      "status": "improved_not_exact"
+    },
+    {
+      "after_abs_error": 23.89875,
+      "after_value": "147.70874999999998",
+      "anomaly_type": "numeric_outlier",
+      "before_abs_error": 296.19,
+      "before_value": "420",
+      "changed": true,
+      "column": "avg_glucose_level",
+      "corrupted_value": "420",
+      "exact_restored": false,
+      "expected_issue_type": "numeric_outlier",
+      "improved": true,
+      "improved_or_exact": true,
+      "injection_id": "m1-0041",
+      "notes": "Numeric value was moved outside the clean subset range.",
+      "original_value": "123.81",
+      "repairable": true,
+      "row_id": "m1-row-03020",
+      "row_index": 3020,
+      "source_row_id": "52790",
+      "status": "improved_not_exact"
+    },
+    {
+      "after_abs_error": 34.98875,
+      "after_value": "147.70874999999998",
+      "anomaly_type": "numeric_outlier",
+      "before_abs_error": 307.28,
+      "before_value": "420",
+      "changed": true,
+      "column": "avg_glucose_level",
+      "corrupted_value": "420",
+      "exact_restored": false,
+      "expected_issue_type": "numeric_outlier",
+      "improved": true,
+      "improved_or_exact": true,
+      "injection_id": "m1-0042",
+      "notes": "Numeric value was moved outside the clean subset range.",
+      "original_value": "112.72",
+      "repairable": true,
+      "row_id": "m1-row-04074",
+      "row_index": 4074,
+      "source_row_id": "70392",
+      "status": "improved_not_exact"
+    },
+    {
+      "after_abs_error": 45.5,
+      "after_value": "110.5",
+      "anomaly_type": "numeric_outlier",
+      "before_abs_error": 75.0,
+      "before_value": "140",
+      "changed": true,
+      "column": "age",
+      "corrupted_value": "140",
+      "exact_restored": false,
+      "expected_issue_type": "numeric_outlier",
+      "improved": true,
+      "improved_or_exact": true,
+      "injection_id": "m1-0043",
+      "notes": "Numeric value was moved outside the clean subset range.",
+      "original_value": "65",
+      "repairable": true,
+      "row_id": "m1-row-00704",
+      "row_index": 704,
+      "source_row_id": "12487",
+      "status": "improved_not_exact"
+    },
+    {
+      "after_abs_error": 95.5,
+      "after_value": "110.5",
+      "anomaly_type": "numeric_outlier",
+      "before_abs_error": 125.0,
+      "before_value": "140",
+      "changed": true,
+      "column": "age",
+      "corrupted_value": "140",
+      "exact_restored": false,
+      "expected_issue_type": "numeric_outlier",
+      "improved": true,
+      "improved_or_exact": true,
+      "injection_id": "m1-0044",
+      "notes": "Numeric value was moved outside the clean subset range.",
+      "original_value": "15",
+      "repairable": true,
+      "row_id": "m1-row-00978",
+      "row_index": 978,
+      "source_row_id": "17175",
+      "status": "improved_not_exact"
+    },
+    {
+      "after_abs_error": 8.075,
+      "after_value": "45.675",
+      "anomaly_type": "numeric_outlier",
+      "before_abs_error": 57.4,
+      "before_value": "95",
+      "changed": true,
+      "column": "bmi",
+      "corrupted_value": "95",
+      "exact_restored": false,
+      "expected_issue_type": "numeric_outlier",
+      "improved": true,
+      "improved_or_exact": true,
+      "injection_id": "m1-0045",
+      "notes": "Numeric value was moved outside the clean subset range.",
+      "original_value": "37.6",
+      "repairable": true,
+      "row_id": "m1-row-00148",
+      "row_index": 148,
+      "source_row_id": "3045",
+      "status": "improved_not_exact"
+    },
+    {
+      "after_abs_error": 79.78875,
+      "after_value": "147.70874999999998",
+      "anomaly_type": "numeric_outlier",
+      "before_abs_error": 352.08,
+      "before_value": "420",
+      "changed": true,
+      "column": "avg_glucose_level",
+      "corrupted_value": "420",
+      "exact_restored": false,
+      "expected_issue_type": "numeric_outlier",
+      "improved": true,
+      "improved_or_exact": true,
+      "injection_id": "m1-0046",
+      "notes": "Numeric value was moved outside the clean subset range.",
+      "original_value": "67.92",
+      "repairable": true,
+      "row_id": "m1-row-03978",
+      "row_index": 3978,
+      "source_row_id": "68601",
+      "status": "improved_not_exact"
+    },
+    {
+      "after_abs_error": 104.5,
+      "after_value": "110.5",
+      "anomaly_type": "numeric_outlier",
+      "before_abs_error": 134.0,
+      "before_value": "140",
+      "changed": true,
+      "column": "age",
+      "corrupted_value": "140",
+      "exact_restored": false,
+      "expected_issue_type": "numeric_outlier",
+      "improved": true,
+      "improved_or_exact": true,
+      "injection_id": "m1-0047",
+      "notes": "Numeric value was moved outside the clean subset range.",
+      "original_value": "6",
+      "repairable": true,
+      "row_id": "m1-row-00532",
+      "row_index": 532,
+      "source_row_id": "9612",
+      "status": "improved_not_exact"
+    },
+    {
+      "after_abs_error": 22.275,
+      "after_value": "45.675",
+      "anomaly_type": "numeric_outlier",
+      "before_abs_error": 71.6,
+      "before_value": "95",
+      "changed": true,
+      "column": "bmi",
+      "corrupted_value": "95",
+      "exact_restored": false,
+      "expected_issue_type": "numeric_outlier",
+      "improved": true,
+      "improved_or_exact": true,
+      "injection_id": "m1-0048",
+      "notes": "Numeric value was moved outside the clean subset range.",
+      "original_value": "23.4",
+      "repairable": true,
+      "row_id": "m1-row-03396",
+      "row_index": 3396,
+      "source_row_id": "59027",
+      "status": "improved_not_exact"
+    },
+    {
+      "after_abs_error": 43.5,
+      "after_value": "110.5",
+      "anomaly_type": "numeric_outlier",
+      "before_abs_error": 73.0,
+      "before_value": "140",
+      "changed": true,
+      "column": "age",
+      "corrupted_value": "140",
+      "exact_restored": false,
+      "expected_issue_type": "numeric_outlier",
+      "improved": true,
+      "improved_or_exact": true,
+      "injection_id": "m1-0049",
+      "notes": "Numeric value was moved outside the clean subset range.",
+      "original_value": "67",
+      "repairable": true,
+      "row_id": "m1-row-00330",
+      "row_index": 330,
+      "source_row_id": "6206",
+      "status": "improved_not_exact"
+    },
+    {
+      "after_abs_error": 58.38875,
+      "after_value": "147.70874999999998",
+      "anomaly_type": "numeric_outlier",
+      "before_abs_error": 330.68,
+      "before_value": "420",
+      "changed": true,
+      "column": "avg_glucose_level",
+      "corrupted_value": "420",
+      "exact_restored": false,
+      "expected_issue_type": "numeric_outlier",
+      "improved": true,
+      "improved_or_exact": true,
+      "injection_id": "m1-0050",
+      "notes": "Numeric value was moved outside the clean subset range.",
+      "original_value": "89.32",
+      "repairable": true,
+      "row_id": "m1-row-03502",
+      "row_index": 3502,
+      "source_row_id": "60732",
+      "status": "improved_not_exact"
+    },
+    {
+      "after_abs_error": 62.5,
+      "after_value": "110.5",
+      "anomaly_type": "numeric_outlier",
+      "before_abs_error": 92.0,
+      "before_value": "140",
+      "changed": true,
+      "column": "age",
+      "corrupted_value": "140",
+      "exact_restored": false,
+      "expected_issue_type": "numeric_outlier",
+      "improved": true,
+      "improved_or_exact": true,
+      "injection_id": "m1-0051",
+      "notes": "Numeric value was moved outside the clean subset range.",
+      "original_value": "48",
+      "repairable": true,
+      "row_id": "m1-row-01412",
+      "row_index": 1412,
+      "source_row_id": "25283",
+      "status": "improved_not_exact"
+    },
+    {
+      "after_abs_error": 59.31875,
+      "after_value": "147.70874999999998",
+      "anomaly_type": "numeric_outlier",
+      "before_abs_error": 331.61,
+      "before_value": "420",
+      "changed": true,
+      "column": "avg_glucose_level",
+      "corrupted_value": "420",
+      "exact_restored": false,
+      "expected_issue_type": "numeric_outlier",
+      "improved": true,
+      "improved_or_exact": true,
+      "injection_id": "m1-0052",
+      "notes": "Numeric value was moved outside the clean subset range.",
+      "original_value": "88.39",
+      "repairable": true,
+      "row_id": "m1-row-01545",
+      "row_index": 1545,
+      "source_row_id": "27794",
+      "status": "improved_not_exact"
+    },
+    {
+      "after_abs_error": 93.5,
+      "after_value": "110.5",
+      "anomaly_type": "numeric_outlier",
+      "before_abs_error": 123.0,
+      "before_value": "140",
+      "changed": true,
+      "column": "age",
+      "corrupted_value": "140",
+      "exact_restored": false,
+      "expected_issue_type": "numeric_outlier",
+      "improved": true,
+      "improved_or_exact": true,
+      "injection_id": "m1-0053",
+      "notes": "Numeric value was moved outside the clean subset range.",
+      "original_value": "17",
+      "repairable": true,
+      "row_id": "m1-row-00073",
+      "row_index": 73,
+      "source_row_id": "1451",
+      "status": "improved_not_exact"
+    },
+    {
+      "after_abs_error": 88.53875,
+      "after_value": "147.70874999999998",
+      "anomaly_type": "numeric_outlier",
+      "before_abs_error": 360.83,
+      "before_value": "420",
+      "changed": true,
+      "column": "avg_glucose_level",
+      "corrupted_value": "420",
+      "exact_restored": false,
+      "expected_issue_type": "numeric_outlier",
+      "improved": true,
+      "improved_or_exact": true,
+      "injection_id": "m1-0054",
+      "notes": "Numeric value was moved outside the clean subset range.",
+      "original_value": "59.17",
+      "repairable": true,
+      "row_id": "m1-row-03952",
+      "row_index": 3952,
+      "source_row_id": "68245",
+      "status": "improved_not_exact"
+    },
+    {
+      "after_abs_error": null,
+      "after_value": "Female",
+      "anomaly_type": "rare_category",
+      "before_abs_error": null,
+      "before_value": "__M1_RARE_GENDER_000__",
+      "changed": true,
+      "column": "gender",
+      "corrupted_value": "__M1_RARE_GENDER_000__",
+      "exact_restored": true,
+      "expected_issue_type": "rare_category",
+      "improved": false,
+      "improved_or_exact": true,
+      "injection_id": "m1-0055",
+      "notes": "Categorical value was replaced with a deterministic singleton category.",
+      "original_value": "Female",
+      "repairable": true,
+      "row_id": "m1-row-00969",
+      "row_index": 969,
+      "source_row_id": "16987",
+      "status": "exact_restored"
+    },
+    {
+      "after_abs_error": null,
+      "after_value": "never smoked",
+      "anomaly_type": "rare_category",
+      "before_abs_error": null,
+      "before_value": "__M1_RARE_SMOKING_STATUS_001__",
+      "changed": true,
+      "column": "smoking_status",
+      "corrupted_value": "__M1_RARE_SMOKING_STATUS_001__",
+      "exact_restored": true,
+      "expected_issue_type": "rare_category",
+      "improved": false,
+      "improved_or_exact": true,
+      "injection_id": "m1-0056",
+      "notes": "Categorical value was replaced with a deterministic singleton category.",
+      "original_value": "never smoked",
+      "repairable": true,
+      "row_id": "m1-row-00686",
+      "row_index": 686,
+      "source_row_id": "12204",
+      "status": "exact_restored"
+    },
+    {
+      "after_abs_error": null,
+      "after_value": "never smoked",
+      "anomaly_type": "rare_category",
+      "before_abs_error": null,
+      "before_value": "__M1_RARE_SMOKING_STATUS_002__",
+      "changed": true,
+      "column": "smoking_status",
+      "corrupted_value": "__M1_RARE_SMOKING_STATUS_002__",
+      "exact_restored": false,
+      "expected_issue_type": "rare_category",
+      "improved": false,
+      "improved_or_exact": false,
+      "injection_id": "m1-0057",
+      "notes": "Categorical value was replaced with a deterministic singleton category.",
+      "original_value": "smokes",
+      "repairable": true,
+      "row_id": "m1-row-01868",
+      "row_index": 1868,
+      "source_row_id": "33400",
+      "status": "changed_not_improved"
+    },
+    {
+      "after_abs_error": null,
+      "after_value": "Female",
+      "anomaly_type": "rare_category",
+      "before_abs_error": null,
+      "before_value": "__M1_RARE_GENDER_003__",
+      "changed": true,
+      "column": "gender",
+      "corrupted_value": "__M1_RARE_GENDER_003__",
+      "exact_restored": true,
+      "expected_issue_type": "rare_category",
+      "improved": false,
+      "improved_or_exact": true,
+      "injection_id": "m1-0058",
+      "notes": "Categorical value was replaced with a deterministic singleton category.",
+      "original_value": "Female",
+      "repairable": true,
+      "row_id": "m1-row-03440",
+      "row_index": 3440,
+      "source_row_id": "59737",
+      "status": "exact_restored"
+    },
+    {
+      "after_abs_error": null,
+      "after_value": "Private",
+      "anomaly_type": "rare_category",
+      "before_abs_error": null,
+      "before_value": "__M1_RARE_WORK_TYPE_004__",
+      "changed": true,
+      "column": "work_type",
+      "corrupted_value": "__M1_RARE_WORK_TYPE_004__",
+      "exact_restored": true,
+      "expected_issue_type": "rare_category",
+      "improved": false,
+      "improved_or_exact": true,
+      "injection_id": "m1-0059",
+      "notes": "Categorical value was replaced with a deterministic singleton category.",
+      "original_value": "Private",
+      "repairable": true,
+      "row_id": "m1-row-03925",
+      "row_index": 3925,
+      "source_row_id": "67864",
+      "status": "exact_restored"
+    },
+    {
+      "after_abs_error": null,
+      "after_value": "never smoked",
+      "anomaly_type": "rare_category",
+      "before_abs_error": null,
+      "before_value": "__M1_RARE_SMOKING_STATUS_005__",
+      "changed": true,
+      "column": "smoking_status",
+      "corrupted_value": "__M1_RARE_SMOKING_STATUS_005__",
+      "exact_restored": true,
+      "expected_issue_type": "rare_category",
+      "improved": false,
+      "improved_or_exact": true,
+      "injection_id": "m1-0060",
+      "notes": "Categorical value was replaced with a deterministic singleton category.",
+      "original_value": "never smoked",
+      "repairable": true,
+      "row_id": "m1-row-01681",
+      "row_index": 1681,
+      "source_row_id": "30214",
+      "status": "exact_restored"
+    },
+    {
+      "after_abs_error": null,
+      "after_value": "Private",
+      "anomaly_type": "rare_category",
+      "before_abs_error": null,
+      "before_value": "__M1_RARE_WORK_TYPE_006__",
+      "changed": true,
+      "column": "work_type",
+      "corrupted_value": "__M1_RARE_WORK_TYPE_006__",
+      "exact_restored": true,
+      "expected_issue_type": "rare_category",
+      "improved": false,
+      "improved_or_exact": true,
+      "injection_id": "m1-0061",
+      "notes": "Categorical value was replaced with a deterministic singleton category.",
+      "original_value": "Private",
+      "repairable": true,
+      "row_id": "m1-row-00428",
+      "row_index": 428,
+      "source_row_id": "7789",
+      "status": "exact_restored"
+    },
+    {
+      "after_abs_error": null,
+      "after_value": "Female",
+      "anomaly_type": "rare_category",
+      "before_abs_error": null,
+      "before_value": "__M1_RARE_GENDER_007__",
+      "changed": true,
+      "column": "gender",
+      "corrupted_value": "__M1_RARE_GENDER_007__",
+      "exact_restored": true,
+      "expected_issue_type": "rare_category",
+      "improved": false,
+      "improved_or_exact": true,
+      "injection_id": "m1-0062",
+      "notes": "Categorical value was replaced with a deterministic singleton category.",
+      "original_value": "Female",
+      "repairable": true,
+      "row_id": "m1-row-04084",
+      "row_index": 4084,
+      "source_row_id": "70610",
+      "status": "exact_restored"
+    },
+    {
+      "after_abs_error": null,
+      "after_value": "never smoked",
+      "anomaly_type": "rare_category",
+      "before_abs_error": null,
+      "before_value": "__M1_RARE_SMOKING_STATUS_008__",
+      "changed": true,
+      "column": "smoking_status",
+      "corrupted_value": "__M1_RARE_SMOKING_STATUS_008__",
+      "exact_restored": false,
+      "expected_issue_type": "rare_category",
+      "improved": false,
+      "improved_or_exact": false,
+      "injection_id": "m1-0063",
+      "notes": "Categorical value was replaced with a deterministic singleton category.",
+      "original_value": "formerly smoked",
+      "repairable": true,
+      "row_id": "m1-row-02232",
+      "row_index": 2232,
+      "source_row_id": "39708",
+      "status": "changed_not_improved"
+    },
+    {
+      "after_abs_error": null,
+      "after_value": "never smoked",
+      "anomaly_type": "rare_category",
+      "before_abs_error": null,
+      "before_value": "__M1_RARE_SMOKING_STATUS_009__",
+      "changed": true,
+      "column": "smoking_status",
+      "corrupted_value": "__M1_RARE_SMOKING_STATUS_009__",
+      "exact_restored": false,
+      "expected_issue_type": "rare_category",
+      "improved": false,
+      "improved_or_exact": false,
+      "injection_id": "m1-0064",
+      "notes": "Categorical value was replaced with a deterministic singleton category.",
+      "original_value": "Unknown",
+      "repairable": true,
+      "row_id": "m1-row-04099",
+      "row_index": 4099,
+      "source_row_id": "70874",
+      "status": "changed_not_improved"
+    },
+    {
+      "after_abs_error": null,
+      "after_value": "never smoked",
+      "anomaly_type": "rare_category",
+      "before_abs_error": null,
+      "before_value": "__M1_RARE_SMOKING_STATUS_010__",
+      "changed": true,
+      "column": "smoking_status",
+      "corrupted_value": "__M1_RARE_SMOKING_STATUS_010__",
+      "exact_restored": false,
+      "expected_issue_type": "rare_category",
+      "improved": false,
+      "improved_or_exact": false,
+      "injection_id": "m1-0065",
+      "notes": "Categorical value was replaced with a deterministic singleton category.",
+      "original_value": "Unknown",
+      "repairable": true,
+      "row_id": "m1-row-00266",
+      "row_index": 266,
+      "source_row_id": "5121",
+      "status": "changed_not_improved"
+    },
+    {
+      "after_abs_error": null,
+      "after_value": "Female",
+      "anomaly_type": "rare_category",
+      "before_abs_error": null,
+      "before_value": "__M1_RARE_GENDER_011__",
+      "changed": true,
+      "column": "gender",
+      "corrupted_value": "__M1_RARE_GENDER_011__",
+      "exact_restored": true,
+      "expected_issue_type": "rare_category",
+      "improved": false,
+      "improved_or_exact": true,
+      "injection_id": "m1-0066",
+      "notes": "Categorical value was replaced with a deterministic singleton category.",
+      "original_value": "Female",
+      "repairable": true,
+      "row_id": "m1-row-02179",
+      "row_index": 2179,
+      "source_row_id": "38673",
+      "status": "exact_restored"
+    },
+    {
+      "after_abs_error": null,
+      "after_value": "Private",
+      "anomaly_type": "rare_category",
+      "before_abs_error": null,
+      "before_value": "__M1_RARE_WORK_TYPE_012__",
+      "changed": true,
+      "column": "work_type",
+      "corrupted_value": "__M1_RARE_WORK_TYPE_012__",
+      "exact_restored": true,
+      "expected_issue_type": "rare_category",
+      "improved": false,
+      "improved_or_exact": true,
+      "injection_id": "m1-0067",
+      "notes": "Categorical value was replaced with a deterministic singleton category.",
+      "original_value": "Private",
+      "repairable": true,
+      "row_id": "m1-row-02456",
+      "row_index": 2456,
+      "source_row_id": "43507",
+      "status": "exact_restored"
+    },
+    {
+      "after_abs_error": null,
+      "after_value": "never smoked",
+      "anomaly_type": "rare_category",
+      "before_abs_error": null,
+      "before_value": "__M1_RARE_SMOKING_STATUS_013__",
+      "changed": true,
+      "column": "smoking_status",
+      "corrupted_value": "__M1_RARE_SMOKING_STATUS_013__",
+      "exact_restored": false,
+      "expected_issue_type": "rare_category",
+      "improved": false,
+      "improved_or_exact": false,
+      "injection_id": "m1-0068",
+      "notes": "Categorical value was replaced with a deterministic singleton category.",
+      "original_value": "smokes",
+      "repairable": true,
+      "row_id": "m1-row-01836",
+      "row_index": 1836,
+      "source_row_id": "32645",
+      "status": "changed_not_improved"
+    },
+    {
+      "after_abs_error": null,
+      "after_value": "Female",
+      "anomaly_type": "rare_category",
+      "before_abs_error": null,
+      "before_value": "__M1_RARE_GENDER_014__",
+      "changed": true,
+      "column": "gender",
+      "corrupted_value": "__M1_RARE_GENDER_014__",
+      "exact_restored": true,
+      "expected_issue_type": "rare_category",
+      "improved": false,
+      "improved_or_exact": true,
+      "injection_id": "m1-0069",
+      "notes": "Categorical value was replaced with a deterministic singleton category.",
+      "original_value": "Female",
+      "repairable": true,
+      "row_id": "m1-row-01519",
+      "row_index": 1519,
+      "source_row_id": "27435",
+      "status": "exact_restored"
+    },
+    {
+      "after_abs_error": null,
+      "after_value": "Private",
+      "anomaly_type": "rare_category",
+      "before_abs_error": null,
+      "before_value": "__M1_RARE_WORK_TYPE_015__",
+      "changed": true,
+      "column": "work_type",
+      "corrupted_value": "__M1_RARE_WORK_TYPE_015__",
+      "exact_restored": false,
+      "expected_issue_type": "rare_category",
+      "improved": false,
+      "improved_or_exact": false,
+      "injection_id": "m1-0070",
+      "notes": "Categorical value was replaced with a deterministic singleton category.",
+      "original_value": "Self-employed",
+      "repairable": true,
+      "row_id": "m1-row-00263",
+      "row_index": 263,
+      "source_row_id": "5046",
+      "status": "changed_not_improved"
+    },
+    {
+      "after_abs_error": null,
+      "after_value": "Private",
+      "anomaly_type": "rare_category",
+      "before_abs_error": null,
+      "before_value": "__M1_RARE_WORK_TYPE_016__",
+      "changed": true,
+      "column": "work_type",
+      "corrupted_value": "__M1_RARE_WORK_TYPE_016__",
+      "exact_restored": false,
+      "expected_issue_type": "rare_category",
+      "improved": false,
+      "improved_or_exact": false,
+      "injection_id": "m1-0071",
+      "notes": "Categorical value was replaced with a deterministic singleton category.",
+      "original_value": "Govt_job",
+      "repairable": true,
+      "row_id": "m1-row-02463",
+      "row_index": 2463,
+      "source_row_id": "43698",
+      "status": "changed_not_improved"
+    },
+    {
+      "after_abs_error": null,
+      "after_value": "Private",
+      "anomaly_type": "rare_category",
+      "before_abs_error": null,
+      "before_value": "__M1_RARE_WORK_TYPE_017__",
+      "changed": true,
+      "column": "work_type",
+      "corrupted_value": "__M1_RARE_WORK_TYPE_017__",
+      "exact_restored": false,
+      "expected_issue_type": "rare_category",
+      "improved": false,
+      "improved_or_exact": false,
+      "injection_id": "m1-0072",
+      "notes": "Categorical value was replaced with a deterministic singleton category.",
+      "original_value": "children",
+      "repairable": true,
+      "row_id": "m1-row-01940",
+      "row_index": 1940,
+      "source_row_id": "34621",
+      "status": "changed_not_improved"
+    }
+  ],
+  "skipped_non_repairable_truth": [
+    {
+      "anomaly_type": "cross_column_consistency",
+      "column": "record_start_day,record_end_day",
+      "corrupted_value": "50>40",
+      "expected_issue_type": "cross_column_consistency",
+      "injection_id": "m1-0073",
+      "notes": "record_start_day was made larger than record_end_day.",
+      "original_value": "35<=40",
+      "repairable": false,
+      "row_id": "m1-row-01105",
+      "row_index": 1105,
+      "skip_reason": "manual_review_required",
+      "source_row_id": "19692"
+    },
+    {
+      "anomaly_type": "cross_column_consistency",
+      "column": "record_start_day,record_end_day",
+      "corrupted_value": "120>110",
+      "expected_issue_type": "cross_column_consistency",
+      "injection_id": "m1-0074",
+      "notes": "record_start_day was made larger than record_end_day.",
+      "original_value": "105<=110",
+      "repairable": false,
+      "row_id": "m1-row-00095",
+      "row_index": 95,
+      "skip_reason": "manual_review_required",
+      "source_row_id": "2092"
+    },
+    {
+      "anomaly_type": "cross_column_consistency",
+      "column": "record_start_day,record_end_day",
+      "corrupted_value": "144>134",
+      "expected_issue_type": "cross_column_consistency",
+      "injection_id": "m1-0075",
+      "notes": "record_start_day was made larger than record_end_day.",
+      "original_value": "129<=134",
+      "repairable": false,
+      "row_id": "m1-row-00119",
+      "row_index": 119,
+      "skip_reason": "manual_review_required",
+      "source_row_id": "2578"
+    },
+    {
+      "anomaly_type": "cross_column_consistency",
+      "column": "record_start_day,record_end_day",
+      "corrupted_value": "97>87",
+      "expected_issue_type": "cross_column_consistency",
+      "injection_id": "m1-0076",
+      "notes": "record_start_day was made larger than record_end_day.",
+      "original_value": "82<=87",
+      "repairable": false,
+      "row_id": "m1-row-03672",
+      "row_index": 3672,
+      "skip_reason": "manual_review_required",
+      "source_row_id": "63455"
+    },
+    {
+      "anomaly_type": "cross_column_consistency",
+      "column": "record_start_day,record_end_day",
+      "corrupted_value": "105>95",
+      "expected_issue_type": "cross_column_consistency",
+      "injection_id": "m1-0077",
+      "notes": "record_start_day was made larger than record_end_day.",
+      "original_value": "90<=95",
+      "repairable": false,
+      "row_id": "m1-row-00320",
+      "row_index": 320,
+      "skip_reason": "manual_review_required",
+      "source_row_id": "6090"
+    },
+    {
+      "anomaly_type": "cross_column_consistency",
+      "column": "record_start_day,record_end_day",
+      "corrupted_value": "33>23",
+      "expected_issue_type": "cross_column_consistency",
+      "injection_id": "m1-0078",
+      "notes": "record_start_day was made larger than record_end_day.",
+      "original_value": "18<=23",
+      "repairable": false,
+      "row_id": "m1-row-00128",
+      "row_index": 128,
+      "skip_reason": "manual_review_required",
+      "source_row_id": "2751"
+    },
+    {
+      "anomaly_type": "cross_column_consistency",
+      "column": "record_start_day,record_end_day",
+      "corrupted_value": "97>87",
+      "expected_issue_type": "cross_column_consistency",
+      "injection_id": "m1-0079",
+      "notes": "record_start_day was made larger than record_end_day.",
+      "original_value": "82<=87",
+      "repairable": false,
+      "row_id": "m1-row-01632",
+      "row_index": 1632,
+      "skip_reason": "manual_review_required",
+      "source_row_id": "29229"
+    },
+    {
+      "anomaly_type": "cross_column_consistency",
+      "column": "record_start_day,record_end_day",
+      "corrupted_value": "95>85",
+      "expected_issue_type": "cross_column_consistency",
+      "injection_id": "m1-0080",
+      "notes": "record_start_day was made larger than record_end_day.",
+      "original_value": "80<=85",
+      "repairable": false,
+      "row_id": "m1-row-02230",
+      "row_index": 2230,
+      "skip_reason": "manual_review_required",
+      "source_row_id": "39683"
+    },
+    {
+      "anomaly_type": "cross_column_consistency",
+      "column": "record_start_day,record_end_day",
+      "corrupted_value": "51>41",
+      "expected_issue_type": "cross_column_consistency",
+      "injection_id": "m1-0081",
+      "notes": "record_start_day was made larger than record_end_day.",
+      "original_value": "36<=41",
+      "repairable": false,
+      "row_id": "m1-row-03026",
+      "row_index": 3026,
+      "skip_reason": "manual_review_required",
+      "source_row_id": "52847"
+    },
+    {
+      "anomaly_type": "cross_column_consistency",
+      "column": "record_start_day,record_end_day",
+      "corrupted_value": "93>83",
+      "expected_issue_type": "cross_column_consistency",
+      "injection_id": "m1-0082",
+      "notes": "record_start_day was made larger than record_end_day.",
+      "original_value": "78<=83",
+      "repairable": false,
+      "row_id": "m1-row-01148",
+      "row_index": 1148,
+      "skip_reason": "manual_review_required",
+      "source_row_id": "20421"
+    },
+    {
+      "anomaly_type": "cross_column_consistency",
+      "column": "record_start_day,record_end_day",
+      "corrupted_value": "130>120",
+      "expected_issue_type": "cross_column_consistency",
+      "injection_id": "m1-0083",
+      "notes": "record_start_day was made larger than record_end_day.",
+      "original_value": "115<=120",
+      "repairable": false,
+      "row_id": "m1-row-00105",
+      "row_index": 105,
+      "skip_reason": "manual_review_required",
+      "source_row_id": "2390"
+    },
+    {
+      "anomaly_type": "cross_column_consistency",
+      "column": "record_start_day,record_end_day",
+      "corrupted_value": "60>50",
+      "expected_issue_type": "cross_column_consistency",
+      "injection_id": "m1-0084",
+      "notes": "record_start_day was made larger than record_end_day.",
+      "original_value": "45<=50",
+      "repairable": false,
+      "row_id": "m1-row-02555",
+      "row_index": 2555,
+      "skip_reason": "manual_review_required",
+      "source_row_id": "45357"
+    },
+    {
+      "anomaly_type": "cross_column_consistency",
+      "column": "record_start_day,record_end_day",
+      "corrupted_value": "72>62",
+      "expected_issue_type": "cross_column_consistency",
+      "injection_id": "m1-0085",
+      "notes": "record_start_day was made larger than record_end_day.",
+      "original_value": "57<=62",
+      "repairable": false,
+      "row_id": "m1-row-02207",
+      "row_index": 2207,
+      "skip_reason": "manual_review_required",
+      "source_row_id": "39229"
+    },
+    {
+      "anomaly_type": "cross_column_consistency",
+      "column": "record_start_day,record_end_day",
+      "corrupted_value": "42>32",
+      "expected_issue_type": "cross_column_consistency",
+      "injection_id": "m1-0086",
+      "notes": "record_start_day was made larger than record_end_day.",
+      "original_value": "27<=32",
+      "repairable": false,
+      "row_id": "m1-row-03377",
+      "row_index": 3377,
+      "skip_reason": "manual_review_required",
+      "source_row_id": "58568"
+    },
+    {
+      "anomaly_type": "cross_column_consistency",
+      "column": "record_start_day,record_end_day",
+      "corrupted_value": "82>72",
+      "expected_issue_type": "cross_column_consistency",
+      "injection_id": "m1-0087",
+      "notes": "record_start_day was made larger than record_end_day.",
+      "original_value": "67<=72",
+      "repairable": false,
+      "row_id": "m1-row-02457",
+      "row_index": 2457,
+      "skip_reason": "manual_review_required",
+      "source_row_id": "43510"
+    },
+    {
+      "anomaly_type": "cross_column_consistency",
+      "column": "record_start_day,record_end_day",
+      "corrupted_value": "123>113",
+      "expected_issue_type": "cross_column_consistency",
+      "injection_id": "m1-0088",
+      "notes": "record_start_day was made larger than record_end_day.",
+      "original_value": "108<=113",
+      "repairable": false,
+      "row_id": "m1-row-00458",
+      "row_index": 458,
+      "skip_reason": "manual_review_required",
+      "source_row_id": "8203"
+    },
+    {
+      "anomaly_type": "duplicate_record",
+      "column": "source_row_id",
+      "corrupted_value": "m1-dup-00000",
+      "expected_issue_type": "duplicate_record",
+      "injection_id": "m1-0089",
+      "notes": "A duplicate row was appended with the same source_row_id.",
+      "original_value": "m1-row-02005",
+      "repairable": false,
+      "row_id": "m1-dup-00000",
+      "row_index": 4228,
+      "skip_reason": "manual_review_required",
+      "source_row_id": "35737"
+    },
+    {
+      "anomaly_type": "duplicate_record",
+      "column": "source_row_id",
+      "corrupted_value": "m1-dup-00001",
+      "expected_issue_type": "duplicate_record",
+      "injection_id": "m1-0090",
+      "notes": "A duplicate row was appended with the same source_row_id.",
+      "original_value": "m1-row-01092",
+      "repairable": false,
+      "row_id": "m1-dup-00001",
+      "row_index": 4229,
+      "skip_reason": "manual_review_required",
+      "source_row_id": "19419"
+    },
+    {
+      "anomaly_type": "duplicate_record",
+      "column": "source_row_id",
+      "corrupted_value": "m1-dup-00002",
+      "expected_issue_type": "duplicate_record",
+      "injection_id": "m1-0091",
+      "notes": "A duplicate row was appended with the same source_row_id.",
+      "original_value": "m1-row-02971",
+      "repairable": false,
+      "row_id": "m1-dup-00002",
+      "row_index": 4230,
+      "skip_reason": "manual_review_required",
+      "source_row_id": "52050"
+    },
+    {
+      "anomaly_type": "duplicate_record",
+      "column": "source_row_id",
+      "corrupted_value": "m1-dup-00003",
+      "expected_issue_type": "duplicate_record",
+      "injection_id": "m1-0092",
+      "notes": "A duplicate row was appended with the same source_row_id.",
+      "original_value": "m1-row-03671",
+      "repairable": false,
+      "row_id": "m1-dup-00003",
+      "row_index": 4231,
+      "skip_reason": "manual_review_required",
+      "source_row_id": "63453"
+    },
+    {
+      "anomaly_type": "duplicate_record",
+      "column": "source_row_id",
+      "corrupted_value": "m1-dup-00004",
+      "expected_issue_type": "duplicate_record",
+      "injection_id": "m1-0093",
+      "notes": "A duplicate row was appended with the same source_row_id.",
+      "original_value": "m1-row-01845",
+      "repairable": false,
+      "row_id": "m1-dup-00004",
+      "row_index": 4232,
+      "skip_reason": "manual_review_required",
+      "source_row_id": "32826"
+    },
+    {
+      "anomaly_type": "duplicate_record",
+      "column": "source_row_id",
+      "corrupted_value": "m1-dup-00005",
+      "expected_issue_type": "duplicate_record",
+      "injection_id": "m1-0094",
+      "notes": "A duplicate row was appended with the same source_row_id.",
+      "original_value": "m1-row-02354",
+      "repairable": false,
+      "row_id": "m1-dup-00005",
+      "row_index": 4233,
+      "skip_reason": "manual_review_required",
+      "source_row_id": "41820"
+    },
+    {
+      "anomaly_type": "duplicate_record",
+      "column": "source_row_id",
+      "corrupted_value": "m1-dup-00006",
+      "expected_issue_type": "duplicate_record",
+      "injection_id": "m1-0095",
+      "notes": "A duplicate row was appended with the same source_row_id.",
+      "original_value": "m1-row-01004",
+      "repairable": false,
+      "row_id": "m1-dup-00006",
+      "row_index": 4234,
+      "skip_reason": "manual_review_required",
+      "source_row_id": "17683"
+    },
+    {
+      "anomaly_type": "duplicate_record",
+      "column": "source_row_id",
+      "corrupted_value": "m1-dup-00007",
+      "expected_issue_type": "duplicate_record",
+      "injection_id": "m1-0096",
+      "notes": "A duplicate row was appended with the same source_row_id.",
+      "original_value": "m1-row-03076",
+      "repairable": false,
+      "row_id": "m1-dup-00007",
+      "row_index": 4235,
+      "skip_reason": "manual_review_required",
+      "source_row_id": "53815"
+    },
+    {
+      "anomaly_type": "duplicate_record",
+      "column": "source_row_id",
+      "corrupted_value": "m1-dup-00008",
+      "expected_issue_type": "duplicate_record",
+      "injection_id": "m1-0097",
+      "notes": "A duplicate row was appended with the same source_row_id.",
+      "original_value": "m1-row-00058",
+      "repairable": false,
+      "row_id": "m1-dup-00008",
+      "row_index": 4236,
+      "skip_reason": "manual_review_required",
+      "source_row_id": "1116"
+    },
+    {
+      "anomaly_type": "duplicate_record",
+      "column": "source_row_id",
+      "corrupted_value": "m1-dup-00009",
+      "expected_issue_type": "duplicate_record",
+      "injection_id": "m1-0098",
+      "notes": "A duplicate row was appended with the same source_row_id.",
+      "original_value": "m1-row-02272",
+      "repairable": false,
+      "row_id": "m1-dup-00009",
+      "row_index": 4237,
+      "skip_reason": "manual_review_required",
+      "source_row_id": "40390"
+    },
+    {
+      "anomaly_type": "duplicate_record",
+      "column": "source_row_id",
+      "corrupted_value": "m1-dup-00010",
+      "expected_issue_type": "duplicate_record",
+      "injection_id": "m1-0099",
+      "notes": "A duplicate row was appended with the same source_row_id.",
+      "original_value": "m1-row-02138",
+      "repairable": false,
+      "row_id": "m1-dup-00010",
+      "row_index": 4238,
+      "skip_reason": "manual_review_required",
+      "source_row_id": "38074"
+    },
+    {
+      "anomaly_type": "duplicate_record",
+      "column": "source_row_id",
+      "corrupted_value": "m1-dup-00011",
+      "expected_issue_type": "duplicate_record",
+      "injection_id": "m1-0100",
+      "notes": "A duplicate row was appended with the same source_row_id.",
+      "original_value": "m1-row-03985",
+      "repairable": false,
+      "row_id": "m1-dup-00011",
+      "row_index": 4239,
+      "skip_reason": "manual_review_required",
+      "source_row_id": "68721"
+    }
+  ],
+  "summary": {
+    "changed_cell_rows": 194,
+    "non_ground_truth_changed_cell_rows": 122,
+    "repairable_truth_rows": 72,
+    "skipped_non_repairable_truth_rows": 28
+  }
+}
