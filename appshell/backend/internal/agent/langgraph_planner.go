@@ -25,7 +25,7 @@ type LangGraphPlanner struct {
 
 func NewLangGraphPlanner(fallback Planner, manager sidecarHealthManager, client cognitionCaller) *LangGraphPlanner {
 	if fallback == nil {
-		fallback = NewMockPlanner()
+		fallback = NewDeterministicPlanner()
 	}
 	return &LangGraphPlanner{
 		fallback: fallback,
@@ -108,6 +108,7 @@ func (p *LangGraphPlanner) BuildPlan(ctx context.Context, input PlanningInput) (
 	updated.ReasoningSummary = strings.TrimSpace(planResp.OneSentenceSummary)
 	updated.ExplanationBullets = append([]string{}, planResp.ShortBullets...)
 	updated.ApprovalNeeded = planResp.ApprovalNeeded
+	updated = enforceLangGraphApprovalContext(updated, input.ApprovalContext)
 
 	explainResp, err := p.client.Explain(ctx, buildLangGraphExplainRequest(input, candidate, updated, planResp))
 	if err != nil {
@@ -116,6 +117,7 @@ func (p *LangGraphPlanner) BuildPlan(ctx context.Context, input PlanningInput) (
 			"reason":     err.Error(),
 		})
 		updated.UserExplanation = buildLangGraphExplanation(planResp)
+		updated = enforceLangGraphApprovalContext(updated, input.ApprovalContext)
 		updated.Cognition = buildLangGraphDegradedState(health, updated)
 		return updated, nil
 	}
@@ -137,9 +139,20 @@ func (p *LangGraphPlanner) BuildPlan(ctx context.Context, input PlanningInput) (
 	if riskNote := strings.TrimSpace(explainResp.RiskNote); riskNote != "" {
 		updated.RiskNote = riskNote
 	}
+	updated = enforceLangGraphApprovalContext(updated, input.ApprovalContext)
 	updated.ReasonCodes = uniqueStrings(updated.ReasonCodes)
 	updated.Cognition = buildLangGraphEngagedState(health, updated)
 	return updated, nil
+}
+
+func enforceLangGraphApprovalContext(plan AgentPlan, approvalContext map[string]any) AgentPlan {
+	required, _ := boolFromAny(approvalContext["deterministic_required"])
+	if !required {
+		return plan
+	}
+	plan.ApprovalNeeded = true
+	plan.ReasonCodes = uniqueStrings(append(plan.ReasonCodes, "approval_context_enforced"))
+	return plan
 }
 
 func buildLangGraphPlanRequest(input PlanningInput, basePlan AgentPlan) LangGraphPlanRequest {
@@ -187,10 +200,18 @@ func buildLangGraphPlanRequest(input PlanningInput, basePlan AgentPlan) LangGrap
 		ScanSummary:       scanSummary,
 		CandidatePreviews: candidatePreviews,
 		SafetyContext: map[string]any{
-			"selected_candidate_id": basePlan.SelectedCandidateID,
-			"selected_source":       basePlan.SelectedSource,
-			"skipped_issue_types":   skippedTypes,
-			"selected_issue_count":  len(basePlan.SelectedIssueIDs),
+			"selected_candidate_id":     basePlan.SelectedCandidateID,
+			"selected_source":           basePlan.SelectedSource,
+			"skipped_issue_types":       skippedTypes,
+			"selected_issue_count":      len(basePlan.SelectedIssueIDs),
+			"auto_repair_issue_ids":     append([]string{}, basePlan.AutoRepairIssueIDs...),
+			"cautious_issue_ids":        append([]string{}, basePlan.CautiousIssueIDs...),
+			"manual_review_issue_ids":   append([]string{}, basePlan.ManualReviewIssueIDs...),
+			"blocked_issue_ids":         append([]string{}, basePlan.BlockedIssueIDs...),
+			"auto_repair_issue_count":   len(basePlan.AutoRepairIssueIDs),
+			"cautious_issue_count":      len(basePlan.CautiousIssueIDs),
+			"manual_review_issue_count": len(basePlan.ManualReviewIssueIDs),
+			"blocked_issue_count":       len(basePlan.BlockedIssueIDs),
 		},
 		ApprovalContext: cloneMap(input.ApprovalContext),
 		UserPreferences: cloneMap(input.PreferenceSnapshot),

@@ -4,6 +4,7 @@ import (
 	"context"
 	"os"
 	"path/filepath"
+	"reflect"
 	"strings"
 	"sync"
 	"testing"
@@ -68,6 +69,7 @@ func (p *spyPlanner) BuildPlan(_ context.Context, input PlanningInput) (AgentPla
 		PlanID:              "plan-spy",
 		Status:              "planned",
 		SelectedIssueIDs:    append([]string{}, input.SelectedIssueIDs...),
+		AutoRepairIssueIDs:  append([]string{}, input.SelectedIssueIDs...),
 		SkippedIssues:       cloneSkippedIssues(input.SkippedIssues),
 		Candidates:          []RepairCandidate{candidate},
 		SelectedCandidateID: candidate.CandidateID,
@@ -386,8 +388,8 @@ func (r *fakeAutoRuntimeBaseRunner) baselineScanResult() map[string]any {
 	issues := r.baselineIssues
 	if len(issues) == 0 {
 		issues = []map[string]any{
-			{"issue_id": "issue-1", "issue_type": "missing_values", "column": "age", "risk_level": "high", "issue_score": 0.7},
-			{"issue_id": "issue-2", "issue_type": "rare_category", "column": "city", "risk_level": "medium", "issue_score": 0.3},
+			{"issue_id": "issue-1", "issue_type": "missing_values", "column": "age", "risk_level": "medium", "issue_score": 0.7},
+			{"issue_id": "issue-2", "issue_type": "rare_category", "column": "city", "risk_level": "low", "issue_score": 0.3},
 		}
 	}
 	issueItems := make([]any, 0, len(issues))
@@ -637,8 +639,14 @@ func TestRuntimeRunnerBuildsPlanAndPersistsTrace(t *testing.T) {
 
 	agentBlock := resp.Result["agent"].(map[string]any)
 	plan := agentBlock["plan"].(AgentPlan)
-	if len(plan.SelectedIssueIDs) != 2 {
-		t.Fatalf("expected 2 selected issue ids, got %d", len(plan.SelectedIssueIDs))
+	if len(plan.SelectedIssueIDs) != 1 || plan.SelectedIssueIDs[0] != "i-1" {
+		t.Fatalf("expected only auto issue id i-1, got %#v", plan.SelectedIssueIDs)
+	}
+	if len(plan.CautiousIssueIDs) != 1 || plan.CautiousIssueIDs[0] != "i-2" {
+		t.Fatalf("expected numeric_outlier to be cautious, got %#v", plan.CautiousIssueIDs)
+	}
+	if len(plan.ManualReviewIssueIDs) != 1 || plan.ManualReviewIssueIDs[0] != "i-3" {
+		t.Fatalf("expected duplicate_record to be manual review, got %#v", plan.ManualReviewIssueIDs)
 	}
 	if len(plan.Candidates) != 3 {
 		t.Fatalf("expected 3 candidates, got %d", len(plan.Candidates))
@@ -722,11 +730,15 @@ func TestRuntimeRunnerBuildsDeterministicPlanningSnapshotBeforeCallingPlanner(t 
 	if input.SessionID == "" {
 		t.Fatalf("expected runtime to populate session id before planning")
 	}
-	if len(input.SelectedIssueIDs) != 2 {
-		t.Fatalf("expected 2 selected issue ids, got %d", len(input.SelectedIssueIDs))
+	if len(input.SelectedIssueIDs) != 1 || input.SelectedIssueIDs[0] != "i-1" {
+		t.Fatalf("expected only auto issue id i-1, got %#v", input.SelectedIssueIDs)
 	}
-	if len(input.SkippedIssues) != 1 || input.SkippedIssues[0].IssueType != "duplicate_record" {
-		t.Fatalf("expected duplicate_record to remain explain-only, got %#v", input.SkippedIssues)
+	if len(input.SkippedIssues) != 2 {
+		t.Fatalf("expected numeric_outlier and duplicate_record to remain explain-only, got %#v", input.SkippedIssues)
+	}
+	skippedTypes := []string{input.SkippedIssues[0].IssueType, input.SkippedIssues[1].IssueType}
+	if !reflect.DeepEqual(skippedTypes, []string{"numeric_outlier", "duplicate_record"}) {
+		t.Fatalf("unexpected skipped issue types: %#v", input.SkippedIssues)
 	}
 	if intFromAny(input.ScanResult["issue_count"]) != 3 {
 		t.Fatalf("expected scan result to be provided to planner, got %#v", input.ScanResult)
@@ -752,6 +764,18 @@ func TestRuntimeRunnerBuildsDeterministicPlanningSnapshotBeforeCallingPlanner(t 
 	if input.ModelDir != "outputs/models" {
 		t.Fatalf("expected model dir in planner input, got %s", input.ModelDir)
 	}
+	base.mu.Lock()
+	for _, call := range base.calls {
+		planOnly, _ := call.Payload["plan_only"].(bool)
+		if !planOnly || (call.Action != string(engine.ActionRepairBatch) && call.Action != string(engine.ActionRepairWithGower)) {
+			continue
+		}
+		if !reflect.DeepEqual(stringsFromAny(call.Payload["issue_ids"]), []string{"i-1"}) {
+			base.mu.Unlock()
+			t.Fatalf("preview payload should include only auto issue i-1, got action=%s payload=%#v", call.Action, call.Payload)
+		}
+	}
+	base.mu.Unlock()
 }
 
 func TestRuntimeRunnerRejectsExecutionWhenValidationFails(t *testing.T) {
@@ -912,11 +936,16 @@ func TestRuntimeRunnerAutoSessionAccepted(t *testing.T) {
 	if asString(safety["final_verdict"]) != "accepted" {
 		t.Fatalf("expected accepted verdict, got %v", safety["final_verdict"])
 	}
+	agentBlock := mapFromAny(resp.Result["agent"])
+	validation := mapFromAny(agentBlock["validation"])
+	postValidation := mapFromAny(validation["post_execute"])
+	if asString(postValidation["verdict"]) != validationGateAccept {
+		t.Fatalf("expected validation gate accept verdict, got %#v", postValidation)
+	}
 	if base.callCount(string(engine.ActionRollbackRepairBatch)) != 0 {
 		t.Fatalf("rollback should not be called on accepted path")
 	}
 
-	agentBlock := mapFromAny(resp.Result["agent"])
 	sessionID := asString(agentBlock["session_id"])
 	trace, err := store.ListTrace(t.Context(), sessionID)
 	if err != nil {
@@ -924,6 +953,7 @@ func TestRuntimeRunnerAutoSessionAccepted(t *testing.T) {
 	}
 	hasPreview := false
 	hasPost := false
+	hasPostGateVerdict := false
 	for _, event := range trace {
 		if event.TraceType != TraceValidation {
 			continue
@@ -933,10 +963,13 @@ func TestRuntimeRunnerAutoSessionAccepted(t *testing.T) {
 		}
 		if asString(event.Payload["phase"]) == "post_execute" {
 			hasPost = true
+			if asString(event.Payload["verdict"]) == validationGateAccept {
+				hasPostGateVerdict = true
+			}
 		}
 	}
-	if !hasPreview || !hasPost {
-		t.Fatalf("expected preview and post_execute validation trace events")
+	if !hasPreview || !hasPost || !hasPostGateVerdict {
+		t.Fatalf("expected preview and post_execute validation trace events with A4 verdict")
 	}
 }
 

@@ -23,7 +23,7 @@ class OpenAICompatibleConfig:
 
     @property
     def enabled(self) -> bool:
-        return bool(self.base_url and self.model)
+        return bool(self.base_url and self.api_key and self.model)
 
     @property
     def chat_url(self) -> str:

@@ -1,6 +1,6 @@
 ﻿# MEMO
 
-Last updated: 2026-05-04 11:20:27 +08:00
+Last updated: 2026-05-05 08:36:10 +08:00
 
 ## 椤圭洰鎬荤洰鏍?
 - 灏嗏€滄贩鍚堟暟鎹被鍨嬪紓甯告娴嬩笌淇鈥濋」鐩粠绠楁硶鍘熷瀷鎺ㄨ繘涓哄彲浜や粯銆佸彲婕旂ず銆佸彲娴嬭瘯鐨勬闈㈠簲鐢ㄣ€?- 浠?`appshell/` 浣滀负浜у搧鍖栦富璺緞锛屽舰鎴?`Python Engine + Go Backend + Wails Frontend` 鐨勭ǔ瀹氭灦鏋勩€?- 淇濈暀 `app.py` 浣滀负鏃х増 Streamlit 婕旂ず鍏ュ彛锛岀敤浜庣畻娉曢獙璇併€佺粨鏋滃鐓у拰绛旇京灞曠ず銆?- 閫愭琛ラ綈鐪熷疄鐢ㄦ埛闂幆锛氬鍏?CSV -> 璁粌/鎵弿 -> 闂绛涢€?-> 鎵归噺淇 -> 鍥炴粴 -> 鍘嗗彶鏌ョ湅銆?- 鍦ㄤ繚鐣欑幇鏈夌畻娉曡祫浜т笌宸ョ▼楠ㄦ灦鐨勫墠鎻愪笅锛岄€愭鍗囩骇涓衡€滃 agent 鍐崇瓥灞?+ 纭畾鎬у伐鍏峰眰鈥濈殑鏅鸿兘鍖栦骇鍝併€?- 鏈€缁堢洰鏍囨槸璁╃敤鎴峰敖閲忓彧闇€閫夋嫨鏂囦欢锛屽嵆鍙嚜鍔ㄨ幏寰楁壂鎻忋€佷慨澶嶃€侀獙璇併€佸洖婊氫繚鎶ゅ拰鍥捐〃鍖栬В閲婄粨鏋溿€?
@@ -854,3 +854,269 @@ Last updated: 2026-05-04 11:20:27 +08:00
   - 当前已有未跟踪项 `out/figma-verify/` 与 `scripts/langgraph.local.ps1` 未处理，保持原样。
 - 我们目前已完成的步骤：已完成 M0 项目基线确认、M1 可复现实验数据构造、M2 检测效果评估、M3 修复效果评估、M4 核心行为回归测试、M5 答辩演示流程收口，以及 M6 论文支撑材料整理。
 - 我们当前正在努力解决的问题：把项目收束为可证明、可复现、可测试、可演示、可写论文的毕业设计交付状态；当前路线图 M0-M6 已全部形成对应产物，后续重点转为人工审查 diff、补论文格式和按学校要求整理终稿。
+
+## Update 2026-05-04 15:49:43
+
+- 改动日期：2026-05-04 15:49:43 +08:00
+- 改动内容简述：记录 `AUTO_AGENT_ROADMAP.md` 中 A0“分支与冻结点确认”的验收结果；本次只更新项目备忘录，不修改业务代码、不修改 `GRADUATION_PROJECT_ROADMAP.md`，也不修改 M0-M6 已冻结产物。
+- 最终目标：确认后续 Auto Agent 增强工作已经从毕业设计冻结主线中隔离出来，所有实验性 agent 工作均在 `feat/auto-agent-planner` 分支上继续推进。
+- 当前采用的方法：
+  - 按项目约定先阅读 `MEMO.md`。
+  - 检查当前分支、upstream、HEAD、`origin/main` 冻结点以及与 `origin/main` 的差异文件。
+  - 仅记录 A0 验收事实，不执行 A1 或后续 agent 功能开发。
+- 相关模块/文件：
+  - `AUTO_AGENT_ROADMAP.md`
+  - `MEMO.md`
+- 已完成的步骤 / 已解决的问题 / 新增功能：
+  - 确认当前分支为 `feat/auto-agent-planner`，并跟踪 `origin/feat/auto-agent-planner`。
+  - 确认当前 HEAD 为 `fd7aae13feb6ae1611828691bb1866dbbdcc25a5`。
+  - 确认 `origin/main` 冻结点为 `0f8a5877dde8651a46121f5c118dbb7c9c655137`。
+  - 确认 `AUTO_AGENT_ROADMAP.md` 已存在。
+  - 确认当前分支相对 `origin/main` 的差异仅为新增 `AUTO_AGENT_ROADMAP.md`。
+  - 确认工作区在验收前为干净状态。
+- 验收结果：
+  - A0 验收通过。
+  - `main` 分支未被修改。
+  - M0-M6 产物未被修改。
+  - 本次只记录验收结果，没有执行任何 agent 功能开发。
+- 当前问题 / 待处理事项：
+  - 下一步如继续推进，应只执行 A1“Auto Agent 设计文档”，不跳到 A2 及之后阶段。
+  - 后续每次 agent 分支改动仍需先阅读 `MEMO.md` 与 `AUTO_AGENT_ROADMAP.md`，并在完成后更新 `MEMO.md`。
+
+## Update 2026-05-04 15:54:01
+
+- 改动日期：2026-05-04 15:54:01 +08:00
+- 改动内容简述：执行 `AUTO_AGENT_ROADMAP.md` 中 A1“Auto Agent 设计文档”，新增根目录 `AUTO_AGENT_DESIGN.md`，冻结 Auto Agent 的目标、边界、输入输出、安全策略、执行流程和后续阶段约束；本次不写业务代码、不修改核心逻辑、不修改 M0-M6 已冻结产物。
+- 最终目标：在正式实现 A2 deterministic planner 之前，先把 Auto Agent 作为旁路编排层的设计边界说明清楚，确保后续实现复用现有确定性工具，并保持 validation-first / rollback-first 的安全边界。
+- 当前采用的方法：
+  - 按项目约定先阅读 `MEMO.md`，并参考 `AUTO_AGENT_ROADMAP.md`、`MULTI_AGENT_BLUEPRINT.md` 和现有 Go `internal/agent` / Python engine 能力。
+  - 只新增设计文档，不修改 Go、Python、前端、实验数据、评估报告、测试文件或答辩材料。
+  - 在文档中把 `APPSHELL_LANGGRAPH_*` sidecar 配置与 `APPSHELL_LANGGRAPH_LLM_*` provider 配置分开说明，并避免写入真实 API key。
+- 相关模块/文件：
+  - `AUTO_AGENT_DESIGN.md`
+  - `MEMO.md`
+- 已完成的步骤 / 已解决的问题 / 新增功能：
+  - 新增 `AUTO_AGENT_DESIGN.md`，明确文档定位、目标体验、非目标和与 M0-M6 冻结主线的关系。
+  - 记录当前系统基线，包括 `feat/auto-agent-planner` 分支、现有 Python engine actions、Go agent actions、planning boundary、agent session / trace 类型和 LangGraph sidecar 现实状态。
+  - 明确分层架构：User Experience Layer、Go Agent Runtime Layer、Planner / Cognition Layer、Deterministic Tool Layer、Algorithm & Artifact Layer。
+  - 明确 agent 能做什么、不能做什么，特别强调 agent 不直接修改 CSV，不能绕过 `repair_batch` / `repair_with_gower` / `rollback_repair_batch` 等受控工具。
+  - 补充 repair plan 的概念映射示例，并说明该示例不要求修改现有 wire shape。
+  - 明确推荐运行流程：Scan -> Profile -> Candidate Preview -> Plan -> Approval / Execute -> Rescan -> Validate -> Rollback / Explain。
+  - 明确外部 API 与 fallback 策略，要求 sidecar 或 LLM 失败、超时、非法 JSON、schema 不合规、高风险越权等情况回退 deterministic planner。
+  - 明确验证与回滚策略，默认低风险自动、中风险谨慎、高风险人工复核，每次写出修复结果必须尽量保留 rollback manifest。
+- 验证结果：
+  - `AUTO_AGENT_DESIGN.md` 已创建并可读取。
+  - 文档包含 A1 要求的关键主题：目标、M0-M6 关系、能做/不能做、工具调用、repair plan、外部 API、fallback、验证与回滚、agent 不直接修改 CSV。
+  - 本次未运行单元测试，因为 A1 是纯文档阶段，没有业务代码变更。
+- 当前问题 / 待处理事项：
+  - 下一步如继续推进，应只执行 A2“Deterministic Planner 原型”，不要同时执行 A3 及之后任务。
+  - A2 实现时应优先复用现有 Go `PlanningInput`、`AgentPlan`、`RepairCandidate` 和 `ToolRegistry` 边界，不应修改 Python engine action 协议。
+
+## Update 2026-05-04 16:26:55
+
+- 改动日期：2026-05-04 16:26:55 +08:00
+- 改动内容简述：执行 `AUTO_AGENT_ROADMAP.md` 中 A2“Deterministic Planner 原型”，在 Go agent 旁路规划层新增保守 deterministic issue 分桶和 additive plan 字段；本次不修改 Python engine action 协议，不修改 `repair_batch` / `repair_with_gower` / `rollback_repair_batch` 语义，不修改 M0-M6 已冻结产物。
+- 最终目标：让 Auto Agent 在不依赖外部 API 的情况下，先具备可解释、可测试、可回退的规则型规划基线，并把自动执行范围收窄到低风险 issue。
+- 当前采用的方法：
+  - 在 `feat/auto-agent-planner` 分支上继续推进 A2，保留 A1 文档和既有 memo 记录。
+  - 将 `missing_values`、`rare_category` 归入 auto repair；将 `numeric_outlier` 归入 cautious；将 `duplicate_record`、`cross_column_consistency` 归入 manual review；将 unknown 或缺失 issue id 归入 blocked / skipped explanation。
+  - 让 rule / Gower preview 和执行 payload 只接收 auto issue ids，cautious/manual/blocked 只进入 plan 字段、skipped issues、reason codes、risk note 和 explanation bullets。
+- 相关模块/文件：
+  - `appshell/backend/internal/agent/types.go`
+  - `appshell/backend/internal/agent/helpers.go`
+  - `appshell/backend/internal/agent/planning_support.go`
+  - `appshell/backend/internal/agent/mock_planner.go`
+  - `appshell/backend/internal/agent/runtime_runner.go`
+  - `appshell/backend/internal/agent/langgraph_factory.go`
+  - `appshell/backend/internal/agent/langgraph_planner.go`
+  - `appshell/backend/internal/agent/planning_support_test.go`
+  - `appshell/backend/internal/agent/mock_planner_test.go`
+  - `appshell/backend/internal/agent/runtime_runner_test.go`
+  - `MEMO.md`
+- 已完成的步骤 / 已解决的问题 / 新增功能：
+  - `AgentPlan` 新增 `auto_repair_issue_ids`、`cautious_issue_ids`、`manual_review_issue_ids`、`blocked_issue_ids` 四个向后兼容 JSON 字段，并更新 `clonePlan`，避免 session snapshot / store roundtrip 丢失字段。
+  - 新增 `DeterministicPlanner` 和 `NewDeterministicPlanner()`，保留 `MockPlanner` / `NewMockPlanner()` 作为兼容 alias。
+  - `NewRuntimeRunner(..., nil)`、LangGraph planner factory 和 LangGraph fallback 默认使用 deterministic planner。
+  - `selectRepairableIssues` 改为基于 A2 分桶规则，只把 auto issue ids 传给 rule / Gower preview。
+  - deterministic planner 继续复用 rule / Gower / hybrid candidate 比较逻辑，但 `SelectedIssueIDs` 和 `ProposedPayload.issue_ids` 只包含 auto issue ids。
+  - planner 输出补充 `ReasonCodes`、`RiskNote`、`ExplanationBullets`，说明 numeric/manual/blocked 项保留复核，不因这些项存在而自动触发 approval gate。
+  - 更新 Go 单元测试，覆盖五类 issue、unknown、缺失 issue id、planner bucket 输出和 preview payload 只包含 auto ids。
+- 验证结果：
+  - `Push-Location appshell\backend; go test ./internal/agent ./internal/engine ./internal/task ./cmd/wails; Pop-Location` 首次执行失败，原因是当前 shell 命中 WindowsApps `python.exe` shim，测试子进程返回 `exit status 9009`；该失败与 A2 planner 逻辑无关。
+  - `$env:PATH = (Resolve-Path '.\.venv-win\Scripts').Path + ';' + $env:PATH; Push-Location appshell\backend; go test ./internal/agent ./internal/engine ./internal/task ./cmd/wails; Pop-Location` 通过：`internal/agent`、`internal/engine`、`internal/task`、`cmd/wails` 均为 `ok`。
+  - `.\.venv-win\Scripts\python.exe -m pytest tests\python_engine -q` 通过：`41 passed, 12 warnings in 45.94s`。
+- 当前问题 / 待处理事项：
+  - A2 只完成 deterministic planner 原型；下一步如继续推进，应只执行 A3，不跳到 A4/A5。
+  - Python tests 仍保留既有 pandas `is_categorical_dtype` deprecation warning；本次按 A2 范围不修改 Python 核心修复逻辑。
+  - 原始 Go 测试命令对当前 Windows PATH 敏感，继续建议在本机验证 Go 包前临时把 `.venv-win\Scripts` 放在 PATH 最前。
+  - 本次未提交、未推送；后续如需要提交，应先复查 diff，确认仍不包含 M0-M6 冻结产物变更。
+
+## Update 2026-05-04 16:39:59
+
+- 改动日期：2026-05-04 16:39:59 +08:00
+- 改动内容简述：执行 `AUTO_AGENT_ROADMAP.md` 中 A3“LLM Planner Adapter”，将现有 LangGraph sidecar 的 OpenAI-compatible LLM 能力收束为可选、可 mock、可 fallback 的 planner adapter；本次不修改 Python engine action 协议，不修改 `repair_batch` / `repair_with_gower` / `rollback_repair_batch` 语义，不修改 M0-M6 已冻结产物。
+- 最终目标：让外部 LLM 只作为规划和解释增强存在，所有真实候选、执行 payload、审批、验证和回滚边界仍由 deterministic Go agent runtime 控制。
+- 当前采用的方法：
+  - 复用现有 `LangGraphPlanner -> deterministic fallback planner -> sidecar Plan/Explain` 架构，不新增 Go 直连 OpenAI provider。
+  - 收紧 sidecar LLM 启用条件，要求 `APPSHELL_LANGGRAPH_LLM_BASE_URL`、`APPSHELL_LANGGRAPH_LLM_API_KEY`、`APPSHELL_LANGGRAPH_LLM_MODEL` 均存在才进入 `planner_mode=llm`。
+  - 对 LLM plan / explain 输出增加严格校验，非法 JSON、缺字段、候选 ID 不存在、请求失败或超时均 fallback，并记录结构化 fallback reason code。
+  - 在 Go adapter 侧再次强制 approval context，避免 LLM 将 high-risk / time-like / protected column 的审批要求降级。
+- 相关模块/文件：
+  - `appshell/core/langgraph_sidecar/llm_client.py`
+  - `appshell/core/langgraph_sidecar/schemas.py`
+  - `appshell/core/langgraph_sidecar/graph.py`
+  - `appshell/backend/internal/agent/langgraph_client.go`
+  - `appshell/backend/internal/agent/langgraph_planner.go`
+  - `appshell/backend/internal/agent/langgraph_client_test.go`
+  - `appshell/backend/internal/agent/langgraph_planner_test.go`
+  - `tests/langgraph_sidecar/test_graph.py`
+  - `tests/langgraph_sidecar/test_llm_client.py`
+  - `tests/langgraph_sidecar/test_schemas.py`
+  - `tests/langgraph_sidecar/test_server.py`
+  - `MEMO.md`
+- 已完成的步骤 / 已解决的问题 / 新增功能：
+  - `OpenAICompatibleConfig.enabled` 现在要求 base URL、API key、model 三者齐备；health payload 继续只暴露 planner mode、LLM mode 和 model，不暴露 key。
+  - 新增严格 LLM plan/explain normalization：plan 必须包含 `strategy_label` 和有效 `selected_candidate_id`；explain 必须包含 `summary` 或 `final_message`。
+  - sidecar fallback 会保留现有 deterministic graph 输出，并在 `reason_codes` 中加入 `llm_invalid_json`、`llm_non_200`、`llm_timeout`、`llm_schema_invalid` 等原因。
+  - 当 `approval_context.deterministic_required=true` 时，sidecar 与 Go overlay 均会强制 `approval_needed=true`，并加入 `approval_context_enforced`。
+  - Go `LangGraphClient.Plan` 增加 `selected_candidate_id` 必填校验，缺失时触发 Go deterministic fallback。
+  - `buildLangGraphPlanRequest` 的 safety context 增加 A2 分桶摘要：auto/cautious/manual/blocked issue ids 与数量，供 LLM 解释使用但不扩大执行 payload。
+  - 更新 Go 和 Python sidecar 测试，覆盖合法 mock LLM、缺 key fallback、非法 JSON fallback、invalid candidate fallback、approval enforcement 和 Go-side request/overlay 保护。
+- 验证结果：
+  - `.\.venv-win\Scripts\python.exe -m pytest tests\langgraph_sidecar -q` 通过：`20 passed in 3.06s`。
+  - `$env:PATH = (Resolve-Path '.\.venv-win\Scripts').Path + ';' + $env:PATH; Push-Location appshell\backend; go test ./internal/agent ./internal/engine ./internal/task ./cmd/wails; Pop-Location` 通过：`internal/agent`、`internal/engine`、`internal/task`、`cmd/wails` 均为 `ok`。
+  - `.\.venv-win\Scripts\python.exe -m pytest tests\python_engine -q` 通过：`41 passed, 12 warnings in 51.96s`。
+  - `git diff --check` 通过，仅出现 Windows 换行提示，无 whitespace error。
+- 当前问题 / 待处理事项：
+  - A3 只完成 LLM planner adapter；下一步如继续推进，应只执行 A4“Validation Gate”，不要跳到 A5/A6。
+  - A3 测试不真实调用外部 API，所有 LLM 行为通过 mock 或本地 fake server 覆盖；真实 provider 联调应留给单独本地验证，并且不能提交 API key。
+  - Python engine 回归仍保留既有 pandas `is_categorical_dtype` deprecation warning；本次按 A3 范围不修改 Python 核心修复逻辑。
+  - 当前 A1/A2/A3 均未提交、未推送；后续如需要提交，应先复查 diff，确认仍不包含 M0-M6 冻结产物变更。
+
+## Update 2026-05-04 16:54:37
+
+- 改动日期：2026-05-04 16:54:37 +08:00
+- 改动内容简述：执行 `AUTO_AGENT_ROADMAP.md` 中 A4“Validation Gate”，在 Go agent 自动闭环层新增修复后安全判定 gate；本次不修改 Python engine action 协议，不修改 `repair_batch` / `repair_with_gower` / `rollback_repair_batch` 语义，不修改 M0-M6 已冻结产物。
+- 最终目标：让 Auto Agent 在自动写出修复结果后，基于修复前 scan、修复执行结果、复扫结果、repair plan 和 rollback manifest 做统一判定，避免“修了但变差”、误修过多、越权修复或缺少回滚依据。
+- 当前采用的方法：
+  - 在 `feat/auto-agent-planner` 分支上继续推进 A4，保留 A1/A2/A3 既有未提交改动。
+  - 将 validation gate 放在 Go `internal/agent` 自动闭环层，复用现有 post-scan、rollback-first 和 agent trace 机制，不进入 Python engine。
+  - 保持 `warn` 为可接受但需解释的结果；`reject` / `rollback_recommended` 继续走现有自动回滚路径。
+- 相关模块/文件：
+  - `appshell/backend/internal/agent/validation_gate.go`
+  - `appshell/backend/internal/agent/validation_gate_test.go`
+  - `appshell/backend/internal/agent/approval_runtime.go`
+  - `appshell/backend/internal/agent/auto_helpers.go`
+  - `appshell/backend/internal/agent/runtime_runner_test.go`
+  - `MEMO.md`
+- 已完成的步骤 / 已解决的问题 / 新增功能：
+  - 新增内部 validation gate，输出 `accept`、`warn`、`reject`、`rollback_recommended` 四类 verdict。
+  - `validation.post_execute` 追加 `verdict`、`resolved_issue_count`、`total_cells_modified`、`risk_notes`、`rollback_recommended`、`explanation` 等 A4 字段，同时保留 `status`、`accepted`、`message` 兼容字段。
+  - gate 现在会检测 issue count 上升、无改善、修改单元格异常多、manual review issue 被自动修复、baseline high-risk issue 被自动修复、rollback manifest 缺失和 repair error。
+  - 修改单元格异常阈值固定为 `total_cells_modified > max(50, before_issue_count * 20)`。
+  - `approval_runtime.go` 的 post-execute 验证改为调用 validation gate；`warn` 不触发回滚，`reject` / `rollback_recommended` 复用现有 `finishAutoRollback`。
+  - output CSV 缺失、post scan 失败、rollback metadata 缺失等早期失败路径现在也会产出同一套 A4 validation 字段。
+  - 新增 A4 单元测试覆盖 accept、warn、issue count increase reject、manual review auto repair reject、high-risk auto repair reject、missing rollback manifest 和 repair error。
+  - 更新 runtime accepted 测试，确认 auto session 成功路径仍可完成，且 post validation trace 中包含 A4 verdict。
+- 验证结果：
+  - `$env:PATH = (Resolve-Path '.\.venv-win\Scripts').Path + ';' + $env:PATH; Push-Location appshell\backend; go test ./internal/agent ./internal/engine ./internal/task ./cmd/wails; Pop-Location` 通过：`internal/agent`、`internal/engine`、`internal/task`、`cmd/wails` 均为 `ok`。
+  - `.\.venv-win\Scripts\python.exe -m pytest tests\langgraph_sidecar -q` 通过：`20 passed in 2.50s`。
+  - `.\.venv-win\Scripts\python.exe -m pytest tests\python_engine -q` 通过：`41 passed, 12 warnings in 51.72s`。
+  - `git diff --check` 通过，仅出现 Windows 换行提示，无 whitespace error。
+- 当前问题 / 待处理事项：
+  - A4 只完成 validation gate；下一步如继续推进，应只执行 A5，不跳到 A6。
+  - Python engine 回归仍保留既有 pandas `is_categorical_dtype` deprecation warning；本次按 A4 范围不修改 Python 核心修复逻辑。
+  - 当前 A1/A2/A3/A4 均未提交、未推送；后续如需要提交，应先复查 diff，确认仍不包含 M0-M6 冻结产物变更。
+
+## Update 2026-05-04 20:46:09
+
+- 改动日期：2026-05-04 20:46:09 +08:00
+- 改动内容简述：执行 `AUTO_AGENT_ROADMAP.md` 中 A5“Auto Agent CLI Demo”，新增最小 Python CLI 演示入口，复用现有 Go agent runtime 跑通 scan -> plan -> execute -> rescan -> validation gate -> report / trace / rollback artifact 输出；本次不修改 Python engine action 协议，不修改 `action_catalog.py` stable action 列表，不修改 M0-M6 已冻结产物。
+- 最终目标：让当前分支能通过一条命令证明 Auto Agent 闭环可演示、可审计、可回滚，并把所有演示产物写入独立 `outputs/auto_agent/...` 目录。
+- 当前采用的方法：
+  - Python CLI 只作为 wrapper 和 artifact 打包层，不重写 deterministic planner、LLM adapter、validation gate 或 repair/rollback 工具。
+  - CLI 内部调用现有 Go demo：`go run ./cmd/demo -action agent.session.auto ...`，并显式使用 `<output-dir>/auto_agent.sqlite` 作为独立 history / agent trace DB。
+  - CLI 将完整 response、repair plan、validation result、execution、safety、agent trace、stdout/stderr log 和 Markdown report 写入输出目录。
+- 相关模块/文件：
+  - `appshell/core/python_engine/auto_agent_cli.py`
+  - `tests/auto_agent_cli/test_auto_agent_cli.py`
+  - `MEMO.md`
+- 已完成的步骤 / 已解决的问题 / 新增功能：
+  - 新增 `auto_agent_cli.py`，支持 `--csv`、`--output-dir`、`--goal`、`--model-dir`、`--timeout-seconds`、`--go-bin`、`--backend-dir`。
+  - CLI 会自动把本地 `.venv-win\Scripts` 放到子进程 PATH 前面，避免 Go runner 命中 WindowsApps `python.exe` shim。
+  - CLI 会解析 Go demo stdout 中的 structured response，并写出 `response.json`、`repair_plan.json`、`validation_result.json`、`execution.json`、`safety.json`。
+  - CLI 会从独立 SQLite DB 的 `agent_trace` 表导出 `auto_agent_trace.json`。
+  - CLI 会生成中文 `report.md`，包含输入 CSV、修复输出 CSV、rollback manifest、自动/谨慎/人工/blocked issue 数量、validation verdict、risk notes、final verdict 和回滚提示。
+  - CLI 会保存 `run_stdout.log` / `run_stderr.log`；Go demo 非 0 退出时仍尽量解析 response 和写出可用产物，最终保留非 0 exit code。
+  - 新增 `tests/auto_agent_cli/test_auto_agent_cli.py`，覆盖 Go demo 命令构造、stdout response 解析、SQLite trace 导出、report 内容和非 0 退出错误产物。
+- 验证结果：
+  - `.\.venv-win\Scripts\python.exe -m pytest tests\auto_agent_cli -q` 通过：`4 passed in 0.34s`。
+  - `$env:PATH = (Resolve-Path '.\.venv-win\Scripts').Path + ';' + $env:PATH; Push-Location appshell\backend; go test ./internal/agent ./internal/engine ./internal/task ./cmd/wails; Pop-Location` 通过：`internal/agent`、`internal/engine`、`internal/task`、`cmd/wails` 均为 `ok`。
+  - `.\.venv-win\Scripts\python.exe -m pytest tests\langgraph_sidecar -q` 通过：`20 passed in 2.92s`。
+  - `.\.venv-win\Scripts\python.exe -m pytest tests\python_engine -q` 通过：`41 passed, 12 warnings in 51.21s`。
+  - A5 smoke 命令通过：`.\.venv-win\Scripts\python.exe appshell\core\python_engine\auto_agent_cli.py --csv data\experiments\m1_stroke\corrupted.csv --output-dir outputs\auto_agent\m1_stroke --timeout-seconds 180`，CLI exit code 为 `0`。
+  - smoke 输出目录已生成 `response.json`、`repair_plan.json`、`validation_result.json`、`execution.json`、`safety.json`、`auto_agent_trace.json`、`report.md`、`run_stdout.log`、`run_stderr.log`、`auto_agent.sqlite`、修复后 CSV 和 rollback manifest；该目录位于 ignored `outputs/` 下，不修改 M1-M3 数据或 M0-M6 报告。
+- 当前问题 / 待处理事项：
+  - A5 只完成 CLI demo；下一步如继续推进，应只执行 A6“可选 Wails / Go 编排接入”。
+  - Python engine 回归仍保留既有 pandas `is_categorical_dtype` deprecation warning；本次按 A5 范围不修改 Python 核心修复逻辑。
+  - 当前 A1/A2/A3/A4/A5 均未提交、未推送；后续如需要提交，应先复查 diff，确认仍不包含 M0-M6 冻结产物变更。
+
+## Update 2026-05-04 22:01:50
+
+- 改动日期：2026-05-04 22:01:50 +08:00
+- 改动内容简述：执行 `AUTO_AGENT_ROADMAP.md` 中 A6“Wails / Go 编排接入”，将 A1-A5 Auto Agent 能力补齐到现有 Wails/Go 与前端 Smart Autofix 展示链路；本次不新增 Python engine action，不修改 `repair_batch` / `repair_with_gower` / `rollback_repair_batch` 协议，不修改 M0-M6 已冻结产物。
+- 最终目标：让 Wails 前端可以通过 `agent.session.auto` 启动 Auto Agent 闭环，并在任务结束后查看 plan 分桶、风险解释、validation gate 结果、rollback 信息、presentation 和 agent trace。
+- 当前采用的方法：
+  - 复用既有 Wails methods：`RunAgentAutofixSession`、`ApproveAgentSession`、`GetAgentSession`、`ListAgentTrace`。
+  - 不重写 planner / validation gate / CLI；只补齐前端消费字段、preview mock 字段和 Wails 端测试断言。
+  - 失败或 binding 缺失时继续保留高级工作台入口，避免破坏原手动 scan/repair 流程。
+- 相关模块/文件：
+  - `appshell/frontend/src/main.js`
+  - `appshell/backend/cmd/wails/app_test.go`
+  - `MEMO.md`
+- 已完成的步骤 / 已解决的问题 / 新增功能：
+  - 前端 Smart Autofix 结果页现在会显示 A2 planner 分桶：自动修复、谨慎复核、人工复核、blocked issue 数量。
+  - 前端结果摘要、可信清单和执行理由中补充 A4 `validation.post_execute.verdict`、`total_cells_modified`、`risk_notes` 和 validation explanation。
+  - 前端会优先从真实 task response 读取 agent plan / validation / safety，并在 `GetAgentSession` / `ListAgentTrace` hydrate 后使用 session snapshot 与 trace 继续补充展示。
+  - preview/mock Auto Agent 返回补齐 A2 分桶字段和 A4 validation gate 字段，确保没有 Wails binding 的浏览器预览仍能演示 A6 UI。
+  - `cmd/wails` 测试新增断言：`RunAgentAutofixSession` 结果包含 A2 plan bucket、A4 post validation verdict、session presentation，并且 `ListAgentTrace` 能读到 post_execute validation trace。
+- 验证结果：
+  - `& 'C:\Users\NEMO\.cache\codex-runtimes\codex-primary-runtime\dependencies\node\bin\node.exe' --check appshell\frontend\src\main.js` 通过。
+  - `$env:PATH = (Resolve-Path '.\.venv-win\Scripts').Path + ';' + $env:PATH; Push-Location appshell\backend; go test ./internal/agent ./internal/engine ./internal/task ./cmd/wails; Pop-Location` 通过：四个 Go package 均为 `ok`。
+  - `.\.venv-win\Scripts\python.exe -m pytest tests\auto_agent_cli -q` 通过：`4 passed`。
+  - `.\.venv-win\Scripts\python.exe -m pytest tests\langgraph_sidecar -q` 通过：`20 passed`。
+  - `.\.venv-win\Scripts\python.exe -m pytest tests\python_engine -q` 通过：`41 passed, 12 warnings`。
+  - A5 smoke 命令继续通过：`.\.venv-win\Scripts\python.exe appshell\core\python_engine\auto_agent_cli.py --csv data\experiments\m1_stroke\corrupted.csv --output-dir outputs\auto_agent\m1_stroke --timeout-seconds 180`。
+  - smoke 输出目录确认存在 `response.json`、`repair_plan.json`、`validation_result.json`、`auto_agent_trace.json`、`report.md`；该目录位于 ignored `outputs/` 下。
+- 当前问题 / 待处理事项：
+  - A6 已完成 Wails / Go 编排接入与复验；下一步如继续推进，应先确认是否进入 A7 或收敛为提交/PR，而不是继续改动 M0-M6 冻结产物。
+  - 当前 A1/A2/A3/A4/A5/A6 均未提交、未推送；提交前仍需复查 diff，确认不包含 `GRADUATION_PROJECT_ROADMAP.md`、M0-M6 实验数据、评估报告、测试文件或答辩材料变更。
+  - 当前 Windows shell 中系统 `rg.exe` 与 `node.exe` 入口会返回 `Access is denied`；本次前端静态校验改用 Codex runtime bundled Node。
+  - Python engine 回归仍保留既有 pandas `is_categorical_dtype` deprecation warning；本次按 A6 范围不修改 Python 核心修复逻辑。
+
+## Update 2026-05-05 08:36:10
+
+- 改动日期：2026-05-05 08:36:10 +08:00
+- 改动内容简述：准备将 `feat/auto-agent-planner` 分支上的 A1-A6 Auto Agent 阶段成果同步到 GitHub；本次同步前复查变更范围，确认不包含 `GRADUATION_PROJECT_ROADMAP.md`、M0-M6 实验数据、评估报告、答辩材料或本地敏感配置。
+- 最终目标：把当前 Auto Agent 旁路增强成果形成一个可追踪的 Git commit，并推送到远端 `origin/feat/auto-agent-planner`，便于后续审查、备份和继续迭代。
+- 当前采用的方法：
+  - 先执行 `git fetch origin` 更新远端引用。
+  - 使用 `git status --short --branch`、`git diff --name-status`、未跟踪文件列表和冻结产物路径过滤检查当前工作区。
+  - 将 A1-A6 相关文档、Go agent runtime、LangGraph sidecar、A5 CLI、A6 Wails / 前端接入和对应测试作为一个整体提交。
+- 相关模块/文件：
+  - `AUTO_AGENT_DESIGN.md`
+  - `MEMO.md`
+  - `appshell/backend/internal/agent/*`
+  - `appshell/backend/cmd/wails/app_test.go`
+  - `appshell/core/langgraph_sidecar/*`
+  - `appshell/core/python_engine/auto_agent_cli.py`
+  - `appshell/frontend/src/main.js`
+  - `tests/langgraph_sidecar/*`
+  - `tests/auto_agent_cli/test_auto_agent_cli.py`
+- 已完成的步骤 / 已解决的问题 / 新增功能：
+  - 已确认当前分支为 `feat/auto-agent-planner`，远端为 `origin`。
+  - 已确认本次同步范围是 A1-A6 Auto Agent 成果，未看到 M0-M6 冻结产物进入 diff。
+  - 已确认 GitHub CLI `gh` 当前未安装，因此本次只做 commit / push 同步；draft PR 创建留待安装 `gh` 或使用 GitHub 网页后执行。
+- 当前问题 / 待处理事项：
+  - 本次同步完成后，需要在 GitHub 远端确认分支提交是否正常显示。
+  - 如需要 Pull Request，需要后续安装并登录 `gh`，或手动在 GitHub 页面从 `feat/auto-agent-planner` 发起 PR。

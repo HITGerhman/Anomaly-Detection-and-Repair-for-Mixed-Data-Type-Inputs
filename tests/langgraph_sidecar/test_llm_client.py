@@ -28,6 +28,12 @@ def test_llm_health_payload_reports_fallback_without_configuration():
     assert payload["llm_mode"] == "unavailable"
 
 
+def test_llm_health_payload_requires_api_key():
+    payload = llm_health_payload(OpenAICompatibleConfig(base_url="http://127.0.0.1:9999/v1", api_key="", model="gpt-test", timeout_ms=1000))
+    assert payload["planner_mode"] == "fallback"
+    assert payload["llm_mode"] == "unavailable"
+
+
 def test_invoke_json_completion_parses_openai_compatible_response():
     class Handler(BaseHTTPRequestHandler):
         def log_message(self, format, *args):  # noqa: A003

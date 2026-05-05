@@ -94,6 +94,24 @@ def normalize_plan_response(payload: Any) -> dict[str, Any]:
     return response
 
 
+def normalize_llm_plan_response(payload: Any, *, valid_candidate_ids: list[str], approval_required: bool = False) -> dict[str, Any]:
+    if not isinstance(payload, dict):
+        raise ValueError("llm plan output must be a JSON object")
+
+    strategy_label = _as_text(payload.get("strategy_label"))
+    if not strategy_label:
+        raise ValueError("llm plan output missing strategy_label")
+
+    selected_candidate_id = _as_text(payload.get("selected_candidate_id"))
+    if not selected_candidate_id:
+        raise ValueError("llm plan output missing selected_candidate_id")
+    if selected_candidate_id not in set(valid_candidate_ids):
+        raise ValueError("llm plan output selected unknown candidate")
+
+    response = normalize_plan_response(payload)
+    return enforce_approval_context(response, approval_required)
+
+
 def normalize_explain_request(payload: Any) -> dict[str, Any]:
     if not isinstance(payload, dict):
         raise ValueError("request body must be a JSON object")
@@ -144,6 +162,16 @@ def normalize_explain_response(payload: Any) -> dict[str, Any]:
     return response
 
 
+def normalize_llm_explain_response(payload: Any) -> dict[str, Any]:
+    if not isinstance(payload, dict):
+        raise ValueError("llm explain output must be a JSON object")
+    if not _as_text(payload.get("summary")) and not _as_text(payload.get("final_message")):
+        raise ValueError("llm explain output missing summary and final_message")
+
+    response = normalize_explain_response(payload)
+    return response
+
+
 def normalize_intent(payload: Any) -> dict[str, Any]:
     if not isinstance(payload, dict):
         return {"intent_label": "balanced_repair", "goal_summary": "", "preference_tags": []}
@@ -161,6 +189,19 @@ def _normalize_reason_codes(value: Any) -> list[str]:
         if text:
             out.append(text)
     return out
+
+
+def enforce_approval_context(response: dict[str, Any], approval_required: bool) -> dict[str, Any]:
+    normalized = dict(response)
+    if not approval_required:
+        return normalized
+
+    normalized["approval_needed"] = True
+    reason_codes = _normalize_reason_codes(normalized.get("reason_codes"))
+    if "approval_context_enforced" not in reason_codes:
+        reason_codes.append("approval_context_enforced")
+    normalized["reason_codes"] = reason_codes
+    return normalized
 
 
 def _normalize_bullets(value: Any) -> list[str]:

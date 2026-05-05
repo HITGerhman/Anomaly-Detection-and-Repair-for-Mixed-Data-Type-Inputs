@@ -176,6 +176,18 @@ func TestLangGraphClientRejectsPlanWithoutStrategyLabel(t *testing.T) {
 	}
 }
 
+func TestLangGraphClientRejectsPlanWithoutSelectedCandidateID(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		_, _ = w.Write([]byte(`{"strategy_label":"deterministic_rule"}`))
+	}))
+	defer server.Close()
+
+	client := NewLangGraphClient(server.URL, time.Second)
+	if _, err := client.Plan(context.Background(), LangGraphPlanRequest{}); err == nil {
+		t.Fatalf("expected missing selected candidate id error")
+	}
+}
+
 func TestLangGraphClientRoundTripsStructuredRequest(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path != "/v1/plan" {

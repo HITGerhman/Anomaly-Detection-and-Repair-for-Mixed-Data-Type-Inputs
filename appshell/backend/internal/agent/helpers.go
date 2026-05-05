@@ -52,6 +52,14 @@ func cloneValue(value any) any {
 func clonePlan(plan AgentPlan) AgentPlan {
 	selected := make([]string, len(plan.SelectedIssueIDs))
 	copy(selected, plan.SelectedIssueIDs)
+	autoRepair := make([]string, len(plan.AutoRepairIssueIDs))
+	copy(autoRepair, plan.AutoRepairIssueIDs)
+	cautious := make([]string, len(plan.CautiousIssueIDs))
+	copy(cautious, plan.CautiousIssueIDs)
+	manualReview := make([]string, len(plan.ManualReviewIssueIDs))
+	copy(manualReview, plan.ManualReviewIssueIDs)
+	blocked := make([]string, len(plan.BlockedIssueIDs))
+	copy(blocked, plan.BlockedIssueIDs)
 
 	skipped := make([]AgentSkippedIssue, len(plan.SkippedIssues))
 	for idx, item := range plan.SkippedIssues {
@@ -93,25 +101,29 @@ func clonePlan(plan AgentPlan) AgentPlan {
 	}
 
 	return AgentPlan{
-		PlanID:              plan.PlanID,
-		Status:              plan.Status,
-		SelectedIssueIDs:    selected,
-		SkippedIssues:       skipped,
-		Candidates:          candidates,
-		SelectedCandidateID: plan.SelectedCandidateID,
-		SelectedSource:      plan.SelectedSource,
-		IssueSourceMap:      cloneMap(plan.IssueSourceMap),
-		ProposedToolID:      plan.ProposedToolID,
-		ProposedPayload:     cloneMap(plan.ProposedPayload),
-		IntentLabel:         plan.IntentLabel,
-		StrategyLabel:       plan.StrategyLabel,
-		ReasonCodes:         append([]string{}, plan.ReasonCodes...),
-		RiskNote:            plan.RiskNote,
-		ExplanationBullets:  append([]string{}, plan.ExplanationBullets...),
-		ApprovalNeeded:      plan.ApprovalNeeded,
-		Cognition:           cloneCognitionState(plan.Cognition),
-		ReasoningSummary:    plan.ReasoningSummary,
-		UserExplanation:     plan.UserExplanation,
+		PlanID:               plan.PlanID,
+		Status:               plan.Status,
+		SelectedIssueIDs:     selected,
+		AutoRepairIssueIDs:   autoRepair,
+		CautiousIssueIDs:     cautious,
+		ManualReviewIssueIDs: manualReview,
+		BlockedIssueIDs:      blocked,
+		SkippedIssues:        skipped,
+		Candidates:           candidates,
+		SelectedCandidateID:  plan.SelectedCandidateID,
+		SelectedSource:       plan.SelectedSource,
+		IssueSourceMap:       cloneMap(plan.IssueSourceMap),
+		ProposedToolID:       plan.ProposedToolID,
+		ProposedPayload:      cloneMap(plan.ProposedPayload),
+		IntentLabel:          plan.IntentLabel,
+		StrategyLabel:        plan.StrategyLabel,
+		ReasonCodes:          append([]string{}, plan.ReasonCodes...),
+		RiskNote:             plan.RiskNote,
+		ExplanationBullets:   append([]string{}, plan.ExplanationBullets...),
+		ApprovalNeeded:       plan.ApprovalNeeded,
+		Cognition:            cloneCognitionState(plan.Cognition),
+		ReasoningSummary:     plan.ReasoningSummary,
+		UserExplanation:      plan.UserExplanation,
 	}
 }
 

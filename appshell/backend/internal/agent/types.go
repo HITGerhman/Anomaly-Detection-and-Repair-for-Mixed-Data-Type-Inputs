@@ -24,25 +24,29 @@ type RepairCandidate struct {
 }
 
 type AgentPlan struct {
-	PlanID              string              `json:"plan_id"`
-	Status              string              `json:"status"`
-	SelectedIssueIDs    []string            `json:"selected_issue_ids"`
-	SkippedIssues       []AgentSkippedIssue `json:"skipped_issues"`
-	Candidates          []RepairCandidate   `json:"candidates"`
-	SelectedCandidateID string              `json:"selected_candidate_id"`
-	SelectedSource      string              `json:"selected_source"`
-	IssueSourceMap      map[string]any      `json:"issue_source_map"`
-	ProposedToolID      string              `json:"proposed_tool_id"`
-	ProposedPayload     map[string]any      `json:"proposed_payload"`
-	IntentLabel         string              `json:"intent_label,omitempty"`
-	StrategyLabel       string              `json:"strategy_label,omitempty"`
-	ReasonCodes         []string            `json:"reason_codes,omitempty"`
-	RiskNote            string              `json:"risk_note,omitempty"`
-	ExplanationBullets  []string            `json:"explanation_bullets,omitempty"`
-	ApprovalNeeded      bool                `json:"approval_needed,omitempty"`
-	Cognition           AgentCognitionState `json:"cognition,omitempty"`
-	ReasoningSummary    string              `json:"reasoning_summary"`
-	UserExplanation     string              `json:"user_explanation"`
+	PlanID               string              `json:"plan_id"`
+	Status               string              `json:"status"`
+	SelectedIssueIDs     []string            `json:"selected_issue_ids"`
+	AutoRepairIssueIDs   []string            `json:"auto_repair_issue_ids,omitempty"`
+	CautiousIssueIDs     []string            `json:"cautious_issue_ids,omitempty"`
+	ManualReviewIssueIDs []string            `json:"manual_review_issue_ids,omitempty"`
+	BlockedIssueIDs      []string            `json:"blocked_issue_ids,omitempty"`
+	SkippedIssues        []AgentSkippedIssue `json:"skipped_issues"`
+	Candidates           []RepairCandidate   `json:"candidates"`
+	SelectedCandidateID  string              `json:"selected_candidate_id"`
+	SelectedSource       string              `json:"selected_source"`
+	IssueSourceMap       map[string]any      `json:"issue_source_map"`
+	ProposedToolID       string              `json:"proposed_tool_id"`
+	ProposedPayload      map[string]any      `json:"proposed_payload"`
+	IntentLabel          string              `json:"intent_label,omitempty"`
+	StrategyLabel        string              `json:"strategy_label,omitempty"`
+	ReasonCodes          []string            `json:"reason_codes,omitempty"`
+	RiskNote             string              `json:"risk_note,omitempty"`
+	ExplanationBullets   []string            `json:"explanation_bullets,omitempty"`
+	ApprovalNeeded       bool                `json:"approval_needed,omitempty"`
+	Cognition            AgentCognitionState `json:"cognition,omitempty"`
+	ReasoningSummary     string              `json:"reasoning_summary"`
+	UserExplanation      string              `json:"user_explanation"`
 }
 
 type AgentSession struct {

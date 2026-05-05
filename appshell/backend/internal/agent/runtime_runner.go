@@ -37,7 +37,7 @@ type RuntimeRunner struct {
 
 func NewRuntimeRunner(base baseRunner, store SessionStore, planner Planner) *RuntimeRunner {
 	if planner == nil {
-		planner = NewMockPlanner()
+		planner = NewDeterministicPlanner()
 	}
 	runner := &RuntimeRunner{
 		base:             base,

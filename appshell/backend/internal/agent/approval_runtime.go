@@ -274,14 +274,17 @@ func (r *RuntimeRunner) continueAutoApprovedSession(ctx context.Context, started
 		riskFlags = appendRiskFlag(riskFlags, "missing_rollback_metadata")
 	}
 	if len(riskFlags) > 0 {
-		postValidation := map[string]any{
-			"phase":    "post_execute",
-			"status":   "rejected",
-			"accepted": false,
-			"message":  "Automatic safety checks rejected the execution result before post-scan completed.",
-		}
-		validation = attachPostValidation(validation, postValidation)
-		session.Context["post_validation"] = cloneMap(postValidation)
+		postValidation := buildPostValidationFailure(
+			"",
+			"Automatic safety checks rejected the execution result before post-scan completed.",
+			riskFlags,
+			baseline,
+			execution,
+			map[string]any{},
+			plan,
+		)
+		validation = attachPostValidation(validation, postValidation.Summary)
+		session.Context["post_validation"] = cloneMap(postValidation.Summary)
 		session.UpdatedAt = time.Now().UTC()
 		if err := r.saveSession(*session); err != nil {
 			return engine.Response{}, err
@@ -291,15 +294,15 @@ func (r *RuntimeRunner) continueAutoApprovedSession(ctx context.Context, started
 			TaskID:    req.TaskID,
 			AgentName: AgentValidator,
 			TraceType: TraceValidation,
-			Summary:   asString(postValidation["message"]),
+			Summary:   asString(postValidation.Summary["message"]),
 			Payload: func() map[string]any {
-				payload := cloneMap(postValidation)
+				payload := cloneMap(postValidation.Summary)
 				payload["phase"] = "post_execute"
-				payload["risk_flags"] = append([]string{}, riskFlags...)
+				payload["risk_flags"] = append([]string{}, postValidation.RiskFlags...)
 				return payload
 			}(),
 		})
-		r.emitStage(req.TaskID, "agent_post_validate", "complete", 94, "Post-execute safety checks rejected the output", map[string]any{"risk_flags": append([]string{}, riskFlags...)})
+		r.emitStage(req.TaskID, "agent_post_validate", "complete", 94, "Post-execute safety checks rejected the output", map[string]any{"risk_flags": append([]string{}, postValidation.RiskFlags...), "verdict": postValidation.Verdict})
 		resp, err := r.finishAutoRollback(ctx, started, req, autoFinalizeInput{
 			Session:        session,
 			Goal:           goal,
@@ -308,9 +311,9 @@ func (r *RuntimeRunner) continueAutoApprovedSession(ctx context.Context, started
 			Execution:      execution,
 			BaselineScan:   baseline,
 			PostScan:       map[string]any{},
-			PostValidation: postValidation,
-			RiskFlags:      riskFlags,
-			Reason:         "Automatic safety checks rejected the execution result before post-scan completed.",
+			PostValidation: postValidation.Summary,
+			RiskFlags:      postValidation.RiskFlags,
+			Reason:         asString(postValidation.Summary["message"]),
 			ErrorCode:      ErrorValidationRejected,
 			ErrorMessage:   "Automatic safety checks rejected the execution result",
 		})
@@ -324,14 +327,9 @@ func (r *RuntimeRunner) continueAutoApprovedSession(ctx context.Context, started
 	_, postScanSummary, postScanResp, postScanToolID, err := r.rescanOutput(ctx, req.TaskID, session.SessionID, req.TaskID, outputCSV, scanOverrides)
 	if err != nil {
 		riskFlags = appendRiskFlag(riskFlags, "post_scan_failed")
-		postValidation := map[string]any{
-			"phase":    "post_execute",
-			"status":   "rejected",
-			"accepted": false,
-			"message":  "Post-execute scan failed and requires rollback.",
-		}
-		validation = attachPostValidation(validation, postValidation)
-		session.Context["post_validation"] = cloneMap(postValidation)
+		postValidation := buildPostValidationFailure(validationGateReject, "Post-execute scan failed and requires rollback.", riskFlags, baseline, execution, map[string]any{}, plan)
+		validation = attachPostValidation(validation, postValidation.Summary)
+		session.Context["post_validation"] = cloneMap(postValidation.Summary)
 		session.UpdatedAt = time.Now().UTC()
 		if saveErr := r.saveSession(*session); saveErr != nil {
 			return engine.Response{}, saveErr
@@ -344,9 +342,9 @@ func (r *RuntimeRunner) continueAutoApprovedSession(ctx context.Context, started
 			Execution:      execution,
 			BaselineScan:   baseline,
 			PostScan:       map[string]any{},
-			PostValidation: postValidation,
-			RiskFlags:      riskFlags,
-			Reason:         "Post-execute scan failed and requires rollback.",
+			PostValidation: postValidation.Summary,
+			RiskFlags:      postValidation.RiskFlags,
+			Reason:         asString(postValidation.Summary["message"]),
 			ErrorCode:      ErrorValidationRejected,
 			ErrorMessage:   "Post-execute scan failed",
 		})
@@ -357,14 +355,9 @@ func (r *RuntimeRunner) continueAutoApprovedSession(ctx context.Context, started
 	}
 	if postScanResp != nil {
 		riskFlags = appendRiskFlag(riskFlags, "post_scan_failed")
-		postValidation := map[string]any{
-			"phase":    "post_execute",
-			"status":   "rejected",
-			"accepted": false,
-			"message":  "Post-execute scan returned an error and requires rollback.",
-		}
-		validation = attachPostValidation(validation, postValidation)
-		session.Context["post_validation"] = cloneMap(postValidation)
+		postValidation := buildPostValidationFailure(validationGateReject, "Post-execute scan returned an error and requires rollback.", riskFlags, baseline, execution, map[string]any{}, plan)
+		validation = attachPostValidation(validation, postValidation.Summary)
+		session.Context["post_validation"] = cloneMap(postValidation.Summary)
 		session.UpdatedAt = time.Now().UTC()
 		if saveErr := r.saveSession(*session); saveErr != nil {
 			return engine.Response{}, saveErr
@@ -378,9 +371,9 @@ func (r *RuntimeRunner) continueAutoApprovedSession(ctx context.Context, started
 			Execution:      execution,
 			BaselineScan:   baseline,
 			PostScan:       map[string]any{},
-			PostValidation: postValidation,
-			RiskFlags:      riskFlags,
-			Reason:         "Post-execute scan returned an error and requires rollback.",
+			PostValidation: postValidation.Summary,
+			RiskFlags:      postValidation.RiskFlags,
+			Reason:         asString(postValidation.Summary["message"]),
 			ErrorCode:      ErrorValidationRejected,
 			ErrorMessage:   "Post-execute scan returned an error",
 		})
@@ -398,7 +391,7 @@ func (r *RuntimeRunner) continueAutoApprovedSession(ctx context.Context, started
 	r.emitStage(req.TaskID, "agent_rescan", "complete", 90, "Repaired output rescanned", map[string]any{"issue_count": intFromAny(postScanSummary["issue_count"])})
 
 	r.emitStage(req.TaskID, "agent_post_validate", "start", 92, "Agent is evaluating post-execute safety checks", nil)
-	postValidation := buildPostValidation(baseline, postScanSummary)
+	postValidation := buildPostValidation(baseline, execution, postScanSummary, plan)
 	validation = attachPostValidation(validation, postValidation.Summary)
 	session.Context["post_validation"] = cloneMap(postValidation.Summary)
 	session.UpdatedAt = time.Now().UTC()
@@ -417,7 +410,7 @@ func (r *RuntimeRunner) continueAutoApprovedSession(ctx context.Context, started
 			return payload
 		}(),
 	})
-	r.emitStage(req.TaskID, "agent_post_validate", "complete", 94, "Post-execute safety validation completed", map[string]any{"accepted": postValidation.Accepted})
+	r.emitStage(req.TaskID, "agent_post_validate", "complete", 94, "Post-execute safety validation completed", map[string]any{"accepted": postValidation.Accepted, "verdict": postValidation.Verdict})
 
 	riskFlags = uniqueStrings(append(riskFlags, postValidation.RiskFlags...))
 	if !postValidation.Accepted {
@@ -455,7 +448,7 @@ func (r *RuntimeRunner) continueAutoApprovedSession(ctx context.Context, started
 	if err := r.saveSession(*session); err != nil {
 		return engine.Response{}, err
 	}
-	safety = buildSafetyResult("accepted", riskFlags, baseline, postScanSummary, buildRollbackRecommendation(false, "Post-execute validation accepted the repaired output"), map[string]any{"status": "not_run"}, "")
+	safety = buildSafetyResult("accepted", riskFlags, baseline, postScanSummary, buildRollbackRecommendation(false, asString(postValidation.Summary["message"])), map[string]any{"status": "not_run"}, "")
 	explanation := buildVerdictExplanation(plan, validation, execution, safety)
 	_ = r.saveTrace(AgentTraceEvent{
 		SessionID: session.SessionID,

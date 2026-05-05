@@ -95,6 +95,9 @@ func (c *LangGraphClient) Plan(ctx context.Context, reqPayload LangGraphPlanRequ
 	if strings.TrimSpace(payload.StrategyLabel) == "" {
 		return LangGraphPlanResponse{}, fmt.Errorf("langgraph plan response missing strategy_label")
 	}
+	if strings.TrimSpace(payload.SelectedCandidateID) == "" {
+		return LangGraphPlanResponse{}, fmt.Errorf("langgraph plan response missing selected_candidate_id")
+	}
 	if len(payload.ShortBullets) > 3 {
 		payload.ShortBullets = payload.ShortBullets[:3]
 	}

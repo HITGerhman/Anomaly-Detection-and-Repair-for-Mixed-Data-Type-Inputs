@@ -834,6 +834,61 @@ func TestRunAgentAutofixSessionReturnsTaskSnapshot(t *testing.T) {
 	if asString(safety["final_verdict"]) != "accepted" {
 		t.Fatalf("expected accepted verdict, got %v", safety["final_verdict"])
 	}
+
+	agentBlock, ok := finalSnapshot.Response.Result["agent"].(map[string]any)
+	if !ok {
+		t.Fatalf("expected agent block in autofix response")
+	}
+	plan, ok := agentBlock["plan"].(agent.AgentPlan)
+	if !ok {
+		t.Fatalf("expected typed agent plan, got %T", agentBlock["plan"])
+	}
+	if len(plan.AutoRepairIssueIDs) == 0 {
+		t.Fatalf("expected A2 auto repair issue bucket in Wails response plan")
+	}
+	if len(plan.SelectedIssueIDs) != len(plan.AutoRepairIssueIDs) {
+		t.Fatalf("selected issues should match auto bucket for A6 autofix wiring: selected=%v auto=%v", plan.SelectedIssueIDs, plan.AutoRepairIssueIDs)
+	}
+	validation, ok := agentBlock["validation"].(map[string]any)
+	if !ok {
+		t.Fatalf("expected validation block in autofix response")
+	}
+	postValidation, ok := validation["post_execute"].(map[string]any)
+	if !ok {
+		t.Fatalf("expected post_execute validation block in autofix response")
+	}
+	if asString(postValidation["verdict"]) == "" {
+		t.Fatalf("expected A4 validation gate verdict, got %#v", postValidation)
+	}
+	if _, ok := postValidation["total_cells_modified"]; !ok {
+		t.Fatalf("expected A4 total_cells_modified in post_execute validation")
+	}
+
+	sessionID := asString(agentBlock["session_id"])
+	session, err := app.GetAgentSession(sessionID)
+	if err != nil {
+		t.Fatalf("GetAgentSession failed for autofix session: %v", err)
+	}
+	if session.LatestPlan.PlanID != plan.PlanID || len(session.LatestPlan.AutoRepairIssueIDs) == 0 {
+		t.Fatalf("expected session snapshot to preserve latest A2 plan buckets, got %+v", session.LatestPlan)
+	}
+	if len(session.Presentation) == 0 {
+		t.Fatalf("expected session presentation for Wails autofix result")
+	}
+	trace, err := app.ListAgentTrace(sessionID)
+	if err != nil {
+		t.Fatalf("ListAgentTrace failed for autofix session: %v", err)
+	}
+	hasPostValidationTrace := false
+	for _, event := range trace {
+		if event.TraceType == agent.TraceValidation && asString(event.Payload["phase"]) == "post_execute" && asString(event.Payload["verdict"]) != "" {
+			hasPostValidationTrace = true
+			break
+		}
+	}
+	if !hasPostValidationTrace {
+		t.Fatalf("expected post_execute validation verdict in Wails trace")
+	}
 }
 
 func TestGetAndSaveAgentPreferences(t *testing.T) {

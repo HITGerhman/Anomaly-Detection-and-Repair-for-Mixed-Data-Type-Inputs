@@ -7,12 +7,18 @@ import (
 	"strings"
 )
 
-type MockPlanner struct{}
+type DeterministicPlanner struct{}
 
-var _ Planner = (*MockPlanner)(nil)
+type MockPlanner = DeterministicPlanner
+
+var _ Planner = (*DeterministicPlanner)(nil)
+
+func NewDeterministicPlanner() *DeterministicPlanner {
+	return &DeterministicPlanner{}
+}
 
 func NewMockPlanner() *MockPlanner {
-	return &MockPlanner{}
+	return NewDeterministicPlanner()
 }
 
 func toolSummaryForSource(source string) string {
@@ -259,13 +265,69 @@ func buildHybridComparison(beforeCount int, issueSourceMap map[string]any, ruleI
 	}
 }
 
-func (p *MockPlanner) BuildPlan(_ context.Context, input PlanningInput) (AgentPlan, error) {
-	selectedIssueIDs := append([]string{}, input.SelectedIssueIDs...)
-	skipped := cloneSkippedIssues(input.SkippedIssues)
+func deterministicReasonCodes(buckets issuePlanBuckets, selectedSource string) []string {
+	codes := []string{"deterministic_planner"}
+	if len(buckets.AutoRepairIssueIDs) > 0 {
+		codes = append(codes, "auto_repair_candidates_selected")
+	} else {
+		codes = append(codes, "no_auto_repair_candidates")
+	}
+	if len(buckets.CautiousIssueIDs) > 0 {
+		codes = append(codes, "cautious_issues_pending_review")
+	}
+	if len(buckets.ManualReviewIssueIDs) > 0 {
+		codes = append(codes, "manual_review_required")
+	}
+	if len(buckets.BlockedIssueIDs) > 0 {
+		codes = append(codes, "blocked_issues_present")
+	}
+	if source := strings.TrimSpace(selectedSource); source != "" {
+		codes = append(codes, "selected_"+source+"_candidate")
+	}
+	return uniqueStrings(codes)
+}
+
+func deterministicRiskNote(buckets issuePlanBuckets) string {
+	if len(buckets.CautiousIssueIDs)+len(buckets.ManualReviewIssueIDs)+len(buckets.BlockedIssueIDs) == 0 {
+		return "Only deterministic low-risk issue types are selected for automatic execution."
+	}
+	return fmt.Sprintf(
+		"Automatic execution is limited to %d low-risk issues; %d cautious, %d manual-review, and %d blocked issues remain outside the write payload.",
+		len(buckets.AutoRepairIssueIDs),
+		len(buckets.CautiousIssueIDs),
+		len(buckets.ManualReviewIssueIDs),
+		len(buckets.BlockedIssueIDs),
+	)
+}
+
+func deterministicExplanationBullets(buckets issuePlanBuckets, selectedCandidate RepairCandidate) []string {
+	bullets := []string{
+		fmt.Sprintf("Selected %d auto-repair issue ids for deterministic preview and execution.", len(buckets.AutoRepairIssueIDs)),
+		fmt.Sprintf("Candidate source selected by deterministic comparison: %s.", selectedCandidate.Source),
+	}
+	if len(buckets.CautiousIssueIDs) > 0 {
+		bullets = append(bullets, fmt.Sprintf("%d numeric_outlier issues are marked cautious and excluded from automatic write payloads.", len(buckets.CautiousIssueIDs)))
+	}
+	if len(buckets.ManualReviewIssueIDs) > 0 {
+		bullets = append(bullets, fmt.Sprintf("%d duplicate or cross-column issues require manual review.", len(buckets.ManualReviewIssueIDs)))
+	}
+	if len(buckets.BlockedIssueIDs) > 0 {
+		bullets = append(bullets, fmt.Sprintf("%d unsupported issues are blocked until a deterministic tool policy exists.", len(buckets.BlockedIssueIDs)))
+	}
+	return bullets
+}
+
+func (p *DeterministicPlanner) BuildPlan(_ context.Context, input PlanningInput) (AgentPlan, error) {
+	buckets := issuePlanBucketsFromPlanningInput(input)
+	selectedIssueIDs := append([]string{}, buckets.AutoRepairIssueIDs...)
+	skipped := cloneSkippedIssues(buckets.SkippedIssues)
+	previewInput := input
+	previewInput.SelectedIssueIDs = append([]string{}, selectedIssueIDs...)
+	previewInput.SkippedIssues = cloneSkippedIssues(skipped)
 	beforeIssueCount := intFromAny(input.ScanResult["issue_count"])
 
-	rulePlanPayloads, ruleExecutePayloads := buildRulePayloads(input)
-	gowerPlanPayloads, gowerExecutePayloads := buildGowerPayloads(input)
+	rulePlanPayloads, ruleExecutePayloads := buildRulePayloads(previewInput)
+	gowerPlanPayloads, gowerExecutePayloads := buildGowerPayloads(previewInput)
 	ruleComparison := comparisonFromPreview(input.RulePreview, beforeIssueCount)
 	gowerComparison := comparisonFromPreview(input.GowerPreview, beforeIssueCount)
 	ruleIssues, ruleSkipped := issueMetricsFromPreview(input.RulePreview)
@@ -395,7 +457,7 @@ func (p *MockPlanner) BuildPlan(_ context.Context, input PlanningInput) (AgentPl
 		intFromAny(selectedCandidate.Comparison["resolved_issue_count"]),
 	)
 	if len(skippedTypes) > 0 {
-		userExplanation += fmt.Sprintf(" Unsupported issue types remain explain-only: %s.", strings.Join(skippedTypes, ", "))
+		userExplanation += fmt.Sprintf(" Non-auto issue types remain outside automatic execution: %s.", strings.Join(skippedTypes, ", "))
 	}
 
 	proposedToolID := ""
@@ -408,18 +470,27 @@ func (p *MockPlanner) BuildPlan(_ context.Context, input PlanningInput) (AgentPl
 	}
 
 	plan := AgentPlan{
-		PlanID:              newPlanID(),
-		Status:              "planned",
-		SelectedIssueIDs:    selectedIssueIDs,
-		SkippedIssues:       skipped,
-		Candidates:          candidates,
-		SelectedCandidateID: selectedCandidate.CandidateID,
-		SelectedSource:      selectedCandidate.Source,
-		IssueSourceMap:      cloneMap(selectedCandidate.IssueSourceMap),
-		ProposedToolID:      proposedToolID,
-		ProposedPayload:     proposedPayload,
-		ReasoningSummary:    reasoningSummary,
-		UserExplanation:     userExplanation,
+		PlanID:               newPlanID(),
+		Status:               "planned",
+		SelectedIssueIDs:     selectedIssueIDs,
+		AutoRepairIssueIDs:   append([]string{}, buckets.AutoRepairIssueIDs...),
+		CautiousIssueIDs:     append([]string{}, buckets.CautiousIssueIDs...),
+		ManualReviewIssueIDs: append([]string{}, buckets.ManualReviewIssueIDs...),
+		BlockedIssueIDs:      append([]string{}, buckets.BlockedIssueIDs...),
+		SkippedIssues:        skipped,
+		Candidates:           candidates,
+		SelectedCandidateID:  selectedCandidate.CandidateID,
+		SelectedSource:       selectedCandidate.Source,
+		IssueSourceMap:       cloneMap(selectedCandidate.IssueSourceMap),
+		ProposedToolID:       proposedToolID,
+		ProposedPayload:      proposedPayload,
+		IntentLabel:          "auto_repair",
+		StrategyLabel:        "deterministic_planner",
+		ReasonCodes:          deterministicReasonCodes(buckets, selectedCandidate.Source),
+		RiskNote:             deterministicRiskNote(buckets),
+		ExplanationBullets:   deterministicExplanationBullets(buckets, selectedCandidate),
+		ReasoningSummary:     reasoningSummary,
+		UserExplanation:      userExplanation,
 	}
 	plan.Cognition = buildDeterministicCognitionState(plan)
 	return plan, nil
