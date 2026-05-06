@@ -60,8 +60,51 @@ func TestValidationGateAcceptsIssueCountDecrease(t *testing.T) {
 	if result.Verdict != validationGateAccept || !result.Accepted {
 		t.Fatalf("expected accept, got verdict=%s accepted=%v summary=%#v", result.Verdict, result.Accepted, result.Summary)
 	}
-	if intFromAny(result.Summary["resolved_issue_count"]) != 2 {
-		t.Fatalf("expected resolved issue count from scan delta, got %#v", result.Summary)
+	if intFromAny(result.Summary["before_issue_items"]) != 2 || intFromAny(result.Summary["after_issue_items"]) != 1 {
+		t.Fatalf("expected before/after issue item counts, got %#v", result.Summary)
+	}
+	if intFromAny(result.Summary["resolved_issue_items"]) != 1 {
+		t.Fatalf("expected resolved issue items from scan delta, got %#v", result.Summary)
+	}
+	if intFromAny(result.Summary["modified_cell_count"]) != 2 {
+		t.Fatalf("expected modified cell count from repair result, got %#v", result.Summary)
+	}
+	if intFromAny(result.Summary["resolved_issue_count"]) != 1 {
+		t.Fatalf("expected compatibility resolved_issue_count to mirror resolved_issue_items, got %#v", result.Summary)
+	}
+	if mapFromAny(result.Summary["metric_definitions"])["resolved_issue_items"] == nil {
+		t.Fatalf("expected metric definitions, got %#v", result.Summary)
+	}
+}
+
+func TestValidationGateSeparatesIssueItemsFromModifiedCells(t *testing.T) {
+	baseline := validationGateScan()
+	for i := 0; i < 17; i++ {
+		baselineIssues := mapsFromAny(baseline["issues"])
+		baselineIssues = append(baselineIssues, map[string]any{"issue_id": "i", "issue_type": "missing_values", "risk_level": "low", "issue_score": 0.1})
+		baseline["issues"] = baselineIssues
+	}
+	baseline["issue_count"] = 17
+	baseline["total_issue_score"] = 1.7
+	postScan := validationGateScan()
+	for i := 0; i < 10; i++ {
+		postIssues := mapsFromAny(postScan["issues"])
+		postIssues = append(postIssues, map[string]any{"issue_id": "post", "issue_type": "rare_category", "risk_level": "low", "issue_score": 0.05})
+		postScan["issues"] = postIssues
+	}
+	postScan["issue_count"] = 10
+	postScan["total_issue_score"] = 0.5
+
+	result := buildPostValidation(baseline, validationGateRepair(48, true, "i-1"), postScan, validationGatePlan("i-1"))
+
+	if intFromAny(result.Summary["before_issue_items"]) != 17 || intFromAny(result.Summary["after_issue_items"]) != 10 {
+		t.Fatalf("unexpected issue item counts: %#v", result.Summary)
+	}
+	if intFromAny(result.Summary["resolved_issue_items"]) != 7 {
+		t.Fatalf("expected issue item delta 7, got %#v", result.Summary)
+	}
+	if intFromAny(result.Summary["modified_cell_count"]) != 48 {
+		t.Fatalf("expected modified cell count 48, got %#v", result.Summary)
 	}
 }
 

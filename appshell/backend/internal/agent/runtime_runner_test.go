@@ -942,8 +942,35 @@ func TestRuntimeRunnerAutoSessionAccepted(t *testing.T) {
 	if asString(postValidation["verdict"]) != validationGateAccept {
 		t.Fatalf("expected validation gate accept verdict, got %#v", postValidation)
 	}
+	if intFromAny(postValidation["before_issue_items"]) != 2 || intFromAny(postValidation["after_issue_items"]) != 1 {
+		t.Fatalf("expected clear issue item metrics, got %#v", postValidation)
+	}
+	if intFromAny(postValidation["resolved_issue_items"]) != 1 || intFromAny(postValidation["modified_cell_count"]) != 2 {
+		t.Fatalf("expected resolved issue items and modified cell count, got %#v", postValidation)
+	}
+	if mapFromAny(postValidation["metric_definitions"])["modified_cell_count"] == nil {
+		t.Fatalf("expected validation metric definitions, got %#v", postValidation)
+	}
+	plan := agentBlock["plan"].(AgentPlan)
+	if _, ok := plan.TimingsMS["scan_duration_ms"]; !ok {
+		t.Fatalf("expected plan timings, got %#v", plan.TimingsMS)
+	}
+	execution := mapFromAny(agentBlock["execution"])
+	executionTimings := mapFromAny(execution["timings_ms"])
+	if _, ok := executionTimings["repair_duration_ms"]; !ok {
+		t.Fatalf("expected repair timing, got %#v", executionTimings)
+	}
+	if _, ok := executionTimings["validation_duration_ms"]; !ok {
+		t.Fatalf("expected validation timing, got %#v", executionTimings)
+	}
+	if _, ok := executionTimings["rollback_manifest_duration_ms"]; !ok {
+		t.Fatalf("expected rollback manifest timing key, got %#v", executionTimings)
+	}
 	if base.callCount(string(engine.ActionRollbackRepairBatch)) != 0 {
 		t.Fatalf("rollback should not be called on accepted path")
+	}
+	if got := base.callCount(string(engine.ActionRepairBatch)) + base.callCount(string(engine.ActionRepairWithGower)); got != 3 {
+		t.Fatalf("expected planning previews plus one execution only, got %d repair/gower calls", got)
 	}
 
 	sessionID := asString(agentBlock["session_id"])
@@ -952,9 +979,13 @@ func TestRuntimeRunnerAutoSessionAccepted(t *testing.T) {
 		t.Fatalf("ListTrace failed: %v", err)
 	}
 	hasPreview := false
+	hasCachedPreview := false
 	hasPost := false
 	hasPostGateVerdict := false
 	for _, event := range trace {
+		if asString(event.Payload["tool_id"]) == "agent.cached_preview_validation" {
+			hasCachedPreview = true
+		}
 		if event.TraceType != TraceValidation {
 			continue
 		}
@@ -970,6 +1001,9 @@ func TestRuntimeRunnerAutoSessionAccepted(t *testing.T) {
 	}
 	if !hasPreview || !hasPost || !hasPostGateVerdict {
 		t.Fatalf("expected preview and post_execute validation trace events with A4 verdict")
+	}
+	if !hasCachedPreview {
+		t.Fatalf("expected cached preview validation trace event")
 	}
 }
 

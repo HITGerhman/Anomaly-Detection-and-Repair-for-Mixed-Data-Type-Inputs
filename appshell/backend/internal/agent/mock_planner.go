@@ -223,7 +223,9 @@ func buildGowerPayloads(input PlanningInput) ([]map[string]any, []map[string]any
 		planPayload["column_dependencies"] = cloneMap(input.ColumnDependencies)
 	}
 	if len(input.GowerStrategyOverrides) > 0 {
-		planPayload["gower_strategy"] = cloneMap(input.GowerStrategyOverrides)
+		planPayload["gower_strategy"] = withDefaultGowerCandidateLimit(input.GowerStrategyOverrides)
+	} else {
+		planPayload["gower_strategy"] = withDefaultGowerCandidateLimit(nil)
 	}
 	if strings.TrimSpace(input.ModelDir) != "" {
 		planPayload["model_dir"] = strings.TrimSpace(input.ModelDir)
@@ -451,10 +453,10 @@ func (p *DeterministicPlanner) BuildPlan(_ context.Context, input PlanningInput)
 		selectedCandidate.Source,
 	)
 	userExplanation := fmt.Sprintf(
-		"The agent compared rule-based repair, Gower neighbor repair, and a hybrid issue-level merge. It selected the %s candidate with after_issue_count=%d and resolved_issue_count=%d.",
+		"The agent compared rule-based repair, Gower neighbor repair, and a hybrid issue-level merge. It selected the %s candidate with after_issue_count=%d and changed_cell_count=%d.",
 		selectedCandidate.Source,
 		intFromAny(selectedCandidate.Comparison["after_issue_count"]),
-		intFromAny(selectedCandidate.Comparison["resolved_issue_count"]),
+		intFromAny(selectedCandidate.Comparison["changed_cell_count"]),
 	)
 	if len(skippedTypes) > 0 {
 		userExplanation += fmt.Sprintf(" Non-auto issue types remain outside automatic execution: %s.", strings.Join(skippedTypes, ", "))
@@ -468,6 +470,7 @@ func (p *DeterministicPlanner) BuildPlan(_ context.Context, input PlanningInput)
 	if len(selectedCandidate.ExecutePayloads) > 0 {
 		proposedPayload = cloneMap(selectedCandidate.ExecutePayloads[0])
 	}
+	blockedDetails, cautiousDetails, blockedReasonCounts := issueExplanationDetails(skipped)
 
 	plan := AgentPlan{
 		PlanID:               newPlanID(),
@@ -477,6 +480,9 @@ func (p *DeterministicPlanner) BuildPlan(_ context.Context, input PlanningInput)
 		CautiousIssueIDs:     append([]string{}, buckets.CautiousIssueIDs...),
 		ManualReviewIssueIDs: append([]string{}, buckets.ManualReviewIssueIDs...),
 		BlockedIssueIDs:      append([]string{}, buckets.BlockedIssueIDs...),
+		CautiousIssueDetails: cautiousDetails,
+		BlockedIssueDetails:  blockedDetails,
+		BlockedReasonCounts:  blockedReasonCounts,
 		SkippedIssues:        skipped,
 		Candidates:           candidates,
 		SelectedCandidateID:  selectedCandidate.CandidateID,

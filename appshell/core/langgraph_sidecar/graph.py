@@ -379,6 +379,8 @@ def _fallback_reason_code(exc: Exception) -> str:
         return "llm_not_configured"
     if "timed out" in text or "timeout" in text:
         return "llm_timeout"
+    if "empty" in text or "missing choices" in text or "missing message" in text:
+        return "llm_empty_response"
     if "non-json" in text or "not valid json" in text:
         return "llm_invalid_json"
     if "status" in text or "endpoint returned" in text:

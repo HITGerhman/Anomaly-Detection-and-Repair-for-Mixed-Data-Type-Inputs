@@ -239,7 +239,9 @@ func (r *RuntimeRunner) continueAutoApprovedSession(ctx context.Context, started
 	}
 
 	r.emitStage(req.TaskID, "agent_execute", "start", 80, "Agent is executing the selected candidate", map[string]any{"selected_source": candidate.Source})
+	repairStarted := time.Now()
 	execution, toolResp, toolID, err := r.executeCandidate(ctx, req.TaskID, session.SessionID, req.TaskID, candidate, outputDir)
+	repairDurationMS := int(time.Since(repairStarted).Milliseconds())
 	if err != nil {
 		r.failSession(*session, "Agent auto flow failed during execution")
 		return engine.Response{}, err
@@ -252,6 +254,9 @@ func (r *RuntimeRunner) continueAutoApprovedSession(ctx context.Context, started
 	execution["auto_mode"] = true
 	execution["rollback_applied"] = false
 	execution["post_scan_output_csv"] = ""
+	execution["timings_ms"] = mergeTimingMS(mapFromAny(execution["timings_ms"]), map[string]any{
+		"repair_duration_ms": repairDurationMS,
+	})
 	session.Context["execution_artifacts"] = map[string]any{
 		"output_csv":       asString(execution["output_csv"]),
 		"rollback":         cloneMap(mapFromAny(execution["rollback"])),
@@ -323,6 +328,7 @@ func (r *RuntimeRunner) continueAutoApprovedSession(ctx context.Context, started
 		return attachApprovalToResponse(resp, approvalResultFromContext(session.Context)), nil
 	}
 
+	validationStarted := time.Now()
 	r.emitStage(req.TaskID, "agent_rescan", "start", 86, "Agent is rescanning the repaired output", map[string]any{"output_csv": outputCSV})
 	_, postScanSummary, postScanResp, postScanToolID, err := r.rescanOutput(ctx, req.TaskID, session.SessionID, req.TaskID, outputCSV, scanOverrides)
 	if err != nil {
@@ -392,6 +398,10 @@ func (r *RuntimeRunner) continueAutoApprovedSession(ctx context.Context, started
 
 	r.emitStage(req.TaskID, "agent_post_validate", "start", 92, "Agent is evaluating post-execute safety checks", nil)
 	postValidation := buildPostValidation(baseline, execution, postScanSummary, plan)
+	validationDurationMS := int(time.Since(validationStarted).Milliseconds())
+	execution["timings_ms"] = mergeTimingMS(mapFromAny(execution["timings_ms"]), map[string]any{
+		"validation_duration_ms": validationDurationMS,
+	})
 	validation = attachPostValidation(validation, postValidation.Summary)
 	session.Context["post_validation"] = cloneMap(postValidation.Summary)
 	session.UpdatedAt = time.Now().UTC()
