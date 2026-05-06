@@ -199,6 +199,45 @@ def test_invoke_plan_falls_back_when_llm_request_fails(monkeypatch):
     assert "llm_invalid_json" in result["reason_codes"]
 
 
+def test_invoke_plan_falls_back_when_llm_times_out(monkeypatch):
+    _enable_mock_llm(monkeypatch)
+
+    def fake_completion(*, system_prompt, user_payload, config=None):
+        raise LLMError("LLM request timed out")
+
+    monkeypatch.setattr(graph_module, "invoke_json_completion", fake_completion)
+
+    result = graph_module.invoke_plan(_llm_plan_request())
+    assert result["selected_candidate_id"] == "candidate-rule"
+    assert "llm_timeout" in result["reason_codes"]
+
+
+def test_invoke_plan_falls_back_when_llm_returns_empty_response(monkeypatch):
+    _enable_mock_llm(monkeypatch)
+
+    def fake_completion(*, system_prompt, user_payload, config=None):
+        raise LLMError("llm content is empty")
+
+    monkeypatch.setattr(graph_module, "invoke_json_completion", fake_completion)
+
+    result = graph_module.invoke_plan(_llm_plan_request())
+    assert result["selected_candidate_id"] == "candidate-rule"
+    assert "llm_empty_response" in result["reason_codes"]
+
+
+def test_invoke_plan_falls_back_when_llm_endpoint_returns_404(monkeypatch):
+    _enable_mock_llm(monkeypatch)
+
+    def fake_completion(*, system_prompt, user_payload, config=None):
+        raise LLMError("llm endpoint returned 404: model_not_found")
+
+    monkeypatch.setattr(graph_module, "invoke_json_completion", fake_completion)
+
+    result = graph_module.invoke_plan(_llm_plan_request())
+    assert result["selected_candidate_id"] == "candidate-rule"
+    assert "llm_non_200" in result["reason_codes"]
+
+
 def test_invoke_plan_enforces_approval_context_over_llm(monkeypatch):
     _enable_mock_llm(monkeypatch)
 

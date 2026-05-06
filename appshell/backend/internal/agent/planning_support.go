@@ -29,11 +29,11 @@ func issueBucketForType(issueType string) (string, string) {
 	case "missing_values", "rare_category":
 		return issueBucketAutoRepair, ""
 	case "numeric_outlier":
-		return issueBucketCautious, "cautious_issue_type"
+		return issueBucketCautious, "requires_human_review_before_auto_repair"
 	case "duplicate_record", "cross_column_consistency":
-		return issueBucketManualReview, "manual_review_issue_type"
+		return issueBucketManualReview, "manual_review_required"
 	default:
-		return issueBucketBlocked, "blocked_issue_type"
+		return issueBucketBlocked, "unsupported_issue_type"
 	}
 }
 
@@ -68,6 +68,7 @@ func skippedIssueFromScan(issue map[string]any, bucket string, reason string) Ag
 			"column":             column,
 			"bucket":             bucket,
 			"recommended_action": recommendedActionForIssueBucket(bucket),
+			"reason":             reason,
 		},
 	}
 }
@@ -122,16 +123,71 @@ func bucketFromSkippedIssue(item AgentSkippedIssue) string {
 		}
 	}
 	switch item.Reason {
-	case "cautious_issue_type":
+	case "cautious_issue_type", "requires_human_review_before_auto_repair":
 		return issueBucketCautious
-	case "manual_review_issue_type":
+	case "manual_review_issue_type", "manual_review_required":
 		return issueBucketManualReview
-	case "missing_issue_id", "blocked_issue_type":
+	case "missing_issue_id", "blocked_issue_type", "unsupported_issue_type":
 		return issueBucketBlocked
 	default:
 		bucket, _ := issueBucketForType(item.IssueType)
 		return bucket
 	}
+}
+
+func blockedIssueDetail(item AgentSkippedIssue) AgentBlockedIssueDetail {
+	reason := asString(item.Reason)
+	if reason == "" {
+		reason = "unsupported_issue_type"
+	}
+	suggested := asString(item.Details["recommended_action"])
+	if suggested == "" {
+		suggested = recommendedActionForIssueBucket(issueBucketBlocked)
+	}
+	return AgentBlockedIssueDetail{
+		IssueID:             item.IssueID,
+		IssueType:           item.IssueType,
+		Column:              item.Column,
+		BlockedReason:       reason,
+		BlockedByRule:       "a2_deterministic_issue_bucket_policy",
+		SuggestedNextAction: suggested,
+	}
+}
+
+func cautiousIssueDetail(item AgentSkippedIssue) AgentCautiousIssueDetail {
+	reason := asString(item.Reason)
+	if reason == "" {
+		reason = "requires_human_review_before_auto_repair"
+	}
+	suggested := asString(item.Details["recommended_action"])
+	if suggested == "" {
+		suggested = recommendedActionForIssueBucket(issueBucketCautious)
+	}
+	return AgentCautiousIssueDetail{
+		IssueID:          item.IssueID,
+		IssueType:        item.IssueType,
+		Column:           item.Column,
+		RiskReason:       reason,
+		ApprovalRequired: true,
+		SuggestedAction:  suggested,
+	}
+}
+
+func issueExplanationDetails(skipped []AgentSkippedIssue) ([]AgentBlockedIssueDetail, []AgentCautiousIssueDetail, map[string]int) {
+	blocked := []AgentBlockedIssueDetail{}
+	cautious := []AgentCautiousIssueDetail{}
+	reasonCounts := map[string]int{}
+	for _, item := range skipped {
+		switch bucketFromSkippedIssue(item) {
+		case issueBucketBlocked:
+			detail := blockedIssueDetail(item)
+			blocked = append(blocked, detail)
+			reasonCounts[detail.BlockedReason]++
+		case issueBucketCautious:
+			cautious = append(cautious, cautiousIssueDetail(item))
+		}
+	}
+	return blocked, cautious, reasonCounts
 }
 
 func issuePlanBucketsFromPlanningInput(input PlanningInput) issuePlanBuckets {
@@ -187,6 +243,7 @@ func buildPlanningInput(sessionID string, goal string, params planningParams, sc
 		ColumnDependencies:      cloneMap(params.ColumnDependencies),
 		GowerStrategyOverrides:  cloneMap(params.GowerOverrides),
 		ModelDir:                params.ModelDir,
+		LLMExplainMode:          params.LLMExplainMode,
 		OutputDir:               params.OutputDir,
 		WorkspaceID:             params.WorkspaceID,
 		PreferenceSnapshot:      cloneMap(preferenceSnapshot),

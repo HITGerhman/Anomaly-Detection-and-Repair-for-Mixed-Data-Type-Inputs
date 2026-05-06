@@ -37,13 +37,13 @@ func TestSelectIssuePlanBucketsUsesConservativeA2Rules(t *testing.T) {
 		reasons[item.IssueID] = item.Reason
 		bucketsByIssue[item.IssueID] = asString(item.Details["bucket"])
 	}
-	if reasons["i-2"] != "cautious_issue_type" || bucketsByIssue["i-2"] != issueBucketCautious {
+	if reasons["i-2"] != "requires_human_review_before_auto_repair" || bucketsByIssue["i-2"] != issueBucketCautious {
 		t.Fatalf("expected numeric_outlier to be cautious, got reasons=%#v buckets=%#v", reasons, bucketsByIssue)
 	}
-	if reasons["i-4"] != "manual_review_issue_type" || reasons["i-5"] != "manual_review_issue_type" {
+	if reasons["i-4"] != "manual_review_required" || reasons["i-5"] != "manual_review_required" {
 		t.Fatalf("expected duplicate/consistency to be manual review, got %#v", reasons)
 	}
-	if reasons["i-6"] != "blocked_issue_type" {
+	if reasons["i-6"] != "unsupported_issue_type" {
 		t.Fatalf("expected unknown issue type to be blocked, got %#v", reasons)
 	}
 	if reasons[""] != "missing_issue_id" || bucketsByIssue[""] != issueBucketBlocked {
@@ -73,11 +73,39 @@ func TestSelectRepairableIssuesReturnsOnlyAutoAndSkippedIssues(t *testing.T) {
 	if len(skipped) != 5 {
 		t.Fatalf("expected 5 skipped issues, got %d", len(skipped))
 	}
-	if skipped[0].Reason != "cautious_issue_type" {
+	if skipped[0].Reason != "requires_human_review_before_auto_repair" {
 		t.Fatalf("expected cautious issue type skip, got %s", skipped[0].Reason)
 	}
 	if skipped[len(skipped)-1].Reason != "missing_issue_id" {
 		t.Fatalf("expected missing issue id skip, got %s", skipped[len(skipped)-1].Reason)
+	}
+}
+
+func TestIssueExplanationDetailsIncludeReasonsAndCounts(t *testing.T) {
+	_, skipped := selectRepairableIssues(map[string]any{
+		"issues": []any{
+			map[string]any{"issue_id": "i-1", "issue_type": "numeric_outlier", "column": "bmi"},
+			map[string]any{"issue_id": "i-2", "issue_type": "time_series_shift", "column": "date"},
+			map[string]any{"issue_type": "missing_values", "column": "weight"},
+		},
+	})
+
+	blocked, cautious, counts := issueExplanationDetails(skipped)
+
+	if len(cautious) != 1 || cautious[0].IssueID != "i-1" || cautious[0].RiskReason != "requires_human_review_before_auto_repair" {
+		t.Fatalf("unexpected cautious details: %#v", cautious)
+	}
+	if !cautious[0].ApprovalRequired || cautious[0].SuggestedAction == "" {
+		t.Fatalf("expected cautious approval guidance, got %#v", cautious[0])
+	}
+	if len(blocked) != 2 {
+		t.Fatalf("expected two blocked details, got %#v", blocked)
+	}
+	if counts["unsupported_issue_type"] != 1 || counts["missing_issue_id"] != 1 {
+		t.Fatalf("unexpected blocked reason counts: %#v", counts)
+	}
+	if blocked[0].BlockedByRule == "" || blocked[0].SuggestedNextAction == "" {
+		t.Fatalf("expected blocked rule explanation, got %#v", blocked[0])
 	}
 }
 

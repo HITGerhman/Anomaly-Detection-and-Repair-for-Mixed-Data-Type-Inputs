@@ -60,6 +60,9 @@ func clonePlan(plan AgentPlan) AgentPlan {
 	copy(manualReview, plan.ManualReviewIssueIDs)
 	blocked := make([]string, len(plan.BlockedIssueIDs))
 	copy(blocked, plan.BlockedIssueIDs)
+	cautiousDetails := cloneCautiousIssueDetails(plan.CautiousIssueDetails)
+	blockedDetails := cloneBlockedIssueDetails(plan.BlockedIssueDetails)
+	blockedReasonCounts := cloneIntMap(plan.BlockedReasonCounts)
 
 	skipped := make([]AgentSkippedIssue, len(plan.SkippedIssues))
 	for idx, item := range plan.SkippedIssues {
@@ -108,6 +111,9 @@ func clonePlan(plan AgentPlan) AgentPlan {
 		CautiousIssueIDs:     cautious,
 		ManualReviewIssueIDs: manualReview,
 		BlockedIssueIDs:      blocked,
+		CautiousIssueDetails: cautiousDetails,
+		BlockedIssueDetails:  blockedDetails,
+		BlockedReasonCounts:  blockedReasonCounts,
 		SkippedIssues:        skipped,
 		Candidates:           candidates,
 		SelectedCandidateID:  plan.SelectedCandidateID,
@@ -122,9 +128,57 @@ func clonePlan(plan AgentPlan) AgentPlan {
 		ExplanationBullets:   append([]string{}, plan.ExplanationBullets...),
 		ApprovalNeeded:       plan.ApprovalNeeded,
 		Cognition:            cloneCognitionState(plan.Cognition),
+		TimingsMS:            cloneMap(plan.TimingsMS),
 		ReasoningSummary:     plan.ReasoningSummary,
 		UserExplanation:      plan.UserExplanation,
 	}
+}
+
+func cloneBlockedIssueDetails(items []AgentBlockedIssueDetail) []AgentBlockedIssueDetail {
+	out := make([]AgentBlockedIssueDetail, len(items))
+	copy(out, items)
+	return out
+}
+
+func cloneCautiousIssueDetails(items []AgentCautiousIssueDetail) []AgentCautiousIssueDetail {
+	out := make([]AgentCautiousIssueDetail, len(items))
+	copy(out, items)
+	return out
+}
+
+func cloneIntMap(input map[string]int) map[string]int {
+	if len(input) == 0 {
+		return map[string]int{}
+	}
+	out := make(map[string]int, len(input))
+	for key, value := range input {
+		out[key] = value
+	}
+	return out
+}
+
+func mergeTimingMS(existing map[string]any, updates map[string]any) map[string]any {
+	out := cloneMap(existing)
+	for key, value := range updates {
+		if strings.TrimSpace(key) == "" {
+			continue
+		}
+		out[key] = value
+	}
+	return out
+}
+
+func ensureTimingKeys(timings map[string]any, keys ...string) map[string]any {
+	out := cloneMap(timings)
+	for _, key := range keys {
+		if strings.TrimSpace(key) == "" {
+			continue
+		}
+		if _, exists := out[key]; !exists {
+			out[key] = nil
+		}
+	}
+	return out
 }
 
 func cloneSkippedIssues(items []AgentSkippedIssue) []AgentSkippedIssue {

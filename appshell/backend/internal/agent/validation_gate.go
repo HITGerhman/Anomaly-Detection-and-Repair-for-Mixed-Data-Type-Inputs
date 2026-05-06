@@ -46,8 +46,8 @@ func buildPostValidationFailure(verdict string, message string, riskFlags []stri
 		RiskNotes:             riskFlags,
 		Message:               message,
 		RollbackRecommended:   verdict == validationGateReject || verdict == validationGateRollbackRecommended,
-		ResolvedIssueCount:    resolvedIssueCount(baseline, postScan, repairResult),
-		TotalCellsModified:    repairChangedCellCount(repairResult),
+		ResolvedIssueItems:    resolvedIssueItems(scanIssueCount(baseline), scanIssueCount(postScan)),
+		ModifiedCellCount:     repairChangedCellCount(repairResult),
 		BeforeIssueCount:      scanIssueCount(baseline),
 		AfterIssueCount:       scanIssueCount(postScan),
 		BeforeHighRiskCount:   scanHighRiskIssueCount(baseline),
@@ -65,8 +65,8 @@ func evaluateValidationGate(input validationGateInput) postValidationResult {
 	afterHighRiskCount := scanHighRiskIssueCount(input.PostScan)
 	beforeTotalIssueScore := scanTotalIssueScore(input.BaselineScan)
 	afterTotalIssueScore := scanTotalIssueScore(input.PostScan)
-	resolvedCount := resolvedIssueCount(input.BaselineScan, input.PostScan, input.RepairResult)
-	totalCellsModified := repairChangedCellCount(input.RepairResult)
+	resolvedItems := resolvedIssueItems(beforeIssueCount, afterIssueCount)
+	modifiedCellCount := repairChangedCellCount(input.RepairResult)
 
 	riskNotes := append([]string{}, input.ExtraRiskFlags...)
 	if input.RepairError != "" {
@@ -78,7 +78,7 @@ func evaluateValidationGate(input validationGateInput) postValidationResult {
 	if afterHighRiskCount > beforeHighRiskCount {
 		riskNotes = appendRiskFlag(riskNotes, "high_risk_issue_count_increased")
 	}
-	if shouldWarnForCellChanges(beforeIssueCount, totalCellsModified) {
+	if shouldWarnForCellChanges(beforeIssueCount, modifiedCellCount) {
 		riskNotes = appendRiskFlag(riskNotes, "changed_cell_count_abnormally_high")
 	}
 	appliedIDs := validationAppliedIssueIDs(input.RepairResult, input.Plan)
@@ -125,8 +125,8 @@ func evaluateValidationGate(input validationGateInput) postValidationResult {
 		RiskNotes:             riskNotes,
 		Message:               input.Message,
 		RollbackRecommended:   rollbackRecommended,
-		ResolvedIssueCount:    resolvedCount,
-		TotalCellsModified:    totalCellsModified,
+		ResolvedIssueItems:    resolvedItems,
+		ModifiedCellCount:     modifiedCellCount,
 		BeforeIssueCount:      beforeIssueCount,
 		AfterIssueCount:       afterIssueCount,
 		BeforeHighRiskCount:   beforeHighRiskCount,
@@ -144,8 +144,8 @@ type validationGateSummaryInput struct {
 	RiskNotes             []string
 	Message               string
 	RollbackRecommended   bool
-	ResolvedIssueCount    int
-	TotalCellsModified    int
+	ResolvedIssueItems    int
+	ModifiedCellCount     int
 	BeforeIssueCount      int
 	AfterIssueCount       int
 	BeforeHighRiskCount   int
@@ -171,11 +171,15 @@ func validationGateSummary(input validationGateSummaryInput) postValidationResul
 		"accepted":                     accepted,
 		"message":                      message,
 		"verdict":                      input.Verdict,
+		"before_issue_items":           input.BeforeIssueCount,
+		"after_issue_items":            input.AfterIssueCount,
+		"resolved_issue_items":         input.ResolvedIssueItems,
+		"modified_cell_count":          input.ModifiedCellCount,
 		"before_issue_count":           input.BeforeIssueCount,
 		"after_issue_count":            input.AfterIssueCount,
-		"resolved_issue_count":         input.ResolvedIssueCount,
-		"total_cells_modified":         input.TotalCellsModified,
-		"changed_cell_count":           input.TotalCellsModified,
+		"resolved_issue_count":         input.ResolvedIssueItems,
+		"total_cells_modified":         input.ModifiedCellCount,
+		"changed_cell_count":           input.ModifiedCellCount,
 		"before_high_risk_issue_count": input.BeforeHighRiskCount,
 		"after_high_risk_issue_count":  input.AfterHighRiskCount,
 		"before_total_issue_score":     input.BeforeTotalIssueScore,
@@ -184,6 +188,7 @@ func validationGateSummary(input validationGateSummaryInput) postValidationResul
 		"risk_flags":                   append([]string{}, riskNotes...),
 		"rollback_recommended":         input.RollbackRecommended,
 		"explanation":                  validationGateExplanation(input.Verdict, riskNotes, input.BeforeIssueCount, input.AfterIssueCount),
+		"metric_definitions":           validationMetricDefinitions(),
 	}
 	return postValidationResult{
 		Summary:             summary,
@@ -220,6 +225,19 @@ func shouldWarnForCellChanges(beforeIssueCount int, totalCellsModified int) bool
 		threshold = scaled
 	}
 	return totalCellsModified > threshold
+}
+
+func validationMetricDefinitions() map[string]any {
+	return map[string]any{
+		"before_issue_items":   "Number of issue records detected in the baseline scan before repair.",
+		"after_issue_items":    "Number of issue records detected in the post-repair scan.",
+		"resolved_issue_items": "Issue-item delta computed as max(before_issue_items - after_issue_items, 0).",
+		"modified_cell_count":  "Number of individual CSV cells modified by the executed repair.",
+		"rollback_recommended": "Whether validation judged the repaired output unsafe enough to recommend or trigger rollback.",
+		"rollback_manifest":    "A recovery manifest created for written outputs; its existence does not imply rollback is recommended.",
+		"resolved_issue_count": "Deprecated compatibility alias for resolved_issue_items in validation.post_execute; do not use for resume or defense metrics.",
+		"total_cells_modified": "Deprecated compatibility alias for modified_cell_count.",
+	}
 }
 
 func scanIssueCount(scan map[string]any) int {
@@ -267,14 +285,7 @@ func scanTotalIssueScore(scan map[string]any) float64 {
 	return total
 }
 
-func resolvedIssueCount(baseline map[string]any, postScan map[string]any, repairResult map[string]any) int {
-	if comparison := mapFromAny(repairResult["comparison"]); comparison != nil {
-		if _, ok := comparison["resolved_issue_count"]; ok {
-			return intFromAny(comparison["resolved_issue_count"])
-		}
-	}
-	before := scanIssueCount(baseline)
-	after := scanIssueCount(postScan)
+func resolvedIssueItems(before int, after int) int {
 	if before > after {
 		return before - after
 	}

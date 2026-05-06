@@ -208,12 +208,18 @@ func (r *RuntimeRunner) failSession(session AgentSession, summary string) {
 }
 
 func (r *RuntimeRunner) successResponse(taskID string, started time.Time, sessionID string, planID string, runMode string, goal string, plan AgentPlan, explanation string, validation map[string]any, execution map[string]any, traceSummary TraceSummary) engine.Response {
+	durationMS := int(time.Since(started).Milliseconds())
+	plan.TimingsMS = mergeTimingMS(plan.TimingsMS, map[string]any{"total_duration_ms": durationMS})
+	plan.TimingsMS = ensureTimingKeys(plan.TimingsMS, "scan_duration_ms", "retrieve_duration_ms", "llm_plan_duration_ms", "llm_explain_duration_ms")
+	execution = cloneMap(execution)
+	execution["timings_ms"] = mergeTimingMS(mapFromAny(execution["timings_ms"]), map[string]any{"total_duration_ms": durationMS})
+	execution["timings_ms"] = ensureTimingKeys(mapFromAny(execution["timings_ms"]), "repair_duration_ms", "validation_duration_ms", "rollback_manifest_duration_ms")
 	return engine.Response{
 		TaskID:     taskID,
 		Status:     "ok",
 		Result:     r.agentResult(sessionID, planID, runMode, goal, plan, explanation, validation, execution, traceSummary),
 		Timestamp:  time.Now().UTC().Format(time.RFC3339Nano),
-		DurationMS: int(time.Since(started).Milliseconds()),
+		DurationMS: durationMS,
 	}
 }
 
@@ -330,6 +336,42 @@ func buildRulePreviewPayload(csvPath string, issueIDs []string, scanOverrides ma
 	return payload
 }
 
+func attachPrecomputedIssues(payload map[string]any, csvPath string, scanResult map[string]any) map[string]any {
+	if len(payload) == 0 || len(scanResult) == 0 {
+		return payload
+	}
+	issues := mapsFromAny(scanResult["issues"])
+	if len(issues) == 0 {
+		return payload
+	}
+	absPath, err := filepath.Abs(strings.TrimSpace(csvPath))
+	if err != nil {
+		absPath = strings.TrimSpace(csvPath)
+	}
+	meta := map[string]any{
+		"csv_path": absPath,
+	}
+	if info, err := os.Stat(strings.TrimSpace(csvPath)); err == nil {
+		meta["csv_size"] = info.Size()
+		meta["csv_mtime_unix_nano"] = info.ModTime().UnixNano()
+	}
+	payload["precomputed_issues"] = cloneValue(issues)
+	payload["precomputed_issues_meta"] = meta
+	return payload
+}
+
+func withDefaultGowerCandidateLimit(input map[string]any) map[string]any {
+	strategy := cloneMap(input)
+	if _, exists := strategy["max_candidates"]; exists {
+		return strategy
+	}
+	if _, exists := strategy["sample_size"]; exists {
+		return strategy
+	}
+	strategy["max_candidates"] = 512
+	return strategy
+}
+
 func buildGowerPreviewPayload(csvPath string, issueIDs []string, scanOverrides map[string]any, columnDependencies map[string]any, gowerOverrides map[string]any, outputDir string, modelDir string) map[string]any {
 	payload := map[string]any{
 		"csv_path":        csvPath,
@@ -344,9 +386,7 @@ func buildGowerPreviewPayload(csvPath string, issueIDs []string, scanOverrides m
 	if len(columnDependencies) > 0 {
 		payload["column_dependencies"] = cloneMap(columnDependencies)
 	}
-	if len(gowerOverrides) > 0 {
-		payload["gower_strategy"] = cloneMap(gowerOverrides)
-	}
+	payload["gower_strategy"] = withDefaultGowerCandidateLimit(gowerOverrides)
 	if strings.TrimSpace(outputDir) != "" {
 		payload["output_dir"] = strings.TrimSpace(outputDir)
 	}
@@ -540,6 +580,63 @@ func (r *RuntimeRunner) runValidationPreview(ctx context.Context, parentTaskID s
 	return validation, lastResp, lastToolID, nil
 }
 
+func (r *RuntimeRunner) runCachedValidationPreview(sessionID string, taskID string, candidate RepairCandidate) map[string]any {
+	toolID := "agent.cached_preview_validation"
+	_ = r.saveTrace(AgentTraceEvent{
+		SessionID: sessionID,
+		TaskID:    taskID,
+		AgentName: AgentValidator,
+		TraceType: TraceToolCall,
+		Summary:   "Reusing cached candidate preview for validation",
+		Payload: map[string]any{
+			"tool_id":        toolID,
+			"candidate_id":   candidate.CandidateID,
+			"selected_source": candidate.Source,
+			"comparison":     cloneMap(candidate.Comparison),
+		},
+	})
+
+	beforeIssueCount := intFromAny(candidate.Comparison["before_issue_count"])
+	afterIssueCount := intFromAny(candidate.Comparison["after_issue_count"])
+	resolvedIssueCount := intFromAny(candidate.Comparison["resolved_issue_count"])
+	changedCellCount := intFromAny(candidate.Comparison["changed_cell_count"])
+	if beforeIssueCount <= 0 && afterIssueCount >= 0 && resolvedIssueCount > 0 {
+		beforeIssueCount = afterIssueCount + resolvedIssueCount
+	}
+	canExecute := candidate.Executable && resolvedIssueCount > 0 && afterIssueCount <= beforeIssueCount
+	validation := map[string]any{
+		"status":               "checked",
+		"candidate_id":         candidate.CandidateID,
+		"selected_source":      candidate.Source,
+		"before_issue_count":   beforeIssueCount,
+		"after_issue_count":    afterIssueCount,
+		"resolved_issue_count": resolvedIssueCount,
+		"changed_cell_count":   changedCellCount,
+		"can_execute":          canExecute,
+		"cached":               true,
+		"source":               toolID,
+	}
+	if canExecute {
+		validation["message"] = "Validation reused the cached planning preview. The selected candidate can be executed."
+	} else {
+		validation["status"] = "rejected"
+		validation["message"] = "Validation rejected the selected candidate because the cached preview did not improve the issue count."
+	}
+
+	_ = r.saveTrace(AgentTraceEvent{
+		SessionID: sessionID,
+		TaskID:    taskID,
+		AgentName: AgentValidator,
+		TraceType: TraceToolResult,
+		Summary:   "Cached preview validation completed",
+		Payload: map[string]any{
+			"tool_id": toolID,
+			"result":  cloneMap(validation),
+		},
+	})
+	return validation
+}
+
 func (r *RuntimeRunner) executeHybridCandidate(ctx context.Context, parentTaskID string, sessionID string, taskID string, candidate RepairCandidate, outputDir string) (map[string]any, error) {
 	if len(candidate.ExecutePayloads) == 0 {
 		return map[string]any{"status": "not_run"}, nil
@@ -605,6 +702,7 @@ func (r *RuntimeRunner) executeHybridCandidate(ctx context.Context, parentTaskID
 		})
 	}
 
+	manifestStarted := time.Now()
 	rollbackDir := filepath.Join(filepath.Dir(finalOutput), ".rollback")
 	if raw := asString(lastPayload["rollback_dir"]); raw != "" {
 		rollbackDir = raw
@@ -637,6 +735,7 @@ func (r *RuntimeRunner) executeHybridCandidate(ctx context.Context, parentTaskID
 	if err := os.WriteFile(manifestPath, append(manifestBytes, '\n'), 0o644); err != nil {
 		return nil, err
 	}
+	rollbackManifestDurationMS := int(time.Since(manifestStarted).Milliseconds())
 
 	return map[string]any{
 		"status":              "executed",
@@ -653,6 +752,9 @@ func (r *RuntimeRunner) executeHybridCandidate(ctx context.Context, parentTaskID
 		},
 		"comparison":      cloneMap(candidate.Comparison),
 		"execution_steps": executionSteps,
+		"timings_ms": map[string]any{
+			"rollback_manifest_duration_ms": rollbackManifestDurationMS,
+		},
 	}, nil
 }
 

@@ -23,6 +23,11 @@ const (
 	CognitionFallbackHealthcheckFailed = "healthcheck_failed"
 	CognitionFallbackPlannerMode       = "planner_mode_fallback"
 	CognitionFallbackPlanRequest       = "plan_request_failed"
+	CognitionFallbackPlanTimeout       = "plan_timeout"
+	CognitionFallbackPlanInvalidJSON   = "plan_invalid_json"
+	CognitionFallbackPlanEmptyResponse = "plan_empty_response"
+	CognitionFallbackPlanSchemaInvalid = "plan_schema_invalid"
+	CognitionFallbackPlanNon200        = "plan_non_200"
 	CognitionFallbackInvalidCandidate  = "invalid_candidate"
 	CognitionFallbackExplainRequest    = "explain_request_failed"
 )
@@ -208,12 +213,43 @@ func langGraphFallbackMessage(reasonCode string) string {
 		return "LangGraph reported fallback planner mode, so Go kept deterministic planning active."
 	case CognitionFallbackPlanRequest:
 		return "LangGraph planning failed, so Go kept deterministic planning active."
+	case CognitionFallbackPlanTimeout:
+		return "LangGraph planning timed out, so Go kept deterministic planning active."
+	case CognitionFallbackPlanInvalidJSON:
+		return "LangGraph returned invalid planning JSON, so Go kept deterministic planning active."
+	case CognitionFallbackPlanEmptyResponse:
+		return "LangGraph returned an empty planning response, so Go kept deterministic planning active."
+	case CognitionFallbackPlanSchemaInvalid:
+		return "LangGraph planning response did not satisfy the required schema, so Go kept deterministic planning active."
+	case CognitionFallbackPlanNon200:
+		return "LangGraph planning endpoint returned a non-200 response, so Go kept deterministic planning active."
 	case CognitionFallbackInvalidCandidate:
 		return "LangGraph returned an invalid candidate, so Go kept deterministic planning active."
 	case CognitionFallbackExplainRequest:
 		return "LangGraph explanation degraded, but the selected candidate remained under Go safety controls."
 	default:
 		return "Deterministic planning remained active."
+	}
+}
+
+func ClassifyLangGraphPlanError(err error) string {
+	if err == nil {
+		return ""
+	}
+	text := strings.ToLower(strings.TrimSpace(err.Error()))
+	switch {
+	case strings.Contains(text, "context deadline exceeded"), strings.Contains(text, "timeout"), strings.Contains(text, "timed out"), strings.Contains(text, "client.timeout"):
+		return CognitionFallbackPlanTimeout
+	case strings.Contains(text, "empty") || strings.Contains(text, "eof"):
+		return CognitionFallbackPlanEmptyResponse
+	case strings.Contains(text, "decode langgraph plan response failed"), strings.Contains(text, "invalid character"):
+		return CognitionFallbackPlanInvalidJSON
+	case strings.Contains(text, "missing strategy_label"), strings.Contains(text, "missing selected_candidate_id"), strings.Contains(text, "schema"):
+		return CognitionFallbackPlanSchemaInvalid
+	case strings.Contains(text, "returned status"):
+		return CognitionFallbackPlanNon200
+	default:
+		return CognitionFallbackPlanRequest
 	}
 }
 

@@ -20,6 +20,7 @@ type PlanningInput struct {
 	ColumnDependencies      map[string]any
 	GowerStrategyOverrides  map[string]any
 	ModelDir                string
+	LLMExplainMode          string
 	OutputDir               string
 	WorkspaceID             string
 	PreferenceSnapshot      map[string]any

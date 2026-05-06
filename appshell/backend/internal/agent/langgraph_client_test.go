@@ -104,6 +104,16 @@ func TestLangGraphClientReturnsErrorsForBadResponses(t *testing.T) {
 			},
 		},
 		{
+			name:       "plan_empty_response",
+			path:       "/v1/plan",
+			statusCode: http.StatusOK,
+			body:       ``,
+			call: func(client *LangGraphClient) error {
+				_, err := client.Plan(context.Background(), LangGraphPlanRequest{})
+				return err
+			},
+		},
+		{
 			name:       "plan_timeout",
 			path:       "/v1/plan",
 			statusCode: http.StatusOK,

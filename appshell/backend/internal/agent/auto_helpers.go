@@ -33,6 +33,7 @@ type planningParams struct {
 	Goal               string
 	OutputDir          string
 	ModelDir           string
+	LLMExplainMode     string
 	ScanOverrides      map[string]any
 	RepairOverrides    map[string]any
 	ColumnDependencies map[string]any
@@ -299,6 +300,7 @@ func newPlanningSession(taskID string, mode string, params planningParams) Agent
 			"repair_strategy_overrides": cloneMap(params.RepairOverrides),
 			"column_dependencies":       cloneMap(params.ColumnDependencies),
 			"gower_strategy_overrides":  cloneMap(params.GowerOverrides),
+			"llm_explain_mode":          params.LLMExplainMode,
 			"user_preferences":          cloneMap(params.UserPreferences),
 			"preference_snapshot":       preferenceProfileToMap(defaultPreferenceProfile()),
 			"approval_state":            defaultApprovalResult(),
@@ -367,6 +369,7 @@ func parsePlanningParams(payload map[string]any, action string) (planningParams,
 	}
 	params.OutputDir = strings.TrimSpace(asString(payload["output_dir"]))
 	params.ModelDir = strings.TrimSpace(asString(payload["model_dir"]))
+	params.LLMExplainMode = strings.TrimSpace(asString(payload["llm_explain_mode"]))
 	params.WorkspaceID = strings.TrimSpace(asString(payload["workspace_id"]))
 	params.UserPreferences, err = validateObjectField(payload, "user_preferences")
 	if err != nil {

@@ -26,6 +26,7 @@ def sample_response() -> dict[str, Any]:
     return {
         "task_id": "task-1",
         "status": "ok",
+        "duration_ms": 200,
         "result": {
             "agent": {
                 "session_id": "session-1",
@@ -36,6 +37,34 @@ def sample_response() -> dict[str, Any]:
                     "cautious_issue_ids": ["cautious-1"],
                     "manual_review_issue_ids": ["manual-1"],
                     "blocked_issue_ids": ["blocked-1"],
+                    "cautious_issue_details": [
+                        {
+                            "issue_id": "cautious-1",
+                            "issue_type": "numeric_outlier",
+                            "column": "bmi",
+                            "risk_reason": "requires_human_review_before_auto_repair",
+                            "approval_required": True,
+                            "suggested_action": "review_before_auto_repair",
+                        }
+                    ],
+                    "blocked_issue_details": [
+                        {
+                            "issue_id": "blocked-1",
+                            "issue_type": "time_series_shift",
+                            "column": "date",
+                            "blocked_reason": "unsupported_issue_type",
+                            "blocked_by_rule": "a2_deterministic_issue_bucket_policy",
+                            "suggested_next_action": "block_until_supported",
+                        }
+                    ],
+                    "blocked_reason_counts": {"unsupported_issue_type": 1},
+                    "timings_ms": {
+                        "scan_duration_ms": 10,
+                        "retrieve_duration_ms": 20,
+                        "llm_plan_duration_ms": 30,
+                        "llm_explain_duration_ms": 40,
+                    },
+                    "cognition": {"provider": "langgraph", "status": "engaged"},
                 },
                 "validation": {
                     "post_execute": {
@@ -43,6 +72,10 @@ def sample_response() -> dict[str, Any]:
                         "before_issue_count": 2,
                         "after_issue_count": 1,
                         "resolved_issue_count": 1,
+                        "before_issue_items": 2,
+                        "after_issue_items": 1,
+                        "resolved_issue_items": 1,
+                        "modified_cell_count": 2,
                         "total_cells_modified": 2,
                         "rollback_recommended": False,
                         "risk_notes": [],
@@ -51,6 +84,12 @@ def sample_response() -> dict[str, Any]:
                 "execution": {
                     "output_csv": "outputs/auto_agent/demo/repaired.csv",
                     "rollback": {"manifest_path": "outputs/auto_agent/demo/.rollback/repair.json"},
+                    "timings_ms": {
+                        "repair_duration_ms": 50,
+                        "validation_duration_ms": 60,
+                        "rollback_manifest_duration_ms": 7,
+                        "total_duration_ms": 200,
+                    },
                 },
             },
             "safety": {"final_verdict": "accepted"},
@@ -124,6 +163,9 @@ def test_cli_builds_go_demo_command_and_writes_artifacts(tmp_path: Path, monkeyp
     assert (output_dir / "response.json").exists()
     assert (output_dir / "repair_plan.json").exists()
     assert (output_dir / "validation_result.json").exists()
+    assert (output_dir / "metric_definitions.json").exists()
+    assert (output_dir / "issue_explanations.json").exists()
+    assert (output_dir / "timings.json").exists()
     assert (output_dir / "auto_agent_trace.json").exists()
 
 
@@ -153,13 +195,27 @@ def test_trace_export_and_report_content(tmp_path: Path, monkeypatch) -> None:
     assert rc == 0
     trace = json.loads((output_dir / "auto_agent_trace.json").read_text(encoding="utf-8"))
     assert trace[0]["trace_type"] == "validation"
+    validation = json.loads((output_dir / "validation_result.json").read_text(encoding="utf-8"))
+    assert validation["before_issue_items"] == 2
+    assert validation["resolved_issue_items"] == 1
+    assert validation["modified_cell_count"] == 2
+    assert "metric_definitions" in validation
+    explanations = json.loads((output_dir / "issue_explanations.json").read_text(encoding="utf-8"))
+    assert explanations["blocked_issue_details"][0]["blocked_reason"] == "unsupported_issue_type"
+    timings = json.loads((output_dir / "timings.json").read_text(encoding="utf-8"))
+    assert timings["repair_duration_ms"] == 50
     report = (output_dir / "report.md").read_text(encoding="utf-8")
-    assert "validation verdict：`accept`" in report
-    assert "rollback manifest：`outputs/auto_agent/demo/.rollback/repair.json`" in report
-    assert "修复输出 CSV：`outputs/auto_agent/demo/repaired.csv`" in report
-    assert "manual review issues：1" in report
-    assert "cautious issues：1" in report
-    assert "blocked issues：1" in report
+    assert "validation verdict" in report
+    assert "`accept`" in report
+    assert "outputs/auto_agent/demo/.rollback/repair.json" in report
+    assert "outputs/auto_agent/demo/repaired.csv" in report
+    assert "before_issue_items" in report
+    assert "resolved_issue_items" in report
+    assert "modified_cell_count" in report
+    assert "resolved_issue_count" in report
+    assert "rollback_manifest_created" in report
+    assert "unsupported_issue_type" in report
+    assert "| `repair_duration_ms` | 50 |" in report
     assert (output_dir / "run_stderr.log").read_text(encoding="utf-8") == "sidecar log\n"
 
 
@@ -180,4 +236,15 @@ def test_nonzero_go_exit_writes_logs_and_error(tmp_path: Path, monkeypatch) -> N
     error = json.loads((output_dir / "error.json").read_text(encoding="utf-8"))
     assert error["returncode"] == 7
     assert (output_dir / "run_stdout.log").read_text(encoding="utf-8") == "no structured response\n"
-    assert "失败原因" in (output_dir / "report.md").read_text(encoding="utf-8")
+    assert "failed" in (output_dir / "report.md").read_text(encoding="utf-8")
+
+
+def test_report_avoids_old_resolved_issue_count_as_primary_metric() -> None:
+    cli = load_cli()
+
+    report = cli.build_report(Path("input.csv"), sample_response(), [])
+
+    assert "resolved_issue_items" in report
+    assert "modified_cell_count" in report
+    assert "resolved_issue_count" in report
+    assert "resolved issue count" not in report.lower()

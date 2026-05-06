@@ -111,3 +111,35 @@ def test_invoke_json_completion_raises_on_http_error():
         server.shutdown()
         server.server_close()
         thread.join(timeout=5)
+
+
+def test_invoke_json_completion_raises_on_empty_message_content():
+    class Handler(BaseHTTPRequestHandler):
+        def log_message(self, format, *args):  # noqa: A003
+            return
+
+        def do_POST(self):  # noqa: N802
+            body = json.dumps({"choices": [{"message": {"content": ""}}]}).encode("utf-8")
+            self.send_response(200)
+            self.send_header("Content-Type", "application/json")
+            self.send_header("Content-Length", str(len(body)))
+            self.end_headers()
+            self.wfile.write(body)
+
+    server, thread, port = _start_server(Handler)
+    try:
+        with pytest.raises(LLMError, match="empty"):
+            invoke_json_completion(
+                system_prompt="Return JSON only.",
+                user_payload={"goal": "repair"},
+                config=OpenAICompatibleConfig(
+                    base_url=f"http://127.0.0.1:{port}",
+                    api_key="test",
+                    model="gpt-test",
+                    timeout_ms=1000,
+                ),
+            )
+    finally:
+        server.shutdown()
+        server.server_close()
+        thread.join(timeout=5)

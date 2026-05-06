@@ -329,16 +329,7 @@ func (r *RuntimeRunner) runAutoSession(ctx context.Context, req engine.Request) 
 	}
 
 	r.emitStage(req.TaskID, "agent_validate", "start", 72, "Agent is validating the selected candidate", map[string]any{"selected_source": candidate.Source})
-	preview, previewResp, previewToolID, err := r.runValidationPreview(ctx, req.TaskID, session.SessionID, req.TaskID, candidate)
-	if err != nil {
-		r.failSession(session, "Agent auto flow failed during preview validation")
-		return engine.Response{}, err
-	}
-	if strings.TrimSpace(previewToolID) != "" && strings.ToLower(strings.TrimSpace(previewResp.Status)) != "ok" {
-		r.failSession(session, "Preview validation tool returned an error")
-		resp := r.toolFailureResponseWithSafety(req.TaskID, started, session.SessionID, plan.PlanID, "auto", goal, plan, validation, execution, safety, previewResp, previewToolID)
-		return attachApprovalToResponse(resp, approvalResultFromContext(session.Context)), nil
-	}
+	preview := r.runCachedValidationPreview(session.SessionID, req.TaskID, candidate)
 
 	validation = buildValidationEnvelope(preview)
 	session.Context["validation_preview"] = cloneMap(preview)
