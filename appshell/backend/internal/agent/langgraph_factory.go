@@ -7,6 +7,6 @@ func NewPhaseBPlannerStack(engineScript string) (Planner, *LangGraphSidecarManag
 	config := ResolveLangGraphConfig(engineScript)
 	client := NewLangGraphClient(config.BaseURL(), config.RequestTimeout)
 	manager := NewLangGraphSidecarManager(config, client)
-	planner := NewLangGraphPlanner(NewMockPlanner(), manager, client)
+	planner := NewLangGraphPlanner(NewDeterministicPlanner(), manager, client)
 	return planner, manager
 }

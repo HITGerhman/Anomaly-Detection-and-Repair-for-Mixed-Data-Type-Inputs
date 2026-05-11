@@ -6,7 +6,15 @@ from typing import Any, TypedDict
 from langgraph.graph import END, START, StateGraph
 
 from .llm_client import LLMError, load_llm_config, invoke_json_completion
-from .schemas import normalize_explain_request, normalize_explain_response, normalize_intent, normalize_plan_response
+from .schemas import (
+    enforce_approval_context,
+    normalize_explain_request,
+    normalize_explain_response,
+    normalize_intent,
+    normalize_llm_explain_response,
+    normalize_llm_plan_response,
+    normalize_plan_response,
+)
 
 
 GRAPH_ID = "phase_c_cognition_graph"
@@ -58,7 +66,7 @@ def strategy_node(state: PlanGraphState) -> PlanGraphState:
     strategy = fallback_strategy(request, intent)
     if llm_enabled():
         try:
-            strategy = normalize_plan_response(
+            strategy = normalize_llm_plan_response(
                 invoke_json_completion(
                     system_prompt=(
                         "You are the strategy node of a data-repair agent. "
@@ -76,10 +84,12 @@ def strategy_node(state: PlanGraphState) -> PlanGraphState:
                         "user_preferences": request.get("user_preferences", {}),
                         "output_constraints": request.get("output_constraints", {}),
                     },
-                )
+                ),
+                valid_candidate_ids=_candidate_ids(request),
+                approval_required=_approval_required(request),
             )
-        except LLMError:
-            pass
+        except (LLMError, ValueError) as exc:
+            strategy = fallback_strategy(request, intent, fallback_reason=_fallback_reason_code(exc))
     strategy["intent_label"] = intent.get("intent_label", strategy.get("intent_label", "balanced_repair"))
     return {"request": request, "intent": intent, "strategy": strategy}
 
@@ -91,7 +101,7 @@ def explain_node(state: PlanGraphState) -> PlanGraphState:
     explanation = fallback_plan_explanation(request, intent, strategy)
     if llm_enabled():
         try:
-            explanation = normalize_explain_response(
+            explanation = normalize_llm_explain_response(
                 invoke_json_completion(
                     system_prompt=(
                         "You are the explanation node of a data-repair agent. "
@@ -110,20 +120,23 @@ def explain_node(state: PlanGraphState) -> PlanGraphState:
                     },
                 )
             )
-        except LLMError:
-            pass
+        except (LLMError, ValueError) as exc:
+            explanation = fallback_plan_explanation(request, intent, strategy, fallback_reason=_fallback_reason_code(exc))
 
-    response = normalize_plan_response(
-        {
-            "strategy_label": strategy.get("strategy_label", ""),
-            "selected_candidate_id": strategy.get("selected_candidate_id", ""),
-            "reason_codes": explanation.get("reason_codes") or strategy.get("reason_codes", []),
-            "risk_note": explanation.get("risk_note") or strategy.get("risk_note", ""),
-            "intent_label": strategy.get("intent_label") or intent.get("intent_label", ""),
-            "one_sentence_summary": explanation.get("summary") or strategy.get("one_sentence_summary", ""),
-            "short_bullets": explanation.get("short_bullets") or strategy.get("short_bullets", []),
-            "approval_needed": strategy.get("approval_needed", False),
-        }
+    response = enforce_approval_context(
+        normalize_plan_response(
+            {
+                "strategy_label": strategy.get("strategy_label", ""),
+                "selected_candidate_id": strategy.get("selected_candidate_id", ""),
+                "reason_codes": _merge_reason_codes(strategy.get("reason_codes", []), explanation.get("reason_codes", [])),
+                "risk_note": explanation.get("risk_note") or strategy.get("risk_note", ""),
+                "intent_label": strategy.get("intent_label") or intent.get("intent_label", ""),
+                "one_sentence_summary": explanation.get("summary") or strategy.get("one_sentence_summary", ""),
+                "short_bullets": explanation.get("short_bullets") or strategy.get("short_bullets", []),
+                "approval_needed": strategy.get("approval_needed", False),
+            }
+        ),
+        _approval_required(request),
     )
     return {
         "request": request,
@@ -139,7 +152,7 @@ def explain_only_node(state: ExplainGraphState) -> ExplainGraphState:
     explanation = fallback_explain_response(request)
     if llm_enabled():
         try:
-            explanation = normalize_explain_response(
+            explanation = normalize_llm_explain_response(
                 invoke_json_completion(
                     system_prompt=(
                         "You are the explanation node of a data-repair agent. "
@@ -149,8 +162,8 @@ def explain_only_node(state: ExplainGraphState) -> ExplainGraphState:
                     user_payload=request,
                 )
             )
-        except LLMError:
-            pass
+        except (LLMError, ValueError) as exc:
+            explanation = fallback_explain_response(request, fallback_reason=_fallback_reason_code(exc))
     return {"request": request, "explanation": explanation, "response": explanation}
 
 
@@ -213,7 +226,7 @@ def fallback_intent(request: dict[str, Any]) -> dict[str, Any]:
     )
 
 
-def fallback_strategy(request: dict[str, Any], intent: dict[str, Any]) -> dict[str, Any]:
+def fallback_strategy(request: dict[str, Any], intent: dict[str, Any], fallback_reason: str = "fallback_no_llm") -> dict[str, Any]:
     selected_id = _default_selected_candidate_id(request)
     candidate = _candidate_by_id(request, selected_id)
     source = str(candidate.get("source", "rule")).strip() or "rule"
@@ -234,28 +247,33 @@ def fallback_strategy(request: dict[str, Any], intent: dict[str, Any]) -> dict[s
         if skipped_types
         else "Any write will still pass through deterministic validation and rollback gates."
     )
-    return normalize_plan_response(
-        {
-            "strategy_label": strategy_label,
-            "selected_candidate_id": selected_id,
-            "reason_codes": [f"selected_{source}", "fallback_no_llm"],
-            "risk_note": risk_note,
-            "intent_label": intent.get("intent_label", "balanced_repair"),
-            "one_sentence_summary": f"Selected the {source} candidate with after_issue_count={after_count} and resolved_issue_count={resolved}.",
-            "short_bullets": [
-                f"Primary source: {source}.",
-                f"Resolved preview issues: {resolved}.",
-                "Execution remains under deterministic validation.",
-            ],
-            "approval_needed": approval_needed,
-        }
+    return enforce_approval_context(
+        normalize_plan_response(
+            {
+                "strategy_label": strategy_label,
+                "selected_candidate_id": selected_id,
+                "reason_codes": [f"selected_{source}", fallback_reason],
+                "risk_note": risk_note,
+                "intent_label": intent.get("intent_label", "balanced_repair"),
+                "one_sentence_summary": f"Selected the {source} candidate with after_issue_count={after_count} and resolved_issue_count={resolved}.",
+                "short_bullets": [
+                    f"Primary source: {source}.",
+                    f"Resolved preview issues: {resolved}.",
+                    "Execution remains under deterministic validation.",
+                ],
+                "approval_needed": approval_needed,
+            }
+        ),
+        approval_needed,
     )
 
 
-def fallback_plan_explanation(request: dict[str, Any], intent: dict[str, Any], strategy: dict[str, Any]) -> dict[str, Any]:
+def fallback_plan_explanation(request: dict[str, Any], intent: dict[str, Any], strategy: dict[str, Any], fallback_reason: str = "") -> dict[str, Any]:
     candidate = _candidate_by_id(request, strategy.get("selected_candidate_id", ""))
     source = str(candidate.get("source", "rule")).strip() or "rule"
-    reason_codes = strategy.get("reason_codes", ["fallback_no_llm"])
+    reason_codes = _merge_reason_codes(strategy.get("reason_codes", ["fallback_no_llm"]))
+    if fallback_reason and fallback_reason not in reason_codes:
+        reason_codes.append(fallback_reason)
     risk_note = str(strategy.get("risk_note", "")).strip()
     summary = str(strategy.get("one_sentence_summary", "")).strip()
     final_message = (
@@ -276,10 +294,12 @@ def fallback_plan_explanation(request: dict[str, Any], intent: dict[str, Any], s
     )
 
 
-def fallback_explain_response(request: dict[str, Any]) -> dict[str, Any]:
+def fallback_explain_response(request: dict[str, Any], fallback_reason: str = "") -> dict[str, Any]:
     candidate = request.get("selected_candidate", {})
     source = str(candidate.get("source", "rule")).strip() or "rule"
-    reason_codes = request.get("reason_codes") or ["fallback_no_llm"]
+    reason_codes = _merge_reason_codes(request.get("reason_codes") or ["fallback_no_llm"])
+    if fallback_reason and fallback_reason not in reason_codes:
+        reason_codes.append(fallback_reason)
     risk_note = str(request.get("risk_note", "")).strip()
     return normalize_explain_response(
         {
@@ -317,6 +337,59 @@ def _candidate_by_id(request: dict[str, Any], candidate_id: str) -> dict[str, An
         if str(item.get("candidate_id", "")).strip() == str(candidate_id).strip():
             return dict(item)
     return {}
+
+
+def _candidate_ids(request: dict[str, Any]) -> list[str]:
+    out: list[str] = []
+    for item in request.get("candidate_previews", []):
+        if not isinstance(item, dict):
+            continue
+        candidate_id = str(item.get("candidate_id", "")).strip()
+        if candidate_id:
+            out.append(candidate_id)
+    return out
+
+
+def _merge_reason_codes(*values: Any) -> list[str]:
+    out: list[str] = []
+    for value in values:
+        if isinstance(value, str):
+            items = [value]
+        elif isinstance(value, list):
+            items = value
+        else:
+            items = []
+        for item in items:
+            text = str(item).strip()
+            if text and text not in out:
+                out.append(text)
+    return out
+
+
+def _approval_required(request: dict[str, Any]) -> bool:
+    approval_context = request.get("approval_context", {})
+    if not isinstance(approval_context, dict):
+        return False
+    return bool(approval_context.get("deterministic_required", False))
+
+
+def _fallback_reason_code(exc: Exception) -> str:
+    text = str(exc).lower()
+    if "not configured" in text:
+        return "llm_not_configured"
+    if "timed out" in text or "timeout" in text:
+        return "llm_timeout"
+    if "empty" in text or "missing choices" in text or "missing message" in text:
+        return "llm_empty_response"
+    if "non-json" in text or "not valid json" in text:
+        return "llm_invalid_json"
+    if "status" in text or "endpoint returned" in text:
+        return "llm_non_200"
+    if "unavailable" in text:
+        return "llm_unavailable"
+    if "missing" in text or "unknown candidate" in text or "schema" in text:
+        return "llm_schema_invalid"
+    return "llm_request_failed"
 
 
 def _short_list(value: Any) -> list[str]:

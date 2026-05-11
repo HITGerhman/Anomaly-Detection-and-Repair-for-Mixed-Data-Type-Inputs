@@ -2,8 +2,10 @@ package agent
 
 import (
 	"context"
+	"os"
 	"sort"
 	"strings"
+	"time"
 
 	"appshell/backend/internal/observability"
 )
@@ -25,7 +27,7 @@ type LangGraphPlanner struct {
 
 func NewLangGraphPlanner(fallback Planner, manager sidecarHealthManager, client cognitionCaller) *LangGraphPlanner {
 	if fallback == nil {
-		fallback = NewMockPlanner()
+		fallback = NewDeterministicPlanner()
 	}
 	return &LangGraphPlanner{
 		fallback: fallback,
@@ -35,6 +37,24 @@ func NewLangGraphPlanner(fallback Planner, manager sidecarHealthManager, client 
 }
 
 var _ Planner = (*LangGraphPlanner)(nil)
+
+const (
+	langGraphExplainModeLocal = "local"
+	langGraphExplainModeLLM   = "llm"
+)
+
+func resolveLangGraphExplainMode(raw string) string {
+	text := strings.ToLower(strings.TrimSpace(raw))
+	if text == "" {
+		text = strings.ToLower(strings.TrimSpace(os.Getenv("APPSHELL_LANGGRAPH_EXPLAIN_MODE")))
+	}
+	switch text {
+	case langGraphExplainModeLLM:
+		return langGraphExplainModeLLM
+	default:
+		return langGraphExplainModeLocal
+	}
+}
 
 func (p *LangGraphPlanner) BuildPlan(ctx context.Context, input PlanningInput) (AgentPlan, error) {
 	basePlan, err := p.fallback.BuildPlan(ctx, input)
@@ -69,13 +89,19 @@ func (p *LangGraphPlanner) BuildPlan(ctx context.Context, input PlanningInput) (
 		return basePlan, nil
 	}
 
+	planStarted := time.Now()
 	planResp, err := p.client.Plan(ctx, buildLangGraphPlanRequest(input, basePlan))
+	basePlan.TimingsMS = mergeTimingMS(basePlan.TimingsMS, map[string]any{
+		"llm_plan_duration_ms": int(time.Since(planStarted).Milliseconds()),
+	})
 	if err != nil {
+		reasonCode := ClassifyLangGraphPlanError(err)
 		observability.Warn("langgraph_plan_fallback", map[string]any{
-			"session_id": input.SessionID,
-			"reason":     err.Error(),
+			"session_id":  input.SessionID,
+			"reason":      err.Error(),
+			"reason_code": reasonCode,
 		})
-		basePlan.Cognition = buildLangGraphFallbackState(basePlan, health, CognitionStatusFallback, CognitionFallbackPlanRequest)
+		basePlan.Cognition = buildLangGraphFallbackState(basePlan, health, CognitionStatusFallback, reasonCode)
 		return basePlan, nil
 	}
 
@@ -108,14 +134,31 @@ func (p *LangGraphPlanner) BuildPlan(ctx context.Context, input PlanningInput) (
 	updated.ReasoningSummary = strings.TrimSpace(planResp.OneSentenceSummary)
 	updated.ExplanationBullets = append([]string{}, planResp.ShortBullets...)
 	updated.ApprovalNeeded = planResp.ApprovalNeeded
+	updated = enforceLangGraphApprovalContext(updated, input.ApprovalContext)
 
+	if resolveLangGraphExplainMode(input.LLMExplainMode) == langGraphExplainModeLocal {
+		updated.UserExplanation = buildLangGraphExplanation(planResp)
+		updated.ReasonCodes = uniqueStrings(append(updated.ReasonCodes, "explain_local"))
+		updated.TimingsMS = mergeTimingMS(updated.TimingsMS, map[string]any{
+			"llm_explain_duration_ms": 0,
+		})
+		updated = enforceLangGraphApprovalContext(updated, input.ApprovalContext)
+		updated.Cognition = buildLangGraphEngagedState(health, updated)
+		return updated, nil
+	}
+
+	explainStarted := time.Now()
 	explainResp, err := p.client.Explain(ctx, buildLangGraphExplainRequest(input, candidate, updated, planResp))
+	updated.TimingsMS = mergeTimingMS(updated.TimingsMS, map[string]any{
+		"llm_explain_duration_ms": int(time.Since(explainStarted).Milliseconds()),
+	})
 	if err != nil {
 		observability.Warn("langgraph_explain_fallback", map[string]any{
 			"session_id": input.SessionID,
 			"reason":     err.Error(),
 		})
 		updated.UserExplanation = buildLangGraphExplanation(planResp)
+		updated = enforceLangGraphApprovalContext(updated, input.ApprovalContext)
 		updated.Cognition = buildLangGraphDegradedState(health, updated)
 		return updated, nil
 	}
@@ -137,9 +180,20 @@ func (p *LangGraphPlanner) BuildPlan(ctx context.Context, input PlanningInput) (
 	if riskNote := strings.TrimSpace(explainResp.RiskNote); riskNote != "" {
 		updated.RiskNote = riskNote
 	}
+	updated = enforceLangGraphApprovalContext(updated, input.ApprovalContext)
 	updated.ReasonCodes = uniqueStrings(updated.ReasonCodes)
 	updated.Cognition = buildLangGraphEngagedState(health, updated)
 	return updated, nil
+}
+
+func enforceLangGraphApprovalContext(plan AgentPlan, approvalContext map[string]any) AgentPlan {
+	required, _ := boolFromAny(approvalContext["deterministic_required"])
+	if !required {
+		return plan
+	}
+	plan.ApprovalNeeded = true
+	plan.ReasonCodes = uniqueStrings(append(plan.ReasonCodes, "approval_context_enforced"))
+	return plan
 }
 
 func buildLangGraphPlanRequest(input PlanningInput, basePlan AgentPlan) LangGraphPlanRequest {
@@ -187,10 +241,18 @@ func buildLangGraphPlanRequest(input PlanningInput, basePlan AgentPlan) LangGrap
 		ScanSummary:       scanSummary,
 		CandidatePreviews: candidatePreviews,
 		SafetyContext: map[string]any{
-			"selected_candidate_id": basePlan.SelectedCandidateID,
-			"selected_source":       basePlan.SelectedSource,
-			"skipped_issue_types":   skippedTypes,
-			"selected_issue_count":  len(basePlan.SelectedIssueIDs),
+			"selected_candidate_id":     basePlan.SelectedCandidateID,
+			"selected_source":           basePlan.SelectedSource,
+			"skipped_issue_types":       skippedTypes,
+			"selected_issue_count":      len(basePlan.SelectedIssueIDs),
+			"auto_repair_issue_ids":     append([]string{}, basePlan.AutoRepairIssueIDs...),
+			"cautious_issue_ids":        append([]string{}, basePlan.CautiousIssueIDs...),
+			"manual_review_issue_ids":   append([]string{}, basePlan.ManualReviewIssueIDs...),
+			"blocked_issue_ids":         append([]string{}, basePlan.BlockedIssueIDs...),
+			"auto_repair_issue_count":   len(basePlan.AutoRepairIssueIDs),
+			"cautious_issue_count":      len(basePlan.CautiousIssueIDs),
+			"manual_review_issue_count": len(basePlan.ManualReviewIssueIDs),
+			"blocked_issue_count":       len(basePlan.BlockedIssueIDs),
 		},
 		ApprovalContext: cloneMap(input.ApprovalContext),
 		UserPreferences: cloneMap(input.PreferenceSnapshot),

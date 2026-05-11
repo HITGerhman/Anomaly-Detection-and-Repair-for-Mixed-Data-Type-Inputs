@@ -23,7 +23,7 @@ class OpenAICompatibleConfig:
 
     @property
     def enabled(self) -> bool:
-        return bool(self.base_url and self.model)
+        return bool(self.base_url and self.api_key and self.model)
 
     @property
     def chat_url(self) -> str:
@@ -134,6 +134,8 @@ def _extract_message_content(payload: dict[str, Any]) -> str:
 
 def _parse_json_text(content: str) -> dict[str, Any]:
     clean = content.strip()
+    if not clean:
+        raise LLMError("llm content is empty")
     if clean.startswith("```"):
         clean = clean.strip("`")
         clean = clean.replace("json", "", 1).strip()
@@ -141,4 +143,6 @@ def _parse_json_text(content: str) -> dict[str, Any]:
     end = clean.rfind("}")
     if start >= 0 and end >= start:
         clean = clean[start : end + 1]
+    if not clean:
+        raise LLMError("llm content is empty")
     return json.loads(clean)

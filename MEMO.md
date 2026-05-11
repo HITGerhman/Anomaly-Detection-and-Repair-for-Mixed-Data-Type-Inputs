@@ -1,6 +1,6 @@
 ﻿# MEMO
 
-Last updated: 2026-05-04 11:20:27 +08:00
+Last updated: 2026-05-05 09:42:18 +08:00
 
 ## 椤圭洰鎬荤洰鏍?
 - 灏嗏€滄贩鍚堟暟鎹被鍨嬪紓甯告娴嬩笌淇鈥濋」鐩粠绠楁硶鍘熷瀷鎺ㄨ繘涓哄彲浜や粯銆佸彲婕旂ず銆佸彲娴嬭瘯鐨勬闈㈠簲鐢ㄣ€?- 浠?`appshell/` 浣滀负浜у搧鍖栦富璺緞锛屽舰鎴?`Python Engine + Go Backend + Wails Frontend` 鐨勭ǔ瀹氭灦鏋勩€?- 淇濈暀 `app.py` 浣滀负鏃х増 Streamlit 婕旂ず鍏ュ彛锛岀敤浜庣畻娉曢獙璇併€佺粨鏋滃鐓у拰绛旇京灞曠ず銆?- 閫愭琛ラ綈鐪熷疄鐢ㄦ埛闂幆锛氬鍏?CSV -> 璁粌/鎵弿 -> 闂绛涢€?-> 鎵归噺淇 -> 鍥炴粴 -> 鍘嗗彶鏌ョ湅銆?- 鍦ㄤ繚鐣欑幇鏈夌畻娉曡祫浜т笌宸ョ▼楠ㄦ灦鐨勫墠鎻愪笅锛岄€愭鍗囩骇涓衡€滃 agent 鍐崇瓥灞?+ 纭畾鎬у伐鍏峰眰鈥濈殑鏅鸿兘鍖栦骇鍝併€?- 鏈€缁堢洰鏍囨槸璁╃敤鎴峰敖閲忓彧闇€閫夋嫨鏂囦欢锛屽嵆鍙嚜鍔ㄨ幏寰楁壂鎻忋€佷慨澶嶃€侀獙璇併€佸洖婊氫繚鎶ゅ拰鍥捐〃鍖栬В閲婄粨鏋溿€?
@@ -854,3 +854,558 @@ Last updated: 2026-05-04 11:20:27 +08:00
   - 当前已有未跟踪项 `out/figma-verify/` 与 `scripts/langgraph.local.ps1` 未处理，保持原样。
 - 我们目前已完成的步骤：已完成 M0 项目基线确认、M1 可复现实验数据构造、M2 检测效果评估、M3 修复效果评估、M4 核心行为回归测试、M5 答辩演示流程收口，以及 M6 论文支撑材料整理。
 - 我们当前正在努力解决的问题：把项目收束为可证明、可复现、可测试、可演示、可写论文的毕业设计交付状态；当前路线图 M0-M6 已全部形成对应产物，后续重点转为人工审查 diff、补论文格式和按学校要求整理终稿。
+
+## Update 2026-05-04 15:49:43
+
+- 改动日期：2026-05-04 15:49:43 +08:00
+- 改动内容简述：记录 `AUTO_AGENT_ROADMAP.md` 中 A0“分支与冻结点确认”的验收结果；本次只更新项目备忘录，不修改业务代码、不修改 `GRADUATION_PROJECT_ROADMAP.md`，也不修改 M0-M6 已冻结产物。
+- 最终目标：确认后续 Auto Agent 增强工作已经从毕业设计冻结主线中隔离出来，所有实验性 agent 工作均在 `feat/auto-agent-planner` 分支上继续推进。
+- 当前采用的方法：
+  - 按项目约定先阅读 `MEMO.md`。
+  - 检查当前分支、upstream、HEAD、`origin/main` 冻结点以及与 `origin/main` 的差异文件。
+  - 仅记录 A0 验收事实，不执行 A1 或后续 agent 功能开发。
+- 相关模块/文件：
+  - `AUTO_AGENT_ROADMAP.md`
+  - `MEMO.md`
+- 已完成的步骤 / 已解决的问题 / 新增功能：
+  - 确认当前分支为 `feat/auto-agent-planner`，并跟踪 `origin/feat/auto-agent-planner`。
+  - 确认当前 HEAD 为 `fd7aae13feb6ae1611828691bb1866dbbdcc25a5`。
+  - 确认 `origin/main` 冻结点为 `0f8a5877dde8651a46121f5c118dbb7c9c655137`。
+  - 确认 `AUTO_AGENT_ROADMAP.md` 已存在。
+  - 确认当前分支相对 `origin/main` 的差异仅为新增 `AUTO_AGENT_ROADMAP.md`。
+  - 确认工作区在验收前为干净状态。
+- 验收结果：
+  - A0 验收通过。
+  - `main` 分支未被修改。
+  - M0-M6 产物未被修改。
+  - 本次只记录验收结果，没有执行任何 agent 功能开发。
+- 当前问题 / 待处理事项：
+  - 下一步如继续推进，应只执行 A1“Auto Agent 设计文档”，不跳到 A2 及之后阶段。
+  - 后续每次 agent 分支改动仍需先阅读 `MEMO.md` 与 `AUTO_AGENT_ROADMAP.md`，并在完成后更新 `MEMO.md`。
+
+## Update 2026-05-04 15:54:01
+
+- 改动日期：2026-05-04 15:54:01 +08:00
+- 改动内容简述：执行 `AUTO_AGENT_ROADMAP.md` 中 A1“Auto Agent 设计文档”，新增根目录 `AUTO_AGENT_DESIGN.md`，冻结 Auto Agent 的目标、边界、输入输出、安全策略、执行流程和后续阶段约束；本次不写业务代码、不修改核心逻辑、不修改 M0-M6 已冻结产物。
+- 最终目标：在正式实现 A2 deterministic planner 之前，先把 Auto Agent 作为旁路编排层的设计边界说明清楚，确保后续实现复用现有确定性工具，并保持 validation-first / rollback-first 的安全边界。
+- 当前采用的方法：
+  - 按项目约定先阅读 `MEMO.md`，并参考 `AUTO_AGENT_ROADMAP.md`、`MULTI_AGENT_BLUEPRINT.md` 和现有 Go `internal/agent` / Python engine 能力。
+  - 只新增设计文档，不修改 Go、Python、前端、实验数据、评估报告、测试文件或答辩材料。
+  - 在文档中把 `APPSHELL_LANGGRAPH_*` sidecar 配置与 `APPSHELL_LANGGRAPH_LLM_*` provider 配置分开说明，并避免写入真实 API key。
+- 相关模块/文件：
+  - `AUTO_AGENT_DESIGN.md`
+  - `MEMO.md`
+- 已完成的步骤 / 已解决的问题 / 新增功能：
+  - 新增 `AUTO_AGENT_DESIGN.md`，明确文档定位、目标体验、非目标和与 M0-M6 冻结主线的关系。
+  - 记录当前系统基线，包括 `feat/auto-agent-planner` 分支、现有 Python engine actions、Go agent actions、planning boundary、agent session / trace 类型和 LangGraph sidecar 现实状态。
+  - 明确分层架构：User Experience Layer、Go Agent Runtime Layer、Planner / Cognition Layer、Deterministic Tool Layer、Algorithm & Artifact Layer。
+  - 明确 agent 能做什么、不能做什么，特别强调 agent 不直接修改 CSV，不能绕过 `repair_batch` / `repair_with_gower` / `rollback_repair_batch` 等受控工具。
+  - 补充 repair plan 的概念映射示例，并说明该示例不要求修改现有 wire shape。
+  - 明确推荐运行流程：Scan -> Profile -> Candidate Preview -> Plan -> Approval / Execute -> Rescan -> Validate -> Rollback / Explain。
+  - 明确外部 API 与 fallback 策略，要求 sidecar 或 LLM 失败、超时、非法 JSON、schema 不合规、高风险越权等情况回退 deterministic planner。
+  - 明确验证与回滚策略，默认低风险自动、中风险谨慎、高风险人工复核，每次写出修复结果必须尽量保留 rollback manifest。
+- 验证结果：
+  - `AUTO_AGENT_DESIGN.md` 已创建并可读取。
+  - 文档包含 A1 要求的关键主题：目标、M0-M6 关系、能做/不能做、工具调用、repair plan、外部 API、fallback、验证与回滚、agent 不直接修改 CSV。
+  - 本次未运行单元测试，因为 A1 是纯文档阶段，没有业务代码变更。
+- 当前问题 / 待处理事项：
+  - 下一步如继续推进，应只执行 A2“Deterministic Planner 原型”，不要同时执行 A3 及之后任务。
+  - A2 实现时应优先复用现有 Go `PlanningInput`、`AgentPlan`、`RepairCandidate` 和 `ToolRegistry` 边界，不应修改 Python engine action 协议。
+
+## Update 2026-05-04 16:26:55
+
+- 改动日期：2026-05-04 16:26:55 +08:00
+- 改动内容简述：执行 `AUTO_AGENT_ROADMAP.md` 中 A2“Deterministic Planner 原型”，在 Go agent 旁路规划层新增保守 deterministic issue 分桶和 additive plan 字段；本次不修改 Python engine action 协议，不修改 `repair_batch` / `repair_with_gower` / `rollback_repair_batch` 语义，不修改 M0-M6 已冻结产物。
+- 最终目标：让 Auto Agent 在不依赖外部 API 的情况下，先具备可解释、可测试、可回退的规则型规划基线，并把自动执行范围收窄到低风险 issue。
+- 当前采用的方法：
+  - 在 `feat/auto-agent-planner` 分支上继续推进 A2，保留 A1 文档和既有 memo 记录。
+  - 将 `missing_values`、`rare_category` 归入 auto repair；将 `numeric_outlier` 归入 cautious；将 `duplicate_record`、`cross_column_consistency` 归入 manual review；将 unknown 或缺失 issue id 归入 blocked / skipped explanation。
+  - 让 rule / Gower preview 和执行 payload 只接收 auto issue ids，cautious/manual/blocked 只进入 plan 字段、skipped issues、reason codes、risk note 和 explanation bullets。
+- 相关模块/文件：
+  - `appshell/backend/internal/agent/types.go`
+  - `appshell/backend/internal/agent/helpers.go`
+  - `appshell/backend/internal/agent/planning_support.go`
+  - `appshell/backend/internal/agent/mock_planner.go`
+  - `appshell/backend/internal/agent/runtime_runner.go`
+  - `appshell/backend/internal/agent/langgraph_factory.go`
+  - `appshell/backend/internal/agent/langgraph_planner.go`
+  - `appshell/backend/internal/agent/planning_support_test.go`
+  - `appshell/backend/internal/agent/mock_planner_test.go`
+  - `appshell/backend/internal/agent/runtime_runner_test.go`
+  - `MEMO.md`
+- 已完成的步骤 / 已解决的问题 / 新增功能：
+  - `AgentPlan` 新增 `auto_repair_issue_ids`、`cautious_issue_ids`、`manual_review_issue_ids`、`blocked_issue_ids` 四个向后兼容 JSON 字段，并更新 `clonePlan`，避免 session snapshot / store roundtrip 丢失字段。
+  - 新增 `DeterministicPlanner` 和 `NewDeterministicPlanner()`，保留 `MockPlanner` / `NewMockPlanner()` 作为兼容 alias。
+  - `NewRuntimeRunner(..., nil)`、LangGraph planner factory 和 LangGraph fallback 默认使用 deterministic planner。
+  - `selectRepairableIssues` 改为基于 A2 分桶规则，只把 auto issue ids 传给 rule / Gower preview。
+  - deterministic planner 继续复用 rule / Gower / hybrid candidate 比较逻辑，但 `SelectedIssueIDs` 和 `ProposedPayload.issue_ids` 只包含 auto issue ids。
+  - planner 输出补充 `ReasonCodes`、`RiskNote`、`ExplanationBullets`，说明 numeric/manual/blocked 项保留复核，不因这些项存在而自动触发 approval gate。
+  - 更新 Go 单元测试，覆盖五类 issue、unknown、缺失 issue id、planner bucket 输出和 preview payload 只包含 auto ids。
+- 验证结果：
+  - `Push-Location appshell\backend; go test ./internal/agent ./internal/engine ./internal/task ./cmd/wails; Pop-Location` 首次执行失败，原因是当前 shell 命中 WindowsApps `python.exe` shim，测试子进程返回 `exit status 9009`；该失败与 A2 planner 逻辑无关。
+  - `$env:PATH = (Resolve-Path '.\.venv-win\Scripts').Path + ';' + $env:PATH; Push-Location appshell\backend; go test ./internal/agent ./internal/engine ./internal/task ./cmd/wails; Pop-Location` 通过：`internal/agent`、`internal/engine`、`internal/task`、`cmd/wails` 均为 `ok`。
+  - `.\.venv-win\Scripts\python.exe -m pytest tests\python_engine -q` 通过：`41 passed, 12 warnings in 45.94s`。
+- 当前问题 / 待处理事项：
+  - A2 只完成 deterministic planner 原型；下一步如继续推进，应只执行 A3，不跳到 A4/A5。
+  - Python tests 仍保留既有 pandas `is_categorical_dtype` deprecation warning；本次按 A2 范围不修改 Python 核心修复逻辑。
+  - 原始 Go 测试命令对当前 Windows PATH 敏感，继续建议在本机验证 Go 包前临时把 `.venv-win\Scripts` 放在 PATH 最前。
+  - 本次未提交、未推送；后续如需要提交，应先复查 diff，确认仍不包含 M0-M6 冻结产物变更。
+
+## Update 2026-05-04 16:39:59
+
+- 改动日期：2026-05-04 16:39:59 +08:00
+- 改动内容简述：执行 `AUTO_AGENT_ROADMAP.md` 中 A3“LLM Planner Adapter”，将现有 LangGraph sidecar 的 OpenAI-compatible LLM 能力收束为可选、可 mock、可 fallback 的 planner adapter；本次不修改 Python engine action 协议，不修改 `repair_batch` / `repair_with_gower` / `rollback_repair_batch` 语义，不修改 M0-M6 已冻结产物。
+- 最终目标：让外部 LLM 只作为规划和解释增强存在，所有真实候选、执行 payload、审批、验证和回滚边界仍由 deterministic Go agent runtime 控制。
+- 当前采用的方法：
+  - 复用现有 `LangGraphPlanner -> deterministic fallback planner -> sidecar Plan/Explain` 架构，不新增 Go 直连 OpenAI provider。
+  - 收紧 sidecar LLM 启用条件，要求 `APPSHELL_LANGGRAPH_LLM_BASE_URL`、`APPSHELL_LANGGRAPH_LLM_API_KEY`、`APPSHELL_LANGGRAPH_LLM_MODEL` 均存在才进入 `planner_mode=llm`。
+  - 对 LLM plan / explain 输出增加严格校验，非法 JSON、缺字段、候选 ID 不存在、请求失败或超时均 fallback，并记录结构化 fallback reason code。
+  - 在 Go adapter 侧再次强制 approval context，避免 LLM 将 high-risk / time-like / protected column 的审批要求降级。
+- 相关模块/文件：
+  - `appshell/core/langgraph_sidecar/llm_client.py`
+  - `appshell/core/langgraph_sidecar/schemas.py`
+  - `appshell/core/langgraph_sidecar/graph.py`
+  - `appshell/backend/internal/agent/langgraph_client.go`
+  - `appshell/backend/internal/agent/langgraph_planner.go`
+  - `appshell/backend/internal/agent/langgraph_client_test.go`
+  - `appshell/backend/internal/agent/langgraph_planner_test.go`
+  - `tests/langgraph_sidecar/test_graph.py`
+  - `tests/langgraph_sidecar/test_llm_client.py`
+  - `tests/langgraph_sidecar/test_schemas.py`
+  - `tests/langgraph_sidecar/test_server.py`
+  - `MEMO.md`
+- 已完成的步骤 / 已解决的问题 / 新增功能：
+  - `OpenAICompatibleConfig.enabled` 现在要求 base URL、API key、model 三者齐备；health payload 继续只暴露 planner mode、LLM mode 和 model，不暴露 key。
+  - 新增严格 LLM plan/explain normalization：plan 必须包含 `strategy_label` 和有效 `selected_candidate_id`；explain 必须包含 `summary` 或 `final_message`。
+  - sidecar fallback 会保留现有 deterministic graph 输出，并在 `reason_codes` 中加入 `llm_invalid_json`、`llm_non_200`、`llm_timeout`、`llm_schema_invalid` 等原因。
+  - 当 `approval_context.deterministic_required=true` 时，sidecar 与 Go overlay 均会强制 `approval_needed=true`，并加入 `approval_context_enforced`。
+  - Go `LangGraphClient.Plan` 增加 `selected_candidate_id` 必填校验，缺失时触发 Go deterministic fallback。
+  - `buildLangGraphPlanRequest` 的 safety context 增加 A2 分桶摘要：auto/cautious/manual/blocked issue ids 与数量，供 LLM 解释使用但不扩大执行 payload。
+  - 更新 Go 和 Python sidecar 测试，覆盖合法 mock LLM、缺 key fallback、非法 JSON fallback、invalid candidate fallback、approval enforcement 和 Go-side request/overlay 保护。
+- 验证结果：
+  - `.\.venv-win\Scripts\python.exe -m pytest tests\langgraph_sidecar -q` 通过：`20 passed in 3.06s`。
+  - `$env:PATH = (Resolve-Path '.\.venv-win\Scripts').Path + ';' + $env:PATH; Push-Location appshell\backend; go test ./internal/agent ./internal/engine ./internal/task ./cmd/wails; Pop-Location` 通过：`internal/agent`、`internal/engine`、`internal/task`、`cmd/wails` 均为 `ok`。
+  - `.\.venv-win\Scripts\python.exe -m pytest tests\python_engine -q` 通过：`41 passed, 12 warnings in 51.96s`。
+  - `git diff --check` 通过，仅出现 Windows 换行提示，无 whitespace error。
+- 当前问题 / 待处理事项：
+  - A3 只完成 LLM planner adapter；下一步如继续推进，应只执行 A4“Validation Gate”，不要跳到 A5/A6。
+  - A3 测试不真实调用外部 API，所有 LLM 行为通过 mock 或本地 fake server 覆盖；真实 provider 联调应留给单独本地验证，并且不能提交 API key。
+  - Python engine 回归仍保留既有 pandas `is_categorical_dtype` deprecation warning；本次按 A3 范围不修改 Python 核心修复逻辑。
+  - 当前 A1/A2/A3 均未提交、未推送；后续如需要提交，应先复查 diff，确认仍不包含 M0-M6 冻结产物变更。
+
+## Update 2026-05-04 16:54:37
+
+- 改动日期：2026-05-04 16:54:37 +08:00
+- 改动内容简述：执行 `AUTO_AGENT_ROADMAP.md` 中 A4“Validation Gate”，在 Go agent 自动闭环层新增修复后安全判定 gate；本次不修改 Python engine action 协议，不修改 `repair_batch` / `repair_with_gower` / `rollback_repair_batch` 语义，不修改 M0-M6 已冻结产物。
+- 最终目标：让 Auto Agent 在自动写出修复结果后，基于修复前 scan、修复执行结果、复扫结果、repair plan 和 rollback manifest 做统一判定，避免“修了但变差”、误修过多、越权修复或缺少回滚依据。
+- 当前采用的方法：
+  - 在 `feat/auto-agent-planner` 分支上继续推进 A4，保留 A1/A2/A3 既有未提交改动。
+  - 将 validation gate 放在 Go `internal/agent` 自动闭环层，复用现有 post-scan、rollback-first 和 agent trace 机制，不进入 Python engine。
+  - 保持 `warn` 为可接受但需解释的结果；`reject` / `rollback_recommended` 继续走现有自动回滚路径。
+- 相关模块/文件：
+  - `appshell/backend/internal/agent/validation_gate.go`
+  - `appshell/backend/internal/agent/validation_gate_test.go`
+  - `appshell/backend/internal/agent/approval_runtime.go`
+  - `appshell/backend/internal/agent/auto_helpers.go`
+  - `appshell/backend/internal/agent/runtime_runner_test.go`
+  - `MEMO.md`
+- 已完成的步骤 / 已解决的问题 / 新增功能：
+  - 新增内部 validation gate，输出 `accept`、`warn`、`reject`、`rollback_recommended` 四类 verdict。
+  - `validation.post_execute` 追加 `verdict`、`resolved_issue_count`、`total_cells_modified`、`risk_notes`、`rollback_recommended`、`explanation` 等 A4 字段，同时保留 `status`、`accepted`、`message` 兼容字段。
+  - gate 现在会检测 issue count 上升、无改善、修改单元格异常多、manual review issue 被自动修复、baseline high-risk issue 被自动修复、rollback manifest 缺失和 repair error。
+  - 修改单元格异常阈值固定为 `total_cells_modified > max(50, before_issue_count * 20)`。
+  - `approval_runtime.go` 的 post-execute 验证改为调用 validation gate；`warn` 不触发回滚，`reject` / `rollback_recommended` 复用现有 `finishAutoRollback`。
+  - output CSV 缺失、post scan 失败、rollback metadata 缺失等早期失败路径现在也会产出同一套 A4 validation 字段。
+  - 新增 A4 单元测试覆盖 accept、warn、issue count increase reject、manual review auto repair reject、high-risk auto repair reject、missing rollback manifest 和 repair error。
+  - 更新 runtime accepted 测试，确认 auto session 成功路径仍可完成，且 post validation trace 中包含 A4 verdict。
+- 验证结果：
+  - `$env:PATH = (Resolve-Path '.\.venv-win\Scripts').Path + ';' + $env:PATH; Push-Location appshell\backend; go test ./internal/agent ./internal/engine ./internal/task ./cmd/wails; Pop-Location` 通过：`internal/agent`、`internal/engine`、`internal/task`、`cmd/wails` 均为 `ok`。
+  - `.\.venv-win\Scripts\python.exe -m pytest tests\langgraph_sidecar -q` 通过：`20 passed in 2.50s`。
+  - `.\.venv-win\Scripts\python.exe -m pytest tests\python_engine -q` 通过：`41 passed, 12 warnings in 51.72s`。
+  - `git diff --check` 通过，仅出现 Windows 换行提示，无 whitespace error。
+- 当前问题 / 待处理事项：
+  - A4 只完成 validation gate；下一步如继续推进，应只执行 A5，不跳到 A6。
+  - Python engine 回归仍保留既有 pandas `is_categorical_dtype` deprecation warning；本次按 A4 范围不修改 Python 核心修复逻辑。
+  - 当前 A1/A2/A3/A4 均未提交、未推送；后续如需要提交，应先复查 diff，确认仍不包含 M0-M6 冻结产物变更。
+
+## Update 2026-05-04 20:46:09
+
+- 改动日期：2026-05-04 20:46:09 +08:00
+- 改动内容简述：执行 `AUTO_AGENT_ROADMAP.md` 中 A5“Auto Agent CLI Demo”，新增最小 Python CLI 演示入口，复用现有 Go agent runtime 跑通 scan -> plan -> execute -> rescan -> validation gate -> report / trace / rollback artifact 输出；本次不修改 Python engine action 协议，不修改 `action_catalog.py` stable action 列表，不修改 M0-M6 已冻结产物。
+- 最终目标：让当前分支能通过一条命令证明 Auto Agent 闭环可演示、可审计、可回滚，并把所有演示产物写入独立 `outputs/auto_agent/...` 目录。
+- 当前采用的方法：
+  - Python CLI 只作为 wrapper 和 artifact 打包层，不重写 deterministic planner、LLM adapter、validation gate 或 repair/rollback 工具。
+  - CLI 内部调用现有 Go demo：`go run ./cmd/demo -action agent.session.auto ...`，并显式使用 `<output-dir>/auto_agent.sqlite` 作为独立 history / agent trace DB。
+  - CLI 将完整 response、repair plan、validation result、execution、safety、agent trace、stdout/stderr log 和 Markdown report 写入输出目录。
+- 相关模块/文件：
+  - `appshell/core/python_engine/auto_agent_cli.py`
+  - `tests/auto_agent_cli/test_auto_agent_cli.py`
+  - `MEMO.md`
+- 已完成的步骤 / 已解决的问题 / 新增功能：
+  - 新增 `auto_agent_cli.py`，支持 `--csv`、`--output-dir`、`--goal`、`--model-dir`、`--timeout-seconds`、`--go-bin`、`--backend-dir`。
+  - CLI 会自动把本地 `.venv-win\Scripts` 放到子进程 PATH 前面，避免 Go runner 命中 WindowsApps `python.exe` shim。
+  - CLI 会解析 Go demo stdout 中的 structured response，并写出 `response.json`、`repair_plan.json`、`validation_result.json`、`execution.json`、`safety.json`。
+  - CLI 会从独立 SQLite DB 的 `agent_trace` 表导出 `auto_agent_trace.json`。
+  - CLI 会生成中文 `report.md`，包含输入 CSV、修复输出 CSV、rollback manifest、自动/谨慎/人工/blocked issue 数量、validation verdict、risk notes、final verdict 和回滚提示。
+  - CLI 会保存 `run_stdout.log` / `run_stderr.log`；Go demo 非 0 退出时仍尽量解析 response 和写出可用产物，最终保留非 0 exit code。
+  - 新增 `tests/auto_agent_cli/test_auto_agent_cli.py`，覆盖 Go demo 命令构造、stdout response 解析、SQLite trace 导出、report 内容和非 0 退出错误产物。
+- 验证结果：
+  - `.\.venv-win\Scripts\python.exe -m pytest tests\auto_agent_cli -q` 通过：`4 passed in 0.34s`。
+  - `$env:PATH = (Resolve-Path '.\.venv-win\Scripts').Path + ';' + $env:PATH; Push-Location appshell\backend; go test ./internal/agent ./internal/engine ./internal/task ./cmd/wails; Pop-Location` 通过：`internal/agent`、`internal/engine`、`internal/task`、`cmd/wails` 均为 `ok`。
+  - `.\.venv-win\Scripts\python.exe -m pytest tests\langgraph_sidecar -q` 通过：`20 passed in 2.92s`。
+  - `.\.venv-win\Scripts\python.exe -m pytest tests\python_engine -q` 通过：`41 passed, 12 warnings in 51.21s`。
+  - A5 smoke 命令通过：`.\.venv-win\Scripts\python.exe appshell\core\python_engine\auto_agent_cli.py --csv data\experiments\m1_stroke\corrupted.csv --output-dir outputs\auto_agent\m1_stroke --timeout-seconds 180`，CLI exit code 为 `0`。
+  - smoke 输出目录已生成 `response.json`、`repair_plan.json`、`validation_result.json`、`execution.json`、`safety.json`、`auto_agent_trace.json`、`report.md`、`run_stdout.log`、`run_stderr.log`、`auto_agent.sqlite`、修复后 CSV 和 rollback manifest；该目录位于 ignored `outputs/` 下，不修改 M1-M3 数据或 M0-M6 报告。
+- 当前问题 / 待处理事项：
+  - A5 只完成 CLI demo；下一步如继续推进，应只执行 A6“可选 Wails / Go 编排接入”。
+  - Python engine 回归仍保留既有 pandas `is_categorical_dtype` deprecation warning；本次按 A5 范围不修改 Python 核心修复逻辑。
+  - 当前 A1/A2/A3/A4/A5 均未提交、未推送；后续如需要提交，应先复查 diff，确认仍不包含 M0-M6 冻结产物变更。
+
+## Update 2026-05-04 22:01:50
+
+- 改动日期：2026-05-04 22:01:50 +08:00
+- 改动内容简述：执行 `AUTO_AGENT_ROADMAP.md` 中 A6“Wails / Go 编排接入”，将 A1-A5 Auto Agent 能力补齐到现有 Wails/Go 与前端 Smart Autofix 展示链路；本次不新增 Python engine action，不修改 `repair_batch` / `repair_with_gower` / `rollback_repair_batch` 协议，不修改 M0-M6 已冻结产物。
+- 最终目标：让 Wails 前端可以通过 `agent.session.auto` 启动 Auto Agent 闭环，并在任务结束后查看 plan 分桶、风险解释、validation gate 结果、rollback 信息、presentation 和 agent trace。
+- 当前采用的方法：
+  - 复用既有 Wails methods：`RunAgentAutofixSession`、`ApproveAgentSession`、`GetAgentSession`、`ListAgentTrace`。
+  - 不重写 planner / validation gate / CLI；只补齐前端消费字段、preview mock 字段和 Wails 端测试断言。
+  - 失败或 binding 缺失时继续保留高级工作台入口，避免破坏原手动 scan/repair 流程。
+- 相关模块/文件：
+  - `appshell/frontend/src/main.js`
+  - `appshell/backend/cmd/wails/app_test.go`
+  - `MEMO.md`
+- 已完成的步骤 / 已解决的问题 / 新增功能：
+  - 前端 Smart Autofix 结果页现在会显示 A2 planner 分桶：自动修复、谨慎复核、人工复核、blocked issue 数量。
+  - 前端结果摘要、可信清单和执行理由中补充 A4 `validation.post_execute.verdict`、`total_cells_modified`、`risk_notes` 和 validation explanation。
+  - 前端会优先从真实 task response 读取 agent plan / validation / safety，并在 `GetAgentSession` / `ListAgentTrace` hydrate 后使用 session snapshot 与 trace 继续补充展示。
+  - preview/mock Auto Agent 返回补齐 A2 分桶字段和 A4 validation gate 字段，确保没有 Wails binding 的浏览器预览仍能演示 A6 UI。
+  - `cmd/wails` 测试新增断言：`RunAgentAutofixSession` 结果包含 A2 plan bucket、A4 post validation verdict、session presentation，并且 `ListAgentTrace` 能读到 post_execute validation trace。
+- 验证结果：
+  - `& 'C:\Users\NEMO\.cache\codex-runtimes\codex-primary-runtime\dependencies\node\bin\node.exe' --check appshell\frontend\src\main.js` 通过。
+  - `$env:PATH = (Resolve-Path '.\.venv-win\Scripts').Path + ';' + $env:PATH; Push-Location appshell\backend; go test ./internal/agent ./internal/engine ./internal/task ./cmd/wails; Pop-Location` 通过：四个 Go package 均为 `ok`。
+  - `.\.venv-win\Scripts\python.exe -m pytest tests\auto_agent_cli -q` 通过：`4 passed`。
+  - `.\.venv-win\Scripts\python.exe -m pytest tests\langgraph_sidecar -q` 通过：`20 passed`。
+  - `.\.venv-win\Scripts\python.exe -m pytest tests\python_engine -q` 通过：`41 passed, 12 warnings`。
+  - A5 smoke 命令继续通过：`.\.venv-win\Scripts\python.exe appshell\core\python_engine\auto_agent_cli.py --csv data\experiments\m1_stroke\corrupted.csv --output-dir outputs\auto_agent\m1_stroke --timeout-seconds 180`。
+  - smoke 输出目录确认存在 `response.json`、`repair_plan.json`、`validation_result.json`、`auto_agent_trace.json`、`report.md`；该目录位于 ignored `outputs/` 下。
+- 当前问题 / 待处理事项：
+  - A6 已完成 Wails / Go 编排接入与复验；下一步如继续推进，应先确认是否进入 A7 或收敛为提交/PR，而不是继续改动 M0-M6 冻结产物。
+  - 当前 A1/A2/A3/A4/A5/A6 均未提交、未推送；提交前仍需复查 diff，确认不包含 `GRADUATION_PROJECT_ROADMAP.md`、M0-M6 实验数据、评估报告、测试文件或答辩材料变更。
+  - 当前 Windows shell 中系统 `rg.exe` 与 `node.exe` 入口会返回 `Access is denied`；本次前端静态校验改用 Codex runtime bundled Node。
+  - Python engine 回归仍保留既有 pandas `is_categorical_dtype` deprecation warning；本次按 A6 范围不修改 Python 核心修复逻辑。
+
+## Update 2026-05-05 08:36:10
+
+- 改动日期：2026-05-05 08:36:10 +08:00
+- 改动内容简述：准备将 `feat/auto-agent-planner` 分支上的 A1-A6 Auto Agent 阶段成果同步到 GitHub；本次同步前复查变更范围，确认不包含 `GRADUATION_PROJECT_ROADMAP.md`、M0-M6 实验数据、评估报告、答辩材料或本地敏感配置。
+- 最终目标：把当前 Auto Agent 旁路增强成果形成一个可追踪的 Git commit，并推送到远端 `origin/feat/auto-agent-planner`，便于后续审查、备份和继续迭代。
+- 当前采用的方法：
+  - 先执行 `git fetch origin` 更新远端引用。
+  - 使用 `git status --short --branch`、`git diff --name-status`、未跟踪文件列表和冻结产物路径过滤检查当前工作区。
+  - 将 A1-A6 相关文档、Go agent runtime、LangGraph sidecar、A5 CLI、A6 Wails / 前端接入和对应测试作为一个整体提交。
+- 相关模块/文件：
+  - `AUTO_AGENT_DESIGN.md`
+  - `MEMO.md`
+  - `appshell/backend/internal/agent/*`
+  - `appshell/backend/cmd/wails/app_test.go`
+  - `appshell/core/langgraph_sidecar/*`
+  - `appshell/core/python_engine/auto_agent_cli.py`
+  - `appshell/frontend/src/main.js`
+  - `tests/langgraph_sidecar/*`
+  - `tests/auto_agent_cli/test_auto_agent_cli.py`
+- 已完成的步骤 / 已解决的问题 / 新增功能：
+  - 已确认当前分支为 `feat/auto-agent-planner`，远端为 `origin`。
+  - 已确认本次同步范围是 A1-A6 Auto Agent 成果，未看到 M0-M6 冻结产物进入 diff。
+  - 已确认 GitHub CLI `gh` 当前未安装，因此本次只做 commit / push 同步；draft PR 创建留待安装 `gh` 或使用 GitHub 网页后执行。
+- 当前问题 / 待处理事项：
+  - 本次同步完成后，需要在 GitHub 远端确认分支提交是否正常显示。
+  - 如需要 Pull Request，需要后续安装并登录 `gh`，或手动在 GitHub 页面从 `feat/auto-agent-planner` 发起 PR。
+
+## Update 2026-05-05 09:42:18
+
+- 改动日期：2026-05-05 09:42:18 +08:00
+- 改动内容简述：执行一次本地 Auto Agent CLI 验收，在 `data/experiments/m1_stroke/corrupted.csv` 上跑通 `auto_agent_cli.py` 并产出完整报告；本次不修改业务代码、不修改 Python engine action 协议、不修改 M0-M6 冻结产物。
+- 最终目标：确认 A5/A6 当前本地闭环仍可在真实 M1 stroke corrupted 数据上完成 scan -> plan -> execute -> rescan -> validation -> report / trace / rollback artifact 输出。
+- 当前采用的方法：
+  - 使用独立 ignored 输出目录 `outputs/auto_agent/m1_stroke_acceptance_20260505_094142`，避免覆盖既有 smoke 输出。
+  - 通过 `.venv-win` 运行 CLI：`.\.venv-win\Scripts\python.exe appshell\core\python_engine\auto_agent_cli.py --csv data\experiments\m1_stroke\corrupted.csv --output-dir outputs\auto_agent\m1_stroke_acceptance_20260505_094142 --timeout-seconds 180`。
+  - 验证 `response.json`、`repair_plan.json`、`validation_result.json`、`execution.json`、`safety.json`、`auto_agent_trace.json`、`report.md`、输出 CSV 和 rollback manifest 是否生成。
+- 相关模块/文件：
+  - `appshell/core/python_engine/auto_agent_cli.py`
+  - `data/experiments/m1_stroke/corrupted.csv`
+  - `outputs/auto_agent/m1_stroke_acceptance_20260505_094142/`
+  - `MEMO.md`
+- 验收结果：
+  - CLI exit code 为 `0`。
+  - `response.status` 为 `ok`。
+  - `safety.final_verdict` 为 `accepted`。
+  - repair plan 选择 `hybrid` candidate。
+  - A2 分桶结果：auto repair issues 7 个，cautious issues 3 个，manual review issues 0 个，blocked issues 7 个。
+  - A4 validation gate：`verdict=accept`，`status=accepted`，`rollback_recommended=False`。
+  - issue count 从 17 降到 10，resolved issue count 为 48，total cells modified 为 48。
+  - trace events 为 22 条。
+  - 已生成完整报告 `outputs/auto_agent/m1_stroke_acceptance_20260505_094142/report.md`、修复输出 `corrupted.repaired.hybrid.csv` 和 rollback manifest `.rollback/rb-1777945309849-hybrid.json`。
+- 当前问题 / 待处理事项：
+  - 本次验收产物位于 ignored `outputs/` 下，不进入 Git 提交；如需长期留档，应单独决定是否复制摘要到文档或提交 `MEMO.md`。
+  - 当前本地 `MEMO.md` 因记录本次验收产生未提交修改；如要同步到 GitHub，需要再提交并推送。
+
+## Update 2026-05-05 16:13:54
+
+- 改动日期：2026-05-05 16:13:54 +08:00
+- 改动内容简述：运行并整理后端 Agent 系统 benchmark 指标，用于简历量化；本次只生成 benchmark JSON、日志与 Markdown 汇总，不修改业务代码、不修改 Python engine action 协议、不修改 M0-M6 冻结产物。
+- 最终目标：基于真实 `cmd/bench` 输出提炼 scheduler、agent-plan 和 approval 三类后端 Agent 指标，形成可引用、可复核的量化材料。
+- 当前采用的方法：
+  - 在 `appshell/backend` 下运行 `cmd/bench` 的 `scheduler`、`agent-plan`、`approval` 三类场景。
+  - scheduler 使用 `scheduler-tasks=300`、`scheduler-delay-ms=40`、`scheduler-concurrency=1,3,6,12`。
+  - agent-plan 使用 `plan-warmups=2`、`plan-iterations=20`、`plan-csv=../../data/raw/simple_obvious_anomaly.csv`、`plan-model-dir=../../outputs/results/wails_mvp`，分别运行 `sequential` 与 `parallel` retrieval。
+  - approval 使用 `approval-iterations=100`。
+  - 只从生成的 benchmark JSON 读取指标并计算加速比，不手写或虚构数字。
+- 相关模块/文件：
+  - `appshell/backend/cmd/bench`
+  - `outputs/results/backend_benchmark_scheduler_20260505.json`
+  - `outputs/results/backend_benchmark_agent_plan_sequential_20260505.json`
+  - `outputs/results/backend_benchmark_agent_plan_parallel_20260505.json`
+  - `outputs/results/backend_benchmark_approval_20260505.json`
+  - `outputs/results/backend_agent_benchmark_summary_20260505.md`
+  - `outputs/results/backend_benchmark_agent_plan_sequential_20260505.log`
+  - `outputs/results/backend_benchmark_agent_plan_parallel_20260505.log`
+  - `outputs/results/backend_benchmark_approval_20260505.log`
+  - `MEMO.md`
+- 验收结果：
+  - scheduler 最高 `throughput_tps` 为 `295.95`，对应 `12` workers；该配置 `p95_queue_wait_ms=927.10 ms`、`p95_end_to_end_ms=967.60 ms`。
+  - agent-plan sequential：`avg_total_ms=3923.10`、`p95_total_ms=4163.85`。
+  - agent-plan parallel：`avg_total_ms=3221.15`、`p95_total_ms=3358.95`。
+  - agent-plan 平均耗时加速比为 `1.22x`，p95 耗时加速比为 `1.24x`。
+  - approval：`success_rate=1`、`p95_pause_latency_ms=308.78`、`p95_resume_latency_ms=185`、`trace_persistence_pct=1`。
+  - 已生成 Markdown 汇总 `outputs/results/backend_agent_benchmark_summary_20260505.md`，其中包含 scheduler 表、agent-plan sequential vs parallel 对比、approval 指标和 3 条中文简历 bullet 建议。
+- 当前问题 / 待处理事项：
+  - benchmark 产物位于 `outputs/results/` 下；如该目录被 Git ignore，需要另行决定是否把 Markdown 汇总复制到可提交文档区。
+  - 当前本地 `MEMO.md` 因记录 benchmark 产生未提交修改；如要同步到 GitHub，需要复查 diff 后提交并推送。
+
+## Update 2026-05-05 16:46:32
+
+- 改动日期：2026-05-05 16:46:32 +08:00
+- 改动内容简述：使用 DeepSeek Chat 真实外部 LLM API 执行一次 Auto Agent live smoke 验收，确认 A3 LLM Planner Adapter 可以在真实 API 可用时进入 LangGraph engaged 路径；本次不修改业务代码、不修改 Python engine action 协议、不修改 M0-M6 冻结产物。
+- 最终目标：补齐此前 deterministic / mock 测试之外的真实 API 端到端验收，验证 LLM 只作为 planner cognition adapter 参与候选选择和解释，不绕过 deterministic candidate、validation gate 与 rollback 安全闭环。
+- 当前采用的方法：
+  - 通过进程环境变量临时配置 `APPSHELL_LANGGRAPH_ENABLED=1`、`APPSHELL_LANGGRAPH_LLM_BASE_URL`、`APPSHELL_LANGGRAPH_LLM_MODEL=deepseek-chat`、`APPSHELL_LANGGRAPH_LLM_API_KEY`、`APPSHELL_LANGGRAPH_LLM_TIMEOUT_MS`、`APPSHELL_LANGGRAPH_REQUEST_TIMEOUT_MS` 等；API key 未写入任何仓库文件、脚本、报告或 MEMO。
+  - 第一次 live smoke 使用较短 Go-side request timeout，完整 Auto Agent CLI 闭环成功，但 LangGraph `/v1/plan` 超时，Go 侧按 A3 设计 fallback 到 deterministic planner。
+  - 第二次将 `APPSHELL_LANGGRAPH_REQUEST_TIMEOUT_MS` 提高到 `90000`、`APPSHELL_LANGGRAPH_LLM_TIMEOUT_MS` 提高到 `30000`，重新运行 Auto Agent CLI live smoke。
+  - 使用正则检查第二次输出目录中的 `.log` / `.json`，未发现形如 `sk-[0-9a-fA-F]{32}` 的 API key 泄露。
+- 相关模块/文件：
+  - `appshell/core/python_engine/auto_agent_cli.py`
+  - `appshell/core/langgraph_sidecar/`
+  - `appshell/backend/internal/agent/langgraph_*`
+  - `data/experiments/m1_stroke/corrupted.csv`
+  - `outputs/auto_agent/m1_stroke_deepseek_live_20260505_1615/`
+  - `outputs/auto_agent/m1_stroke_deepseek_live_20260505_1617/`
+  - `MEMO.md`
+- 验收结果：
+  - 第二次 live smoke CLI exit code 为 `0`。
+  - `response.status=ok`，`duration_ms=39311`。
+  - `plan.cognition.provider=langgraph`，`plan.cognition.status=engaged`，`planner_mode=llm`，`llm_mode=configured`，确认真实 LLM planner adapter 已接管本次 plan/explain。
+  - LLM 选择 `selected_candidate_id=candidate-hybrid`、`selected_source=hybrid`，未注入新的执行 payload，仍沿用 deterministic candidate。
+  - A2 分桶结果保持：auto repair issues 7 个，cautious issues 3 个，manual review issues 0 个，blocked issues 7 个。
+  - A4 validation gate：`verdict=accept`，`status=accepted`，`rollback_recommended=False`。
+  - `safety.final_verdict=accepted`。
+  - issue count 从 17 降到 10，resolved issue count 为 48，total cells modified 为 48。
+  - 已生成修复输出 `outputs/auto_agent/m1_stroke_deepseek_live_20260505_1617/corrupted.repaired.hybrid.csv`、rollback manifest、trace、response、plan、validation、safety 和 report artifacts。
+- 当前问题 / 待处理事项：
+  - DeepSeek live 路径需要更长的 Go-side LangGraph request timeout；短超时时系统会按设计 fallback 到 deterministic planner。
+  - API key 只应继续通过本地环境变量或私密配置注入，不应提交到 Git 或写入任何项目文档。
+  - 当前 live smoke 产物位于 ignored `outputs/` 下；如需长期留档，应只复制脱敏摘要，不复制任何敏感配置。
+
+## Update 2026-05-05 17:32:30
+
+- 改动日期：2026-05-05 17:32:30 +08:00
+- 改动内容简述：完成 Auto Agent 报告语义、可观测性与稳定性增强；本次不新增核心修复算法，不修改 Python engine action 协议，不修改 `repair_batch` / `repair_with_gower` / `rollback_repair_batch` 语义，不修改 M0-M6 冻结产物。
+- 最终目标：让 Auto Agent CLI Demo Report、validation 输出和 live benchmark 更适合答辩与简历量化，避免 `before_issue_count=17` 与 `resolved_issue_count=48` 这种口径混乱，同时证明 live API 链路可连续复验、故障可降级。
+- 当前采用的方法：
+  - 在 Go agent validation gate 中把“问题条目数”和“实际修改单元格数”分开，新增 `before_issue_items`、`after_issue_items`、`resolved_issue_items`、`modified_cell_count` 和 `metric_definitions`，旧字段仅保留兼容解释。
+  - 在 A2 planner 分桶结果中新增 blocked / cautious 明细与 blocked reason 分布，说明每个 issue 的风险原因、拦截规则和下一步建议。
+  - 在 Go agent response 中新增 `timings_ms`，记录 baseline scan、candidate preview、LLM plan/explain、repair、validation、rollback manifest 和 total duration。
+  - 在 LangGraph planner / client / sidecar 中细化 fallback reason code，覆盖 disabled、timeout、invalid JSON、empty response、schema invalid、non-200 等情况，保证 fallback 后仍保留 deterministic candidate 与 validation / rollback 安全闭环。
+  - 更新 A5 CLI 报告与 artifacts，新增 `timings.json`、`metric_definitions.json`、`issue_explanations.json`，Markdown 报告增加 Rollback 说明与 metric definitions。
+  - 新增 `auto_agent_live_benchmark.py`，连续复用 A5 CLI 运行 N 次 live demo，输出每次 `run_result.json`、汇总 `summary.json` 和 `summary.md`；报告只记录环境变量名、模型名和 API key 是否配置，不记录 API key 值。
+- 相关模块/文件：
+  - `appshell/backend/internal/agent/types.go`
+  - `appshell/backend/internal/agent/helpers.go`
+  - `appshell/backend/internal/agent/planning_support.go`
+  - `appshell/backend/internal/agent/mock_planner.go`
+  - `appshell/backend/internal/agent/validation_gate.go`
+  - `appshell/backend/internal/agent/planning_flow.go`
+  - `appshell/backend/internal/agent/langgraph_planner.go`
+  - `appshell/backend/internal/agent/cognition.go`
+  - `appshell/backend/internal/agent/runtime_runner.go`
+  - `appshell/backend/internal/agent/approval_runtime.go`
+  - `appshell/core/langgraph_sidecar/graph.py`
+  - `appshell/core/langgraph_sidecar/llm_client.py`
+  - `appshell/core/python_engine/auto_agent_cli.py`
+  - `appshell/core/python_engine/auto_agent_live_benchmark.py`
+  - `tests/auto_agent_cli/test_auto_agent_cli.py`
+  - `tests/auto_agent_cli/test_auto_agent_live_benchmark.py`
+  - `tests/langgraph_sidecar/test_graph.py`
+  - `tests/langgraph_sidecar/test_llm_client.py`
+  - `appshell/backend/internal/agent/*_test.go`
+  - ignored live benchmark 产物：`outputs/auto_agent/live_benchmark_deepseek_20260505_report_semantics/`
+  - `MEMO.md`
+- 已解决的问题 / 新增能力：
+  - 单次 live report 中 `validation_result.json` 现显示：`before_issue_items=17`、`after_issue_items=10`、`resolved_issue_items=7`、`modified_cell_count=48`，旧 `resolved_issue_count` 只作为兼容别名，不再作为答辩/简历口径。
+  - `issue_explanations.json` 现包含 7 个 blocked issue 明细、3 个 cautious issue 明细和 `blocked_reason_counts={"unsupported_issue_type":7}`。
+  - CLI report 现明确区分 `rollback_manifest_created=true` 与 `rollback_recommended=false`：manifest 是每次写出后的恢复凭证，recommended 仅表示 validation 判定当前输出不安全时才建议/触发回滚。
+  - `timings.json` 现包含 `scan_duration_ms`、`retrieve_duration_ms`、`llm_plan_duration_ms`、`llm_explain_duration_ms`、`repair_duration_ms`、`validation_duration_ms`、`rollback_manifest_duration_ms`、`total_duration_ms`。
+  - live benchmark 连续 10 次 DeepSeek Chat 跑通：`total_runs=10`、`success_runs=10`、`success_rate=1.0`、`accepted_runs=10`、`accepted_rate=1.0`、`fallback_runs=0`、`fallback_rate=0.0`、`validation_reject_runs=0`、`avg_total_ms=39733.2`、`p95_total_ms=41221.0`、`rollback_manifest_created_rate=1.0`、`avg_trace_event_count=22.0`。
+  - 使用 `sk-[0-9a-fA-F]{32}` 扫描 live benchmark 输出目录和 Git tracked files，未发现 API key 泄露。
+- 验证命令：
+  - `$env:PATH = (Resolve-Path '.\.venv-win\Scripts').Path + ';' + $env:PATH; Push-Location appshell\backend; go test ./internal/agent ./internal/engine ./internal/task ./cmd/wails; Pop-Location`
+  - `.\.venv-win\Scripts\python.exe -m pytest tests\python_engine -q`
+  - `.\.venv-win\Scripts\python.exe -m pytest tests\langgraph_sidecar -q`
+  - `.\.venv-win\Scripts\python.exe -m pytest tests\auto_agent_cli -q`
+  - `.\.venv-win\Scripts\python.exe appshell\core\python_engine\auto_agent_live_benchmark.py --csv data\experiments\m1_stroke\corrupted.csv --output-dir outputs\auto_agent\live_benchmark_deepseek_20260505_report_semantics --runs 10 --timeout-seconds 300 --continue-on-error`
+- 验收结果：
+  - Go 回归：`ok` for `./internal/agent ./internal/engine ./internal/task ./cmd/wails`。
+  - Python engine 回归：`41 passed, 12 warnings`。
+  - LangGraph sidecar 测试：`23 passed`。
+  - Auto Agent CLI / live benchmark 测试：`7 passed`。
+  - live benchmark summary 已生成：`outputs/auto_agent/live_benchmark_deepseek_20260505_report_semantics/summary.md` 与 `summary.json`。
+- 当前问题 / 待处理事项：
+  - live benchmark 产物默认位于 ignored `outputs/` 下；若用于答辩归档，建议只提交脱敏后的 summary，不提交原始日志、SQLite 或大体积产物。
+  - 当前分支仍有 A1-A6 与本轮增强的本地未提交改动；同步 GitHub 前应先做最终 diff 审查，确认没有 M0-M6 冻结产物、API key 或无关文件进入提交。
+  - 下一步建议：整理脱敏的 benchmark / live summary 到可提交文档，随后进行一次有意图的 commit 与 push；若继续开发，应进入可复现实验报告或前端展示 polish，而不是新增修复算法。
+
+## Update 2026-05-05 21:13:13
+
+- 改动日期：2026-05-05 21:13:13 +08:00
+- 改动内容简述：新增 Auto Agent LLM fallback benchmark，用于验证 LangGraph / LLM / API 不可用时系统能稳定降级到 deterministic planner；本次不修改 Python engine action 协议，不修改 repair / validation / rollback 核心语义，不提交任何真实 API key。
+- 最终目标：补齐 DeepSeek live benchmark 的故障降级维度，证明 API 正常和 API 异常两类场景下 Auto Agent 都保持 validation gate、trace、rollback manifest 安全闭环。
+- 当前采用的方法：
+  - 新增 `appshell/core/python_engine/auto_agent_fallback_benchmark.py`，每次仍调用 `auto_agent_cli.py` 执行完整 `scan -> plan -> execute -> rescan -> validation -> rollback manifest/report` 闭环。
+  - 内置 6 个故障场景：`langgraph_disabled`、`api_base_url_wrong`、`api_timeout`、`invalid_json_response`、`empty_response`、`wrong_model_or_mock_404`。
+  - 通过本地 mock OpenAI-compatible HTTP server 或禁用配置制造故障，不调用真实外部 LLM API；每个 scenario/run 使用独立 LangGraph port，避免 sidecar 串扰。
+  - fallback 判定同时读取 `plan.cognition.fallback_reason_code`、`plan.cognition.reason_codes` 和 `plan.reason_codes`，避免 sidecar 内部 fallback 被误判为正常 LLM engaged。
+  - `fallback_success_rate` 要求 fallback=true、结构化 response、validation verdict 非空、trace event 存在，并且有 output CSV 时必须生成 rollback manifest。
+- 相关模块/文件：
+  - `appshell/core/python_engine/auto_agent_fallback_benchmark.py`
+  - `tests/auto_agent_cli/test_auto_agent_fallback_benchmark.py`
+  - `tests/langgraph_sidecar/test_graph.py`
+  - ignored 验收产物：`outputs/auto_agent/fallback_benchmark_20260505/`
+  - ignored smoke 产物：`outputs/auto_agent/fallback_benchmark_smoke_20260505/`
+  - `MEMO.md`
+- 已解决的问题 / 新增能力：
+  - 新增 fallback benchmark 输出：`summary.json`、`summary.md`、`all_run_results.json`、每个 scenario 的 `scenario_summary.json` 和 `run_*/run_result.json`。
+  - `summary.md` 逐场景说明是否成功降级，并展示 success / fallback / fallback_success / accepted / rollback_manifest / trace / p95 latency / reason counts。
+  - 新增测试覆盖：6 个场景 x 3 次聚合、fallback_success_rate 口径、reason code 多来源提取、环境变量恢复、summary 不包含 dummy key。
+  - 补充 sidecar 测试：LLM endpoint 404 时降级 reason 为 `llm_non_200`。
+- 验证命令：
+  - `.\.venv-win\Scripts\python.exe -m py_compile appshell\core\python_engine\auto_agent_fallback_benchmark.py`
+  - `.\.venv-win\Scripts\python.exe -m pytest tests\auto_agent_cli -q`
+  - `.\.venv-win\Scripts\python.exe -m pytest tests\langgraph_sidecar -q`
+  - `$env:PATH = (Resolve-Path '.\.venv-win\Scripts').Path + ';' + $env:PATH; Push-Location appshell\backend; go test ./internal/agent ./internal/engine ./internal/task ./cmd/wails; Pop-Location`
+  - `.\.venv-win\Scripts\python.exe -m pytest tests\python_engine -q`
+  - `.\.venv-win\Scripts\python.exe appshell\core\python_engine\auto_agent_fallback_benchmark.py --csv data\experiments\m1_stroke\corrupted.csv --output-dir outputs\auto_agent\fallback_benchmark_20260505 --runs-per-scenario 3 --timeout-seconds 300 --continue-on-error`
+- 验收结果：
+  - fallback benchmark 共 18 次运行，`all_scenarios_degraded_successfully=True`。
+  - `langgraph_disabled`：`success_rate=1.0`、`fallback_rate=1.0`、`fallback_success_rate=1.0`、`accepted_rate=1.0`、`rollback_manifest_created_rate=1.0`、`avg_trace_event_count=22.0`、`fallback_reason_counts={"disabled":3}`。
+  - `api_base_url_wrong`：`success_rate=1.0`、`fallback_rate=1.0`、`fallback_success_rate=1.0`、`accepted_rate=1.0`、`rollback_manifest_created_rate=1.0`、`avg_trace_event_count=22.0`、`fallback_reason_counts={"llm_timeout":3}`；Windows 本地错误 URL 表现为 timeout，但仍是可解释 fallback。
+  - `api_timeout`：`fallback_reason_counts={"llm_timeout":3}`，其余成功率 / accepted / rollback / trace 指标均为 1.0 / 22.0。
+  - `invalid_json_response`：`fallback_reason_counts={"llm_invalid_json":3}`，其余成功率 / accepted / rollback / trace 指标均为 1.0 / 22.0。
+  - `empty_response`：`fallback_reason_counts={"llm_empty_response":3}`，其余成功率 / accepted / rollback / trace 指标均为 1.0 / 22.0。
+  - `wrong_model_or_mock_404`：`fallback_reason_counts={"llm_non_200":3}`，其余成功率 / accepted / rollback / trace 指标均为 1.0 / 22.0。
+  - Go 回归：`ok` for `./internal/agent ./internal/engine ./internal/task ./cmd/wails`。
+  - Python engine 回归：`41 passed, 12 warnings`。
+  - LangGraph sidecar 测试：`24 passed`。
+  - Auto Agent CLI / benchmark 测试：`10 passed`。
+  - 扫描 fallback benchmark 输出目录和 tracked files，未发现 fallback benchmark dummy key 完整字符串或 `sk-[0-9a-fA-F]{32}` 真实 key 形态泄露。
+- 当前问题 / 待处理事项：
+  - `api_base_url_wrong` 在当前 Windows 环境下观测到的 reason 是 `llm_timeout`，不是理论上的 `llm_unavailable`；报告中已保留真实 reason，不虚构数据。
+  - fallback benchmark 产物位于 ignored `outputs/` 下；如需用于答辩归档，建议只提交脱敏后的 `summary.md` / `summary.json` 摘要。
+  - 当前分支仍有多轮 Auto Agent 增强的本地未提交改动；同步 GitHub 前需要做一次最终 diff 审查和有意图的 commit。
+
+## Update 2026-05-05 21:21:39
+
+- 改动日期：2026-05-05 21:21:39 +08:00
+- 改动内容简述：为 Auto Agent live benchmark 新增 timings 聚合报告，用于定位 live agent 平均耗时与 P95 耗时的主要来源；本次只增强 benchmark 报告，不修改 Auto Agent 业务逻辑、Go / Python engine 协议或 repair / validation / rollback 语义。
+- 最终目标：让 live benchmark 能直接回答当前慢在 LLM、retrieve、repair、validation 还是 rollback，并生成可放入项目文档的 `timings_summary.json` / `timings_summary.md`。
+- 当前采用的方法：
+  - 在 `auto_agent_live_benchmark.py` 中读取每个 `run_*/timings.json`。
+  - 固定聚合 `llm_plan_duration_ms`、`llm_explain_duration_ms`、`scan_duration_ms`、`retrieve_duration_ms`、`repair_duration_ms`、`validation_duration_ms`、`rollback_manifest_duration_ms`、`total_duration_ms`。
+  - 对每个 stage 计算 `avg_ms`、`p50_ms`、`p95_ms`、`max_ms`、`present_runs`、`missing_runs`、`missing`、`share_of_total_avg`。
+  - Markdown 自动标记排除 `total_duration_ms` 后的 top 3 slowest stages，并给出主要耗时区域结论。
+- 相关模块/文件：
+  - `appshell/core/python_engine/auto_agent_live_benchmark.py`
+  - `tests/auto_agent_cli/test_auto_agent_live_benchmark.py`
+  - ignored live benchmark timings 产物：`outputs/auto_agent/live_benchmark_deepseek_20260505_report_semantics/timings_summary.json`
+  - ignored live benchmark timings 产物：`outputs/auto_agent/live_benchmark_deepseek_20260505_report_semantics/timings_summary.md`
+  - `MEMO.md`
+- 已解决的问题 / 新增能力：
+  - 新增 `timings_summary.json` 和 `timings_summary.md` 输出，不改变原有 `summary.json` 字段语义，只 additive 增加 `timings_summary_path`、`timings_top_slowest_stages`、`timings_dominant_area`。
+  - 缺失字段不再静默忽略：缺少 `timings.json` 或某个 timing 字段时，报告会统计 `missing_runs` 并在 Markdown 中显示 `missing`。
+  - 对已有 DeepSeek live benchmark 10 次运行生成 timings summary：`missing_fields={}`，所有 run 都存在 timings。
+  - 当前主要耗时区域为 `LLM`，LLM 平均耗时 `31763.5ms`。
+  - top 3 slowest stages：`llm_plan_duration_ms` 平均 `23602.7ms`、`llm_explain_duration_ms` 平均 `8160.8ms`、`retrieve_duration_ms` 平均 `3396.0ms`。
+  - `total_duration_ms` 平均 `39733.2ms`，P95 `41221.0ms`；由此可解释 live agent 慢主要来自 LLM plan / explain，而不是 repair、validation 或 rollback manifest。
+- 验证命令：
+  - `.\.venv-win\Scripts\python.exe -m py_compile appshell\core\python_engine\auto_agent_live_benchmark.py tests\auto_agent_cli\test_auto_agent_live_benchmark.py`
+  - `.\.venv-win\Scripts\python.exe -m pytest tests\auto_agent_cli -q`
+  - `$env:PATH = (Resolve-Path '.\.venv-win\Scripts').Path + ';' + $env:PATH; Push-Location appshell\backend; go test ./internal/agent ./internal/engine ./internal/task ./cmd/wails; Pop-Location`
+  - `.\.venv-win\Scripts\python.exe -m pytest tests\python_engine -q`
+  - `.\.venv-win\Scripts\python.exe -m pytest tests\langgraph_sidecar -q`
+  - `git diff --check`
+- 验收结果：
+  - `py_compile`：通过。
+  - Auto Agent CLI / benchmark 测试：`11 passed`。
+  - Go 回归：`ok` for `./internal/agent ./internal/engine ./internal/task ./cmd/wails`。
+  - Python engine 回归：`41 passed, 12 warnings`。
+  - LangGraph sidecar 测试：`24 passed`。
+  - `git diff --check`：无 whitespace error，仅显示既有 CRLF warning。
+- 当前问题 / 待处理事项：
+  - `timings_summary.json` / `timings_summary.md` 位于 ignored `outputs/` 下；若用于答辩或项目文档，建议只整理脱敏后的 summary，不提交原始日志、SQLite 或大体积产物。
+  - 当前分支仍保留 A1-A6、报告语义增强、fallback benchmark 和 timings 聚合的本地未提交改动；推送 GitHub 前应先做一次最终 diff 审查，确认没有 API key、M0-M6 冻结产物或无关文件进入提交。
+
+## Update 2026-05-06 08:08:25
+
+- 改动日期：2026-05-06 08:08:25 +08:00
+- 改动内容简述：新增 Auto Agent multi-dataset benchmark，用于验证系统在不同混合类型数据集上的稳定性；本次不修改核心修复算法、不修改 Python engine action 协议、不修改 repair / validation / rollback 语义，只新增 benchmark 编排、测试和小型样例数据。
+- 最终目标：保留现有 `m1_stroke/corrupted.csv`，再加入订单/交易类与用户画像/设备日志类 mixed-type CSV，使 Auto Agent 可以默认对 3 个数据集各运行 5 次，并输出每个数据集独立 run JSON、数据集 summary、总 `summary.json` 和 `summary.md`，同时解释 blocked / cautious / manual-review 剩余问题原因。
+- 当前采用的方法：
+  - 新增两个小型、确定性 mixed-type 样例数据集，均包含 numeric columns、categorical columns、missing values、numeric outliers、rare categories、duplicate records 和 `*_start <= *_end` cross-column consistency issues。
+  - 新增 `auto_agent_multi_dataset_benchmark.py`，每次 run 仍调用现有 `auto_agent_cli.py`，只负责多数据集编排、独立输出目录、run_result 生成和 summary 聚合，不复制 planner、repair、validation 或 rollback 逻辑。
+  - benchmark 继承当前 LangGraph / LLM 环境变量；本地未配置 live LLM 时按现有机制进入 deterministic fallback，并在 summary 中记录 `fallback_rate` 与 `fallback_reason_counts`。
+  - summary 明确聚合 `before_issue_items`、`after_issue_items`、`resolved_issue_items`、`modified_cell_count`，继续把问题条目数和实际修改单元格数分开。
+  - `summary.md` 对剩余问题给出解释：`numeric_outlier` 进入 cautious 是因为当前策略要求人工确认后再自动修；`duplicate_record` 与 `cross_column_consistency` 属于 manual review；`time_series_shift` 等 unsupported 类型进入 blocked。
+- 相关模块/文件：
+  - `.gitignore`
+  - `appshell/core/python_engine/auto_agent_multi_dataset_benchmark.py`
+  - `tests/auto_agent_cli/test_auto_agent_multi_dataset_benchmark.py`
+  - `data/experiments/auto_agent_multi_dataset/README.md`
+  - `data/experiments/auto_agent_multi_dataset/orders_transactions/corrupted.csv`
+  - `data/experiments/auto_agent_multi_dataset/user_device_logs/corrupted.csv`
+  - ignored 验收产物：`outputs/auto_agent/multi_dataset_smoke_20260506_r2/`
+  - ignored 验收产物：`outputs/auto_agent/multi_dataset_benchmark_20260506/`
+  - `MEMO.md`
+- 已解决的问题 / 新增功能：
+  - 默认数据集现在为 `m1_stroke`、`orders_transactions`、`user_device_logs`。
+  - CLI 支持 `--output-dir`、`--runs-per-dataset`、`--dataset name=path`、`--timeout-seconds`、`--goal`、`--model-dir`、`--continue-on-error`、`--go-bin`、`--backend-dir`。
+  - 输出结构包含每个数据集的 `run_###/run_result.json`、`runs.json`、`dataset_summary.json`，以及根目录 `all_run_results.json`、`summary.json`、`summary.md`。
+  - `.gitignore` 继续忽略大体积 `outputs/` 和通用 CSV，同时只放行本次新增的两个小型样例 CSV。
+  - 修正样例数据中的地区值，避免 `NA` 被 pandas 默认识别为缺失值导致 Auto Agent 误判高风险审批，从而保证两个新数据集能够完整进入 execute / validation / rollback manifest 路径。
+- 验证命令：
+  - `.\.venv-win\Scripts\python.exe -m py_compile appshell\core\python_engine\auto_agent_multi_dataset_benchmark.py tests\auto_agent_cli\test_auto_agent_multi_dataset_benchmark.py`
+  - `.\.venv-win\Scripts\python.exe -m pytest tests\auto_agent_cli -q`
+  - `.\.venv-win\Scripts\python.exe -m pytest tests\python_engine -q`
+  - `.\.venv-win\Scripts\python.exe appshell\core\python_engine\auto_agent_multi_dataset_benchmark.py --output-dir outputs\auto_agent\multi_dataset_smoke_20260506_r2 --runs-per-dataset 1 --timeout-seconds 300 --continue-on-error`
+  - `.\.venv-win\Scripts\python.exe appshell\core\python_engine\auto_agent_multi_dataset_benchmark.py --output-dir outputs\auto_agent\multi_dataset_benchmark_20260506 --timeout-seconds 300 --continue-on-error`
+  - `git diff --check`
+- 验收结果：
+  - Auto Agent CLI / benchmark 测试：`13 passed`。
+  - Python engine 回归：`43 passed, 12 warnings`。
+  - `git diff --check`：无 whitespace error，仅显示既有 CRLF warning。
+  - 3 数据集 x 1 次 smoke 通过，全部 `success_rate=1.0`、`accepted_rate=1.0`、`rollback_manifest_created_rate=1.0`。
+  - 默认 3 数据集 x 5 次完整 benchmark 通过，共 `total_runs=15`，每个数据集均 `success_rate=1.0`、`accepted_rate=1.0`、`rollback_manifest_created_rate=1.0`、`avg_trace_event_count=22.0`。
+  - `m1_stroke`：`before_issue_items_avg=17.0`、`after_issue_items_avg=13.0`、`resolved_issue_items_avg=4.0`、`modified_cell_count_avg=30.0`、`blocked_issue_count_avg=7.0`、`cautious_issue_count_avg=3.0`、`avg_total_ms=5553.8`、`p95_total_ms=5630.0`。
+  - `orders_transactions`：`before_issue_items_avg=21.0`、`after_issue_items_avg=17.0`、`resolved_issue_items_avg=4.0`、`modified_cell_count_avg=4.0`、`blocked_issue_count_avg=5.0`、`cautious_issue_count_avg=6.0`、`avg_total_ms=5022.0`、`p95_total_ms=5078.0`。
+  - `user_device_logs`：`before_issue_items_avg=21.0`、`after_issue_items_avg=18.0`、`resolved_issue_items_avg=3.0`、`modified_cell_count_avg=4.0`、`blocked_issue_count_avg=3.0`、`cautious_issue_count_avg=6.0`、`avg_total_ms=5057.8`、`p95_total_ms=5110.0`。
+- 当前问题 / 待处理事项：
+  - 当前本地未配置 live LLM，因此完整 benchmark 的 `fallback_rate=1.0`，fallback reason 为 `planner_mode_fallback`；这验证的是无 LLM 配置下的 deterministic fallback 稳定性。若需要 live LLM 多数据集结果，需要在私密环境变量中配置 API key 后重跑，仍不得提交 key 或原始日志。
+  - 完整 benchmark 产物位于 ignored `outputs/auto_agent/multi_dataset_benchmark_20260506/` 下；如需答辩归档，建议只复制脱敏后的 summary 摘要，不提交 run logs、SQLite、repaired CSV 或大体积输出。
+  - 当前分支仍包含多轮 Auto Agent 相关未提交改动；提交前需要复查 diff，确认没有 API key、无关文件或 ignored outputs 被加入版本控制。

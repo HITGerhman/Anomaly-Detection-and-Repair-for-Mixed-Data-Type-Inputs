@@ -99,6 +99,7 @@ def test_server_exposes_health_and_plan_endpoints():
 
 def test_server_health_reflects_llm_configuration(monkeypatch):
     monkeypatch.setenv("APPSHELL_LANGGRAPH_LLM_BASE_URL", "http://127.0.0.1:9999/v1")
+    monkeypatch.setenv("APPSHELL_LANGGRAPH_LLM_API_KEY", "test-key")
     monkeypatch.setenv("APPSHELL_LANGGRAPH_LLM_MODEL", "gpt-test")
 
     port = _free_port()
@@ -111,6 +112,27 @@ def test_server_health_reflects_llm_configuration(monkeypatch):
         assert health["planner_mode"] == "llm"
         assert health["llm_mode"] == "configured"
         assert health["model"] == "gpt-test"
+    finally:
+        server.shutdown()
+        server.server_close()
+        thread.join(timeout=5)
+
+
+def test_server_health_falls_back_when_api_key_missing(monkeypatch):
+    monkeypatch.setenv("APPSHELL_LANGGRAPH_LLM_BASE_URL", "http://127.0.0.1:9999/v1")
+    monkeypatch.delenv("APPSHELL_LANGGRAPH_LLM_API_KEY", raising=False)
+    monkeypatch.setenv("APPSHELL_LANGGRAPH_LLM_MODEL", "gpt-test")
+
+    port = _free_port()
+    server = create_server("127.0.0.1", port)
+    thread = threading.Thread(target=server.serve_forever, daemon=True)
+    thread.start()
+
+    try:
+        health = _read_json(f"http://127.0.0.1:{port}/health")
+        assert health["planner_mode"] == "fallback"
+        assert health["llm_mode"] == "unavailable"
+        assert "api" not in health
     finally:
         server.shutdown()
         server.server_close()

@@ -2,6 +2,8 @@ package agent
 
 import (
 	"context"
+	"fmt"
+	"io"
 	"testing"
 )
 
@@ -42,24 +44,28 @@ func (m stubSidecarManager) EnsureHealthy(_ context.Context) (LangGraphHealth, e
 }
 
 type stubCognitionCaller struct {
-	planResp     LangGraphPlanResponse
-	planErr      error
-	planCalls    int
-	explainResp  LangGraphExplainResponse
-	explainErr   error
-	explainCalls int
+	planResp       LangGraphPlanResponse
+	planErr        error
+	planCalls      int
+	lastPlanReq    LangGraphPlanRequest
+	explainResp    LangGraphExplainResponse
+	explainErr     error
+	explainCalls   int
+	lastExplainReq LangGraphExplainRequest
 }
 
-func (c *stubCognitionCaller) Plan(_ context.Context, _ LangGraphPlanRequest) (LangGraphPlanResponse, error) {
+func (c *stubCognitionCaller) Plan(_ context.Context, req LangGraphPlanRequest) (LangGraphPlanResponse, error) {
 	c.planCalls++
+	c.lastPlanReq = req
 	if c.planErr != nil {
 		return LangGraphPlanResponse{}, c.planErr
 	}
 	return c.planResp, nil
 }
 
-func (c *stubCognitionCaller) Explain(_ context.Context, _ LangGraphExplainRequest) (LangGraphExplainResponse, error) {
+func (c *stubCognitionCaller) Explain(_ context.Context, req LangGraphExplainRequest) (LangGraphExplainResponse, error) {
 	c.explainCalls++
+	c.lastExplainReq = req
 	if c.explainErr != nil {
 		return LangGraphExplainResponse{}, c.explainErr
 	}
@@ -68,9 +74,13 @@ func (c *stubCognitionCaller) Explain(_ context.Context, _ LangGraphExplainReque
 
 func TestLangGraphPlannerOverlaysCognitiveFieldsWhenSidecarIsHealthy(t *testing.T) {
 	basePlan := AgentPlan{
-		PlanID:           "plan-1",
-		Status:           "planned",
-		SelectedIssueIDs: []string{"i-1"},
+		PlanID:               "plan-1",
+		Status:               "planned",
+		SelectedIssueIDs:     []string{"i-1"},
+		AutoRepairIssueIDs:   []string{"i-1"},
+		CautiousIssueIDs:     []string{"i-2"},
+		ManualReviewIssueIDs: []string{"i-3"},
+		BlockedIssueIDs:      []string{"i-4"},
 		Candidates: []RepairCandidate{
 			{
 				CandidateID:      "candidate-rule",
@@ -127,6 +137,7 @@ func TestLangGraphPlannerOverlaysCognitiveFieldsWhenSidecarIsHealthy(t *testing.
 	plan, err := planner.BuildPlan(t.Context(), PlanningInput{
 		SessionID: "session-1",
 		Goal:      "scan and repair",
+		LLMExplainMode: "llm",
 		ScanResult: map[string]any{
 			"scan_summary": map[string]any{"total_issues": 1},
 		},
@@ -136,6 +147,19 @@ func TestLangGraphPlannerOverlaysCognitiveFieldsWhenSidecarIsHealthy(t *testing.
 	}
 	if fallback.calls != 1 || client.planCalls != 1 || client.explainCalls != 1 {
 		t.Fatalf("expected fallback, plan, and explain calls exactly once")
+	}
+	safety := client.lastPlanReq.SafetyContext
+	if len(stringsFromAny(safety["auto_repair_issue_ids"])) != 1 || stringsFromAny(safety["auto_repair_issue_ids"])[0] != "i-1" {
+		t.Fatalf("expected A2 auto issue ids in plan request safety context, got %#v", safety)
+	}
+	if len(stringsFromAny(safety["cautious_issue_ids"])) != 1 || stringsFromAny(safety["cautious_issue_ids"])[0] != "i-2" {
+		t.Fatalf("expected cautious issue ids in plan request safety context, got %#v", safety)
+	}
+	if len(stringsFromAny(safety["manual_review_issue_ids"])) != 1 || stringsFromAny(safety["manual_review_issue_ids"])[0] != "i-3" {
+		t.Fatalf("expected manual issue ids in plan request safety context, got %#v", safety)
+	}
+	if len(stringsFromAny(safety["blocked_issue_ids"])) != 1 || stringsFromAny(safety["blocked_issue_ids"])[0] != "i-4" {
+		t.Fatalf("expected blocked issue ids in plan request safety context, got %#v", safety)
 	}
 	if plan.SelectedCandidateID != "candidate-gower" || plan.SelectedSource != "gower" {
 		t.Fatalf("expected sidecar-selected candidate, got %s / %s", plan.SelectedCandidateID, plan.SelectedSource)
@@ -177,6 +201,49 @@ func TestLangGraphPlannerFallsBackWhenSidecarUnavailableOrInvalid(t *testing.T) 
 			{CandidateID: "candidate-rule", Source: "rule", ToolSequence: []string{"engine.repair_batch"}, ExecutePayloads: []map[string]any{{"csv_path": "demo.csv"}}, Executable: true},
 		},
 	}
+
+	t.Run("default_local_explain_skips_explain_request", func(t *testing.T) {
+		fallback := &stubFallbackPlanner{plan: basePlan}
+		client := &stubCognitionCaller{
+			planResp: LangGraphPlanResponse{
+				StrategyLabel:       "deterministic_rule",
+				SelectedCandidateID: "candidate-rule",
+				ReasonCodes:         []string{"phase_c_llm"},
+				RiskNote:            "still validated",
+				IntentLabel:         "auto_repair",
+				OneSentenceSummary:  "plan overlay",
+				ShortBullets:        []string{"plan bullet"},
+			},
+		}
+		planner := NewLangGraphPlanner(fallback, stubSidecarManager{}, client)
+
+		plan, err := planner.BuildPlan(t.Context(), PlanningInput{})
+		if err != nil {
+			t.Fatalf("BuildPlan failed: %v", err)
+		}
+		if client.planCalls != 1 || client.explainCalls != 0 {
+			t.Fatalf("expected plan call without explain call, got plan=%d explain=%d", client.planCalls, client.explainCalls)
+		}
+		if plan.Cognition.Status != CognitionStatusEngaged || plan.Cognition.FallbackReasonCode != "" {
+			t.Fatalf("expected engaged cognition without fallback, got %+v", plan.Cognition)
+		}
+		if got := intFromAny(plan.TimingsMS["llm_explain_duration_ms"]); got != 0 {
+			t.Fatalf("expected local explain timing to be 0, got %#v", plan.TimingsMS)
+		}
+		found := false
+		for _, code := range plan.ReasonCodes {
+			if code == "explain_local" {
+				found = true
+				break
+			}
+		}
+		if !found {
+			t.Fatalf("expected explain_local reason code, got %#v", plan.ReasonCodes)
+		}
+		if plan.UserExplanation == "" || plan.UserExplanation == "base" {
+			t.Fatalf("expected local explanation from plan response, got %q", plan.UserExplanation)
+		}
+	})
 
 	t.Run("manager_error", func(t *testing.T) {
 		fallback := &stubFallbackPlanner{plan: basePlan}
@@ -249,7 +316,7 @@ func TestLangGraphPlannerFallsBackWhenSidecarUnavailableOrInvalid(t *testing.T) 
 		}
 		planner := NewLangGraphPlanner(fallback, stubSidecarManager{}, client)
 
-		plan, err := planner.BuildPlan(t.Context(), PlanningInput{})
+		plan, err := planner.BuildPlan(t.Context(), PlanningInput{LLMExplainMode: "llm"})
 		if err != nil {
 			t.Fatalf("BuildPlan failed: %v", err)
 		}
@@ -273,8 +340,81 @@ func TestLangGraphPlannerFallsBackWhenSidecarUnavailableOrInvalid(t *testing.T) 
 		if plan.SelectedCandidateID != "candidate-rule" || client.explainCalls != 0 {
 			t.Fatalf("expected fallback plan after plan request failure")
 		}
-		if plan.Cognition.Status != CognitionStatusFallback || plan.Cognition.FallbackReasonCode != CognitionFallbackPlanRequest {
-			t.Fatalf("expected plan request fallback cognition, got %+v", plan.Cognition)
+		if plan.Cognition.Status != CognitionStatusFallback || plan.Cognition.FallbackReasonCode != CognitionFallbackPlanTimeout {
+			t.Fatalf("expected plan timeout fallback cognition, got %+v", plan.Cognition)
+		}
+	})
+
+	t.Run("granular_plan_failure_reason_codes", func(t *testing.T) {
+		tests := []struct {
+			name string
+			err  error
+			want string
+		}{
+			{name: "timeout", err: context.DeadlineExceeded, want: CognitionFallbackPlanTimeout},
+			{name: "invalid_json", err: fmt.Errorf("decode langgraph plan response failed: invalid character 'n' looking for beginning of value"), want: CognitionFallbackPlanInvalidJSON},
+			{name: "empty_response", err: io.EOF, want: CognitionFallbackPlanEmptyResponse},
+			{name: "schema_invalid", err: fmt.Errorf("langgraph plan response missing selected_candidate_id"), want: CognitionFallbackPlanSchemaInvalid},
+			{name: "non_200", err: fmt.Errorf("langgraph plan returned status 502: bad gateway"), want: CognitionFallbackPlanNon200},
+		}
+		for _, tc := range tests {
+			t.Run(tc.name, func(t *testing.T) {
+				fallback := &stubFallbackPlanner{plan: basePlan}
+				client := &stubCognitionCaller{planErr: tc.err}
+				planner := NewLangGraphPlanner(fallback, stubSidecarManager{}, client)
+
+				plan, err := planner.BuildPlan(t.Context(), PlanningInput{})
+				if err != nil {
+					t.Fatalf("BuildPlan failed: %v", err)
+				}
+				if plan.SelectedCandidateID != "candidate-rule" || client.explainCalls != 0 {
+					t.Fatalf("expected deterministic candidate after plan failure")
+				}
+				if plan.Cognition.FallbackReasonCode != tc.want {
+					t.Fatalf("expected %s, got %+v", tc.want, plan.Cognition)
+				}
+			})
+		}
+	})
+
+	t.Run("approval_context_forces_overlay_approval", func(t *testing.T) {
+		fallback := &stubFallbackPlanner{plan: basePlan}
+		client := &stubCognitionCaller{
+			planResp: LangGraphPlanResponse{
+				StrategyLabel:       "deterministic_rule",
+				SelectedCandidateID: "candidate-rule",
+				ReasonCodes:         []string{"phase_c_llm"},
+				IntentLabel:         "auto_repair",
+				OneSentenceSummary:  "LLM tried to avoid approval.",
+				ApprovalNeeded:      false,
+			},
+			explainResp: LangGraphExplainResponse{
+				Summary:      "LLM summary",
+				FinalMessage: "LLM final message",
+				ReasonCodes:  []string{"phase_c_llm"},
+			},
+		}
+		planner := NewLangGraphPlanner(fallback, stubSidecarManager{}, client)
+
+		plan, err := planner.BuildPlan(t.Context(), PlanningInput{
+			LLMExplainMode:  "llm",
+			ApprovalContext: map[string]any{"deterministic_required": true},
+		})
+		if err != nil {
+			t.Fatalf("BuildPlan failed: %v", err)
+		}
+		if !plan.ApprovalNeeded {
+			t.Fatalf("expected approval context to force approval")
+		}
+		found := false
+		for _, code := range plan.ReasonCodes {
+			if code == "approval_context_enforced" {
+				found = true
+				break
+			}
+		}
+		if !found {
+			t.Fatalf("expected approval_context_enforced reason code, got %#v", plan.ReasonCodes)
 		}
 	})
 }

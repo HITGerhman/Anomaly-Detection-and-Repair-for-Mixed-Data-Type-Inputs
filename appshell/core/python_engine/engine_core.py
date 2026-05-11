@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import importlib
+import hashlib
 import json
 import math
 import os
@@ -32,6 +33,9 @@ except Exception:  # pragma: no cover - optional runtime dependency
 PROJECT_ROOT = Path(__file__).resolve().parents[3]
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
+
+_SYSTEM_STATE_CACHE: dict[tuple[Any, ...], tuple[Any, Any, Any]] = {}
+_MODEL_IMPORTANCE_CACHE: dict[tuple[Any, ...], list[float] | None] = {}
 
 
 def _emit_stage_progress(
@@ -361,6 +365,33 @@ def _to_positive_int(payload: dict[str, Any], key: str, default: int, minimum: i
     raw = payload.get(key, default)
     if raw is None:
         return default
+    try:
+        value = int(raw)
+    except (TypeError, ValueError) as exc:
+        raise KnownEngineError(
+            code=ErrorCode.INVALID_INPUT,
+            message=f"Field {key} must be an integer",
+            details={"field": key, "value": raw},
+        ) from exc
+    if value < minimum or value > maximum:
+        raise KnownEngineError(
+            code=ErrorCode.INVALID_INPUT,
+            message=f"Field {key} must be between {minimum} and {maximum}",
+            details={"field": key, "value": value, "minimum": minimum, "maximum": maximum},
+        )
+    return value
+
+
+def _to_optional_positive_int(
+    payload: dict[str, Any],
+    key: str,
+    *,
+    minimum: int = 1,
+    maximum: int = 1_000_000,
+) -> int | None:
+    raw = payload.get(key)
+    if raw is None or (isinstance(raw, str) and not raw.strip()):
+        return None
     try:
         value = int(raw)
     except (TypeError, ValueError) as exc:
@@ -1780,25 +1811,102 @@ def _resolve_output_path(csv_file: Path, payload: dict[str, Any], *, default_suf
     return csv_file.with_name(f"{csv_file.stem}{default_suffix}")
 
 
+def _csv_fingerprint(csv_file: Path) -> dict[str, Any]:
+    resolved = csv_file.expanduser().resolve()
+    stat = resolved.stat()
+    return {
+        "csv_path": str(resolved),
+        "csv_size": int(stat.st_size),
+        "csv_mtime_unix_nano": int(stat.st_mtime_ns),
+    }
+
+
+def _precomputed_issues_from_payload(
+    payload: dict[str, Any],
+    csv_file: Path,
+    *,
+    plan_only: bool,
+) -> tuple[list[dict[str, Any]] | None, bool]:
+    if not plan_only:
+        return None, False
+    raw_issues = payload.get("precomputed_issues")
+    raw_meta = payload.get("precomputed_issues_meta")
+    if not isinstance(raw_issues, list) or not isinstance(raw_meta, dict):
+        return None, False
+
+    try:
+        current = _csv_fingerprint(csv_file)
+        meta_path = Path(str(raw_meta.get("csv_path") or "")).expanduser().resolve()
+    except Exception:
+        return None, False
+
+    if str(meta_path) != str(current["csv_path"]):
+        return None, False
+    try:
+        if int(raw_meta.get("csv_size")) != int(current["csv_size"]):
+            return None, False
+        if int(raw_meta.get("csv_mtime_unix_nano")) != int(current["csv_mtime_unix_nano"]):
+            return None, False
+    except Exception:
+        return None, False
+
+    issues: list[dict[str, Any]] = []
+    for item in raw_issues:
+        if isinstance(item, dict):
+            issues.append(dict(item))
+    return issues, True
+
+
+def _model_state_cache_key(model_dir: Path) -> tuple[Any, ...]:
+    resolved = model_dir.expanduser().resolve()
+    parts: list[Any] = [str(resolved)]
+    for name in ("model_lgb.pkl", "normal_data.pkl", "config.pkl", "test_data.pkl"):
+        path = resolved / name
+        try:
+            stat = path.stat()
+            parts.extend([name, int(stat.st_size), int(stat.st_mtime_ns)])
+        except OSError:
+            parts.extend([name, -1, -1])
+    return tuple(parts)
+
+
+def _cached_load_system_state(model_dir: Path) -> tuple[Any, Any, Any]:
+    key = _model_state_cache_key(model_dir)
+    cached = _SYSTEM_STATE_CACHE.get(key)
+    if cached is not None:
+        return cached
+    from src.training_core import load_system_state  # type: ignore
+
+    state = load_system_state(model_dir)
+    _SYSTEM_STATE_CACHE[key] = state
+    return state
+
+
 def _model_importance_weights(model_dir: Path, feature_columns: list[str]) -> list[float] | None:
     if not feature_columns:
         return None
     try:
-        from src.training_core import load_system_state  # type: ignore
+        state_key = _model_state_cache_key(model_dir)
     except Exception:
         return None
+    cache_key = (*state_key, tuple(str(column) for column in feature_columns))
+    if cache_key in _MODEL_IMPORTANCE_CACHE:
+        cached = _MODEL_IMPORTANCE_CACHE[cache_key]
+        return list(cached) if cached is not None else None
 
     try:
-        model, _, normal_data = load_system_state(model_dir)
+        model, _, normal_data = _cached_load_system_state(model_dir)
     except Exception:
         return None
 
     importances = getattr(model, "feature_importances_", None)
     if importances is None:
+        _MODEL_IMPORTANCE_CACHE[cache_key] = None
         return None
     values = list(importances)
     normal_columns = [str(column) for column in list(normal_data.columns)]
     if len(values) != len(normal_columns):
+        _MODEL_IMPORTANCE_CACHE[cache_key] = None
         return None
 
     weight_map = {
@@ -1807,7 +1915,9 @@ def _model_importance_weights(model_dir: Path, feature_columns: list[str]) -> li
     }
     weights = [float(weight_map.get(column, 0.0)) for column in feature_columns]
     if any(weight > 0.0 for weight in weights):
+        _MODEL_IMPORTANCE_CACHE[cache_key] = list(weights)
         return weights
+    _MODEL_IMPORTANCE_CACHE[cache_key] = None
     return None
 
 
@@ -1828,6 +1938,12 @@ def _gower_strategy_from_payload(payload: dict[str, Any]) -> dict[str, Any]:
         "feature_weights": raw.get("feature_weights"),
         "preview_limit": _to_positive_int(raw, "preview_limit", default=5, minimum=1, maximum=50),
     }
+    if "max_candidates" in raw:
+        strategy["max_candidates"] = _to_optional_positive_int(raw, "max_candidates", minimum=1, maximum=1_000_000)
+    elif "sample_size" in raw:
+        strategy["max_candidates"] = _to_optional_positive_int(raw, "sample_size", minimum=1, maximum=1_000_000)
+    else:
+        strategy["max_candidates"] = None
     if strategy["weight_mode"] not in {"uniform", "model_importance", "custom"}:
         raise KnownEngineError(
             code=ErrorCode.INVALID_INPUT,
@@ -1904,6 +2020,29 @@ def _resolve_gower_feature_weights(
         if weights is not None:
             return weights, "model_importance"
     return None, "uniform"
+
+
+def _stable_gower_sample_seed(*parts: Any) -> int:
+    text = "|".join(str(part) for part in parts)
+    digest = hashlib.sha256(text.encode("utf-8")).digest()
+    return int.from_bytes(digest[:4], byteorder="big", signed=False)
+
+
+def _limit_gower_candidate_rows(
+    candidate_rows: Any,
+    max_candidates: int | None,
+    *,
+    issue_id: str,
+    column: str,
+    row_pos: int,
+) -> tuple[Any, int, int, bool]:
+    pool_size = int(len(candidate_rows))
+    if max_candidates is None or pool_size <= int(max_candidates):
+        return candidate_rows, pool_size, pool_size, False
+    sample_size = int(max_candidates)
+    seed = _stable_gower_sample_seed(issue_id, column, row_pos, pool_size, sample_size)
+    sampled = candidate_rows.sample(n=sample_size, random_state=seed).sort_index()
+    return sampled, pool_size, sample_size, True
 
 def action_health(_: dict[str, Any]) -> dict[str, Any]:
     dependencies = _runtime_dependency_snapshot()
@@ -2693,7 +2832,15 @@ def action_repair_batch(payload: dict[str, Any]) -> dict[str, Any]:
 
     _emit_stage_progress("repair_batch", "scan_columns", "start", 34, "开始识别可修复问题", file=str(csv_file))
     try:
-        issues_internal = _detect_issues_for_frame(df, frame_pd, scan_config=scan_config)
+        precomputed_issues, precomputed_issues_used = _precomputed_issues_from_payload(
+            payload,
+            csv_file,
+            plan_only=plan_only,
+        )
+        if precomputed_issues_used and precomputed_issues is not None:
+            issues_internal = precomputed_issues
+        else:
+            issues_internal = _detect_issues_for_frame(df, frame_pd, scan_config=scan_config)
         _emit_stage_progress(
             "repair_batch",
             "scan_columns",
@@ -2702,6 +2849,7 @@ def action_repair_batch(payload: dict[str, Any]) -> dict[str, Any]:
             "可修复问题识别完成",
             file=str(csv_file),
             issue_count=int(len(issues_internal)),
+            precomputed_issues_used=bool(precomputed_issues_used),
         )
         issue_map = {str(item["issue_id"]): item for item in issues_internal}
 
@@ -3120,6 +3268,7 @@ def action_repair_batch(payload: dict[str, Any]) -> dict[str, Any]:
             "execution_mode": "plan_only" if plan_only else "apply",
             "write_output_requested": write_output_requested,
             "write_output": write_output,
+            "precomputed_issues_used": bool(precomputed_issues_used),
             "output_csv": output_csv,
             "selected_issue_count": len(selected_issue_ids),
             "applied_issue_count": len(applied_repairs),
@@ -3244,7 +3393,15 @@ def action_repair_with_gower(payload: dict[str, Any]) -> dict[str, Any]:
 
     _emit_stage_progress("repair_with_gower", "scan_columns", "start", 34, "开始识别 Gower 可修复问题", file=str(csv_file))
     try:
-        issues_internal = _detect_issues_for_frame(df, frame_pd, scan_config=scan_config)
+        precomputed_issues, precomputed_issues_used = _precomputed_issues_from_payload(
+            payload,
+            csv_file,
+            plan_only=plan_only,
+        )
+        if precomputed_issues_used and precomputed_issues is not None:
+            issues_internal = precomputed_issues
+        else:
+            issues_internal = _detect_issues_for_frame(df, frame_pd, scan_config=scan_config)
         _emit_stage_progress(
             "repair_with_gower",
             "scan_columns",
@@ -3253,6 +3410,7 @@ def action_repair_with_gower(payload: dict[str, Any]) -> dict[str, Any]:
             "Gower 可修复问题识别完成",
             file=str(csv_file),
             issue_count=int(len(issues_internal)),
+            precomputed_issues_used=bool(precomputed_issues_used),
         )
         issue_map = {str(item["issue_id"]): item for item in issues_internal}
         original_df = df.copy(deep=True)
@@ -3350,12 +3508,25 @@ def action_repair_with_gower(payload: dict[str, Any]) -> dict[str, Any]:
             replacement_values: list[Any] = []
             preview_rows: list[dict[str, Any]] = []
             neighbor_count = 0
+            candidate_pool_sizes: list[int] = []
+            candidate_sample_sizes: list[int] = []
+            candidate_limit_applied = False
 
             for pos in positions:
                 row_label = original_df.index[pos]
                 candidate_rows = candidate_pool.drop(index=row_label, errors="ignore")
                 if candidate_rows.empty:
                     candidate_rows = candidate_pool
+                candidate_rows, pool_size, sample_size, limit_applied = _limit_gower_candidate_rows(
+                    candidate_rows,
+                    gower_strategy.get("max_candidates"),
+                    issue_id=issue_id,
+                    column=column,
+                    row_pos=int(pos),
+                )
+                candidate_pool_sizes.append(pool_size)
+                candidate_sample_sizes.append(sample_size)
+                candidate_limit_applied = candidate_limit_applied or limit_applied
                 try:
                     suggestion = suggest_replacement_from_neighbors(
                         candidate_rows,
@@ -3435,6 +3606,9 @@ def action_repair_with_gower(payload: dict[str, Any]) -> dict[str, Any]:
                 "replacement_value": replacement_value,
                 "candidate_confidence": round(sum(confidences) / float(len(confidences)), 6),
                 "weight_mode": effective_weight_mode,
+                "candidate_pool_size": max(candidate_pool_sizes) if candidate_pool_sizes else 0,
+                "candidate_sample_size": max(candidate_sample_sizes) if candidate_sample_sizes else 0,
+                "candidate_limit_applied": bool(candidate_limit_applied),
             }
 
         _emit_stage_progress(
@@ -3581,10 +3755,12 @@ def action_repair_with_gower(payload: dict[str, Any]) -> dict[str, Any]:
                 "k_neighbors": int(gower_strategy["k_neighbors"]),
                 "weight_mode": str(gower_strategy["weight_mode"]),
                 "preview_limit": int(gower_strategy["preview_limit"]),
+                "max_candidates": gower_strategy.get("max_candidates"),
             },
             "plan_only": plan_only,
             "execution_mode": "plan_only" if plan_only else "apply",
             "write_output": write_output,
+            "precomputed_issues_used": bool(precomputed_issues_used),
             "output_csv": output_csv,
             "selected_issue_ids": selected_issue_ids,
             "selected_issue_count": len(selected_issue_ids),

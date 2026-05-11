@@ -274,6 +274,121 @@ def test_repair_with_gower_plan_only_returns_neighbor_evidence(tmp_path: Path) -
     assert any(item["reason"] == "unsupported_issue_type" for item in result["skipped_issues"])
 
 
+def test_plan_only_repair_uses_precomputed_issues_when_fingerprint_matches(tmp_path: Path) -> None:
+    csv_path = tmp_path / "precomputed_repair.csv"
+    pd.DataFrame(
+        {
+            "age": [20, 21, np.nan, 23, 24, 25],
+            "city": ["a", "a", "b", "b", "rare", "a"],
+        }
+    ).to_csv(csv_path, index=False)
+
+    scan_resp = _run_engine(
+        json.dumps(
+            {
+                "task_id": "scan-precomputed",
+                "action": "scan_file",
+                "payload": {"csv_path": str(csv_path)},
+            }
+        )
+    )
+    assert scan_resp["status"] == "ok"
+    stat = csv_path.stat()
+    meta = {
+        "csv_path": str(csv_path.resolve()),
+        "csv_size": stat.st_size,
+        "csv_mtime_unix_nano": stat.st_mtime_ns,
+    }
+    selected_ids = [item["issue_id"] for item in scan_resp["result"]["issues"]]
+    assert selected_ids
+
+    repair_resp = _run_engine(
+        json.dumps(
+            {
+                "task_id": "repair-precomputed",
+                "action": "repair_batch",
+                "payload": {
+                    "csv_path": str(csv_path),
+                    "issue_ids": selected_ids,
+                    "plan_only": True,
+                    "write_output": False,
+                    "precomputed_issues": scan_resp["result"]["issues"],
+                    "precomputed_issues_meta": meta,
+                },
+            }
+        )
+    )
+    assert repair_resp["status"] == "ok"
+    assert repair_resp["result"]["precomputed_issues_used"] is True
+
+    stale_meta = dict(meta)
+    stale_meta["csv_mtime_unix_nano"] = int(stale_meta["csv_mtime_unix_nano"]) - 1
+    stale_resp = _run_engine(
+        json.dumps(
+            {
+                "task_id": "repair-precomputed-stale",
+                "action": "repair_batch",
+                "payload": {
+                    "csv_path": str(csv_path),
+                    "issue_ids": selected_ids,
+                    "plan_only": True,
+                    "write_output": False,
+                    "precomputed_issues": scan_resp["result"]["issues"],
+                    "precomputed_issues_meta": stale_meta,
+                },
+            }
+        )
+    )
+    assert stale_resp["status"] == "ok"
+    assert stale_resp["result"]["precomputed_issues_used"] is False
+
+
+def test_repair_with_gower_limits_candidate_sample_deterministically(tmp_path: Path) -> None:
+    csv_path = tmp_path / "gower_limited.csv"
+    pd.DataFrame(
+        {
+            "age": [20, 21, 22, 23, 24, 25, 26, 27, np.nan, 29, 30, 31],
+            "bmi": [20.0, 21.0, 22.0, 23.0, 24.0, 25.0, 26.0, 27.0, 28.0, 29.0, 30.0, 31.0],
+            "work_type": ["Private", "Govt", "Self", "Private", "Govt", "Self", "Private", "Govt", "Self", "Private", "Govt", "Self"],
+        }
+    ).to_csv(csv_path, index=False)
+
+    scan_resp = _run_engine(
+        json.dumps(
+            {
+                "task_id": "scan-gower-limited",
+                "action": "scan_file",
+                "payload": {"csv_path": str(csv_path)},
+            }
+        )
+    )
+    assert scan_resp["status"] == "ok"
+    selected_ids = [
+        item["issue_id"]
+        for item in scan_resp["result"]["issues"]
+        if item["issue_type"] == "missing_values"
+    ]
+    assert selected_ids
+
+    payload = {
+        "csv_path": str(csv_path),
+        "issue_ids": selected_ids,
+        "plan_only": True,
+        "write_output": False,
+        "gower_strategy": {"max_candidates": 3, "k_neighbors": 2},
+    }
+    first = _run_engine(json.dumps({"task_id": "gower-limited-1", "action": "repair_with_gower", "payload": payload}))
+    second = _run_engine(json.dumps({"task_id": "gower-limited-2", "action": "repair_with_gower", "payload": payload}))
+    assert first["status"] == "ok"
+    assert second["status"] == "ok"
+    evidence = first["result"]["neighbor_evidence"]
+    assert evidence
+    assert evidence[0]["candidate_limit_applied"] is True
+    assert evidence[0]["candidate_sample_size"] == 3
+    assert evidence[0]["candidate_pool_size"] > evidence[0]["candidate_sample_size"]
+    assert first["result"]["neighbor_evidence"] == second["result"]["neighbor_evidence"]
+
+
 def test_repair_with_gower_write_output_and_model_importance(tmp_path: Path) -> None:
     csv_path = tmp_path / "repair_with_gower_weighted.csv"
     rows = 120

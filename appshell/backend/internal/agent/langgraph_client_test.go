@@ -104,6 +104,16 @@ func TestLangGraphClientReturnsErrorsForBadResponses(t *testing.T) {
 			},
 		},
 		{
+			name:       "plan_empty_response",
+			path:       "/v1/plan",
+			statusCode: http.StatusOK,
+			body:       ``,
+			call: func(client *LangGraphClient) error {
+				_, err := client.Plan(context.Background(), LangGraphPlanRequest{})
+				return err
+			},
+		},
+		{
 			name:       "plan_timeout",
 			path:       "/v1/plan",
 			statusCode: http.StatusOK,
@@ -173,6 +183,18 @@ func TestLangGraphClientRejectsPlanWithoutStrategyLabel(t *testing.T) {
 	client := NewLangGraphClient(server.URL, time.Second)
 	if _, err := client.Plan(context.Background(), LangGraphPlanRequest{}); err == nil {
 		t.Fatalf("expected missing strategy label error")
+	}
+}
+
+func TestLangGraphClientRejectsPlanWithoutSelectedCandidateID(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		_, _ = w.Write([]byte(`{"strategy_label":"deterministic_rule"}`))
+	}))
+	defer server.Close()
+
+	client := NewLangGraphClient(server.URL, time.Second)
+	if _, err := client.Plan(context.Background(), LangGraphPlanRequest{}); err == nil {
+		t.Fatalf("expected missing selected candidate id error")
 	}
 }
 

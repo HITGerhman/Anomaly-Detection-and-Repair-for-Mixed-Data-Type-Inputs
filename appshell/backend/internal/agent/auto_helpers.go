@@ -33,6 +33,7 @@ type planningParams struct {
 	Goal               string
 	OutputDir          string
 	ModelDir           string
+	LLMExplainMode     string
 	ScanOverrides      map[string]any
 	RepairOverrides    map[string]any
 	ColumnDependencies map[string]any
@@ -49,9 +50,11 @@ type planningResult struct {
 }
 
 type postValidationResult struct {
-	Summary   map[string]any
-	RiskFlags []string
-	Accepted  bool
+	Summary             map[string]any
+	RiskFlags           []string
+	Accepted            bool
+	Verdict             string
+	RollbackRecommended bool
 }
 
 type rollbackMetadata struct {
@@ -297,6 +300,7 @@ func newPlanningSession(taskID string, mode string, params planningParams) Agent
 			"repair_strategy_overrides": cloneMap(params.RepairOverrides),
 			"column_dependencies":       cloneMap(params.ColumnDependencies),
 			"gower_strategy_overrides":  cloneMap(params.GowerOverrides),
+			"llm_explain_mode":          params.LLMExplainMode,
 			"user_preferences":          cloneMap(params.UserPreferences),
 			"preference_snapshot":       preferenceProfileToMap(defaultPreferenceProfile()),
 			"approval_state":            defaultApprovalResult(),
@@ -365,6 +369,7 @@ func parsePlanningParams(payload map[string]any, action string) (planningParams,
 	}
 	params.OutputDir = strings.TrimSpace(asString(payload["output_dir"]))
 	params.ModelDir = strings.TrimSpace(asString(payload["model_dir"]))
+	params.LLMExplainMode = strings.TrimSpace(asString(payload["llm_explain_mode"]))
 	params.WorkspaceID = strings.TrimSpace(asString(payload["workspace_id"]))
 	params.UserPreferences, err = validateObjectField(payload, "user_preferences")
 	if err != nil {
@@ -425,53 +430,6 @@ func writeRejectedSnapshot(execution map[string]any) (string, error) {
 		return "", err
 	}
 	return target, nil
-}
-
-func buildPostValidation(baseline map[string]any, postScan map[string]any) postValidationResult {
-	beforeIssueCount := intFromAny(baseline["issue_count"])
-	afterIssueCount := intFromAny(postScan["issue_count"])
-	beforeHighRiskCount := intFromAny(baseline["high_risk_issue_count"])
-	afterHighRiskCount := intFromAny(postScan["high_risk_issue_count"])
-	beforeTotalIssueScore := floatFromAny(baseline["total_issue_score"])
-	afterTotalIssueScore := floatFromAny(postScan["total_issue_score"])
-
-	riskFlags := []string{}
-	if afterIssueCount > beforeIssueCount {
-		riskFlags = appendRiskFlag(riskFlags, "issue_count_increased")
-	}
-	if afterHighRiskCount > beforeHighRiskCount {
-		riskFlags = appendRiskFlag(riskFlags, "high_risk_issue_count_increased")
-	}
-	if afterIssueCount >= beforeIssueCount && afterTotalIssueScore >= beforeTotalIssueScore {
-		riskFlags = appendRiskFlag(riskFlags, "issue_score_not_improved")
-	}
-
-	accepted := afterIssueCount <= beforeIssueCount &&
-		afterHighRiskCount <= beforeHighRiskCount &&
-		(afterIssueCount < beforeIssueCount || afterTotalIssueScore < beforeTotalIssueScore)
-
-	summary := map[string]any{
-		"phase":                        "post_execute",
-		"before_issue_count":           beforeIssueCount,
-		"after_issue_count":            afterIssueCount,
-		"before_high_risk_issue_count": beforeHighRiskCount,
-		"after_high_risk_issue_count":  afterHighRiskCount,
-		"before_total_issue_score":     beforeTotalIssueScore,
-		"after_total_issue_score":      afterTotalIssueScore,
-		"accepted":                     accepted,
-	}
-	if accepted {
-		summary["status"] = "accepted"
-		summary["message"] = "Post-execute validation accepted the repaired output."
-	} else {
-		summary["status"] = "rejected"
-		summary["message"] = "Post-execute validation rejected the repaired output and requires rollback."
-	}
-	return postValidationResult{
-		Summary:   summary,
-		RiskFlags: riskFlags,
-		Accepted:  accepted,
-	}
 }
 
 func buildVerdictExplanation(plan AgentPlan, validation map[string]any, execution map[string]any, safety map[string]any) string {

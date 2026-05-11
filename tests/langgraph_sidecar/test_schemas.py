@@ -1,7 +1,10 @@
 from appshell.core.langgraph_sidecar.schemas import (
     build_health_response,
+    enforce_approval_context,
     normalize_explain_request,
     normalize_explain_response,
+    normalize_llm_explain_response,
+    normalize_llm_plan_response,
     normalize_plan_request,
     normalize_plan_response,
 )
@@ -23,6 +26,32 @@ def test_normalize_plan_response_adds_phase_c_fields():
     assert result["intent_label"] == "auto_repair"
     assert result["risk_note"] == "validation first"
     assert len(result["short_bullets"]) == 3
+
+
+def test_normalize_llm_plan_response_requires_known_candidate_and_enforces_approval():
+    result = normalize_llm_plan_response(
+        {
+            "strategy_label": "neighbor_similarity",
+            "selected_candidate_id": "candidate-gower",
+            "reason_codes": ["phase_c_llm"],
+            "approval_needed": False,
+        },
+        valid_candidate_ids=["candidate-rule", "candidate-gower"],
+        approval_required=True,
+    )
+    assert result["selected_candidate_id"] == "candidate-gower"
+    assert result["approval_needed"] is True
+    assert "approval_context_enforced" in result["reason_codes"]
+
+    try:
+        normalize_llm_plan_response(
+            {"strategy_label": "bad", "selected_candidate_id": "candidate-missing"},
+            valid_candidate_ids=["candidate-rule"],
+        )
+    except ValueError as exc:
+        assert "unknown candidate" in str(exc)
+    else:
+        raise AssertionError("expected unknown candidate to be rejected")
 
 
 def test_normalize_explain_request_and_response():
@@ -47,6 +76,19 @@ def test_normalize_explain_request_and_response():
     )
     assert response["final_message"] == "Short final message."
     assert len(response["short_bullets"]) == 3
+
+    try:
+        normalize_llm_explain_response({"short_bullets": ["missing text"]})
+    except ValueError as exc:
+        assert "summary" in str(exc)
+    else:
+        raise AssertionError("expected missing LLM explanation text to be rejected")
+
+
+def test_enforce_approval_context_adds_reason_code():
+    result = enforce_approval_context({"reason_codes": ["phase_c_llm"], "approval_needed": False}, True)
+    assert result["approval_needed"] is True
+    assert result["reason_codes"] == ["phase_c_llm", "approval_context_enforced"]
 
 
 def test_build_health_response_includes_llm_fields():

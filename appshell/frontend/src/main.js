@@ -3484,6 +3484,64 @@ function buildSmartCognition(view, session = null) {
   };
 }
 
+function smartPlanIssueIDs(plan, key) {
+  return asArray(asObject(plan)?.[key])
+    .map((item) => String(item || "").trim())
+    .filter(Boolean);
+}
+
+function smartIssueBucketEntries(plan) {
+  return [
+    ["自动修复", smartPlanIssueIDs(plan, "auto_repair_issue_ids")],
+    ["谨慎复核", smartPlanIssueIDs(plan, "cautious_issue_ids")],
+    ["人工复核", smartPlanIssueIDs(plan, "manual_review_issue_ids")],
+    ["阻塞", smartPlanIssueIDs(plan, "blocked_issue_ids")],
+  ];
+}
+
+function smartBucketCountText(plan) {
+  const entries = smartIssueBucketEntries(plan);
+  if (entries.every(([, ids]) => ids.length === 0)) {
+    const selected = smartPlanIssueIDs(plan, "selected_issue_ids");
+    return selected.length > 0 ? `自动修复: ${selected.length}` : "";
+  }
+  return entries.map(([label, ids]) => `${label}: ${ids.length}`).join(" / ");
+}
+
+function smartBucketDetailBullets(plan) {
+  const entries = smartIssueBucketEntries(plan).filter(([, ids]) => ids.length > 0);
+  if (entries.length === 0) return [];
+  return entries.map(([label, ids]) => {
+    const preview = ids.slice(0, 3).join(", ");
+    const suffix = ids.length > 3 ? ` +${ids.length - 3}` : "";
+    return `${label}: ${ids.length}${preview ? ` (${preview}${suffix})` : ""}`;
+  });
+}
+
+function smartPostValidation(view, session = null) {
+  const validation = asObject(view?.validation);
+  const postExecute = asObject(validation?.post_execute);
+  if (Object.keys(postExecute).length > 0) return postExecute;
+  return asObject(asObject(session?.context)?.post_validation);
+}
+
+function smartPreviewValidation(view, session = null) {
+  const validation = asObject(view?.validation);
+  const preview = asObject(validation?.preview);
+  if (Object.keys(preview).length > 0) return preview;
+  return asObject(asObject(session?.context)?.preview_validation);
+}
+
+function smartValidationVerdict(postExecute) {
+  return String(postExecute?.verdict || postExecute?.status || "").trim();
+}
+
+function smartValidationRiskNotes(postExecute, safety = null) {
+  return asArray(postExecute?.risk_notes || postExecute?.risk_flags || asObject(safety)?.risk_flags)
+    .map((item) => String(item || "").trim())
+    .filter(Boolean);
+}
+
 function smartCognitionLabel(cognition) {
   const provider = String(cognition?.provider || "").trim();
   const status = String(cognition?.status || "").trim();
@@ -3593,15 +3651,21 @@ function renderSmartApprovalCard(view, task, session = null) {
 
 function buildSmartTrustList(view, task, verdict) {
   const safety = asObject(view?.safety);
-  const validation = asObject(view?.validation);
-  const preview = asObject(validation?.preview);
-  const postExecute = asObject(validation?.post_execute);
-  const approval = buildSmartApprovalDetails(view, state.smartSessionSnapshot);
-  const cognition = buildSmartCognition(view, state.smartSessionSnapshot);
+  const session = state.smartSessionSnapshot;
+  const preview = smartPreviewValidation(view, session);
+  const postExecute = smartPostValidation(view, session);
+  const approval = buildSmartApprovalDetails(view, session);
+  const cognition = buildSmartCognition(view, session);
+  const plan = asObject(view?.agentBlock?.plan || asObject(session?.latest_plan));
+  const bucketSummary = smartBucketCountText(plan);
+  const postVerdict = smartValidationVerdict(postExecute);
   const list = [
     `最终结论: ${verdict || "unknown"}`,
     preview?.message ? `Preview: ${preview.message}` : "Preview: -",
   ];
+  if (bucketSummary) {
+    list.push(`Plan Buckets: ${bucketSummary}`);
+  }
   if (approval.required || approval.status === "approved" || approval.status === "rejected") {
     list.push(`Approval: ${approval.status || "required"}`);
   }
@@ -3610,6 +3674,9 @@ function buildSmartTrustList(view, task, verdict) {
   }
   if (cognition?.fallbackReasonCode) {
     list.push(`Fallback: ${cognition.fallbackReasonCode}`);
+  }
+  if (postVerdict) {
+    list.push(`Validation Gate: ${postVerdict}`);
   }
   if (postExecute?.message) {
     list.push(`Post Validation: ${postExecute.message}`);
@@ -3626,14 +3693,17 @@ function buildSmartTrustList(view, task, verdict) {
 function renderSmartReasoning(view, task, session = null) {
   if (!smartReasoningBody) return;
   const agentBlock = asObject(view?.agentBlock);
-  const plan = asObject(agentBlock?.plan);
+  const plan = asObject(agentBlock?.plan || asObject(session?.latest_plan));
   const explanationBlock = asObject(agentBlock?.explanation);
-  const validation = asObject(view?.validation);
-  const preview = asObject(validation?.preview);
-  const postExecute = asObject(validation?.post_execute);
+  const safety = asObject(view?.safety);
+  const preview = smartPreviewValidation(view, session);
+  const postExecute = smartPostValidation(view, session);
   const sessionContext = asObject(session?.context);
   const approval = buildSmartApprovalDetails(view, session);
   const cognition = buildSmartCognition(view, session);
+  const bucketBullets = smartBucketDetailBullets(plan);
+  const postVerdict = smartValidationVerdict(postExecute);
+  const riskNotes = smartValidationRiskNotes(postExecute, safety);
   const reasoningSummary = String(explanationBlock?.summary || plan?.reasoning_summary || "").trim();
   const userExplanation = String(explanationBlock?.final_message || plan?.user_explanation || "").trim();
   const shortBullets = asArray(explanationBlock?.short_bullets)
@@ -3650,7 +3720,11 @@ function renderSmartReasoning(view, task, session = null) {
     explanationBlock?.risk_note ? `Risk Note: ${String(explanationBlock.risk_note)}` : "",
     approval?.status && approval.status !== "not_required" ? `Approval: ${approval.status}` : "",
     preview?.message ? `Preview: ${preview.message}` : "",
+    ...bucketBullets.map((item) => `Plan Bucket: ${item}`),
+    postVerdict ? `Validation Gate: ${postVerdict}` : "",
+    riskNotes.length > 0 ? `Risk Notes: ${riskNotes.join(", ")}` : "",
     postExecute?.message ? `Post Validation: ${postExecute.message}` : "",
+    postExecute?.explanation ? `Validation Explanation: ${String(postExecute.explanation)}` : "",
     sessionContext?.final_verdict ? `Session Verdict: ${String(sessionContext.final_verdict)}` : "",
   ].filter(Boolean);
   smartReasoningBody.innerHTML = `
@@ -3810,6 +3884,11 @@ function renderSmartResult(task, options = {}) {
   const session = asObject(state.smartSessionSnapshot);
   const traceEvents = asArray(state.smartTraceEvents);
   const comparison = asObject(repairResult?.comparison);
+  const agentPlan = asObject(view?.agentBlock?.plan || asObject(session?.latest_plan));
+  const postExecute = smartPostValidation(view, session);
+  const postVerdict = smartValidationVerdict(postExecute);
+  const riskNotes = smartValidationRiskNotes(postExecute, safety);
+  const bucketSummary = smartBucketCountText(agentPlan);
   const verdict = String(safety?.final_verdict || (String(task?.status || "").toLowerCase() === "succeeded" ? "accepted" : "failed")).trim();
   const outputCSV = String(repairResult?.output_csv || "").trim();
   const presentationArtifact = String(session?.presentation_artifact || "").trim();
@@ -3817,10 +3896,11 @@ function renderSmartResult(task, options = {}) {
   const rollbackManifest = String(rollback?.manifest_path || "").trim();
   const rejectedSnapshot = String(safety?.rejected_output_snapshot || "").trim();
   const cognition = buildSmartCognition(view, session);
-  const beforeIssueCount = toInt(comparison?.before_issue_count, toInt(safety?.baseline_scan_summary?.issue_count, 0));
-  const afterIssueCount = toInt(comparison?.after_issue_count, toInt(safety?.post_scan_summary?.issue_count, 0));
-  const resolvedIssueCount = toInt(comparison?.resolved_issue_count, Math.max(0, beforeIssueCount - afterIssueCount));
-  const selectedSource = String(repairResult?.selected_source || asObject(view?.agentBlock?.plan)?.selected_source || "-").trim();
+  const beforeIssueCount = toInt(comparison?.before_issue_count, toInt(postExecute?.before_issue_count, toInt(safety?.baseline_scan_summary?.issue_count, 0)));
+  const afterIssueCount = toInt(comparison?.after_issue_count, toInt(postExecute?.after_issue_count, toInt(safety?.post_scan_summary?.issue_count, 0)));
+  const resolvedIssueCount = toInt(postExecute?.resolved_issue_count, toInt(comparison?.resolved_issue_count, Math.max(0, beforeIssueCount - afterIssueCount)));
+  const totalCellsModified = toInt(postExecute?.total_cells_modified, toInt(repairResult?.total_cells_modified, 0));
+  const selectedSource = String(repairResult?.selected_source || agentPlan?.selected_source || "-").trim();
   const conclusion =
     verdict === "accepted"
       ? "系统已完成自动扫描、修复、复扫与验证，本次输出被正式接纳。"
@@ -3845,7 +3925,10 @@ function renderSmartResult(task, options = {}) {
       ["采用来源", selectedSource || "-"],
       ["问题数变化", beforeIssueCount > 0 || afterIssueCount > 0 ? `${beforeIssueCount} -> ${afterIssueCount}` : "-"],
       ["已解决问题", resolvedIssueCount || 0],
-      ["修改单元格", toInt(repairResult?.total_cells_modified, 0)],
+      ["修改单元格", totalCellsModified],
+      ["Validation Gate", postVerdict || "-"],
+      ["Plan 分桶", bucketSummary || "-"],
+      ["风险提示", riskNotes.length > 0 ? riskNotes.join(", ") : "-"],
       ["输出文件", outputCSV || "-"],
     ]);
     if (smartCognitionLabel(cognition)) {
@@ -4801,10 +4884,31 @@ function buildMockAgentAutofixResult(taskID, payload) {
     verdict === "accepted" ? 1 : verdict === "validation_rejected" ? beforeIssueCount : beforeIssueCount + 1;
   const postRiskScore =
     verdict === "accepted" ? 32.4 : verdict === "validation_rejected" ? 54.2 : 66.8;
+  const scanIssues = asArray(scan?.issues).map((item) => asObject(item));
+  const autoRepairIssueIDs = scanIssues
+    .filter((item) => ["missing_values", "rare_category"].includes(String(item?.issue_type || "")))
+    .map((item) => String(item?.issue_id || "").trim())
+    .filter(Boolean);
+  const cautiousIssueIDs = scanIssues
+    .filter((item) => String(item?.issue_type || "") === "numeric_outlier")
+    .map((item) => String(item?.issue_id || "").trim())
+    .filter(Boolean);
+  const manualReviewIssueIDs = scanIssues
+    .filter((item) => ["duplicate_record", "cross_column_consistency"].includes(String(item?.issue_type || "")))
+    .map((item) => String(item?.issue_id || "").trim())
+    .filter(Boolean);
+  const blockedIssueIDs = scanIssues
+    .filter((item) => {
+      const issueType = String(item?.issue_type || "");
+      return !["missing_values", "rare_category", "numeric_outlier", "duplicate_record", "cross_column_consistency"].includes(issueType);
+    })
+    .map((item) => String(item?.issue_id || "").trim())
+    .filter(Boolean);
   const selectedSource = verdict === "accepted" ? "hybrid" : verdict === "validation_rejected" ? "rule" : "gower";
   const outputCSV = `${outputDir}/mock.smart.repaired.csv`;
   const presentationArtifact = `${outputDir}/presentation.json`;
   const rollbackManifest = `${outputDir}/rollback/manifest.v2.json`;
+  const totalCellsModified = verdict === "accepted" ? 42 : 48;
   const rejectedSnapshot =
     verdict === "rolled_back" || verdict === "rollback_failed" ? `${outputDir}/rollback/${taskID}.rejected.csv` : "";
   const rollbackExecution =
@@ -4860,14 +4964,27 @@ function buildMockAgentAutofixResult(taskID, payload) {
         ? {}
         : {
             status: verdict === "accepted" ? "accepted" : "rejected",
+            accepted: verdict === "accepted",
+            verdict: verdict === "accepted" ? "accept" : "reject",
+            phase: "post_execute",
             message:
               verdict === "accepted"
                 ? "Rescan confirms lower issue count and lower total issue score."
                 : "Rescan did not meet the acceptance threshold.",
             before_issue_count: beforeIssueCount,
             after_issue_count: afterIssueCount,
+            resolved_issue_count: Math.max(0, beforeIssueCount - afterIssueCount),
+            total_cells_modified: totalCellsModified,
+            changed_cell_count: totalCellsModified,
             before_total_issue_score: 123.4,
             after_total_issue_score: postRiskScore,
+            risk_notes: verdict === "accepted" ? [] : ["issue_count_increased"],
+            risk_flags: verdict === "accepted" ? [] : ["issue_count_increased"],
+            rollback_recommended: verdict !== "accepted",
+            explanation:
+              verdict === "accepted"
+                ? `Issue count changed from ${beforeIssueCount} to ${afterIssueCount} and no validation gate risks were detected.`
+                : `Validation gate verdict=reject because issue_count_increased. Issue count changed from ${beforeIssueCount} to ${afterIssueCount}.`,
           },
   };
   const execution =
@@ -4887,21 +5004,29 @@ function buildMockAgentAutofixResult(taskID, payload) {
           post_scan_output_csv: outputCSV,
           rollback_applied: verdict === "rolled_back",
           applied_issue_count: verdict === "accepted" ? 3 : 2,
-          total_cells_modified: verdict === "accepted" ? 61 : 48,
+          total_cells_modified: totalCellsModified,
           rollback: rollbackExecution,
           comparison: {
             before_issue_count: beforeIssueCount,
             after_issue_count: afterIssueCount,
             resolved_issue_count: Math.max(0, beforeIssueCount - afterIssueCount),
-            changed_cell_count: verdict === "accepted" ? 61 : 48,
+            changed_cell_count: totalCellsModified,
           },
         };
   const plan = {
     plan_id: planID,
     selected_candidate_id: `${selectedSource}-candidate`,
     selected_source: selectedSource,
-    selected_issue_ids: asArray(scan?.issues).map((item) => String(item?.issue_id || "").trim()),
-    skipped_issues: [{ issue_type: "duplicate_record", reason: "unsupported_issue_type" }],
+    selected_issue_ids: autoRepairIssueIDs,
+    auto_repair_issue_ids: autoRepairIssueIDs,
+    cautious_issue_ids: cautiousIssueIDs,
+    manual_review_issue_ids: manualReviewIssueIDs,
+    blocked_issue_ids: blockedIssueIDs,
+    skipped_issues: [
+      ...cautiousIssueIDs.map((issueID) => ({ issue_id: issueID, issue_type: "numeric_outlier", reason: "cautious_review_required" })),
+      ...manualReviewIssueIDs.map((issueID) => ({ issue_id: issueID, reason: "manual_review_required" })),
+      ...blockedIssueIDs.map((issueID) => ({ issue_id: issueID, reason: "blocked_by_deterministic_planner" })),
+    ],
     reasoning_summary:
       verdict === "accepted"
         ? "Hybrid candidate reduced issue count most aggressively while keeping change count acceptable."

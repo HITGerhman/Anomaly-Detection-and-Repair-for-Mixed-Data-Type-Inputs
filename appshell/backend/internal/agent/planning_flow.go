@@ -31,6 +31,7 @@ func (r *RuntimeRunner) runPlanningFlow(ctx context.Context, req engine.Request,
 	session := newPlanningSession(req.TaskID, mode, params)
 	session.Context["preference_snapshot"] = preferenceProfileToMap(preferenceSnapshot)
 	session.Context["agent_retrieve_mode"] = retrieveMode
+	session.Context["llm_explain_mode"] = params.LLMExplainMode
 	if params.OutputDir != "" {
 		session.Context["output_dir"] = params.OutputDir
 	}
@@ -70,7 +71,9 @@ func (r *RuntimeRunner) runPlanningFlow(ctx context.Context, req engine.Request,
 		Summary:   "Calling engine.scan_table",
 		Payload:   map[string]any{"tool_id": "engine.scan_table", "payload": cloneMap(scanPayload)},
 	})
+	scanStarted := time.Now()
 	scanResp, err := r.callTool(ctx, req.TaskID, "engine.scan_table", scanPayload)
+	scanDurationMS := int(time.Since(scanStarted).Milliseconds())
 	if err != nil {
 		r.failSession(session, "Agent planning failed while calling the scan tool")
 		return nil, nil, err
@@ -135,6 +138,8 @@ func (r *RuntimeRunner) runPlanningFlow(ctx context.Context, req engine.Request,
 
 	rulePreviewPayload := buildRulePreviewPayload(params.CSVPath, selectedIssueIDs, params.ScanOverrides, params.RepairOverrides, params.ColumnDependencies, params.OutputDir)
 	gowerPreviewPayload := buildGowerPreviewPayload(params.CSVPath, selectedIssueIDs, params.ScanOverrides, params.ColumnDependencies, params.GowerOverrides, params.OutputDir, params.ModelDir)
+	rulePreviewPayload = attachPrecomputedIssues(rulePreviewPayload, params.CSVPath, scanResult)
+	gowerPreviewPayload = attachPrecomputedIssues(gowerPreviewPayload, params.CSVPath, scanResult)
 	r.emitStage(req.TaskID, "agent_retrieve", "start", progress.RetrieveStart, "Agent is previewing rule and Gower candidates", map[string]any{"retrieve_mode": retrieveMode})
 
 	previewSpecs := []previewToolSpec{
@@ -162,7 +167,9 @@ func (r *RuntimeRunner) runPlanningFlow(ctx context.Context, req engine.Request,
 		})
 	}
 
+	retrieveStarted := time.Now()
 	previewOutcomes := r.runPreviewTools(ctx, req.TaskID, previewSpecs, retrieveMode)
+	retrieveDurationMS := int(time.Since(retrieveStarted).Milliseconds())
 	rulePreviewResp := engine.Response{}
 	gowerPreviewResp := engine.Response{}
 	for _, outcome := range previewOutcomes {
@@ -224,6 +231,11 @@ func (r *RuntimeRunner) runPlanningFlow(ctx context.Context, req engine.Request,
 		return nil, responsePtr(resp), nil
 	}
 	plan = ensurePlanCognition(plan)
+	plan.TimingsMS = mergeTimingMS(plan.TimingsMS, map[string]any{
+		"scan_duration_ms":     scanDurationMS,
+		"retrieve_duration_ms": retrieveDurationMS,
+	})
+	plan.TimingsMS = ensureTimingKeys(plan.TimingsMS, "llm_plan_duration_ms", "llm_explain_duration_ms")
 	_ = r.saveTrace(AgentTraceEvent{
 		SessionID: session.SessionID,
 		TaskID:    req.TaskID,
