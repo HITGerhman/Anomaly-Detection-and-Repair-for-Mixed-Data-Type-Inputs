@@ -1,6 +1,6 @@
 ﻿# MEMO
 
-Last updated: 2026-05-07 18:28:00 +08:00
+Last updated: 2026-05-11 14:16:30 +08:00
 
 ## 椤圭洰鎬荤洰鏍?
 - 灏嗏€滄贩鍚堟暟鎹被鍨嬪紓甯告娴嬩笌淇鈥濋」鐩粠绠楁硶鍘熷瀷鎺ㄨ繘涓哄彲浜や粯銆佸彲婕旂ず銆佸彲娴嬭瘯鐨勬闈㈠簲鐢ㄣ€?- 浠?`appshell/` 浣滀负浜у搧鍖栦富璺緞锛屽舰鎴?`Python Engine + Go Backend + Wails Frontend` 鐨勭ǔ瀹氭灦鏋勩€?- 淇濈暀 `app.py` 浣滀负鏃х増 Streamlit 婕旂ず鍏ュ彛锛岀敤浜庣畻娉曢獙璇併€佺粨鏋滃鐓у拰绛旇京灞曠ず銆?- 閫愭琛ラ綈鐪熷疄鐢ㄦ埛闂幆锛氬鍏?CSV -> 璁粌/鎵弿 -> 闂绛涢€?-> 鎵归噺淇 -> 鍥炴粴 -> 鍘嗗彶鏌ョ湅銆?- 鍦ㄤ繚鐣欑幇鏈夌畻娉曡祫浜т笌宸ョ▼楠ㄦ灦鐨勫墠鎻愪笅锛岄€愭鍗囩骇涓衡€滃 agent 鍐崇瓥灞?+ 纭畾鎬у伐鍏峰眰鈥濈殑鏅鸿兘鍖栦骇鍝併€?- 鏈€缁堢洰鏍囨槸璁╃敤鎴峰敖閲忓彧闇€閫夋嫨鏂囦欢锛屽嵆鍙嚜鍔ㄨ幏寰楁壂鎻忋€佷慨澶嶃€侀獙璇併€佸洖婊氫繚鎶ゅ拰鍥捐〃鍖栬В閲婄粨鏋溿€?
@@ -1409,7 +1409,6 @@ Last updated: 2026-05-07 18:28:00 +08:00
   - 当前本地未配置 live LLM，因此完整 benchmark 的 `fallback_rate=1.0`，fallback reason 为 `planner_mode_fallback`；这验证的是无 LLM 配置下的 deterministic fallback 稳定性。若需要 live LLM 多数据集结果，需要在私密环境变量中配置 API key 后重跑，仍不得提交 key 或原始日志。
   - 完整 benchmark 产物位于 ignored `outputs/auto_agent/multi_dataset_benchmark_20260506/` 下；如需答辩归档，建议只复制脱敏后的 summary 摘要，不提交 run logs、SQLite、repaired CSV 或大体积输出。
   - 当前分支仍包含多轮 Auto Agent 相关未提交改动；提交前需要复查 diff，确认没有 API key、无关文件或 ignored outputs 被加入版本控制。
-
 ## Update 2026-05-07 18:28:00
 
 - 改动日期：2026-05-07 18:28:00 +08:00
@@ -1628,3 +1627,31 @@ Last updated: 2026-05-07 18:28:00 +08:00
   - 各 K 的 `total_cells_modified=194`、`non_ground_truth_cells_modified=122` 均未改善，说明 K 调参不能单独解决 numeric_outlier 误报导致的副作用；核心仍应依赖 R2-R4 风险分层、planner 保守分流和 validation gate 约束。
   - R7 需要更新文档与简历口径：默认 K=5 是工程折中，不是全局最优宣称；R6 结果支持它在当前数据上达到最优 improved-or-exact，同时避免进一步扩大邻域。
   - 当前 R1-R6 仍处于本地未提交工作区状态，推送 GitHub 前需要统一审查 diff，并决定是否提交 R5/R6 JSON/Markdown 指标；CSV repaired outputs 受全局 `*.csv` ignore 规则保护，默认不会进入提交。
+
+## Update 2026-05-11 14:16:30 +08:00
+
+- 改动日期：2026-05-11 14:16:30 +08:00
+- 改动内容简述：将 GitHub 最新 `origin/main` 合并到 `feat/algorithm-risk-hardening`，解决 PR 合并冲突；本次只做冲突整合、测试验证、提交与推送，不新增算法逻辑、不修改 M1-M3 既有实验结果、不引入依赖。
+- 最终目标：让 `feat/algorithm-risk-hardening` 在保留 R1-R6 风险增强成果的同时与 GitHub `main` 对齐，清除 PR 页面中的 merge conflict 提示。
+- 当前采用的方法：
+  - 使用 WSL Git 更新远端 `origin/main` 引用，随后在 Windows 工作区执行 merge。
+  - 在 planner 测试冲突中保留 R3 的 numeric_outlier mild/strong/extreme 保守分流断言。
+  - 在 LangGraph planner 测试冲突中保留 deterministic numeric_outlier risk note 合并断言和 safety context 风险策略检查。
+  - 在 validation gate 冲突中保留 R4 新增的 acceptance reason、modified/resolved ratio、numeric_outlier 修改摘要、rollback availability 和 side effect notes 字段。
+  - 在 `MEMO.md` 中保留远端 main 既有 Auto Agent benchmark 记录，并保留本分支 R2-R6 记录。
+- 相关模块/文件：
+  - `MEMO.md`
+  - `appshell/backend/internal/agent/langgraph_planner_test.go`
+  - `appshell/backend/internal/agent/planning_support_test.go`
+  - `appshell/backend/internal/agent/validation_gate.go`
+  - `appshell/backend/internal/agent/validation_gate_test.go`
+- 已解决的问题 / 新增功能：
+  - 解决 GitHub PR 标记的 5 个冲突文件。
+  - 保留 R3 planner 风险策略和 R4 validation gate 副作用约束。
+  - 保留 R5/R6 实验记录与输出摘要。
+- 验证命令：
+  - `$env:PATH = (Resolve-Path '.\.venv-win\Scripts').Path + ';' + $env:PATH; Push-Location appshell\backend; go test ./internal/agent ./cmd/wails; Pop-Location`
+- 验收结果：
+  - Go 指定回归：`ok` for `./internal/agent ./cmd/wails`。
+- 待处理事项：
+  - 提交 merge commit 并推送到 `origin/feat/algorithm-risk-hardening` 后，在 GitHub PR 页面确认 merge conflict 提示消失。
