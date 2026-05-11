@@ -10,6 +10,15 @@ const (
 
 	validationGateCellChangeFloor      = 50
 	validationGateCellChangeMultiplier = 20
+
+	validationGateModifiedResolvedRatioWarn = 10.0
+	validationGateModifiedResolvedMinCells  = 50
+	validationGateNumericOutlierShareWarn   = 0.5
+	validationGateNumericOutlierMinCells    = 20
+
+	validationRiskMildNumericOutlierAutoRepaired      = "mild_numeric_outlier_auto_repaired"
+	validationRiskModifiedHighRelativeToResolved      = "modified_cell_count_high_relative_to_resolved"
+	validationRiskNumericOutlierModificationShareHigh = "numeric_outlier_modification_share_high"
 )
 
 type validationGateInput struct {
@@ -85,11 +94,21 @@ func evaluateValidationGate(input validationGateInput) postValidationResult {
 	if intersects(appliedIDs, input.Plan.ManualReviewIssueIDs) {
 		riskNotes = appendRiskFlag(riskNotes, "manual_review_issue_auto_repaired")
 	}
+	if repairedMildNumericOutlier(input.BaselineScan, appliedIDs) {
+		riskNotes = appendRiskFlag(riskNotes, validationRiskMildNumericOutlierAutoRepaired)
+	}
 	if repairedHighRiskIssue(input.BaselineScan, appliedIDs) {
 		riskNotes = appendRiskFlag(riskNotes, "high_risk_issue_auto_repaired")
 	}
 	if repairWroteOutput(input.RepairResult) && !repairHasRollbackManifest(input.RepairResult) {
 		riskNotes = appendRiskFlag(riskNotes, "missing_rollback_metadata")
+	}
+	if shouldWarnForModifiedResolvedRatio(modifiedCellCount, resolvedItems) {
+		riskNotes = appendRiskFlag(riskNotes, validationRiskModifiedHighRelativeToResolved)
+	}
+	numericOutlierSummary := numericOutlierModificationSummary(input.RepairResult, input.BaselineScan)
+	if boolValue(numericOutlierSummary["high_share"]) {
+		riskNotes = appendRiskFlag(riskNotes, validationRiskNumericOutlierModificationShareHigh)
 	}
 
 	issueCountImproved := afterIssueCount < beforeIssueCount
@@ -101,7 +120,7 @@ func evaluateValidationGate(input validationGateInput) postValidationResult {
 	case input.RepairError != "":
 		verdict = validationGateReject
 		rollbackRecommended = true
-	case hasAnyString(riskNotes, []string{"issue_count_increased", "high_risk_issue_count_increased", "manual_review_issue_auto_repaired", "high_risk_issue_auto_repaired"}):
+	case hasAnyString(riskNotes, []string{"issue_count_increased", "high_risk_issue_count_increased", "manual_review_issue_auto_repaired", validationRiskMildNumericOutlierAutoRepaired, "high_risk_issue_auto_repaired"}):
 		verdict = validationGateReject
 		rollbackRecommended = true
 	case !issueCountImproved && !scoreImproved:
@@ -111,7 +130,7 @@ func evaluateValidationGate(input validationGateInput) postValidationResult {
 	case hasString(riskNotes, "missing_rollback_metadata"):
 		verdict = validationGateRollbackRecommended
 		rollbackRecommended = true
-	case hasString(riskNotes, "changed_cell_count_abnormally_high") || (!issueCountImproved && scoreImproved):
+	case hasAnyString(riskNotes, []string{"changed_cell_count_abnormally_high", validationRiskModifiedHighRelativeToResolved, validationRiskNumericOutlierModificationShareHigh}) || (!issueCountImproved && scoreImproved):
 		verdict = validationGateWarn
 	default:
 		verdict = validationGateAccept
@@ -165,30 +184,39 @@ func validationGateSummary(input validationGateSummaryInput) postValidationResul
 	if message == "" {
 		message = validationGateMessage(input.Verdict)
 	}
+	modifiedResolvedRatio := modifiedToResolvedRatio(input.ModifiedCellCount, input.ResolvedIssueItems)
+	numericOutlierSummary := numericOutlierModificationSummary(input.RepairResult, input.BaselineScan)
+	rollbackAvailability := validationRollbackAvailability(input.RepairResult)
+	sideEffectNotes := validationSideEffectNotes(riskNotes)
 	summary := map[string]any{
-		"phase":                        "post_execute",
-		"status":                       status,
-		"accepted":                     accepted,
-		"message":                      message,
-		"verdict":                      input.Verdict,
-		"before_issue_items":           input.BeforeIssueCount,
-		"after_issue_items":            input.AfterIssueCount,
-		"resolved_issue_items":         input.ResolvedIssueItems,
-		"modified_cell_count":          input.ModifiedCellCount,
-		"before_issue_count":           input.BeforeIssueCount,
-		"after_issue_count":            input.AfterIssueCount,
-		"resolved_issue_count":         input.ResolvedIssueItems,
-		"total_cells_modified":         input.ModifiedCellCount,
-		"changed_cell_count":           input.ModifiedCellCount,
-		"before_high_risk_issue_count": input.BeforeHighRiskCount,
-		"after_high_risk_issue_count":  input.AfterHighRiskCount,
-		"before_total_issue_score":     input.BeforeTotalIssueScore,
-		"after_total_issue_score":      input.AfterTotalIssueScore,
-		"risk_notes":                   append([]string{}, riskNotes...),
-		"risk_flags":                   append([]string{}, riskNotes...),
-		"rollback_recommended":         input.RollbackRecommended,
-		"explanation":                  validationGateExplanation(input.Verdict, riskNotes, input.BeforeIssueCount, input.AfterIssueCount),
-		"metric_definitions":           validationMetricDefinitions(),
+		"phase":                                "post_execute",
+		"status":                               status,
+		"accepted":                             accepted,
+		"message":                              message,
+		"verdict":                              input.Verdict,
+		"before_issue_items":                   input.BeforeIssueCount,
+		"after_issue_items":                    input.AfterIssueCount,
+		"resolved_issue_items":                 input.ResolvedIssueItems,
+		"modified_cell_count":                  input.ModifiedCellCount,
+		"before_issue_count":                   input.BeforeIssueCount,
+		"after_issue_count":                    input.AfterIssueCount,
+		"resolved_issue_count":                 input.ResolvedIssueItems,
+		"total_cells_modified":                 input.ModifiedCellCount,
+		"changed_cell_count":                   input.ModifiedCellCount,
+		"before_high_risk_issue_count":         input.BeforeHighRiskCount,
+		"after_high_risk_issue_count":          input.AfterHighRiskCount,
+		"before_total_issue_score":             input.BeforeTotalIssueScore,
+		"after_total_issue_score":              input.AfterTotalIssueScore,
+		"risk_notes":                           append([]string{}, riskNotes...),
+		"risk_flags":                           append([]string{}, riskNotes...),
+		"rollback_recommended":                 input.RollbackRecommended,
+		"acceptance_reason":                    validationGateAcceptanceReason(input.Verdict, riskNotes),
+		"modified_to_resolved_ratio":           modifiedResolvedRatio,
+		"numeric_outlier_modification_summary": numericOutlierSummary,
+		"rollback_availability":                rollbackAvailability,
+		"side_effect_notes":                    sideEffectNotes,
+		"explanation":                          validationGateExplanation(input.Verdict, riskNotes, input.BeforeIssueCount, input.AfterIssueCount),
+		"metric_definitions":                   validationMetricDefinitions(),
 	}
 	return postValidationResult{
 		Summary:             summary,
@@ -229,14 +257,19 @@ func shouldWarnForCellChanges(beforeIssueCount int, totalCellsModified int) bool
 
 func validationMetricDefinitions() map[string]any {
 	return map[string]any{
-		"before_issue_items":   "Number of issue records detected in the baseline scan before repair.",
-		"after_issue_items":    "Number of issue records detected in the post-repair scan.",
-		"resolved_issue_items": "Issue-item delta computed as max(before_issue_items - after_issue_items, 0).",
-		"modified_cell_count":  "Number of individual CSV cells modified by the executed repair.",
-		"rollback_recommended": "Whether validation judged the repaired output unsafe enough to recommend or trigger rollback.",
-		"rollback_manifest":    "A recovery manifest created for written outputs; its existence does not imply rollback is recommended.",
-		"resolved_issue_count": "Deprecated compatibility alias for resolved_issue_items in validation.post_execute; do not use for resume or defense metrics.",
-		"total_cells_modified": "Deprecated compatibility alias for modified_cell_count.",
+		"before_issue_items":                   "Number of issue records detected in the baseline scan before repair.",
+		"after_issue_items":                    "Number of issue records detected in the post-repair scan.",
+		"resolved_issue_items":                 "Issue-item delta computed as max(before_issue_items - after_issue_items, 0).",
+		"modified_cell_count":                  "Number of individual CSV cells modified by the executed repair.",
+		"modified_to_resolved_ratio":           "Modified cells divided by resolved issue items; high values indicate possible repair side effects.",
+		"numeric_outlier_modification_summary": "Summary of how many repaired cells came from numeric_outlier issues and whether the share is high.",
+		"rollback_availability":                "Whether a rollback manifest path is available for the written output.",
+		"side_effect_notes":                    "Human-readable validation notes for side-effect risks.",
+		"acceptance_reason":                    "Short machine-readable reason for the validation verdict.",
+		"rollback_recommended":                 "Whether validation judged the repaired output unsafe enough to recommend or trigger rollback.",
+		"rollback_manifest":                    "A recovery manifest created for written outputs; its existence does not imply rollback is recommended.",
+		"resolved_issue_count":                 "Deprecated compatibility alias for resolved_issue_items in validation.post_execute; do not use for resume or defense metrics.",
+		"total_cells_modified":                 "Deprecated compatibility alias for modified_cell_count.",
 	}
 }
 
@@ -328,16 +361,36 @@ func validationAppliedIssueIDs(repairResult map[string]any, plan AgentPlan) []st
 	return uniqueStrings(ids)
 }
 
-func repairedHighRiskIssue(scan map[string]any, appliedIDs []string) bool {
-	selected := stringSet(appliedIDs)
+func scanIssuesByID(scan map[string]any) map[string]map[string]any {
+	out := map[string]map[string]any{}
 	for _, issue := range mapsFromAny(scan["issues"]) {
 		issueID := asString(issue["issue_id"])
 		if issueID == "" {
 			continue
 		}
-		if _, ok := selected[issueID]; !ok {
+		out[issueID] = issue
+	}
+	return out
+}
+
+func repairedMildNumericOutlier(scan map[string]any, appliedIDs []string) bool {
+	issuesByID := scanIssuesByID(scan)
+	for _, issueID := range uniqueStrings(appliedIDs) {
+		issue := issuesByID[issueID]
+		if asString(issue["issue_type"]) != "numeric_outlier" {
 			continue
 		}
+		if asString(issue["outlier_risk_level"]) == "mild" {
+			return true
+		}
+	}
+	return false
+}
+
+func repairedHighRiskIssue(scan map[string]any, appliedIDs []string) bool {
+	issuesByID := scanIssuesByID(scan)
+	for _, issueID := range uniqueStrings(appliedIDs) {
+		issue := issuesByID[issueID]
 		if asString(issue["risk_level"]) == "high" {
 			return true
 		}
@@ -353,14 +406,175 @@ func repairWroteOutput(repairResult map[string]any) bool {
 }
 
 func repairHasRollbackManifest(repairResult map[string]any) bool {
+	return validationRollbackManifestPath(repairResult) != ""
+}
+
+func validationRollbackManifestPath(repairResult map[string]any) string {
 	if repairResult == nil {
-		return false
+		return ""
 	}
 	if asString(repairResult["rollback_manifest_path"]) != "" || asString(repairResult["manifest_path"]) != "" {
-		return true
+		if path := asString(repairResult["rollback_manifest_path"]); path != "" {
+			return path
+		}
+		return asString(repairResult["manifest_path"])
 	}
 	rollback := mapFromAny(repairResult["rollback"])
-	return asString(rollback["manifest_path"]) != ""
+	return asString(rollback["manifest_path"])
+}
+
+func validationRollbackAvailability(repairResult map[string]any) map[string]any {
+	path := validationRollbackManifestPath(repairResult)
+	return map[string]any{
+		"available":     path != "",
+		"manifest_path": path,
+	}
+}
+
+func modifiedToResolvedRatio(modifiedCellCount int, resolvedItems int) float64 {
+	if resolvedItems <= 0 {
+		if modifiedCellCount > 0 {
+			return float64(modifiedCellCount)
+		}
+		return 0
+	}
+	return float64(modifiedCellCount) / float64(resolvedItems)
+}
+
+func shouldWarnForModifiedResolvedRatio(modifiedCellCount int, resolvedItems int) bool {
+	if modifiedCellCount < validationGateModifiedResolvedMinCells || resolvedItems <= 0 {
+		return false
+	}
+	return modifiedToResolvedRatio(modifiedCellCount, resolvedItems) > validationGateModifiedResolvedRatioWarn
+}
+
+func numericOutlierModificationSummary(repairResult map[string]any, baseline map[string]any) map[string]any {
+	totalModified := repairChangedCellCount(repairResult)
+	numericModified := numericOutlierModifiedCells(repairResult, baseline)
+	share := 0.0
+	if totalModified > 0 {
+		share = float64(numericModified) / float64(totalModified)
+	}
+	appliedIDs := validationAppliedIssueIDs(repairResult, AgentPlan{})
+	numericIDs := []string{}
+	mildIDs := []string{}
+	issuesByID := scanIssuesByID(baseline)
+	for _, issueID := range appliedIDs {
+		issue := issuesByID[issueID]
+		if asString(issue["issue_type"]) != "numeric_outlier" {
+			continue
+		}
+		numericIDs = append(numericIDs, issueID)
+		if asString(issue["outlier_risk_level"]) == "mild" {
+			mildIDs = append(mildIDs, issueID)
+		}
+	}
+	highShare := numericModified >= validationGateNumericOutlierMinCells && share >= validationGateNumericOutlierShareWarn
+	return map[string]any{
+		"modified_cells":            numericModified,
+		"total_modified_cells":      totalModified,
+		"share_of_modified_cells":   share,
+		"applied_issue_count":       len(uniqueStrings(numericIDs)),
+		"applied_issue_ids":         uniqueStrings(numericIDs),
+		"mild_issue_ids":            uniqueStrings(mildIDs),
+		"high_share":                highShare,
+		"manual_review_recommended": highShare,
+	}
+}
+
+func numericOutlierModifiedCells(repairResult map[string]any, baseline map[string]any) int {
+	issuesByID := scanIssuesByID(baseline)
+	appliedRepairs := mapsFromAny(repairResult["applied_repairs"])
+	if len(appliedRepairs) > 0 {
+		total := 0
+		for _, item := range appliedRepairs {
+			issueID := asString(item["issue_id"])
+			issueType := asString(item["issue_type"])
+			if issueType == "" {
+				issueType = asString(issuesByID[issueID]["issue_type"])
+			}
+			if issueType != "numeric_outlier" {
+				continue
+			}
+			total += repairItemChangedCellCount(item)
+		}
+		return total
+	}
+
+	executionSteps := mapsFromAny(repairResult["execution_steps"])
+	if len(executionSteps) > 0 {
+		total := 0
+		for _, step := range executionSteps {
+			selectedIDs := stringsFromAny(step["selected_issue_ids"])
+			if !containsNumericOutlierIssue(selectedIDs, issuesByID) {
+				continue
+			}
+			total += intFromAny(mapFromAny(step["comparison"])["changed_cell_count"])
+		}
+		return total
+	}
+
+	selectedIDs := validationAppliedIssueIDs(repairResult, AgentPlan{})
+	if containsNumericOutlierIssue(selectedIDs, issuesByID) {
+		return repairChangedCellCount(repairResult)
+	}
+	return 0
+}
+
+func repairItemChangedCellCount(item map[string]any) int {
+	for _, key := range []string{"rows_touched", "resolved_count", "before_count", "changed_cell_count"} {
+		if count := intFromAny(item[key]); count > 0 {
+			return count
+		}
+	}
+	return len(mapsFromAny(item["cells_preview"]))
+}
+
+func containsNumericOutlierIssue(issueIDs []string, issuesByID map[string]map[string]any) bool {
+	for _, issueID := range uniqueStrings(issueIDs) {
+		if asString(issuesByID[issueID]["issue_type"]) == "numeric_outlier" {
+			return true
+		}
+	}
+	return false
+}
+
+func validationSideEffectNotes(riskNotes []string) []string {
+	notes := []string{}
+	if hasString(riskNotes, validationRiskNumericOutlierModificationShareHigh) {
+		notes = append(notes, "numeric_outlier repairs changed many cells; manual review is recommended")
+	}
+	if hasString(riskNotes, validationRiskModifiedHighRelativeToResolved) {
+		notes = append(notes, "modified cell count is high relative to resolved issue count; manual review is recommended")
+	}
+	if hasString(riskNotes, validationRiskMildNumericOutlierAutoRepaired) {
+		notes = append(notes, "mild numeric_outlier was repaired automatically; rollback is recommended")
+	}
+	if hasString(riskNotes, "missing_rollback_metadata") {
+		notes = append(notes, "rollback manifest is unavailable for the repaired output")
+	}
+	return uniqueStrings(notes)
+}
+
+func validationGateAcceptanceReason(verdict string, riskNotes []string) string {
+	switch verdict {
+	case validationGateAccept:
+		return "issue_count_improved_and_side_effects_controlled"
+	case validationGateWarn:
+		return "accepted_with_side_effect_warnings"
+	case validationGateRollbackRecommended:
+		return "rollback_manifest_missing"
+	default:
+		if len(riskNotes) > 0 {
+			return "rejected_due_to_validation_risks"
+		}
+		return "rejected_without_measurable_improvement"
+	}
+}
+
+func boolValue(value any) bool {
+	typed, ok := value.(bool)
+	return ok && typed
 }
 
 func intersects(left []string, right []string) bool {

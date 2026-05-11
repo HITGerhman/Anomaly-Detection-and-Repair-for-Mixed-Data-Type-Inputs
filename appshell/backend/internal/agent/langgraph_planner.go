@@ -130,7 +130,7 @@ func (p *LangGraphPlanner) BuildPlan(ctx context.Context, input PlanningInput) (
 	updated.IntentLabel = strings.TrimSpace(planResp.IntentLabel)
 	updated.StrategyLabel = strings.TrimSpace(planResp.StrategyLabel)
 	updated.ReasonCodes = append([]string{}, planResp.ReasonCodes...)
-	updated.RiskNote = strings.TrimSpace(planResp.RiskNote)
+	updated.RiskNote = mergeLangGraphRiskNote(planResp.RiskNote, basePlan.RiskNote)
 	updated.ReasoningSummary = strings.TrimSpace(planResp.OneSentenceSummary)
 	updated.ExplanationBullets = append([]string{}, planResp.ShortBullets...)
 	updated.ApprovalNeeded = planResp.ApprovalNeeded
@@ -178,7 +178,9 @@ func (p *LangGraphPlanner) BuildPlan(ctx context.Context, input PlanningInput) (
 		updated.ReasonCodes = append([]string{}, explainResp.ReasonCodes...)
 	}
 	if riskNote := strings.TrimSpace(explainResp.RiskNote); riskNote != "" {
-		updated.RiskNote = riskNote
+		updated.RiskNote = mergeLangGraphRiskNote(riskNote, basePlan.RiskNote)
+	} else {
+		updated.RiskNote = mergeLangGraphRiskNote(updated.RiskNote, basePlan.RiskNote)
 	}
 	updated = enforceLangGraphApprovalContext(updated, input.ApprovalContext)
 	updated.ReasonCodes = uniqueStrings(updated.ReasonCodes)
@@ -194,6 +196,21 @@ func enforceLangGraphApprovalContext(plan AgentPlan, approvalContext map[string]
 	plan.ApprovalNeeded = true
 	plan.ReasonCodes = uniqueStrings(append(plan.ReasonCodes, "approval_context_enforced"))
 	return plan
+}
+
+func mergeLangGraphRiskNote(llmNote string, deterministicNote string) string {
+	note := strings.TrimSpace(llmNote)
+	deterministic := strings.TrimSpace(deterministicNote)
+	if deterministic == "" {
+		return note
+	}
+	if note == "" {
+		return deterministic
+	}
+	if strings.Contains(note, deterministic) {
+		return note
+	}
+	return note + " " + deterministic
 }
 
 func buildLangGraphPlanRequest(input PlanningInput, basePlan AgentPlan) LangGraphPlanRequest {
@@ -253,6 +270,17 @@ func buildLangGraphPlanRequest(input PlanningInput, basePlan AgentPlan) LangGrap
 			"cautious_issue_count":      len(basePlan.CautiousIssueIDs),
 			"manual_review_issue_count": len(basePlan.ManualReviewIssueIDs),
 			"blocked_issue_count":       len(basePlan.BlockedIssueIDs),
+			"numeric_outlier_risk_policy": map[string]any{
+				"name":                    numericOutlierRiskPolicyName,
+				"mild":                    "cautious_prompt_only",
+				"strong":                  "cautious_requires_review",
+				"extreme":                 "auto_candidate_only_when_auto_repair_eligible",
+				"missing_or_unknown_risk": "cautious_requires_review",
+				"risk_notes": []string{
+					numericOutlierMildRiskNote,
+					numericOutlierAutoRepairRestrictedRiskNote,
+				},
+			},
 		},
 		ApprovalContext: cloneMap(input.ApprovalContext),
 		UserPreferences: cloneMap(input.PreferenceSnapshot),

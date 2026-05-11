@@ -39,6 +39,18 @@ func validationGateRepair(changed int, rollback bool, issueIDs ...string) map[st
 	return result
 }
 
+func validationGateRepairWithApplied(changed int, rollback bool, appliedRepairs ...map[string]any) map[string]any {
+	issueIDs := make([]string, 0, len(appliedRepairs))
+	items := make([]any, 0, len(appliedRepairs))
+	for _, item := range appliedRepairs {
+		issueIDs = append(issueIDs, asString(item["issue_id"]))
+		items = append(items, cloneMap(item))
+	}
+	result := validationGateRepair(changed, rollback, issueIDs...)
+	result["applied_repairs"] = items
+	return result
+}
+
 func validationGatePlan(autoIDs ...string) AgentPlan {
 	return AgentPlan{
 		SelectedIssueIDs:   append([]string{}, autoIDs...),
@@ -74,6 +86,23 @@ func TestValidationGateAcceptsIssueCountDecrease(t *testing.T) {
 	}
 	if mapFromAny(result.Summary["metric_definitions"])["resolved_issue_items"] == nil {
 		t.Fatalf("expected metric definitions, got %#v", result.Summary)
+	}
+	if asString(result.Summary["acceptance_reason"]) != "issue_count_improved_and_side_effects_controlled" {
+		t.Fatalf("expected acceptance reason, got %#v", result.Summary)
+	}
+	if floatFromAny(result.Summary["modified_to_resolved_ratio"]) != 2.0 {
+		t.Fatalf("expected modified/resolved ratio 2.0, got %#v", result.Summary)
+	}
+	numericSummary := mapFromAny(result.Summary["numeric_outlier_modification_summary"])
+	if intFromAny(numericSummary["modified_cells"]) != 0 {
+		t.Fatalf("expected no numeric_outlier modifications, got %#v", numericSummary)
+	}
+	rollbackAvailability := mapFromAny(result.Summary["rollback_availability"])
+	if rollbackAvailability["available"] != true || asString(rollbackAvailability["manifest_path"]) == "" {
+		t.Fatalf("expected rollback availability, got %#v", rollbackAvailability)
+	}
+	if len(stringsFromAny(result.Summary["side_effect_notes"])) != 0 {
+		t.Fatalf("expected no side effect notes, got %#v", result.Summary["side_effect_notes"])
 	}
 }
 
@@ -125,6 +154,89 @@ func TestValidationGateWarnsOnLargeCellChange(t *testing.T) {
 	}
 	if !hasString(stringsFromAny(result.Summary["risk_notes"]), "changed_cell_count_abnormally_high") {
 		t.Fatalf("expected changed_cell_count_abnormally_high risk, got %#v", result.Summary["risk_notes"])
+	}
+	if !hasString(result.RiskFlags, validationRiskModifiedHighRelativeToResolved) {
+		t.Fatalf("expected modified/resolved side-effect risk, got %#v", result.RiskFlags)
+	}
+}
+
+func TestValidationGateWarnsWhenModifiedResolvedRatioIsHigh(t *testing.T) {
+	baseline := validationGateScan(
+		map[string]any{"issue_id": "i-1", "issue_type": "missing_values", "risk_level": "low", "issue_score": 0.2},
+		map[string]any{"issue_id": "i-2", "issue_type": "missing_values", "risk_level": "low", "issue_score": 0.2},
+		map[string]any{"issue_id": "i-3", "issue_type": "rare_category", "risk_level": "low", "issue_score": 0.2},
+		map[string]any{"issue_id": "i-4", "issue_type": "rare_category", "risk_level": "low", "issue_score": 0.2},
+		map[string]any{"issue_id": "i-5", "issue_type": "missing_values", "risk_level": "low", "issue_score": 0.2},
+		map[string]any{"issue_id": "i-6", "issue_type": "rare_category", "risk_level": "low", "issue_score": 0.2},
+	)
+	postScan := validationGateScan(
+		map[string]any{"issue_id": "post-1", "issue_type": "rare_category", "risk_level": "low", "issue_score": 0.1},
+		map[string]any{"issue_id": "post-2", "issue_type": "missing_values", "risk_level": "low", "issue_score": 0.1},
+	)
+
+	result := buildPostValidation(baseline, validationGateRepair(55, true, "i-1", "i-2"), postScan, validationGatePlan("i-1", "i-2"))
+
+	if result.Verdict != validationGateWarn || !result.Accepted {
+		t.Fatalf("expected warn but accepted, got verdict=%s accepted=%v summary=%#v", result.Verdict, result.Accepted, result.Summary)
+	}
+	if !hasString(result.RiskFlags, validationRiskModifiedHighRelativeToResolved) {
+		t.Fatalf("expected modified/resolved side-effect risk, got %#v", result.RiskFlags)
+	}
+	if hasString(result.RiskFlags, "changed_cell_count_abnormally_high") {
+		t.Fatalf("expected ratio-specific warning without coarse changed-cell warning, got %#v", result.RiskFlags)
+	}
+}
+
+func TestValidationGateRejectsMildNumericOutlierAutoRepair(t *testing.T) {
+	baseline := validationGateScan(
+		map[string]any{"issue_id": "n-1", "issue_type": "numeric_outlier", "outlier_risk_level": "mild", "risk_level": "low", "issue_score": 0.2},
+	)
+	repair := validationGateRepairWithApplied(
+		1,
+		true,
+		map[string]any{"issue_id": "n-1", "issue_type": "numeric_outlier", "rows_touched": 1},
+	)
+
+	result := buildPostValidation(baseline, repair, validationGateScan(), validationGatePlan("n-1"))
+
+	if result.Verdict != validationGateReject || result.Accepted {
+		t.Fatalf("expected reject for mild numeric_outlier auto repair, got %#v", result.Summary)
+	}
+	if !hasString(result.RiskFlags, validationRiskMildNumericOutlierAutoRepaired) {
+		t.Fatalf("expected mild numeric_outlier risk, got %#v", result.RiskFlags)
+	}
+}
+
+func TestValidationGateWarnsWhenNumericOutlierModificationShareIsHigh(t *testing.T) {
+	baseline := validationGateScan(
+		map[string]any{"issue_id": "n-1", "issue_type": "numeric_outlier", "outlier_risk_level": "extreme", "risk_level": "low", "issue_score": 0.3},
+		map[string]any{"issue_id": "i-1", "issue_type": "missing_values", "risk_level": "low", "issue_score": 0.2},
+		map[string]any{"issue_id": "i-2", "issue_type": "rare_category", "risk_level": "low", "issue_score": 0.2},
+	)
+	postScan := validationGateScan(
+		map[string]any{"issue_id": "post-1", "issue_type": "rare_category", "risk_level": "low", "issue_score": 0.1},
+	)
+	repair := validationGateRepairWithApplied(
+		40,
+		true,
+		map[string]any{"issue_id": "n-1", "issue_type": "numeric_outlier", "rows_touched": 30},
+		map[string]any{"issue_id": "i-1", "issue_type": "missing_values", "rows_touched": 10},
+	)
+
+	result := buildPostValidation(baseline, repair, postScan, validationGatePlan("n-1", "i-1"))
+
+	if result.Verdict != validationGateWarn || !result.Accepted {
+		t.Fatalf("expected warn for numeric_outlier modification share, got %#v", result.Summary)
+	}
+	if !hasString(result.RiskFlags, validationRiskNumericOutlierModificationShareHigh) {
+		t.Fatalf("expected numeric_outlier modification share risk, got %#v", result.RiskFlags)
+	}
+	numericSummary := mapFromAny(result.Summary["numeric_outlier_modification_summary"])
+	if intFromAny(numericSummary["modified_cells"]) != 30 || numericSummary["high_share"] != true {
+		t.Fatalf("unexpected numeric_outlier modification summary: %#v", numericSummary)
+	}
+	if !hasString(stringsFromAny(result.Summary["side_effect_notes"]), "numeric_outlier repairs changed many cells; manual review is recommended") {
+		t.Fatalf("expected numeric_outlier side-effect note, got %#v", result.Summary["side_effect_notes"])
 	}
 }
 

@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"strings"
 	"testing"
 )
 
@@ -135,8 +136,8 @@ func TestLangGraphPlannerOverlaysCognitiveFieldsWhenSidecarIsHealthy(t *testing.
 
 	planner := NewLangGraphPlanner(fallback, stubSidecarManager{}, client)
 	plan, err := planner.BuildPlan(t.Context(), PlanningInput{
-		SessionID: "session-1",
-		Goal:      "scan and repair",
+		SessionID:      "session-1",
+		Goal:           "scan and repair",
 		LLMExplainMode: "llm",
 		ScanResult: map[string]any{
 			"scan_summary": map[string]any{"total_issues": 1},
@@ -184,6 +185,71 @@ func TestLangGraphPlannerOverlaysCognitiveFieldsWhenSidecarIsHealthy(t *testing.
 	}
 	if plan.Cognition.SelectedCandidateID != "candidate-gower" || plan.Cognition.FallbackReasonCode != "" {
 		t.Fatalf("expected engaged cognition without fallback, got %+v", plan.Cognition)
+	}
+}
+
+func TestLangGraphPlannerPreservesDeterministicNumericOutlierRiskNote(t *testing.T) {
+	deterministicRiskNote := numericOutlierMildRiskNote + ". " + numericOutlierAutoRepairRestrictedRiskNote + "."
+	basePlan := AgentPlan{
+		PlanID:             "plan-1",
+		Status:             "planned",
+		SelectedIssueIDs:   []string{"i-1"},
+		AutoRepairIssueIDs: []string{"i-1"},
+		Candidates: []RepairCandidate{
+			{
+				CandidateID:      "candidate-rule",
+				Source:           "rule",
+				ToolSequence:     []string{"engine.repair_batch"},
+				ExecutePayloads:  []map[string]any{{"csv_path": "demo.csv", "plan_only": false}},
+				SelectedIssueIDs: []string{"i-1"},
+				IssueSourceMap:   map[string]any{},
+				Comparison:       map[string]any{"after_issue_count": 0},
+				Summary:          "rule",
+				Executable:       true,
+			},
+		},
+		SelectedCandidateID: "candidate-rule",
+		SelectedSource:      "rule",
+		ProposedToolID:      "engine.repair_batch",
+		ProposedPayload:     map[string]any{"csv_path": "demo.csv"},
+		RiskNote:            deterministicRiskNote,
+		ReasoningSummary:    "base",
+		UserExplanation:     "base",
+	}
+	fallback := &stubFallbackPlanner{plan: basePlan}
+	client := &stubCognitionCaller{
+		planResp: LangGraphPlanResponse{
+			StrategyLabel:       "llm_overlay",
+			SelectedCandidateID: "candidate-rule",
+			ReasonCodes:         []string{"phase_c_llm"},
+			RiskNote:            "LLM plan risk note.",
+			IntentLabel:         "auto_repair",
+			OneSentenceSummary:  "LLM selected rule.",
+		},
+		explainResp: LangGraphExplainResponse{
+			Summary:      "LLM summary",
+			FinalMessage: "LLM final message",
+			RiskNote:     "LLM final risk note.",
+		},
+	}
+
+	planner := NewLangGraphPlanner(fallback, stubSidecarManager{}, client)
+	plan, err := planner.BuildPlan(t.Context(), PlanningInput{LLMExplainMode: "llm"})
+	if err != nil {
+		t.Fatalf("BuildPlan failed: %v", err)
+	}
+
+	if !strings.Contains(plan.RiskNote, "LLM final risk note.") {
+		t.Fatalf("expected final LLM risk note to remain, got %q", plan.RiskNote)
+	}
+	for _, expected := range []string{numericOutlierMildRiskNote, numericOutlierAutoRepairRestrictedRiskNote} {
+		if !strings.Contains(plan.RiskNote, expected) {
+			t.Fatalf("expected deterministic numeric_outlier risk note %q in %q", expected, plan.RiskNote)
+		}
+	}
+	policy := mapFromAny(client.lastPlanReq.SafetyContext["numeric_outlier_risk_policy"])
+	if asString(policy["name"]) != numericOutlierRiskPolicyName {
+		t.Fatalf("expected numeric_outlier risk policy in safety context, got %#v", client.lastPlanReq.SafetyContext)
 	}
 }
 

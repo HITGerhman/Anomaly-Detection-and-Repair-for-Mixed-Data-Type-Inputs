@@ -750,6 +750,169 @@ def _issue_confidence(ratio: float, severity: str, signal_strength: float = 1.0)
     return round(max(0.05, min(0.99, scaled)), 6)
 
 
+_OUTLIER_RISK_RANK = {
+    "mild": 0,
+    "strong": 1,
+    "extreme": 2,
+}
+
+
+def _finite_float_or_none(value: Any) -> float | None:
+    try:
+        resolved = float(value)
+    except (TypeError, ValueError):
+        return None
+    if not math.isfinite(resolved):
+        return None
+    return resolved
+
+
+def _rounded_float_or_none(value: Any, digits: int = 6) -> float | None:
+    resolved = _finite_float_or_none(value)
+    if resolved is None:
+        return None
+    return round(resolved, digits)
+
+
+def _row_outlier_risk_level(
+    *,
+    relative_distance_to_bound: float,
+    robust_z_value: float | None,
+    iqr_hit: bool,
+    robust_hit: bool,
+    robust_z_threshold: float,
+) -> str:
+    robust_extreme = robust_z_value is not None and robust_z_value >= robust_z_threshold * 2.0
+    if relative_distance_to_bound >= 1.0 or robust_extreme or (
+        iqr_hit and robust_hit and relative_distance_to_bound >= 0.5
+    ):
+        return "extreme"
+    if relative_distance_to_bound >= 0.2 or robust_hit or (iqr_hit and robust_hit):
+        return "strong"
+    return "mild"
+
+
+def _dominant_outlier_risk_level(risk_counts: dict[str, int]) -> str:
+    if sum(int(risk_counts.get(level, 0)) for level in ("mild", "strong", "extreme")) <= 0:
+        return "mild"
+    return max(
+        ("mild", "strong", "extreme"),
+        key=lambda level: (int(risk_counts.get(level, 0)), _OUTLIER_RISK_RANK[level]),
+    )
+
+
+def _outlier_policy_reason(issue_risk_level: str, auto_repair_eligible: bool) -> str:
+    if issue_risk_level == "mild":
+        return "mild_outlier_prompt_only"
+    if auto_repair_eligible:
+        return "strong_or_extreme_outlier_auto_candidate_requires_validation"
+    return "mixed_outlier_mild_or_tie_prompt_only"
+
+
+def _numeric_outlier_risk_metadata(
+    series: Any,
+    numeric_series: Any,
+    outlier_mask: Any,
+    iqr_mask: Any,
+    robust_mask: Any,
+    robust_z: Any | None,
+    *,
+    lower: float,
+    upper: float,
+    robust_z_threshold: float,
+    preview_limit: int,
+) -> dict[str, Any]:
+    risk_counts = {"mild": 0, "strong": 0, "extreme": 0}
+    row_evidence_preview: list[dict[str, Any]] = []
+    max_relative_distance = 0.0
+    max_robust_z: float | None = None
+    both_hits = 0
+    bound_span = max(abs(float(upper) - float(lower)), 1e-12)
+    positions = [idx for idx, flag in enumerate(outlier_mask.tolist()) if bool(flag)]
+
+    for pos in positions:
+        value = _finite_float_or_none(numeric_series.iloc[pos])
+        if value is None:
+            continue
+
+        if value < lower:
+            bound_side = "lower"
+            nearest_bound = lower
+            absolute_distance = lower - value
+        elif value > upper:
+            bound_side = "upper"
+            nearest_bound = upper
+            absolute_distance = value - upper
+        else:
+            lower_distance = abs(value - lower)
+            upper_distance = abs(value - upper)
+            bound_side = "inside_bounds"
+            nearest_bound = lower if lower_distance <= upper_distance else upper
+            absolute_distance = 0.0
+
+        relative_distance = absolute_distance / bound_span
+        robust_z_value = None
+        if robust_z is not None:
+            robust_z_value = _finite_float_or_none(robust_z.iloc[pos])
+        iqr_hit = bool(iqr_mask.iloc[pos])
+        robust_hit = bool(robust_mask.iloc[pos])
+        if iqr_hit and robust_hit:
+            both_hits += 1
+        row_risk_level = _row_outlier_risk_level(
+            relative_distance_to_bound=relative_distance,
+            robust_z_value=robust_z_value,
+            iqr_hit=iqr_hit,
+            robust_hit=robust_hit,
+            robust_z_threshold=robust_z_threshold,
+        )
+        risk_counts[row_risk_level] += 1
+        max_relative_distance = max(max_relative_distance, relative_distance)
+        if robust_z_value is not None:
+            max_robust_z = robust_z_value if max_robust_z is None else max(max_robust_z, robust_z_value)
+
+        if len(row_evidence_preview) < preview_limit:
+            row_evidence_preview.append(
+                {
+                    "row": _index_to_builtin(series.index[pos]),
+                    "value": _to_builtin(series.iloc[pos]),
+                    "iqr_hit": iqr_hit,
+                    "robust_z_hit": robust_hit,
+                    "bound_side": bound_side,
+                    "nearest_bound": round(float(nearest_bound), 12),
+                    "absolute_distance_to_bound": round(float(absolute_distance), 6),
+                    "relative_distance_to_bound": round(float(relative_distance), 6),
+                    "robust_z_value": _rounded_float_or_none(robust_z_value),
+                    "row_risk_level": row_risk_level,
+                }
+            )
+
+    issue_risk_level = max(
+        (level for level, count in risk_counts.items() if count > 0),
+        key=lambda level: _OUTLIER_RISK_RANK[level],
+        default="mild",
+    )
+    auto_repair_eligible = (
+        issue_risk_level in {"strong", "extreme"}
+        and int(risk_counts["strong"]) + int(risk_counts["extreme"]) > int(risk_counts["mild"])
+    )
+
+    return {
+        "outlier_risk_level": issue_risk_level,
+        "auto_repair_eligible": bool(auto_repair_eligible),
+        "outlier_policy_reason": _outlier_policy_reason(issue_risk_level, auto_repair_eligible),
+        "outlier_evidence": {
+            "risk_counts": risk_counts,
+            "dominant_row_risk_level": _dominant_outlier_risk_level(risk_counts),
+            "max_relative_distance_to_bound": round(float(max_relative_distance), 6),
+            "max_robust_z": _rounded_float_or_none(max_robust_z),
+            "iqr_hits": int(iqr_mask.sum()),
+            "robust_hits": int(robust_mask.sum()),
+            "both_iqr_and_robust_hits": int(both_hits),
+            "row_evidence_preview": row_evidence_preview,
+        },
+    }
+
+
 def _preview_shift_hits(series: Any, delta: Any, zscore: Any, mask: Any, limit: int) -> list[dict[str, Any]]:
     previews: list[dict[str, Any]] = []
     positions = [idx for idx, flag in enumerate(mask.tolist()) if bool(flag)]
@@ -1111,6 +1274,7 @@ def _detect_issues_for_frame(df: Any, frame_pd: Any, scan_config: dict[str, Any]
             iqr = float(q3 - q1)
             iqr_mask = frame_pd.Series(False, index=series.index, dtype=bool)
             robust_mask = frame_pd.Series(False, index=series.index, dtype=bool)
+            robust_z = None
             lower = float(q1)
             upper = float(q3)
 
@@ -1139,6 +1303,18 @@ def _detect_issues_for_frame(df: Any, frame_pd: Any, scan_config: dict[str, Any]
                 dominant_hits = max(int(iqr_mask.sum()), int(robust_mask.sum()))
                 signal_strength = 1.0 + min(0.35, float(dominant_hits) / max(1.0, float(outlier_count)))
                 confidence = _issue_confidence(ratio=ratio, severity=severity, signal_strength=signal_strength)
+                outlier_risk_metadata = _numeric_outlier_risk_metadata(
+                    series,
+                    numeric_series,
+                    outlier_mask,
+                    iqr_mask,
+                    robust_mask,
+                    robust_z,
+                    lower=lower,
+                    upper=upper,
+                    robust_z_threshold=robust_z_threshold,
+                    preview_limit=preview_limit,
+                )
                 issues.append(
                     {
                         "issue_id": _build_issue_id(f"{column}::numeric_outlier", used_ids),
@@ -1150,6 +1326,7 @@ def _detect_issues_for_frame(df: Any, frame_pd: Any, scan_config: dict[str, Any]
                         "severity": severity,
                         "severity_rank": severity_rank,
                         "confidence": confidence,
+                        **outlier_risk_metadata,
                         "explain_features": [
                             {"name": "outlier_ratio", "value": round(ratio, 6)},
                             {"name": "iqr_hits", "value": int(iqr_mask.sum())},
@@ -2165,25 +2342,28 @@ def action_scan_file(payload: dict[str, Any]) -> dict[str, Any]:
         bin_counts, bin_size = _mask_to_bin_counts(mask, row_count=row_count, max_bins=max_bins)
         heat_bins = _bin_counts_to_heat(bin_counts, bin_size=bin_size)
         segments = _bin_counts_to_segments(bin_counts, row_count=row_count, bin_size=bin_size, max_segments=24)
-        issues.append(
-            {
-                "issue_id": issue["issue_id"],
-                "column": column,
-                "issue_type": issue["issue_type"],
-                "severity": issue["severity"],
-                "issue_score": round(float(issue["issue_score"]), 6),
-                "confidence": round(float(issue.get("confidence", 0.0)), 6),
-                "count": int(issue["count"]),
-                "ratio": round(float(issue["ratio"]), 6),
-                "risk_level": _risk_level_from_score(float(issue["issue_score"])),
-                "explain_features": issue.get("explain_features", []),
-                "bins": [1 if count > 0 else 0 for count in bin_counts],
-                "heat_bins": heat_bins,
-                "segments": segments,
-                "detail": issue["detail"],
-                "repair_supported": True,
-            }
-        )
+        public_issue = {
+            "issue_id": issue["issue_id"],
+            "column": column,
+            "issue_type": issue["issue_type"],
+            "severity": issue["severity"],
+            "issue_score": round(float(issue["issue_score"]), 6),
+            "confidence": round(float(issue.get("confidence", 0.0)), 6),
+            "count": int(issue["count"]),
+            "ratio": round(float(issue["ratio"]), 6),
+            "risk_level": _risk_level_from_score(float(issue["issue_score"])),
+            "explain_features": issue.get("explain_features", []),
+            "bins": [1 if count > 0 else 0 for count in bin_counts],
+            "heat_bins": heat_bins,
+            "segments": segments,
+            "detail": issue["detail"],
+            "repair_supported": True,
+        }
+        if issue["issue_type"] == "numeric_outlier":
+            for key in ("outlier_risk_level", "auto_repair_eligible", "outlier_policy_reason", "outlier_evidence"):
+                if key in issue:
+                    public_issue[key] = issue[key]
+        issues.append(public_issue)
 
     column_profiles: list[dict[str, Any]] = []
     column_thumbnails: list[dict[str, Any]] = []

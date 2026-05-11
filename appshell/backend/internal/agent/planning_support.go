@@ -1,18 +1,29 @@
 package agent
 
+import "strings"
+
 const (
 	issueBucketAutoRepair   = "auto_repair"
 	issueBucketCautious     = "cautious"
 	issueBucketManualReview = "manual_review"
 	issueBucketBlocked      = "blocked"
+
+	numericOutlierMildPromptOnlyReason            = "numeric_outlier_mild_prompt_only"
+	numericOutlierStrongRequiresReviewReason      = "numeric_outlier_strong_requires_review"
+	numericOutlierMissingRiskLevelCautiousReason  = "numeric_outlier_missing_risk_level_cautious"
+	numericOutlierExtremeRequiresValidationReason = "numeric_outlier_extreme_requires_validation_or_review"
+	numericOutlierRiskPolicyName                  = "numeric_outlier_eligible_extreme_only"
+	numericOutlierMildRiskNote                    = "numeric_outlier mild values are statistical outliers but not necessarily data errors"
+	numericOutlierAutoRepairRestrictedRiskNote    = "numeric_outlier automatic repair is restricted to eligible extreme cases"
 )
 
 type issuePlanBuckets struct {
-	AutoRepairIssueIDs   []string
-	CautiousIssueIDs     []string
-	ManualReviewIssueIDs []string
-	BlockedIssueIDs      []string
-	SkippedIssues        []AgentSkippedIssue
+	AutoRepairIssueIDs     []string
+	CautiousIssueIDs       []string
+	ManualReviewIssueIDs   []string
+	BlockedIssueIDs        []string
+	SkippedIssues          []AgentSkippedIssue
+	NumericOutlierIssueIDs []string
 }
 
 func normalizeIssuePlanBuckets(buckets issuePlanBuckets) issuePlanBuckets {
@@ -21,6 +32,7 @@ func normalizeIssuePlanBuckets(buckets issuePlanBuckets) issuePlanBuckets {
 	buckets.ManualReviewIssueIDs = uniqueStrings(buckets.ManualReviewIssueIDs)
 	buckets.BlockedIssueIDs = uniqueStrings(buckets.BlockedIssueIDs)
 	buckets.SkippedIssues = cloneSkippedIssues(buckets.SkippedIssues)
+	buckets.NumericOutlierIssueIDs = uniqueStrings(buckets.NumericOutlierIssueIDs)
 	return buckets
 }
 
@@ -35,6 +47,32 @@ func issueBucketForType(issueType string) (string, string) {
 	default:
 		return issueBucketBlocked, "unsupported_issue_type"
 	}
+}
+
+func numericOutlierBucketForIssue(issue map[string]any) (string, string) {
+	riskLevel := strings.ToLower(asString(issue["outlier_risk_level"]))
+	autoEligible, hasAutoEligible := boolFromAny(issue["auto_repair_eligible"])
+	switch riskLevel {
+	case "mild":
+		return issueBucketCautious, numericOutlierMildPromptOnlyReason
+	case "strong":
+		return issueBucketCautious, numericOutlierStrongRequiresReviewReason
+	case "extreme":
+		if hasAutoEligible && autoEligible {
+			return issueBucketAutoRepair, ""
+		}
+		return issueBucketCautious, numericOutlierExtremeRequiresValidationReason
+	default:
+		return issueBucketCautious, numericOutlierMissingRiskLevelCautiousReason
+	}
+}
+
+func issueBucketForScanIssue(issue map[string]any) (string, string) {
+	issueType := asString(issue["issue_type"])
+	if issueType == "numeric_outlier" {
+		return numericOutlierBucketForIssue(issue)
+	}
+	return issueBucketForType(issueType)
 }
 
 func recommendedActionForIssueBucket(bucket string) string {
@@ -58,7 +96,7 @@ func skippedIssueFromScan(issue map[string]any, bucket string, reason string) Ag
 		bucket = issueBucketBlocked
 		reason = "missing_issue_id"
 	}
-	return AgentSkippedIssue{
+	skipped := AgentSkippedIssue{
 		IssueID:   issueID,
 		IssueType: issueType,
 		Column:    column,
@@ -71,6 +109,17 @@ func skippedIssueFromScan(issue map[string]any, bucket string, reason string) Ag
 			"reason":             reason,
 		},
 	}
+	if issueType == "numeric_outlier" {
+		skipped.Details["risk_policy"] = numericOutlierRiskPolicyName
+		skipped.Details["outlier_risk_level"] = asString(issue["outlier_risk_level"])
+		if eligible, ok := boolFromAny(issue["auto_repair_eligible"]); ok {
+			skipped.Details["auto_repair_eligible"] = eligible
+		}
+		if policyReason := asString(issue["outlier_policy_reason"]); policyReason != "" {
+			skipped.Details["outlier_policy_reason"] = policyReason
+		}
+	}
+	return skipped
 }
 
 func selectIssuePlanBuckets(scanResult map[string]any) issuePlanBuckets {
@@ -86,10 +135,13 @@ func selectIssuePlanBuckets(scanResult map[string]any) issuePlanBuckets {
 	for _, issue := range issues {
 		issueID := asString(issue["issue_id"])
 		issueType := asString(issue["issue_type"])
-		bucket, reason := issueBucketForType(issueType)
+		bucket, reason := issueBucketForScanIssue(issue)
 		if issueID == "" {
 			buckets.SkippedIssues = append(buckets.SkippedIssues, skippedIssueFromScan(issue, issueBucketBlocked, "missing_issue_id"))
 			continue
+		}
+		if issueType == "numeric_outlier" {
+			buckets.NumericOutlierIssueIDs = append(buckets.NumericOutlierIssueIDs, issueID)
 		}
 
 		switch bucket {
@@ -206,6 +258,9 @@ func issuePlanBucketsFromPlanningInput(input PlanningInput) issuePlanBuckets {
 		issueID := asString(item.IssueID)
 		if issueID == "" {
 			continue
+		}
+		if item.IssueType == "numeric_outlier" {
+			buckets.NumericOutlierIssueIDs = append(buckets.NumericOutlierIssueIDs, issueID)
 		}
 		switch bucketFromSkippedIssue(item) {
 		case issueBucketCautious:
