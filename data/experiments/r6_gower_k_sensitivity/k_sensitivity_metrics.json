@@ -1,0 +1,4907 @@
+{
+  "data_profile": {
+    "clean_columns": 16,
+    "clean_rows": 4228,
+    "corrupted_columns": 16,
+    "corrupted_rows": 4240,
+    "ground_truth_rows": 100
+  },
+  "dataset": "r6_gower_k_sensitivity",
+  "default_k_assessment": {
+    "best_improved_or_exact_rate": 0.527778,
+    "default_improved_or_exact_rate": 0.527778,
+    "default_k": 5,
+    "default_non_ground_truth_cells_modified": 122,
+    "default_resolved_issue_count": 9,
+    "max_resolved_issue_count": 9,
+    "min_non_ground_truth_cells_modified": 122,
+    "quality_gap": 0.0,
+    "reason": "K=5 is within 2 percentage points of the best improved/exact rate, does not add meaningful side effects, and resolves nearly as many issues as the best K.",
+    "resolved_gap": 0,
+    "side_effect_gap": 0,
+    "supports_default_k": true
+  },
+  "gower_strategy_base": {
+    "max_candidates": 512,
+    "preview_limit": 20,
+    "weight_mode": "uniform"
+  },
+  "k_results": {
+    "15": {
+      "after_issue_count": 3,
+      "before_issue_count": 12,
+      "by_type": {
+        "missing_values": {
+          "changed_count": 30,
+          "exact_restoration_rate": 0.233333,
+          "exact_restored_count": 7,
+          "ground_truth_count": 30,
+          "improved_or_exact_count": 7,
+          "improved_or_exact_rate": 0.233333
+        },
+        "numeric_outlier": {
+          "changed_count": 24,
+          "exact_restoration_rate": 0.041667,
+          "exact_restored_count": 1,
+          "ground_truth_count": 24,
+          "improved_or_exact_count": 24,
+          "improved_or_exact_rate": 1.0
+        },
+        "rare_category": {
+          "changed_count": 18,
+          "exact_restoration_rate": 0.388889,
+          "exact_restored_count": 7,
+          "ground_truth_count": 18,
+          "improved_or_exact_count": 7,
+          "improved_or_exact_rate": 0.388889
+        }
+      },
+      "engine_total_cells_modified": 194,
+      "exact_restoration_rate": 0.208333,
+      "exact_restored_count": 15,
+      "improved_or_exact_count": 38,
+      "improved_or_exact_rate": 0.527778,
+      "k_neighbors": 15,
+      "mean_neighbor_confidence": 0.831685,
+      "non_ground_truth_cells_modified": 122,
+      "notes": [
+        "repair_with_gower executed with k_neighbors=15."
+      ],
+      "output_csv": "data/experiments/r6_gower_k_sensitivity/k_15/repaired.csv",
+      "repair_summary": {
+        "applied_issue_count": 10,
+        "applied_repairs": [
+          {
+            "after_count": 0,
+            "before_count": 122,
+            "candidate_confidence": 0.81838,
+            "cells_preview": [
+              {
+                "after": 94.75,
+                "before": 157.77,
+                "row": 149
+              },
+              {
+                "after": 90.26,
+                "before": 158.89,
+                "row": 430
+              },
+              {
+                "after": 81.96,
+                "before": 163.82,
+                "row": 525
+              },
+              {
+                "after": 92.7,
+                "before": 420.0,
+                "row": 956
+              },
+              {
+                "after": 84.93,
+                "before": 153.24,
+                "row": 1315
+              },
+              {
+                "after": 92.08,
+                "before": 160.94,
+                "row": 1419
+              },
+              {
+                "after": 92.17,
+                "before": 420.0,
+                "row": 1545
+              },
+              {
+                "after": 88.38,
+                "before": 163.17,
+                "row": 1675
+              },
+              {
+                "after": 88.97,
+                "before": 167.16,
+                "row": 2013
+              },
+              {
+                "after": 83.01,
+                "before": 155.23,
+                "row": 2034
+              },
+              {
+                "after": 104.86,
+                "before": 162.72,
+                "row": 2044
+              },
+              {
+                "after": 80.25,
+                "before": 162.14,
+                "row": 2064
+              },
+              {
+                "after": 87.69,
+                "before": 166.29,
+                "row": 2105
+              },
+              {
+                "after": 88.63,
+                "before": 166.38,
+                "row": 2116
+              },
+              {
+                "after": 94.11,
+                "before": 163.02,
+                "row": 2137
+              },
+              {
+                "after": 83.02,
+                "before": 152.87,
+                "row": 2180
+              },
+              {
+                "after": 78.57,
+                "before": 159.7,
+                "row": 2194
+              },
+              {
+                "after": 83.44,
+                "before": 151.25,
+                "row": 2212
+              },
+              {
+                "after": 89.31,
+                "before": 157.67,
+                "row": 2248
+              },
+              {
+                "after": 86.99,
+                "before": 149.75,
+                "row": 2264
+              }
+            ],
+            "column": "avg_glucose_level",
+            "issue_id": "avg_glucose_level::numeric_outlier",
+            "issue_type": "numeric_outlier",
+            "replacement_preview": [
+              94.75,
+              90.26,
+              81.96,
+              92.7,
+              84.93,
+              92.08,
+              92.17,
+              88.38,
+              88.97,
+              83.01,
+              104.86,
+              80.25,
+              87.69,
+              88.63,
+              94.11,
+              83.02,
+              78.57,
+              83.44,
+              89.31,
+              86.99
+            ],
+            "resolved_count": 122,
+            "rows_touched": 122,
+            "strategy": {
+              "k_neighbors": 15,
+              "tool_id": "engine.repair_with_gower",
+              "weight_mode": "uniform"
+            }
+          },
+          {
+            "after_count": 0,
+            "before_count": 15,
+            "candidate_confidence": 0.820944,
+            "cells_preview": [
+              {
+                "after": 22.2,
+                "before": 95.0,
+                "row": 114
+              },
+              {
+                "after": 30.2,
+                "before": 95.0,
+                "row": 148
+              },
+              {
+                "after": 34,
+                "before": 95.0,
+                "row": 765
+              },
+              {
+                "after": 20.6,
+                "before": 45.8,
+                "row": 818
+              },
+              {
+                "after": 29.1,
+                "before": 95.0,
+                "row": 855
+              },
+              {
+                "after": 25.7,
+                "before": 45.9,
+                "row": 1479
+              },
+              {
+                "after": 29.2,
+                "before": 46.1,
+                "row": 1624
+              },
+              {
+                "after": 29,
+                "before": 46.2,
+                "row": 1682
+              },
+              {
+                "after": 28.9,
+                "before": 95.0,
+                "row": 1898
+              },
+              {
+                "after": 28.7,
+                "before": 45.9,
+                "row": 2373
+              },
+              {
+                "after": 29.4,
+                "before": 46.2,
+                "row": 2795
+              },
+              {
+                "after": 19.2,
+                "before": 95.0,
+                "row": 3396
+              },
+              {
+                "after": 32.5,
+                "before": 46.0,
+                "row": 3662
+              },
+              {
+                "after": 26.2,
+                "before": 46.0,
+                "row": 3685
+              },
+              {
+                "after": 24.7,
+                "before": 46.1,
+                "row": 3896
+              }
+            ],
+            "column": "bmi",
+            "issue_id": "bmi::numeric_outlier",
+            "issue_type": "numeric_outlier",
+            "replacement_preview": [
+              22.2,
+              30.2,
+              34,
+              20.6,
+              29.1,
+              25.7,
+              29.2,
+              29,
+              28.9,
+              28.7,
+              29.4,
+              19.2,
+              32.5,
+              26.2,
+              24.7
+            ],
+            "resolved_count": 15,
+            "rows_touched": 15,
+            "strategy": {
+              "k_neighbors": 15,
+              "tool_id": "engine.repair_with_gower",
+              "weight_mode": "uniform"
+            }
+          },
+          {
+            "after_count": 0,
+            "before_count": 9,
+            "candidate_confidence": 0.839764,
+            "cells_preview": [
+              {
+                "after": 23,
+                "before": 140.0,
+                "row": 73
+              },
+              {
+                "after": 5,
+                "before": 140.0,
+                "row": 255
+              },
+              {
+                "after": 65,
+                "before": 140.0,
+                "row": 330
+              },
+              {
+                "after": 5,
+                "before": 140.0,
+                "row": 532
+              },
+              {
+                "after": 51,
+                "before": 140.0,
+                "row": 704
+              },
+              {
+                "after": 9,
+                "before": 140.0,
+                "row": 978
+              },
+              {
+                "after": 47,
+                "before": 140.0,
+                "row": 1412
+              },
+              {
+                "after": 25,
+                "before": 140.0,
+                "row": 1851
+              },
+              {
+                "after": 56,
+                "before": 140.0,
+                "row": 2146
+              }
+            ],
+            "column": "age",
+            "issue_id": "age::numeric_outlier",
+            "issue_type": "numeric_outlier",
+            "replacement_preview": [
+              23,
+              5,
+              65,
+              51,
+              9,
+              47,
+              25,
+              56
+            ],
+            "resolved_count": 9,
+            "rows_touched": 9,
+            "strategy": {
+              "k_neighbors": 15,
+              "tool_id": "engine.repair_with_gower",
+              "weight_mode": "uniform"
+            }
+          },
+          {
+            "after_count": 0,
+            "before_count": 9,
+            "candidate_confidence": 0.82586,
+            "cells_preview": [
+              {
+                "after": 26,
+                "before": null,
+                "row": 14
+              },
+              {
+                "after": 19.8,
+                "before": null,
+                "row": 263
+              },
+              {
+                "after": 28.4,
+                "before": null,
+                "row": 358
+              },
+              {
+                "after": 26.8,
+                "before": null,
+                "row": 378
+              },
+              {
+                "after": 21.5,
+                "before": null,
+                "row": 697
+              },
+              {
+                "after": 19.1,
+                "before": null,
+                "row": 2076
+              },
+              {
+                "after": 33.1,
+                "before": null,
+                "row": 3163
+              },
+              {
+                "after": 31.8,
+                "before": null,
+                "row": 3210
+              },
+              {
+                "after": 30.1,
+                "before": null,
+                "row": 3812
+              }
+            ],
+            "column": "bmi",
+            "issue_id": "bmi::missing_values",
+            "issue_type": "missing_values",
+            "replacement_preview": [
+              26,
+              19.8,
+              28.4,
+              26.8,
+              21.5,
+              19.1,
+              33.1,
+              31.8,
+              30.1
+            ],
+            "resolved_count": 9,
+            "rows_touched": 9,
+            "strategy": {
+              "k_neighbors": 15,
+              "tool_id": "engine.repair_with_gower",
+              "weight_mode": "uniform"
+            }
+          },
+          {
+            "after_count": 0,
+            "before_count": 9,
+            "candidate_confidence": 0.829971,
+            "cells_preview": [
+              {
+                "after": "Unknown",
+                "before": null,
+                "row": 1757
+              },
+              {
+                "after": "Unknown",
+                "before": null,
+                "row": 2035
+              },
+              {
+                "after": "never smoked",
+                "before": null,
+                "row": 2050
+              },
+              {
+                "after": "never smoked",
+                "before": null,
+                "row": 2421
+              },
+              {
+                "after": "never smoked",
+                "before": null,
+                "row": 2895
+              },
+              {
+                "after": "never smoked",
+                "before": null,
+                "row": 2954
+              },
+              {
+                "after": "never smoked",
+                "before": null,
+                "row": 3334
+              },
+              {
+                "after": "never smoked",
+                "before": null,
+                "row": 3604
+              },
+              {
+                "after": "never smoked",
+                "before": null,
+                "row": 3938
+              }
+            ],
+            "column": "smoking_status",
+            "issue_id": "smoking_status::missing_values",
+            "issue_type": "missing_values",
+            "replacement_preview": [
+              "Unknown",
+              "never smoked"
+            ],
+            "resolved_count": 9,
+            "rows_touched": 9,
+            "strategy": {
+              "k_neighbors": 15,
+              "tool_id": "engine.repair_with_gower",
+              "weight_mode": "uniform"
+            }
+          },
+          {
+            "after_count": 0,
+            "before_count": 8,
+            "candidate_confidence": 0.810393,
+            "cells_preview": [
+              {
+                "after": 88.43,
+                "before": null,
+                "row": 367
+              },
+              {
+                "after": 86.07,
+                "before": null,
+                "row": 723
+              },
+              {
+                "after": 91.25,
+                "before": null,
+                "row": 969
+              },
+              {
+                "after": 88.2,
+                "before": null,
+                "row": 1517
+              },
+              {
+                "after": 88.54,
+                "before": null,
+                "row": 1595
+              },
+              {
+                "after": 93.47,
+                "before": null,
+                "row": 1817
+              },
+              {
+                "after": 88.79,
+                "before": null,
+                "row": 1871
+              },
+              {
+                "after": 74.64,
+                "before": null,
+                "row": 4061
+              }
+            ],
+            "column": "avg_glucose_level",
+            "issue_id": "avg_glucose_level::missing_values",
+            "issue_type": "missing_values",
+            "replacement_preview": [
+              88.43,
+              86.07,
+              91.25,
+              88.2,
+              88.54,
+              93.47,
+              88.79,
+              74.64
+            ],
+            "resolved_count": 8,
+            "rows_touched": 8,
+            "strategy": {
+              "k_neighbors": 15,
+              "tool_id": "engine.repair_with_gower",
+              "weight_mode": "uniform"
+            }
+          },
+          {
+            "after_count": 0,
+            "before_count": 7,
+            "candidate_confidence": 0.836615,
+            "cells_preview": [
+              {
+                "after": "never smoked",
+                "before": "__M1_RARE_SMOKING_STATUS_010__",
+                "row": 266
+              },
+              {
+                "after": "Unknown",
+                "before": "__M1_RARE_SMOKING_STATUS_001__",
+                "row": 686
+              },
+              {
+                "after": "never smoked",
+                "before": "__M1_RARE_SMOKING_STATUS_005__",
+                "row": 1681
+              },
+              {
+                "after": "never smoked",
+                "before": "__M1_RARE_SMOKING_STATUS_013__",
+                "row": 1836
+              },
+              {
+                "after": "formerly smoked",
+                "before": "__M1_RARE_SMOKING_STATUS_002__",
+                "row": 1868
+              },
+              {
+                "after": "never smoked",
+                "before": "__M1_RARE_SMOKING_STATUS_008__",
+                "row": 2232
+              },
+              {
+                "after": "never smoked",
+                "before": "__M1_RARE_SMOKING_STATUS_009__",
+                "row": 4099
+              }
+            ],
+            "column": "smoking_status",
+            "issue_id": "smoking_status::rare_category",
+            "issue_type": "rare_category",
+            "replacement_preview": [
+              "never smoked",
+              "Unknown",
+              "formerly smoked"
+            ],
+            "resolved_count": 7,
+            "rows_touched": 7,
+            "strategy": {
+              "k_neighbors": 15,
+              "tool_id": "engine.repair_with_gower",
+              "weight_mode": "uniform"
+            }
+          },
+          {
+            "after_count": 0,
+            "before_count": 6,
+            "candidate_confidence": 0.852208,
+            "cells_preview": [
+              {
+                "after": "children",
+                "before": "__M1_RARE_WORK_TYPE_015__",
+                "row": 263
+              },
+              {
+                "after": "Private",
+                "before": "__M1_RARE_WORK_TYPE_006__",
+                "row": 428
+              },
+              {
+                "after": "children",
+                "before": "__M1_RARE_WORK_TYPE_017__",
+                "row": 1940
+              },
+              {
+                "after": "Private",
+                "before": "__M1_RARE_WORK_TYPE_012__",
+                "row": 2456
+              },
+              {
+                "after": "children",
+                "before": "__M1_RARE_WORK_TYPE_016__",
+                "row": 2463
+              },
+              {
+                "after": "Private",
+                "before": "__M1_RARE_WORK_TYPE_004__",
+                "row": 3925
+              }
+            ],
+            "column": "work_type",
+            "issue_id": "work_type::rare_category",
+            "issue_type": "rare_category",
+            "replacement_preview": [
+              "children",
+              "Private"
+            ],
+            "resolved_count": 6,
+            "rows_touched": 6,
+            "strategy": {
+              "k_neighbors": 15,
+              "tool_id": "engine.repair_with_gower",
+              "weight_mode": "uniform"
+            }
+          },
+          {
+            "after_count": 0,
+            "before_count": 5,
+            "candidate_confidence": 0.846163,
+            "cells_preview": [
+              {
+                "after": "Male",
+                "before": "__M1_RARE_GENDER_000__",
+                "row": 969
+              },
+              {
+                "after": "Male",
+                "before": "__M1_RARE_GENDER_014__",
+                "row": 1519
+              },
+              {
+                "after": "Female",
+                "before": "__M1_RARE_GENDER_011__",
+                "row": 2179
+              },
+              {
+                "after": "Female",
+                "before": "__M1_RARE_GENDER_003__",
+                "row": 3440
+              },
+              {
+                "after": "Male",
+                "before": "__M1_RARE_GENDER_007__",
+                "row": 4084
+              }
+            ],
+            "column": "gender",
+            "issue_id": "gender::rare_category",
+            "issue_type": "rare_category",
+            "replacement_preview": [
+              "Male",
+              "Female"
+            ],
+            "resolved_count": 5,
+            "rows_touched": 5,
+            "strategy": {
+              "k_neighbors": 15,
+              "tool_id": "engine.repair_with_gower",
+              "weight_mode": "uniform"
+            }
+          },
+          {
+            "after_count": 0,
+            "before_count": 4,
+            "candidate_confidence": 0.836549,
+            "cells_preview": [
+              {
+                "after": "Private",
+                "before": null,
+                "row": 70
+              },
+              {
+                "after": "Private",
+                "before": null,
+                "row": 269
+              },
+              {
+                "after": "Private",
+                "before": null,
+                "row": 1417
+              },
+              {
+                "after": "Private",
+                "before": null,
+                "row": 3824
+              }
+            ],
+            "column": "work_type",
+            "issue_id": "work_type::missing_values",
+            "issue_type": "missing_values",
+            "replacement_preview": "Private",
+            "resolved_count": 4,
+            "rows_touched": 4,
+            "strategy": {
+              "k_neighbors": 15,
+              "tool_id": "engine.repair_with_gower",
+              "weight_mode": "uniform"
+            }
+          }
+        ],
+        "comparison": {
+          "after_column_issue_counts": {
+            "avg_glucose_level": 1,
+            "record_start_day": 1,
+            "source_row_id": 1
+          },
+          "after_issue_count": 3,
+          "after_issue_type_counts": {
+            "cross_column_consistency": 1,
+            "duplicate_record": 1,
+            "numeric_outlier": 1
+          },
+          "before_column_issue_counts": {
+            "age": 1,
+            "avg_glucose_level": 2,
+            "bmi": 2,
+            "gender": 1,
+            "record_start_day": 1,
+            "smoking_status": 2,
+            "source_row_id": 1,
+            "work_type": 2
+          },
+          "before_issue_count": 12,
+          "before_issue_type_counts": {
+            "cross_column_consistency": 1,
+            "duplicate_record": 1,
+            "missing_values": 4,
+            "numeric_outlier": 3,
+            "rare_category": 3
+          },
+          "changed_cell_count": 194,
+          "changed_cells_preview": [
+            {
+              "after": 26,
+              "before": null,
+              "column": "bmi",
+              "issue_id": "bmi::missing_values",
+              "row": 14
+            },
+            {
+              "after": "Private",
+              "before": null,
+              "column": "work_type",
+              "issue_id": "work_type::missing_values",
+              "row": 70
+            },
+            {
+              "after": 23,
+              "before": 140.0,
+              "column": "age",
+              "issue_id": "age::numeric_outlier",
+              "row": 73
+            },
+            {
+              "after": 22.2,
+              "before": 95.0,
+              "column": "bmi",
+              "issue_id": "bmi::numeric_outlier",
+              "row": 114
+            },
+            {
+              "after": 30.2,
+              "before": 95.0,
+              "column": "bmi",
+              "issue_id": "bmi::numeric_outlier",
+              "row": 148
+            },
+            {
+              "after": 94.75,
+              "before": 157.77,
+              "column": "avg_glucose_level",
+              "issue_id": "avg_glucose_level::numeric_outlier",
+              "row": 149
+            },
+            {
+              "after": 5,
+              "before": 140.0,
+              "column": "age",
+              "issue_id": "age::numeric_outlier",
+              "row": 255
+            },
+            {
+              "after": 19.8,
+              "before": null,
+              "column": "bmi",
+              "issue_id": "bmi::missing_values",
+              "row": 263
+            },
+            {
+              "after": "children",
+              "before": "__M1_RARE_WORK_TYPE_015__",
+              "column": "work_type",
+              "issue_id": "work_type::rare_category",
+              "row": 263
+            },
+            {
+              "after": "never smoked",
+              "before": "__M1_RARE_SMOKING_STATUS_010__",
+              "column": "smoking_status",
+              "issue_id": "smoking_status::rare_category",
+              "row": 266
+            },
+            {
+              "after": "Private",
+              "before": null,
+              "column": "work_type",
+              "issue_id": "work_type::missing_values",
+              "row": 269
+            },
+            {
+              "after": 65,
+              "before": 140.0,
+              "column": "age",
+              "issue_id": "age::numeric_outlier",
+              "row": 330
+            },
+            {
+              "after": 28.4,
+              "before": null,
+              "column": "bmi",
+              "issue_id": "bmi::missing_values",
+              "row": 358
+            },
+            {
+              "after": 88.43,
+              "before": null,
+              "column": "avg_glucose_level",
+              "issue_id": "avg_glucose_level::missing_values",
+              "row": 367
+            },
+            {
+              "after": 26.8,
+              "before": null,
+              "column": "bmi",
+              "issue_id": "bmi::missing_values",
+              "row": 378
+            },
+            {
+              "after": "Private",
+              "before": "__M1_RARE_WORK_TYPE_006__",
+              "column": "work_type",
+              "issue_id": "work_type::rare_category",
+              "row": 428
+            },
+            {
+              "after": 90.26,
+              "before": 158.89,
+              "column": "avg_glucose_level",
+              "issue_id": "avg_glucose_level::numeric_outlier",
+              "row": 430
+            },
+            {
+              "after": 81.96,
+              "before": 163.82,
+              "column": "avg_glucose_level",
+              "issue_id": "avg_glucose_level::numeric_outlier",
+              "row": 525
+            },
+            {
+              "after": 5,
+              "before": 140.0,
+              "column": "age",
+              "issue_id": "age::numeric_outlier",
+              "row": 532
+            },
+            {
+              "after": "Unknown",
+              "before": "__M1_RARE_SMOKING_STATUS_001__",
+              "column": "smoking_status",
+              "issue_id": "smoking_status::rare_category",
+              "row": 686
+            }
+          ],
+          "resolved_issue_count": 9
+        },
+        "execution_steps": [],
+        "issue_source_map": {},
+        "selected_issue_count": 10,
+        "selected_issue_ids": [
+          "avg_glucose_level::numeric_outlier",
+          "bmi::numeric_outlier",
+          "age::numeric_outlier",
+          "bmi::missing_values",
+          "smoking_status::missing_values",
+          "avg_glucose_level::missing_values",
+          "smoking_status::rare_category",
+          "work_type::rare_category",
+          "gender::rare_category",
+          "work_type::missing_values"
+        ],
+        "skipped_issues": []
+      },
+      "repairable_ground_truth_count": 72,
+      "resolved_issue_count": 9,
+      "skipped_issue_count": 0,
+      "status": "ok",
+      "strategy": "gower-k-15",
+      "total_cells_modified": 194
+    },
+    "3": {
+      "after_issue_count": 3,
+      "before_issue_count": 12,
+      "by_type": {
+        "missing_values": {
+          "changed_count": 30,
+          "exact_restoration_rate": 0.133333,
+          "exact_restored_count": 4,
+          "ground_truth_count": 30,
+          "improved_or_exact_count": 4,
+          "improved_or_exact_rate": 0.133333
+        },
+        "numeric_outlier": {
+          "changed_count": 24,
+          "exact_restoration_rate": 0.0,
+          "exact_restored_count": 0,
+          "ground_truth_count": 24,
+          "improved_or_exact_count": 24,
+          "improved_or_exact_rate": 1.0
+        },
+        "rare_category": {
+          "changed_count": 18,
+          "exact_restoration_rate": 0.388889,
+          "exact_restored_count": 7,
+          "ground_truth_count": 18,
+          "improved_or_exact_count": 7,
+          "improved_or_exact_rate": 0.388889
+        }
+      },
+      "engine_total_cells_modified": 194,
+      "exact_restoration_rate": 0.152778,
+      "exact_restored_count": 11,
+      "improved_or_exact_count": 35,
+      "improved_or_exact_rate": 0.486111,
+      "k_neighbors": 3,
+      "mean_neighbor_confidence": 0.864886,
+      "non_ground_truth_cells_modified": 122,
+      "notes": [
+        "repair_with_gower executed with k_neighbors=3."
+      ],
+      "output_csv": "data/experiments/r6_gower_k_sensitivity/k_3/repaired.csv",
+      "repair_summary": {
+        "applied_issue_count": 10,
+        "applied_repairs": [
+          {
+            "after_count": 0,
+            "before_count": 122,
+            "candidate_confidence": 0.85578,
+            "cells_preview": [
+              {
+                "after": 90.43,
+                "before": 157.77,
+                "row": 149
+              },
+              {
+                "after": 112.77,
+                "before": 158.89,
+                "row": 430
+              },
+              {
+                "after": 93.85,
+                "before": 163.82,
+                "row": 525
+              },
+              {
+                "after": 85.12,
+                "before": 420.0,
+                "row": 956
+              },
+              {
+                "after": 84.37,
+                "before": 153.24,
+                "row": 1315
+              },
+              {
+                "after": 97.78,
+                "before": 160.94,
+                "row": 1419
+              },
+              {
+                "after": 108.79,
+                "before": 420.0,
+                "row": 1545
+              },
+              {
+                "after": 80.1,
+                "before": 163.17,
+                "row": 1675
+              },
+              {
+                "after": 71.31,
+                "before": 167.16,
+                "row": 2013
+              },
+              {
+                "after": 69.22,
+                "before": 155.23,
+                "row": 2034
+              },
+              {
+                "after": 105.47,
+                "before": 162.72,
+                "row": 2044
+              },
+              {
+                "after": 75.93,
+                "before": 162.14,
+                "row": 2064
+              },
+              {
+                "after": 70.16,
+                "before": 166.29,
+                "row": 2105
+              },
+              {
+                "after": 93.79,
+                "before": 166.38,
+                "row": 2116
+              },
+              {
+                "after": 95.52,
+                "before": 163.02,
+                "row": 2137
+              },
+              {
+                "after": 79.25,
+                "before": 152.87,
+                "row": 2180
+              },
+              {
+                "after": 97.95,
+                "before": 159.7,
+                "row": 2194
+              },
+              {
+                "after": 85.6,
+                "before": 151.25,
+                "row": 2212
+              },
+              {
+                "after": 99.64,
+                "before": 157.67,
+                "row": 2248
+              },
+              {
+                "after": 89.96,
+                "before": 149.75,
+                "row": 2264
+              }
+            ],
+            "column": "avg_glucose_level",
+            "issue_id": "avg_glucose_level::numeric_outlier",
+            "issue_type": "numeric_outlier",
+            "replacement_preview": [
+              90.43,
+              112.77,
+              93.85,
+              85.12,
+              84.37,
+              97.78,
+              108.79,
+              80.1,
+              71.31,
+              69.22,
+              105.47,
+              75.93,
+              70.16,
+              93.79,
+              95.52,
+              79.25,
+              97.95,
+              85.6,
+              99.64,
+              89.96
+            ],
+            "resolved_count": 122,
+            "rows_touched": 122,
+            "strategy": {
+              "k_neighbors": 3,
+              "tool_id": "engine.repair_with_gower",
+              "weight_mode": "uniform"
+            }
+          },
+          {
+            "after_count": 0,
+            "before_count": 15,
+            "candidate_confidence": 0.85733,
+            "cells_preview": [
+              {
+                "after": 22.2,
+                "before": 95.0,
+                "row": 114
+              },
+              {
+                "after": 32.1,
+                "before": 95.0,
+                "row": 148
+              },
+              {
+                "after": 30.9,
+                "before": 95.0,
+                "row": 765
+              },
+              {
+                "after": 26.1,
+                "before": 45.8,
+                "row": 818
+              },
+              {
+                "after": 32.5,
+                "before": 95.0,
+                "row": 855
+              },
+              {
+                "after": 23.3,
+                "before": 45.9,
+                "row": 1479
+              },
+              {
+                "after": 37.5,
+                "before": 46.1,
+                "row": 1624
+              },
+              {
+                "after": 24,
+                "before": 46.2,
+                "row": 1682
+              },
+              {
+                "after": 29.9,
+                "before": 95.0,
+                "row": 1898
+              },
+              {
+                "after": 26.5,
+                "before": 45.9,
+                "row": 2373
+              },
+              {
+                "after": 31.1,
+                "before": 46.2,
+                "row": 2795
+              },
+              {
+                "after": 25.3,
+                "before": 95.0,
+                "row": 3396
+              },
+              {
+                "after": 29.5,
+                "before": 46.0,
+                "row": 3662
+              },
+              {
+                "after": 34.4,
+                "before": 46.0,
+                "row": 3685
+              },
+              {
+                "after": 23.7,
+                "before": 46.1,
+                "row": 3896
+              }
+            ],
+            "column": "bmi",
+            "issue_id": "bmi::numeric_outlier",
+            "issue_type": "numeric_outlier",
+            "replacement_preview": [
+              22.2,
+              32.1,
+              30.9,
+              26.1,
+              32.5,
+              23.3,
+              37.5,
+              24,
+              29.9,
+              26.5,
+              31.1,
+              25.3,
+              29.5,
+              34.4,
+              23.7
+            ],
+            "resolved_count": 15,
+            "rows_touched": 15,
+            "strategy": {
+              "k_neighbors": 3,
+              "tool_id": "engine.repair_with_gower",
+              "weight_mode": "uniform"
+            }
+          },
+          {
+            "after_count": 0,
+            "before_count": 9,
+            "candidate_confidence": 0.870562,
+            "cells_preview": [
+              {
+                "after": 16,
+                "before": 140.0,
+                "row": 73
+              },
+              {
+                "after": 10,
+                "before": 140.0,
+                "row": 255
+              },
+              {
+                "after": 66,
+                "before": 140.0,
+                "row": 330
+              },
+              {
+                "after": 5,
+                "before": 140.0,
+                "row": 532
+              },
+              {
+                "after": 54,
+                "before": 140.0,
+                "row": 704
+              },
+              {
+                "after": 2,
+                "before": 140.0,
+                "row": 978
+              },
+              {
+                "after": 47,
+                "before": 140.0,
+                "row": 1412
+              },
+              {
+                "after": 26,
+                "before": 140.0,
+                "row": 1851
+              },
+              {
+                "after": 62,
+                "before": 140.0,
+                "row": 2146
+              }
+            ],
+            "column": "age",
+            "issue_id": "age::numeric_outlier",
+            "issue_type": "numeric_outlier",
+            "replacement_preview": [
+              16,
+              10,
+              66,
+              5,
+              54,
+              2,
+              47,
+              26,
+              62
+            ],
+            "resolved_count": 9,
+            "rows_touched": 9,
+            "strategy": {
+              "k_neighbors": 3,
+              "tool_id": "engine.repair_with_gower",
+              "weight_mode": "uniform"
+            }
+          },
+          {
+            "after_count": 0,
+            "before_count": 9,
+            "candidate_confidence": 0.856713,
+            "cells_preview": [
+              {
+                "after": 33.1,
+                "before": null,
+                "row": 14
+              },
+              {
+                "after": 20.3,
+                "before": null,
+                "row": 263
+              },
+              {
+                "after": 31.2,
+                "before": null,
+                "row": 358
+              },
+              {
+                "after": 28.1,
+                "before": null,
+                "row": 378
+              },
+              {
+                "after": 21,
+                "before": null,
+                "row": 697
+              },
+              {
+                "after": 19.1,
+                "before": null,
+                "row": 2076
+              },
+              {
+                "after": 34.7,
+                "before": null,
+                "row": 3163
+              },
+              {
+                "after": 32.7,
+                "before": null,
+                "row": 3210
+              },
+              {
+                "after": 30.1,
+                "before": null,
+                "row": 3812
+              }
+            ],
+            "column": "bmi",
+            "issue_id": "bmi::missing_values",
+            "issue_type": "missing_values",
+            "replacement_preview": [
+              33.1,
+              20.3,
+              31.2,
+              28.1,
+              21,
+              19.1,
+              34.7,
+              32.7,
+              30.1
+            ],
+            "resolved_count": 9,
+            "rows_touched": 9,
+            "strategy": {
+              "k_neighbors": 3,
+              "tool_id": "engine.repair_with_gower",
+              "weight_mode": "uniform"
+            }
+          },
+          {
+            "after_count": 0,
+            "before_count": 9,
+            "candidate_confidence": 0.858065,
+            "cells_preview": [
+              {
+                "after": "never smoked",
+                "before": null,
+                "row": 1757
+              },
+              {
+                "after": "Unknown",
+                "before": null,
+                "row": 2035
+              },
+              {
+                "after": "never smoked",
+                "before": null,
+                "row": 2050
+              },
+              {
+                "after": "never smoked",
+                "before": null,
+                "row": 2421
+              },
+              {
+                "after": "formerly smoked",
+                "before": null,
+                "row": 2895
+              },
+              {
+                "after": "never smoked",
+                "before": null,
+                "row": 2954
+              },
+              {
+                "after": "smokes",
+                "before": null,
+                "row": 3334
+              },
+              {
+                "after": "formerly smoked",
+                "before": null,
+                "row": 3604
+              },
+              {
+                "after": "never smoked",
+                "before": null,
+                "row": 3938
+              }
+            ],
+            "column": "smoking_status",
+            "issue_id": "smoking_status::missing_values",
+            "issue_type": "missing_values",
+            "replacement_preview": [
+              "never smoked",
+              "Unknown",
+              "formerly smoked",
+              "smokes"
+            ],
+            "resolved_count": 9,
+            "rows_touched": 9,
+            "strategy": {
+              "k_neighbors": 3,
+              "tool_id": "engine.repair_with_gower",
+              "weight_mode": "uniform"
+            }
+          },
+          {
+            "after_count": 0,
+            "before_count": 8,
+            "candidate_confidence": 0.844872,
+            "cells_preview": [
+              {
+                "after": 88.69,
+                "before": null,
+                "row": 367
+              },
+              {
+                "after": 95.47,
+                "before": null,
+                "row": 723
+              },
+              {
+                "after": 75.78,
+                "before": null,
+                "row": 969
+              },
+              {
+                "after": 88.2,
+                "before": null,
+                "row": 1517
+              },
+              {
+                "after": 88.54,
+                "before": null,
+                "row": 1595
+              },
+              {
+                "after": 115.99,
+                "before": null,
+                "row": 1817
+              },
+              {
+                "after": 95.87,
+                "before": null,
+                "row": 1871
+              },
+              {
+                "after": 105.9,
+                "before": null,
+                "row": 4061
+              }
+            ],
+            "column": "avg_glucose_level",
+            "issue_id": "avg_glucose_level::missing_values",
+            "issue_type": "missing_values",
+            "replacement_preview": [
+              88.69,
+              95.47,
+              75.78,
+              88.2,
+              88.54,
+              115.99,
+              95.87,
+              105.9
+            ],
+            "resolved_count": 8,
+            "rows_touched": 8,
+            "strategy": {
+              "k_neighbors": 3,
+              "tool_id": "engine.repair_with_gower",
+              "weight_mode": "uniform"
+            }
+          },
+          {
+            "after_count": 0,
+            "before_count": 7,
+            "candidate_confidence": 0.870106,
+            "cells_preview": [
+              {
+                "after": "never smoked",
+                "before": "__M1_RARE_SMOKING_STATUS_010__",
+                "row": 266
+              },
+              {
+                "after": "never smoked",
+                "before": "__M1_RARE_SMOKING_STATUS_001__",
+                "row": 686
+              },
+              {
+                "after": "formerly smoked",
+                "before": "__M1_RARE_SMOKING_STATUS_005__",
+                "row": 1681
+              },
+              {
+                "after": "never smoked",
+                "before": "__M1_RARE_SMOKING_STATUS_013__",
+                "row": 1836
+              },
+              {
+                "after": "never smoked",
+                "before": "__M1_RARE_SMOKING_STATUS_002__",
+                "row": 1868
+              },
+              {
+                "after": "Unknown",
+                "before": "__M1_RARE_SMOKING_STATUS_008__",
+                "row": 2232
+              },
+              {
+                "after": "never smoked",
+                "before": "__M1_RARE_SMOKING_STATUS_009__",
+                "row": 4099
+              }
+            ],
+            "column": "smoking_status",
+            "issue_id": "smoking_status::rare_category",
+            "issue_type": "rare_category",
+            "replacement_preview": [
+              "never smoked",
+              "formerly smoked",
+              "Unknown"
+            ],
+            "resolved_count": 7,
+            "rows_touched": 7,
+            "strategy": {
+              "k_neighbors": 3,
+              "tool_id": "engine.repair_with_gower",
+              "weight_mode": "uniform"
+            }
+          },
+          {
+            "after_count": 0,
+            "before_count": 6,
+            "candidate_confidence": 0.887089,
+            "cells_preview": [
+              {
+                "after": "children",
+                "before": "__M1_RARE_WORK_TYPE_015__",
+                "row": 263
+              },
+              {
+                "after": "Private",
+                "before": "__M1_RARE_WORK_TYPE_006__",
+                "row": 428
+              },
+              {
+                "after": "children",
+                "before": "__M1_RARE_WORK_TYPE_017__",
+                "row": 1940
+              },
+              {
+                "after": "Self-employed",
+                "before": "__M1_RARE_WORK_TYPE_012__",
+                "row": 2456
+              },
+              {
+                "after": "Private",
+                "before": "__M1_RARE_WORK_TYPE_016__",
+                "row": 2463
+              },
+              {
+                "after": "Private",
+                "before": "__M1_RARE_WORK_TYPE_004__",
+                "row": 3925
+              }
+            ],
+            "column": "work_type",
+            "issue_id": "work_type::rare_category",
+            "issue_type": "rare_category",
+            "replacement_preview": [
+              "children",
+              "Private",
+              "Self-employed"
+            ],
+            "resolved_count": 6,
+            "rows_touched": 6,
+            "strategy": {
+              "k_neighbors": 3,
+              "tool_id": "engine.repair_with_gower",
+              "weight_mode": "uniform"
+            }
+          },
+          {
+            "after_count": 0,
+            "before_count": 5,
+            "candidate_confidence": 0.880098,
+            "cells_preview": [
+              {
+                "after": "Female",
+                "before": "__M1_RARE_GENDER_000__",
+                "row": 969
+              },
+              {
+                "after": "Male",
+                "before": "__M1_RARE_GENDER_014__",
+                "row": 1519
+              },
+              {
+                "after": "Female",
+                "before": "__M1_RARE_GENDER_011__",
+                "row": 2179
+              },
+              {
+                "after": "Female",
+                "before": "__M1_RARE_GENDER_003__",
+                "row": 3440
+              },
+              {
+                "after": "Male",
+                "before": "__M1_RARE_GENDER_007__",
+                "row": 4084
+              }
+            ],
+            "column": "gender",
+            "issue_id": "gender::rare_category",
+            "issue_type": "rare_category",
+            "replacement_preview": [
+              "Female",
+              "Male"
+            ],
+            "resolved_count": 5,
+            "rows_touched": 5,
+            "strategy": {
+              "k_neighbors": 3,
+              "tool_id": "engine.repair_with_gower",
+              "weight_mode": "uniform"
+            }
+          },
+          {
+            "after_count": 0,
+            "before_count": 4,
+            "candidate_confidence": 0.868242,
+            "cells_preview": [
+              {
+                "after": "Govt_job",
+                "before": null,
+                "row": 70
+              },
+              {
+                "after": "Govt_job",
+                "before": null,
+                "row": 269
+              },
+              {
+                "after": "Private",
+                "before": null,
+                "row": 1417
+              },
+              {
+                "after": "Govt_job",
+                "before": null,
+                "row": 3824
+              }
+            ],
+            "column": "work_type",
+            "issue_id": "work_type::missing_values",
+            "issue_type": "missing_values",
+            "replacement_preview": [
+              "Govt_job",
+              "Private"
+            ],
+            "resolved_count": 4,
+            "rows_touched": 4,
+            "strategy": {
+              "k_neighbors": 3,
+              "tool_id": "engine.repair_with_gower",
+              "weight_mode": "uniform"
+            }
+          }
+        ],
+        "comparison": {
+          "after_column_issue_counts": {
+            "avg_glucose_level": 1,
+            "record_start_day": 1,
+            "source_row_id": 1
+          },
+          "after_issue_count": 3,
+          "after_issue_type_counts": {
+            "cross_column_consistency": 1,
+            "duplicate_record": 1,
+            "numeric_outlier": 1
+          },
+          "before_column_issue_counts": {
+            "age": 1,
+            "avg_glucose_level": 2,
+            "bmi": 2,
+            "gender": 1,
+            "record_start_day": 1,
+            "smoking_status": 2,
+            "source_row_id": 1,
+            "work_type": 2
+          },
+          "before_issue_count": 12,
+          "before_issue_type_counts": {
+            "cross_column_consistency": 1,
+            "duplicate_record": 1,
+            "missing_values": 4,
+            "numeric_outlier": 3,
+            "rare_category": 3
+          },
+          "changed_cell_count": 194,
+          "changed_cells_preview": [
+            {
+              "after": 33.1,
+              "before": null,
+              "column": "bmi",
+              "issue_id": "bmi::missing_values",
+              "row": 14
+            },
+            {
+              "after": "Govt_job",
+              "before": null,
+              "column": "work_type",
+              "issue_id": "work_type::missing_values",
+              "row": 70
+            },
+            {
+              "after": 16,
+              "before": 140.0,
+              "column": "age",
+              "issue_id": "age::numeric_outlier",
+              "row": 73
+            },
+            {
+              "after": 22.2,
+              "before": 95.0,
+              "column": "bmi",
+              "issue_id": "bmi::numeric_outlier",
+              "row": 114
+            },
+            {
+              "after": 32.1,
+              "before": 95.0,
+              "column": "bmi",
+              "issue_id": "bmi::numeric_outlier",
+              "row": 148
+            },
+            {
+              "after": 90.43,
+              "before": 157.77,
+              "column": "avg_glucose_level",
+              "issue_id": "avg_glucose_level::numeric_outlier",
+              "row": 149
+            },
+            {
+              "after": 10,
+              "before": 140.0,
+              "column": "age",
+              "issue_id": "age::numeric_outlier",
+              "row": 255
+            },
+            {
+              "after": 20.3,
+              "before": null,
+              "column": "bmi",
+              "issue_id": "bmi::missing_values",
+              "row": 263
+            },
+            {
+              "after": "children",
+              "before": "__M1_RARE_WORK_TYPE_015__",
+              "column": "work_type",
+              "issue_id": "work_type::rare_category",
+              "row": 263
+            },
+            {
+              "after": "never smoked",
+              "before": "__M1_RARE_SMOKING_STATUS_010__",
+              "column": "smoking_status",
+              "issue_id": "smoking_status::rare_category",
+              "row": 266
+            },
+            {
+              "after": "Govt_job",
+              "before": null,
+              "column": "work_type",
+              "issue_id": "work_type::missing_values",
+              "row": 269
+            },
+            {
+              "after": 66,
+              "before": 140.0,
+              "column": "age",
+              "issue_id": "age::numeric_outlier",
+              "row": 330
+            },
+            {
+              "after": 31.2,
+              "before": null,
+              "column": "bmi",
+              "issue_id": "bmi::missing_values",
+              "row": 358
+            },
+            {
+              "after": 88.69,
+              "before": null,
+              "column": "avg_glucose_level",
+              "issue_id": "avg_glucose_level::missing_values",
+              "row": 367
+            },
+            {
+              "after": 28.1,
+              "before": null,
+              "column": "bmi",
+              "issue_id": "bmi::missing_values",
+              "row": 378
+            },
+            {
+              "after": "Private",
+              "before": "__M1_RARE_WORK_TYPE_006__",
+              "column": "work_type",
+              "issue_id": "work_type::rare_category",
+              "row": 428
+            },
+            {
+              "after": 112.77,
+              "before": 158.89,
+              "column": "avg_glucose_level",
+              "issue_id": "avg_glucose_level::numeric_outlier",
+              "row": 430
+            },
+            {
+              "after": 93.85,
+              "before": 163.82,
+              "column": "avg_glucose_level",
+              "issue_id": "avg_glucose_level::numeric_outlier",
+              "row": 525
+            },
+            {
+              "after": 5,
+              "before": 140.0,
+              "column": "age",
+              "issue_id": "age::numeric_outlier",
+              "row": 532
+            },
+            {
+              "after": "never smoked",
+              "before": "__M1_RARE_SMOKING_STATUS_001__",
+              "column": "smoking_status",
+              "issue_id": "smoking_status::rare_category",
+              "row": 686
+            }
+          ],
+          "resolved_issue_count": 9
+        },
+        "execution_steps": [],
+        "issue_source_map": {},
+        "selected_issue_count": 10,
+        "selected_issue_ids": [
+          "avg_glucose_level::numeric_outlier",
+          "bmi::numeric_outlier",
+          "age::numeric_outlier",
+          "bmi::missing_values",
+          "smoking_status::missing_values",
+          "avg_glucose_level::missing_values",
+          "smoking_status::rare_category",
+          "work_type::rare_category",
+          "gender::rare_category",
+          "work_type::missing_values"
+        ],
+        "skipped_issues": []
+      },
+      "repairable_ground_truth_count": 72,
+      "resolved_issue_count": 9,
+      "skipped_issue_count": 0,
+      "status": "ok",
+      "strategy": "gower-k-3",
+      "total_cells_modified": 194
+    },
+    "5": {
+      "after_issue_count": 3,
+      "before_issue_count": 12,
+      "by_type": {
+        "missing_values": {
+          "changed_count": 30,
+          "exact_restoration_rate": 0.2,
+          "exact_restored_count": 6,
+          "ground_truth_count": 30,
+          "improved_or_exact_count": 6,
+          "improved_or_exact_rate": 0.2
+        },
+        "numeric_outlier": {
+          "changed_count": 24,
+          "exact_restoration_rate": 0.0,
+          "exact_restored_count": 0,
+          "ground_truth_count": 24,
+          "improved_or_exact_count": 24,
+          "improved_or_exact_rate": 1.0
+        },
+        "rare_category": {
+          "changed_count": 18,
+          "exact_restoration_rate": 0.444444,
+          "exact_restored_count": 8,
+          "ground_truth_count": 18,
+          "improved_or_exact_count": 8,
+          "improved_or_exact_rate": 0.444444
+        }
+      },
+      "engine_total_cells_modified": 194,
+      "exact_restoration_rate": 0.194444,
+      "exact_restored_count": 14,
+      "improved_or_exact_count": 38,
+      "improved_or_exact_rate": 0.527778,
+      "k_neighbors": 5,
+      "mean_neighbor_confidence": 0.85614,
+      "non_ground_truth_cells_modified": 122,
+      "notes": [
+        "repair_with_gower executed with k_neighbors=5."
+      ],
+      "output_csv": "data/experiments/r6_gower_k_sensitivity/k_5/repaired.csv",
+      "repair_summary": {
+        "applied_issue_count": 10,
+        "applied_repairs": [
+          {
+            "after_count": 0,
+            "before_count": 122,
+            "candidate_confidence": 0.845802,
+            "cells_preview": [
+              {
+                "after": 85.59,
+                "before": 157.77,
+                "row": 149
+              },
+              {
+                "after": 97.95,
+                "before": 158.89,
+                "row": 430
+              },
+              {
+                "after": 82.35,
+                "before": 163.82,
+                "row": 525
+              },
+              {
+                "after": 85.12,
+                "before": 420.0,
+                "row": 956
+              },
+              {
+                "after": 93.15,
+                "before": 153.24,
+                "row": 1315
+              },
+              {
+                "after": 80.86,
+                "before": 160.94,
+                "row": 1419
+              },
+              {
+                "after": 108.79,
+                "before": 420.0,
+                "row": 1545
+              },
+              {
+                "after": 80.1,
+                "before": 163.17,
+                "row": 1675
+              },
+              {
+                "after": 80.77,
+                "before": 167.16,
+                "row": 2013
+              },
+              {
+                "after": 83.01,
+                "before": 155.23,
+                "row": 2034
+              },
+              {
+                "after": 105.47,
+                "before": 162.72,
+                "row": 2044
+              },
+              {
+                "after": 87.16,
+                "before": 162.14,
+                "row": 2064
+              },
+              {
+                "after": 80.72,
+                "before": 166.29,
+                "row": 2105
+              },
+              {
+                "after": 80.2,
+                "before": 166.38,
+                "row": 2116
+              },
+              {
+                "after": 93.24,
+                "before": 163.02,
+                "row": 2137
+              },
+              {
+                "after": 96.69,
+                "before": 152.87,
+                "row": 2180
+              },
+              {
+                "after": 97.95,
+                "before": 159.7,
+                "row": 2194
+              },
+              {
+                "after": 75.15,
+                "before": 151.25,
+                "row": 2212
+              },
+              {
+                "after": 99.64,
+                "before": 157.67,
+                "row": 2248
+              },
+              {
+                "after": 89.96,
+                "before": 149.75,
+                "row": 2264
+              }
+            ],
+            "column": "avg_glucose_level",
+            "issue_id": "avg_glucose_level::numeric_outlier",
+            "issue_type": "numeric_outlier",
+            "replacement_preview": [
+              85.59,
+              97.95,
+              82.35,
+              85.12,
+              93.15,
+              80.86,
+              108.79,
+              80.1,
+              80.77,
+              83.01,
+              105.47,
+              87.16,
+              80.72,
+              80.2,
+              93.24,
+              96.69,
+              75.15,
+              99.64,
+              89.96,
+              112.7
+            ],
+            "resolved_count": 122,
+            "rows_touched": 122,
+            "strategy": {
+              "k_neighbors": 5,
+              "tool_id": "engine.repair_with_gower",
+              "weight_mode": "uniform"
+            }
+          },
+          {
+            "after_count": 0,
+            "before_count": 15,
+            "candidate_confidence": 0.847427,
+            "cells_preview": [
+              {
+                "after": 23.5,
+                "before": 95.0,
+                "row": 114
+              },
+              {
+                "after": 30.8,
+                "before": 95.0,
+                "row": 148
+              },
+              {
+                "after": 30.9,
+                "before": 95.0,
+                "row": 765
+              },
+              {
+                "after": 26.1,
+                "before": 45.8,
+                "row": 818
+              },
+              {
+                "after": 29.1,
+                "before": 95.0,
+                "row": 855
+              },
+              {
+                "after": 23.3,
+                "before": 45.9,
+                "row": 1479
+              },
+              {
+                "after": 26.6,
+                "before": 46.1,
+                "row": 1624
+              },
+              {
+                "after": 24,
+                "before": 46.2,
+                "row": 1682
+              },
+              {
+                "after": 29.9,
+                "before": 95.0,
+                "row": 1898
+              },
+              {
+                "after": 28.5,
+                "before": 45.9,
+                "row": 2373
+              },
+              {
+                "after": 31.1,
+                "before": 46.2,
+                "row": 2795
+              },
+              {
+                "after": 21.2,
+                "before": 95.0,
+                "row": 3396
+              },
+              {
+                "after": 29.5,
+                "before": 46.0,
+                "row": 3662
+              },
+              {
+                "after": 26.2,
+                "before": 46.0,
+                "row": 3685
+              },
+              {
+                "after": 24.7,
+                "before": 46.1,
+                "row": 3896
+              }
+            ],
+            "column": "bmi",
+            "issue_id": "bmi::numeric_outlier",
+            "issue_type": "numeric_outlier",
+            "replacement_preview": [
+              23.5,
+              30.8,
+              30.9,
+              26.1,
+              29.1,
+              23.3,
+              26.6,
+              24,
+              29.9,
+              28.5,
+              31.1,
+              21.2,
+              29.5,
+              26.2,
+              24.7
+            ],
+            "resolved_count": 15,
+            "rows_touched": 15,
+            "strategy": {
+              "k_neighbors": 5,
+              "tool_id": "engine.repair_with_gower",
+              "weight_mode": "uniform"
+            }
+          },
+          {
+            "after_count": 0,
+            "before_count": 9,
+            "candidate_confidence": 0.862754,
+            "cells_preview": [
+              {
+                "after": 20,
+                "before": 140.0,
+                "row": 73
+              },
+              {
+                "after": 7,
+                "before": 140.0,
+                "row": 255
+              },
+              {
+                "after": 65,
+                "before": 140.0,
+                "row": 330
+              },
+              {
+                "after": 5,
+                "before": 140.0,
+                "row": 532
+              },
+              {
+                "after": 53,
+                "before": 140.0,
+                "row": 704
+              },
+              {
+                "after": 3,
+                "before": 140.0,
+                "row": 978
+              },
+              {
+                "after": 47,
+                "before": 140.0,
+                "row": 1412
+              },
+              {
+                "after": 26,
+                "before": 140.0,
+                "row": 1851
+              },
+              {
+                "after": 62,
+                "before": 140.0,
+                "row": 2146
+              }
+            ],
+            "column": "age",
+            "issue_id": "age::numeric_outlier",
+            "issue_type": "numeric_outlier",
+            "replacement_preview": [
+              20,
+              7,
+              65,
+              5,
+              53,
+              3,
+              47,
+              26,
+              62
+            ],
+            "resolved_count": 9,
+            "rows_touched": 9,
+            "strategy": {
+              "k_neighbors": 5,
+              "tool_id": "engine.repair_with_gower",
+              "weight_mode": "uniform"
+            }
+          },
+          {
+            "after_count": 0,
+            "before_count": 9,
+            "candidate_confidence": 0.848835,
+            "cells_preview": [
+              {
+                "after": 24.7,
+                "before": null,
+                "row": 14
+              },
+              {
+                "after": 19.8,
+                "before": null,
+                "row": 263
+              },
+              {
+                "after": 28.9,
+                "before": null,
+                "row": 358
+              },
+              {
+                "after": 26.4,
+                "before": null,
+                "row": 378
+              },
+              {
+                "after": 21,
+                "before": null,
+                "row": 697
+              },
+              {
+                "after": 20.6,
+                "before": null,
+                "row": 2076
+              },
+              {
+                "after": 36.6,
+                "before": null,
+                "row": 3163
+              },
+              {
+                "after": 31.8,
+                "before": null,
+                "row": 3210
+              },
+              {
+                "after": 29.8,
+                "before": null,
+                "row": 3812
+              }
+            ],
+            "column": "bmi",
+            "issue_id": "bmi::missing_values",
+            "issue_type": "missing_values",
+            "replacement_preview": [
+              24.7,
+              19.8,
+              28.9,
+              26.4,
+              21,
+              20.6,
+              36.6,
+              31.8,
+              29.8
+            ],
+            "resolved_count": 9,
+            "rows_touched": 9,
+            "strategy": {
+              "k_neighbors": 5,
+              "tool_id": "engine.repair_with_gower",
+              "weight_mode": "uniform"
+            }
+          },
+          {
+            "after_count": 0,
+            "before_count": 9,
+            "candidate_confidence": 0.849992,
+            "cells_preview": [
+              {
+                "after": "never smoked",
+                "before": null,
+                "row": 1757
+              },
+              {
+                "after": "never smoked",
+                "before": null,
+                "row": 2035
+              },
+              {
+                "after": "never smoked",
+                "before": null,
+                "row": 2050
+              },
+              {
+                "after": "never smoked",
+                "before": null,
+                "row": 2421
+              },
+              {
+                "after": "never smoked",
+                "before": null,
+                "row": 2895
+              },
+              {
+                "after": "never smoked",
+                "before": null,
+                "row": 2954
+              },
+              {
+                "after": "never smoked",
+                "before": null,
+                "row": 3334
+              },
+              {
+                "after": "formerly smoked",
+                "before": null,
+                "row": 3604
+              },
+              {
+                "after": "never smoked",
+                "before": null,
+                "row": 3938
+              }
+            ],
+            "column": "smoking_status",
+            "issue_id": "smoking_status::missing_values",
+            "issue_type": "missing_values",
+            "replacement_preview": [
+              "never smoked",
+              "formerly smoked"
+            ],
+            "resolved_count": 9,
+            "rows_touched": 9,
+            "strategy": {
+              "k_neighbors": 5,
+              "tool_id": "engine.repair_with_gower",
+              "weight_mode": "uniform"
+            }
+          },
+          {
+            "after_count": 0,
+            "before_count": 8,
+            "candidate_confidence": 0.835701,
+            "cells_preview": [
+              {
+                "after": 88.69,
+                "before": null,
+                "row": 367
+              },
+              {
+                "after": 84.43,
+                "before": null,
+                "row": 723
+              },
+              {
+                "after": 75.78,
+                "before": null,
+                "row": 969
+              },
+              {
+                "after": 88.2,
+                "before": null,
+                "row": 1517
+              },
+              {
+                "after": 88.54,
+                "before": null,
+                "row": 1595
+              },
+              {
+                "after": 115.99,
+                "before": null,
+                "row": 1817
+              },
+              {
+                "after": 88.79,
+                "before": null,
+                "row": 1871
+              },
+              {
+                "after": 105.9,
+                "before": null,
+                "row": 4061
+              }
+            ],
+            "column": "avg_glucose_level",
+            "issue_id": "avg_glucose_level::missing_values",
+            "issue_type": "missing_values",
+            "replacement_preview": [
+              88.69,
+              84.43,
+              75.78,
+              88.2,
+              88.54,
+              115.99,
+              88.79,
+              105.9
+            ],
+            "resolved_count": 8,
+            "rows_touched": 8,
+            "strategy": {
+              "k_neighbors": 5,
+              "tool_id": "engine.repair_with_gower",
+              "weight_mode": "uniform"
+            }
+          },
+          {
+            "after_count": 0,
+            "before_count": 7,
+            "candidate_confidence": 0.860203,
+            "cells_preview": [
+              {
+                "after": "formerly smoked",
+                "before": "__M1_RARE_SMOKING_STATUS_010__",
+                "row": 266
+              },
+              {
+                "after": "never smoked",
+                "before": "__M1_RARE_SMOKING_STATUS_001__",
+                "row": 686
+              },
+              {
+                "after": "never smoked",
+                "before": "__M1_RARE_SMOKING_STATUS_005__",
+                "row": 1681
+              },
+              {
+                "after": "never smoked",
+                "before": "__M1_RARE_SMOKING_STATUS_013__",
+                "row": 1836
+              },
+              {
+                "after": "never smoked",
+                "before": "__M1_RARE_SMOKING_STATUS_002__",
+                "row": 1868
+              },
+              {
+                "after": "never smoked",
+                "before": "__M1_RARE_SMOKING_STATUS_008__",
+                "row": 2232
+              },
+              {
+                "after": "never smoked",
+                "before": "__M1_RARE_SMOKING_STATUS_009__",
+                "row": 4099
+              }
+            ],
+            "column": "smoking_status",
+            "issue_id": "smoking_status::rare_category",
+            "issue_type": "rare_category",
+            "replacement_preview": [
+              "formerly smoked",
+              "never smoked"
+            ],
+            "resolved_count": 7,
+            "rows_touched": 7,
+            "strategy": {
+              "k_neighbors": 5,
+              "tool_id": "engine.repair_with_gower",
+              "weight_mode": "uniform"
+            }
+          },
+          {
+            "after_count": 0,
+            "before_count": 6,
+            "candidate_confidence": 0.879342,
+            "cells_preview": [
+              {
+                "after": "children",
+                "before": "__M1_RARE_WORK_TYPE_015__",
+                "row": 263
+              },
+              {
+                "after": "Private",
+                "before": "__M1_RARE_WORK_TYPE_006__",
+                "row": 428
+              },
+              {
+                "after": "children",
+                "before": "__M1_RARE_WORK_TYPE_017__",
+                "row": 1940
+              },
+              {
+                "after": "Private",
+                "before": "__M1_RARE_WORK_TYPE_012__",
+                "row": 2456
+              },
+              {
+                "after": "Private",
+                "before": "__M1_RARE_WORK_TYPE_016__",
+                "row": 2463
+              },
+              {
+                "after": "Private",
+                "before": "__M1_RARE_WORK_TYPE_004__",
+                "row": 3925
+              }
+            ],
+            "column": "work_type",
+            "issue_id": "work_type::rare_category",
+            "issue_type": "rare_category",
+            "replacement_preview": [
+              "children",
+              "Private"
+            ],
+            "resolved_count": 6,
+            "rows_touched": 6,
+            "strategy": {
+              "k_neighbors": 5,
+              "tool_id": "engine.repair_with_gower",
+              "weight_mode": "uniform"
+            }
+          },
+          {
+            "after_count": 0,
+            "before_count": 5,
+            "candidate_confidence": 0.871559,
+            "cells_preview": [
+              {
+                "after": "Male",
+                "before": "__M1_RARE_GENDER_000__",
+                "row": 969
+              },
+              {
+                "after": "Male",
+                "before": "__M1_RARE_GENDER_014__",
+                "row": 1519
+              },
+              {
+                "after": "Female",
+                "before": "__M1_RARE_GENDER_011__",
+                "row": 2179
+              },
+              {
+                "after": "Female",
+                "before": "__M1_RARE_GENDER_003__",
+                "row": 3440
+              },
+              {
+                "after": "Male",
+                "before": "__M1_RARE_GENDER_007__",
+                "row": 4084
+              }
+            ],
+            "column": "gender",
+            "issue_id": "gender::rare_category",
+            "issue_type": "rare_category",
+            "replacement_preview": [
+              "Male",
+              "Female"
+            ],
+            "resolved_count": 5,
+            "rows_touched": 5,
+            "strategy": {
+              "k_neighbors": 5,
+              "tool_id": "engine.repair_with_gower",
+              "weight_mode": "uniform"
+            }
+          },
+          {
+            "after_count": 0,
+            "before_count": 4,
+            "candidate_confidence": 0.859783,
+            "cells_preview": [
+              {
+                "after": "Private",
+                "before": null,
+                "row": 70
+              },
+              {
+                "after": "Private",
+                "before": null,
+                "row": 269
+              },
+              {
+                "after": "Private",
+                "before": null,
+                "row": 1417
+              },
+              {
+                "after": "Govt_job",
+                "before": null,
+                "row": 3824
+              }
+            ],
+            "column": "work_type",
+            "issue_id": "work_type::missing_values",
+            "issue_type": "missing_values",
+            "replacement_preview": [
+              "Private",
+              "Govt_job"
+            ],
+            "resolved_count": 4,
+            "rows_touched": 4,
+            "strategy": {
+              "k_neighbors": 5,
+              "tool_id": "engine.repair_with_gower",
+              "weight_mode": "uniform"
+            }
+          }
+        ],
+        "comparison": {
+          "after_column_issue_counts": {
+            "avg_glucose_level": 1,
+            "record_start_day": 1,
+            "source_row_id": 1
+          },
+          "after_issue_count": 3,
+          "after_issue_type_counts": {
+            "cross_column_consistency": 1,
+            "duplicate_record": 1,
+            "numeric_outlier": 1
+          },
+          "before_column_issue_counts": {
+            "age": 1,
+            "avg_glucose_level": 2,
+            "bmi": 2,
+            "gender": 1,
+            "record_start_day": 1,
+            "smoking_status": 2,
+            "source_row_id": 1,
+            "work_type": 2
+          },
+          "before_issue_count": 12,
+          "before_issue_type_counts": {
+            "cross_column_consistency": 1,
+            "duplicate_record": 1,
+            "missing_values": 4,
+            "numeric_outlier": 3,
+            "rare_category": 3
+          },
+          "changed_cell_count": 194,
+          "changed_cells_preview": [
+            {
+              "after": 24.7,
+              "before": null,
+              "column": "bmi",
+              "issue_id": "bmi::missing_values",
+              "row": 14
+            },
+            {
+              "after": "Private",
+              "before": null,
+              "column": "work_type",
+              "issue_id": "work_type::missing_values",
+              "row": 70
+            },
+            {
+              "after": 20,
+              "before": 140.0,
+              "column": "age",
+              "issue_id": "age::numeric_outlier",
+              "row": 73
+            },
+            {
+              "after": 23.5,
+              "before": 95.0,
+              "column": "bmi",
+              "issue_id": "bmi::numeric_outlier",
+              "row": 114
+            },
+            {
+              "after": 30.8,
+              "before": 95.0,
+              "column": "bmi",
+              "issue_id": "bmi::numeric_outlier",
+              "row": 148
+            },
+            {
+              "after": 85.59,
+              "before": 157.77,
+              "column": "avg_glucose_level",
+              "issue_id": "avg_glucose_level::numeric_outlier",
+              "row": 149
+            },
+            {
+              "after": 7,
+              "before": 140.0,
+              "column": "age",
+              "issue_id": "age::numeric_outlier",
+              "row": 255
+            },
+            {
+              "after": 19.8,
+              "before": null,
+              "column": "bmi",
+              "issue_id": "bmi::missing_values",
+              "row": 263
+            },
+            {
+              "after": "children",
+              "before": "__M1_RARE_WORK_TYPE_015__",
+              "column": "work_type",
+              "issue_id": "work_type::rare_category",
+              "row": 263
+            },
+            {
+              "after": "formerly smoked",
+              "before": "__M1_RARE_SMOKING_STATUS_010__",
+              "column": "smoking_status",
+              "issue_id": "smoking_status::rare_category",
+              "row": 266
+            },
+            {
+              "after": "Private",
+              "before": null,
+              "column": "work_type",
+              "issue_id": "work_type::missing_values",
+              "row": 269
+            },
+            {
+              "after": 65,
+              "before": 140.0,
+              "column": "age",
+              "issue_id": "age::numeric_outlier",
+              "row": 330
+            },
+            {
+              "after": 28.9,
+              "before": null,
+              "column": "bmi",
+              "issue_id": "bmi::missing_values",
+              "row": 358
+            },
+            {
+              "after": 88.69,
+              "before": null,
+              "column": "avg_glucose_level",
+              "issue_id": "avg_glucose_level::missing_values",
+              "row": 367
+            },
+            {
+              "after": 26.4,
+              "before": null,
+              "column": "bmi",
+              "issue_id": "bmi::missing_values",
+              "row": 378
+            },
+            {
+              "after": "Private",
+              "before": "__M1_RARE_WORK_TYPE_006__",
+              "column": "work_type",
+              "issue_id": "work_type::rare_category",
+              "row": 428
+            },
+            {
+              "after": 97.95,
+              "before": 158.89,
+              "column": "avg_glucose_level",
+              "issue_id": "avg_glucose_level::numeric_outlier",
+              "row": 430
+            },
+            {
+              "after": 82.35,
+              "before": 163.82,
+              "column": "avg_glucose_level",
+              "issue_id": "avg_glucose_level::numeric_outlier",
+              "row": 525
+            },
+            {
+              "after": 5,
+              "before": 140.0,
+              "column": "age",
+              "issue_id": "age::numeric_outlier",
+              "row": 532
+            },
+            {
+              "after": "never smoked",
+              "before": "__M1_RARE_SMOKING_STATUS_001__",
+              "column": "smoking_status",
+              "issue_id": "smoking_status::rare_category",
+              "row": 686
+            }
+          ],
+          "resolved_issue_count": 9
+        },
+        "execution_steps": [],
+        "issue_source_map": {},
+        "selected_issue_count": 10,
+        "selected_issue_ids": [
+          "avg_glucose_level::numeric_outlier",
+          "bmi::numeric_outlier",
+          "age::numeric_outlier",
+          "bmi::missing_values",
+          "smoking_status::missing_values",
+          "avg_glucose_level::missing_values",
+          "smoking_status::rare_category",
+          "work_type::rare_category",
+          "gender::rare_category",
+          "work_type::missing_values"
+        ],
+        "skipped_issues": []
+      },
+      "repairable_ground_truth_count": 72,
+      "resolved_issue_count": 9,
+      "skipped_issue_count": 0,
+      "status": "ok",
+      "strategy": "gower-k-5",
+      "total_cells_modified": 194
+    },
+    "7": {
+      "after_issue_count": 3,
+      "before_issue_count": 12,
+      "by_type": {
+        "missing_values": {
+          "changed_count": 30,
+          "exact_restoration_rate": 0.166667,
+          "exact_restored_count": 5,
+          "ground_truth_count": 30,
+          "improved_or_exact_count": 5,
+          "improved_or_exact_rate": 0.166667
+        },
+        "numeric_outlier": {
+          "changed_count": 24,
+          "exact_restoration_rate": 0.0,
+          "exact_restored_count": 0,
+          "ground_truth_count": 24,
+          "improved_or_exact_count": 24,
+          "improved_or_exact_rate": 1.0
+        },
+        "rare_category": {
+          "changed_count": 18,
+          "exact_restoration_rate": 0.333333,
+          "exact_restored_count": 6,
+          "ground_truth_count": 18,
+          "improved_or_exact_count": 6,
+          "improved_or_exact_rate": 0.333333
+        }
+      },
+      "engine_total_cells_modified": 194,
+      "exact_restoration_rate": 0.152778,
+      "exact_restored_count": 11,
+      "improved_or_exact_count": 35,
+      "improved_or_exact_rate": 0.486111,
+      "k_neighbors": 7,
+      "mean_neighbor_confidence": 0.84953,
+      "non_ground_truth_cells_modified": 122,
+      "notes": [
+        "repair_with_gower executed with k_neighbors=7."
+      ],
+      "output_csv": "data/experiments/r6_gower_k_sensitivity/k_7/repaired.csv",
+      "repair_summary": {
+        "applied_issue_count": 10,
+        "applied_repairs": [
+          {
+            "after_count": 0,
+            "before_count": 122,
+            "candidate_confidence": 0.838234,
+            "cells_preview": [
+              {
+                "after": 85.59,
+                "before": 157.77,
+                "row": 149
+              },
+              {
+                "after": 106.54,
+                "before": 158.89,
+                "row": 430
+              },
+              {
+                "after": 82.35,
+                "before": 163.82,
+                "row": 525
+              },
+              {
+                "after": 85.12,
+                "before": 420.0,
+                "row": 956
+              },
+              {
+                "after": 93.15,
+                "before": 153.24,
+                "row": 1315
+              },
+              {
+                "after": 80.86,
+                "before": 160.94,
+                "row": 1419
+              },
+              {
+                "after": 99.07,
+                "before": 420.0,
+                "row": 1545
+              },
+              {
+                "after": 88.38,
+                "before": 163.17,
+                "row": 1675
+              },
+              {
+                "after": 80.77,
+                "before": 167.16,
+                "row": 2013
+              },
+              {
+                "after": 83.01,
+                "before": 155.23,
+                "row": 2034
+              },
+              {
+                "after": 105.47,
+                "before": 162.72,
+                "row": 2044
+              },
+              {
+                "after": 87.16,
+                "before": 162.14,
+                "row": 2064
+              },
+              {
+                "after": 79.87,
+                "before": 166.29,
+                "row": 2105
+              },
+              {
+                "after": 80.2,
+                "before": 166.38,
+                "row": 2116
+              },
+              {
+                "after": 95.52,
+                "before": 163.02,
+                "row": 2137
+              },
+              {
+                "after": 79.25,
+                "before": 152.87,
+                "row": 2180
+              },
+              {
+                "after": 87.92,
+                "before": 159.7,
+                "row": 2194
+              },
+              {
+                "after": 75.15,
+                "before": 151.25,
+                "row": 2212
+              },
+              {
+                "after": 99.64,
+                "before": 157.67,
+                "row": 2248
+              },
+              {
+                "after": 89.96,
+                "before": 149.75,
+                "row": 2264
+              }
+            ],
+            "column": "avg_glucose_level",
+            "issue_id": "avg_glucose_level::numeric_outlier",
+            "issue_type": "numeric_outlier",
+            "replacement_preview": [
+              85.59,
+              106.54,
+              82.35,
+              85.12,
+              93.15,
+              80.86,
+              99.07,
+              88.38,
+              80.77,
+              83.01,
+              105.47,
+              87.16,
+              79.87,
+              80.2,
+              95.52,
+              79.25,
+              87.92,
+              75.15,
+              99.64,
+              89.96
+            ],
+            "resolved_count": 122,
+            "rows_touched": 122,
+            "strategy": {
+              "k_neighbors": 7,
+              "tool_id": "engine.repair_with_gower",
+              "weight_mode": "uniform"
+            }
+          },
+          {
+            "after_count": 0,
+            "before_count": 15,
+            "candidate_confidence": 0.840745,
+            "cells_preview": [
+              {
+                "after": 23.5,
+                "before": 95.0,
+                "row": 114
+              },
+              {
+                "after": 30.8,
+                "before": 95.0,
+                "row": 148
+              },
+              {
+                "after": 40.2,
+                "before": 95.0,
+                "row": 765
+              },
+              {
+                "after": 19.1,
+                "before": 45.8,
+                "row": 818
+              },
+              {
+                "after": 30.4,
+                "before": 95.0,
+                "row": 855
+              },
+              {
+                "after": 23.9,
+                "before": 45.9,
+                "row": 1479
+              },
+              {
+                "after": 29.7,
+                "before": 46.1,
+                "row": 1624
+              },
+              {
+                "after": 24,
+                "before": 46.2,
+                "row": 1682
+              },
+              {
+                "after": 29.8,
+                "before": 95.0,
+                "row": 1898
+              },
+              {
+                "after": 28.5,
+                "before": 45.9,
+                "row": 2373
+              },
+              {
+                "after": 30,
+                "before": 46.2,
+                "row": 2795
+              },
+              {
+                "after": 17.2,
+                "before": 95.0,
+                "row": 3396
+              },
+              {
+                "after": 29.5,
+                "before": 46.0,
+                "row": 3662
+              },
+              {
+                "after": 26.2,
+                "before": 46.0,
+                "row": 3685
+              },
+              {
+                "after": 24.5,
+                "before": 46.1,
+                "row": 3896
+              }
+            ],
+            "column": "bmi",
+            "issue_id": "bmi::numeric_outlier",
+            "issue_type": "numeric_outlier",
+            "replacement_preview": [
+              23.5,
+              30.8,
+              40.2,
+              19.1,
+              30.4,
+              23.9,
+              29.7,
+              24,
+              29.8,
+              28.5,
+              30,
+              17.2,
+              29.5,
+              26.2,
+              24.5
+            ],
+            "resolved_count": 15,
+            "rows_touched": 15,
+            "strategy": {
+              "k_neighbors": 7,
+              "tool_id": "engine.repair_with_gower",
+              "weight_mode": "uniform"
+            }
+          },
+          {
+            "after_count": 0,
+            "before_count": 9,
+            "candidate_confidence": 0.856553,
+            "cells_preview": [
+              {
+                "after": 20,
+                "before": 140.0,
+                "row": 73
+              },
+              {
+                "after": 7,
+                "before": 140.0,
+                "row": 255
+              },
+              {
+                "after": 65,
+                "before": 140.0,
+                "row": 330
+              },
+              {
+                "after": 5,
+                "before": 140.0,
+                "row": 532
+              },
+              {
+                "after": 53,
+                "before": 140.0,
+                "row": 704
+              },
+              {
+                "after": 9,
+                "before": 140.0,
+                "row": 978
+              },
+              {
+                "after": 47,
+                "before": 140.0,
+                "row": 1412
+              },
+              {
+                "after": 25,
+                "before": 140.0,
+                "row": 1851
+              },
+              {
+                "after": 62,
+                "before": 140.0,
+                "row": 2146
+              }
+            ],
+            "column": "age",
+            "issue_id": "age::numeric_outlier",
+            "issue_type": "numeric_outlier",
+            "replacement_preview": [
+              20,
+              7,
+              65,
+              5,
+              53,
+              9,
+              47,
+              25,
+              62
+            ],
+            "resolved_count": 9,
+            "rows_touched": 9,
+            "strategy": {
+              "k_neighbors": 7,
+              "tool_id": "engine.repair_with_gower",
+              "weight_mode": "uniform"
+            }
+          },
+          {
+            "after_count": 0,
+            "before_count": 9,
+            "candidate_confidence": 0.842479,
+            "cells_preview": [
+              {
+                "after": 24.7,
+                "before": null,
+                "row": 14
+              },
+              {
+                "after": 18.9,
+                "before": null,
+                "row": 263
+              },
+              {
+                "after": 27,
+                "before": null,
+                "row": 358
+              },
+              {
+                "after": 28,
+                "before": null,
+                "row": 378
+              },
+              {
+                "after": 21,
+                "before": null,
+                "row": 697
+              },
+              {
+                "after": 19.1,
+                "before": null,
+                "row": 2076
+              },
+              {
+                "after": 34.7,
+                "before": null,
+                "row": 3163
+              },
+              {
+                "after": 25.4,
+                "before": null,
+                "row": 3210
+              },
+              {
+                "after": 30.1,
+                "before": null,
+                "row": 3812
+              }
+            ],
+            "column": "bmi",
+            "issue_id": "bmi::missing_values",
+            "issue_type": "missing_values",
+            "replacement_preview": [
+              24.7,
+              18.9,
+              27,
+              28,
+              21,
+              19.1,
+              34.7,
+              25.4,
+              30.1
+            ],
+            "resolved_count": 9,
+            "rows_touched": 9,
+            "strategy": {
+              "k_neighbors": 7,
+              "tool_id": "engine.repair_with_gower",
+              "weight_mode": "uniform"
+            }
+          },
+          {
+            "after_count": 0,
+            "before_count": 9,
+            "candidate_confidence": 0.844568,
+            "cells_preview": [
+              {
+                "after": "Unknown",
+                "before": null,
+                "row": 1757
+              },
+              {
+                "after": "never smoked",
+                "before": null,
+                "row": 2035
+              },
+              {
+                "after": "never smoked",
+                "before": null,
+                "row": 2050
+              },
+              {
+                "after": "never smoked",
+                "before": null,
+                "row": 2421
+              },
+              {
+                "after": "formerly smoked",
+                "before": null,
+                "row": 2895
+              },
+              {
+                "after": "never smoked",
+                "before": null,
+                "row": 2954
+              },
+              {
+                "after": "never smoked",
+                "before": null,
+                "row": 3334
+              },
+              {
+                "after": "never smoked",
+                "before": null,
+                "row": 3604
+              },
+              {
+                "after": "never smoked",
+                "before": null,
+                "row": 3938
+              }
+            ],
+            "column": "smoking_status",
+            "issue_id": "smoking_status::missing_values",
+            "issue_type": "missing_values",
+            "replacement_preview": [
+              "Unknown",
+              "never smoked",
+              "formerly smoked"
+            ],
+            "resolved_count": 9,
+            "rows_touched": 9,
+            "strategy": {
+              "k_neighbors": 7,
+              "tool_id": "engine.repair_with_gower",
+              "weight_mode": "uniform"
+            }
+          },
+          {
+            "after_count": 0,
+            "before_count": 8,
+            "candidate_confidence": 0.828794,
+            "cells_preview": [
+              {
+                "after": 88.69,
+                "before": null,
+                "row": 367
+              },
+              {
+                "after": 84.43,
+                "before": null,
+                "row": 723
+              },
+              {
+                "after": 75.78,
+                "before": null,
+                "row": 969
+              },
+              {
+                "after": 92.04,
+                "before": null,
+                "row": 1517
+              },
+              {
+                "after": 88.54,
+                "before": null,
+                "row": 1595
+              },
+              {
+                "after": 97.27,
+                "before": null,
+                "row": 1817
+              },
+              {
+                "after": 88.79,
+                "before": null,
+                "row": 1871
+              },
+              {
+                "after": 74.64,
+                "before": null,
+                "row": 4061
+              }
+            ],
+            "column": "avg_glucose_level",
+            "issue_id": "avg_glucose_level::missing_values",
+            "issue_type": "missing_values",
+            "replacement_preview": [
+              88.69,
+              84.43,
+              75.78,
+              92.04,
+              88.54,
+              97.27,
+              88.79,
+              74.64
+            ],
+            "resolved_count": 8,
+            "rows_touched": 8,
+            "strategy": {
+              "k_neighbors": 7,
+              "tool_id": "engine.repair_with_gower",
+              "weight_mode": "uniform"
+            }
+          },
+          {
+            "after_count": 0,
+            "before_count": 7,
+            "candidate_confidence": 0.853848,
+            "cells_preview": [
+              {
+                "after": "never smoked",
+                "before": "__M1_RARE_SMOKING_STATUS_010__",
+                "row": 266
+              },
+              {
+                "after": "never smoked",
+                "before": "__M1_RARE_SMOKING_STATUS_001__",
+                "row": 686
+              },
+              {
+                "after": "never smoked",
+                "before": "__M1_RARE_SMOKING_STATUS_005__",
+                "row": 1681
+              },
+              {
+                "after": "never smoked",
+                "before": "__M1_RARE_SMOKING_STATUS_013__",
+                "row": 1836
+              },
+              {
+                "after": "formerly smoked",
+                "before": "__M1_RARE_SMOKING_STATUS_002__",
+                "row": 1868
+              },
+              {
+                "after": "never smoked",
+                "before": "__M1_RARE_SMOKING_STATUS_008__",
+                "row": 2232
+              },
+              {
+                "after": "never smoked",
+                "before": "__M1_RARE_SMOKING_STATUS_009__",
+                "row": 4099
+              }
+            ],
+            "column": "smoking_status",
+            "issue_id": "smoking_status::rare_category",
+            "issue_type": "rare_category",
+            "replacement_preview": [
+              "never smoked",
+              "formerly smoked"
+            ],
+            "resolved_count": 7,
+            "rows_touched": 7,
+            "strategy": {
+              "k_neighbors": 7,
+              "tool_id": "engine.repair_with_gower",
+              "weight_mode": "uniform"
+            }
+          },
+          {
+            "after_count": 0,
+            "before_count": 6,
+            "candidate_confidence": 0.870802,
+            "cells_preview": [
+              {
+                "after": "children",
+                "before": "__M1_RARE_WORK_TYPE_015__",
+                "row": 263
+              },
+              {
+                "after": "Private",
+                "before": "__M1_RARE_WORK_TYPE_006__",
+                "row": 428
+              },
+              {
+                "after": "children",
+                "before": "__M1_RARE_WORK_TYPE_017__",
+                "row": 1940
+              },
+              {
+                "after": "Self-employed",
+                "before": "__M1_RARE_WORK_TYPE_012__",
+                "row": 2456
+              },
+              {
+                "after": "Private",
+                "before": "__M1_RARE_WORK_TYPE_016__",
+                "row": 2463
+              },
+              {
+                "after": "Private",
+                "before": "__M1_RARE_WORK_TYPE_004__",
+                "row": 3925
+              }
+            ],
+            "column": "work_type",
+            "issue_id": "work_type::rare_category",
+            "issue_type": "rare_category",
+            "replacement_preview": [
+              "children",
+              "Private",
+              "Self-employed"
+            ],
+            "resolved_count": 6,
+            "rows_touched": 6,
+            "strategy": {
+              "k_neighbors": 7,
+              "tool_id": "engine.repair_with_gower",
+              "weight_mode": "uniform"
+            }
+          },
+          {
+            "after_count": 0,
+            "before_count": 5,
+            "candidate_confidence": 0.865178,
+            "cells_preview": [
+              {
+                "after": "Male",
+                "before": "__M1_RARE_GENDER_000__",
+                "row": 969
+              },
+              {
+                "after": "Male",
+                "before": "__M1_RARE_GENDER_014__",
+                "row": 1519
+              },
+              {
+                "after": "Female",
+                "before": "__M1_RARE_GENDER_011__",
+                "row": 2179
+              },
+              {
+                "after": "Male",
+                "before": "__M1_RARE_GENDER_003__",
+                "row": 3440
+              },
+              {
+                "after": "Male",
+                "before": "__M1_RARE_GENDER_007__",
+                "row": 4084
+              }
+            ],
+            "column": "gender",
+            "issue_id": "gender::rare_category",
+            "issue_type": "rare_category",
+            "replacement_preview": [
+              "Male",
+              "Female"
+            ],
+            "resolved_count": 5,
+            "rows_touched": 5,
+            "strategy": {
+              "k_neighbors": 7,
+              "tool_id": "engine.repair_with_gower",
+              "weight_mode": "uniform"
+            }
+          },
+          {
+            "after_count": 0,
+            "before_count": 4,
+            "candidate_confidence": 0.854094,
+            "cells_preview": [
+              {
+                "after": "Private",
+                "before": null,
+                "row": 70
+              },
+              {
+                "after": "Private",
+                "before": null,
+                "row": 269
+              },
+              {
+                "after": "Govt_job",
+                "before": null,
+                "row": 1417
+              },
+              {
+                "after": "Govt_job",
+                "before": null,
+                "row": 3824
+              }
+            ],
+            "column": "work_type",
+            "issue_id": "work_type::missing_values",
+            "issue_type": "missing_values",
+            "replacement_preview": [
+              "Private",
+              "Govt_job"
+            ],
+            "resolved_count": 4,
+            "rows_touched": 4,
+            "strategy": {
+              "k_neighbors": 7,
+              "tool_id": "engine.repair_with_gower",
+              "weight_mode": "uniform"
+            }
+          }
+        ],
+        "comparison": {
+          "after_column_issue_counts": {
+            "avg_glucose_level": 1,
+            "record_start_day": 1,
+            "source_row_id": 1
+          },
+          "after_issue_count": 3,
+          "after_issue_type_counts": {
+            "cross_column_consistency": 1,
+            "duplicate_record": 1,
+            "numeric_outlier": 1
+          },
+          "before_column_issue_counts": {
+            "age": 1,
+            "avg_glucose_level": 2,
+            "bmi": 2,
+            "gender": 1,
+            "record_start_day": 1,
+            "smoking_status": 2,
+            "source_row_id": 1,
+            "work_type": 2
+          },
+          "before_issue_count": 12,
+          "before_issue_type_counts": {
+            "cross_column_consistency": 1,
+            "duplicate_record": 1,
+            "missing_values": 4,
+            "numeric_outlier": 3,
+            "rare_category": 3
+          },
+          "changed_cell_count": 194,
+          "changed_cells_preview": [
+            {
+              "after": 24.7,
+              "before": null,
+              "column": "bmi",
+              "issue_id": "bmi::missing_values",
+              "row": 14
+            },
+            {
+              "after": "Private",
+              "before": null,
+              "column": "work_type",
+              "issue_id": "work_type::missing_values",
+              "row": 70
+            },
+            {
+              "after": 20,
+              "before": 140.0,
+              "column": "age",
+              "issue_id": "age::numeric_outlier",
+              "row": 73
+            },
+            {
+              "after": 23.5,
+              "before": 95.0,
+              "column": "bmi",
+              "issue_id": "bmi::numeric_outlier",
+              "row": 114
+            },
+            {
+              "after": 30.8,
+              "before": 95.0,
+              "column": "bmi",
+              "issue_id": "bmi::numeric_outlier",
+              "row": 148
+            },
+            {
+              "after": 85.59,
+              "before": 157.77,
+              "column": "avg_glucose_level",
+              "issue_id": "avg_glucose_level::numeric_outlier",
+              "row": 149
+            },
+            {
+              "after": 7,
+              "before": 140.0,
+              "column": "age",
+              "issue_id": "age::numeric_outlier",
+              "row": 255
+            },
+            {
+              "after": 18.9,
+              "before": null,
+              "column": "bmi",
+              "issue_id": "bmi::missing_values",
+              "row": 263
+            },
+            {
+              "after": "children",
+              "before": "__M1_RARE_WORK_TYPE_015__",
+              "column": "work_type",
+              "issue_id": "work_type::rare_category",
+              "row": 263
+            },
+            {
+              "after": "never smoked",
+              "before": "__M1_RARE_SMOKING_STATUS_010__",
+              "column": "smoking_status",
+              "issue_id": "smoking_status::rare_category",
+              "row": 266
+            },
+            {
+              "after": "Private",
+              "before": null,
+              "column": "work_type",
+              "issue_id": "work_type::missing_values",
+              "row": 269
+            },
+            {
+              "after": 65,
+              "before": 140.0,
+              "column": "age",
+              "issue_id": "age::numeric_outlier",
+              "row": 330
+            },
+            {
+              "after": 27,
+              "before": null,
+              "column": "bmi",
+              "issue_id": "bmi::missing_values",
+              "row": 358
+            },
+            {
+              "after": 88.69,
+              "before": null,
+              "column": "avg_glucose_level",
+              "issue_id": "avg_glucose_level::missing_values",
+              "row": 367
+            },
+            {
+              "after": 28,
+              "before": null,
+              "column": "bmi",
+              "issue_id": "bmi::missing_values",
+              "row": 378
+            },
+            {
+              "after": "Private",
+              "before": "__M1_RARE_WORK_TYPE_006__",
+              "column": "work_type",
+              "issue_id": "work_type::rare_category",
+              "row": 428
+            },
+            {
+              "after": 106.54,
+              "before": 158.89,
+              "column": "avg_glucose_level",
+              "issue_id": "avg_glucose_level::numeric_outlier",
+              "row": 430
+            },
+            {
+              "after": 82.35,
+              "before": 163.82,
+              "column": "avg_glucose_level",
+              "issue_id": "avg_glucose_level::numeric_outlier",
+              "row": 525
+            },
+            {
+              "after": 5,
+              "before": 140.0,
+              "column": "age",
+              "issue_id": "age::numeric_outlier",
+              "row": 532
+            },
+            {
+              "after": "never smoked",
+              "before": "__M1_RARE_SMOKING_STATUS_001__",
+              "column": "smoking_status",
+              "issue_id": "smoking_status::rare_category",
+              "row": 686
+            }
+          ],
+          "resolved_issue_count": 9
+        },
+        "execution_steps": [],
+        "issue_source_map": {},
+        "selected_issue_count": 10,
+        "selected_issue_ids": [
+          "avg_glucose_level::numeric_outlier",
+          "bmi::numeric_outlier",
+          "age::numeric_outlier",
+          "bmi::missing_values",
+          "smoking_status::missing_values",
+          "avg_glucose_level::missing_values",
+          "smoking_status::rare_category",
+          "work_type::rare_category",
+          "gender::rare_category",
+          "work_type::missing_values"
+        ],
+        "skipped_issues": []
+      },
+      "repairable_ground_truth_count": 72,
+      "resolved_issue_count": 9,
+      "skipped_issue_count": 0,
+      "status": "ok",
+      "strategy": "gower-k-7",
+      "total_cells_modified": 194
+    },
+    "9": {
+      "after_issue_count": 3,
+      "before_issue_count": 12,
+      "by_type": {
+        "missing_values": {
+          "changed_count": 30,
+          "exact_restoration_rate": 0.166667,
+          "exact_restored_count": 5,
+          "ground_truth_count": 30,
+          "improved_or_exact_count": 5,
+          "improved_or_exact_rate": 0.166667
+        },
+        "numeric_outlier": {
+          "changed_count": 24,
+          "exact_restoration_rate": 0.041667,
+          "exact_restored_count": 1,
+          "ground_truth_count": 24,
+          "improved_or_exact_count": 24,
+          "improved_or_exact_rate": 1.0
+        },
+        "rare_category": {
+          "changed_count": 18,
+          "exact_restoration_rate": 0.444444,
+          "exact_restored_count": 8,
+          "ground_truth_count": 18,
+          "improved_or_exact_count": 8,
+          "improved_or_exact_rate": 0.444444
+        }
+      },
+      "engine_total_cells_modified": 194,
+      "exact_restoration_rate": 0.194444,
+      "exact_restored_count": 14,
+      "improved_or_exact_count": 37,
+      "improved_or_exact_rate": 0.513889,
+      "k_neighbors": 9,
+      "mean_neighbor_confidence": 0.844094,
+      "non_ground_truth_cells_modified": 122,
+      "notes": [
+        "repair_with_gower executed with k_neighbors=9."
+      ],
+      "output_csv": "data/experiments/r6_gower_k_sensitivity/k_9/repaired.csv",
+      "repair_summary": {
+        "applied_issue_count": 10,
+        "applied_repairs": [
+          {
+            "after_count": 0,
+            "before_count": 122,
+            "candidate_confidence": 0.832158,
+            "cells_preview": [
+              {
+                "after": 90.43,
+                "before": 157.77,
+                "row": 149
+              },
+              {
+                "after": 97.95,
+                "before": 158.89,
+                "row": 430
+              },
+              {
+                "after": 82.35,
+                "before": 163.82,
+                "row": 525
+              },
+              {
+                "after": 87.86,
+                "before": 420.0,
+                "row": 956
+              },
+              {
+                "after": 93.15,
+                "before": 153.24,
+                "row": 1315
+              },
+              {
+                "after": 80.86,
+                "before": 160.94,
+                "row": 1419
+              },
+              {
+                "after": 99.07,
+                "before": 420.0,
+                "row": 1545
+              },
+              {
+                "after": 80.1,
+                "before": 163.17,
+                "row": 1675
+              },
+              {
+                "after": 80.77,
+                "before": 167.16,
+                "row": 2013
+              },
+              {
+                "after": 83.01,
+                "before": 155.23,
+                "row": 2034
+              },
+              {
+                "after": 105.47,
+                "before": 162.72,
+                "row": 2044
+              },
+              {
+                "after": 80.25,
+                "before": 162.14,
+                "row": 2064
+              },
+              {
+                "after": 80.72,
+                "before": 166.29,
+                "row": 2105
+              },
+              {
+                "after": 88.2,
+                "before": 166.38,
+                "row": 2116
+              },
+              {
+                "after": 95.52,
+                "before": 163.02,
+                "row": 2137
+              },
+              {
+                "after": 75.06,
+                "before": 152.87,
+                "row": 2180
+              },
+              {
+                "after": 78.09,
+                "before": 159.7,
+                "row": 2194
+              },
+              {
+                "after": 77.55,
+                "before": 151.25,
+                "row": 2212
+              },
+              {
+                "after": 99.64,
+                "before": 157.67,
+                "row": 2248
+              },
+              {
+                "after": 89.96,
+                "before": 149.75,
+                "row": 2264
+              }
+            ],
+            "column": "avg_glucose_level",
+            "issue_id": "avg_glucose_level::numeric_outlier",
+            "issue_type": "numeric_outlier",
+            "replacement_preview": [
+              90.43,
+              97.95,
+              82.35,
+              87.86,
+              93.15,
+              80.86,
+              99.07,
+              80.1,
+              80.77,
+              83.01,
+              105.47,
+              80.25,
+              80.72,
+              88.2,
+              95.52,
+              75.06,
+              78.09,
+              77.55,
+              99.64,
+              89.96
+            ],
+            "resolved_count": 122,
+            "rows_touched": 122,
+            "strategy": {
+              "k_neighbors": 9,
+              "tool_id": "engine.repair_with_gower",
+              "weight_mode": "uniform"
+            }
+          },
+          {
+            "after_count": 0,
+            "before_count": 15,
+            "candidate_confidence": 0.834673,
+            "cells_preview": [
+              {
+                "after": 22.2,
+                "before": 95.0,
+                "row": 114
+              },
+              {
+                "after": 30.2,
+                "before": 95.0,
+                "row": 148
+              },
+              {
+                "after": 34,
+                "before": 95.0,
+                "row": 765
+              },
+              {
+                "after": 20.4,
+                "before": 45.8,
+                "row": 818
+              },
+              {
+                "after": 30.4,
+                "before": 95.0,
+                "row": 855
+              },
+              {
+                "after": 26.2,
+                "before": 45.9,
+                "row": 1479
+              },
+              {
+                "after": 29.7,
+                "before": 46.1,
+                "row": 1624
+              },
+              {
+                "after": 27.4,
+                "before": 46.2,
+                "row": 1682
+              },
+              {
+                "after": 29.8,
+                "before": 95.0,
+                "row": 1898
+              },
+              {
+                "after": 28.5,
+                "before": 45.9,
+                "row": 2373
+              },
+              {
+                "after": 30,
+                "before": 46.2,
+                "row": 2795
+              },
+              {
+                "after": 21.2,
+                "before": 95.0,
+                "row": 3396
+              },
+              {
+                "after": 32.5,
+                "before": 46.0,
+                "row": 3662
+              },
+              {
+                "after": 26.2,
+                "before": 46.0,
+                "row": 3685
+              },
+              {
+                "after": 24.5,
+                "before": 46.1,
+                "row": 3896
+              }
+            ],
+            "column": "bmi",
+            "issue_id": "bmi::numeric_outlier",
+            "issue_type": "numeric_outlier",
+            "replacement_preview": [
+              22.2,
+              30.2,
+              34,
+              20.4,
+              30.4,
+              26.2,
+              29.7,
+              27.4,
+              29.8,
+              28.5,
+              30,
+              21.2,
+              32.5,
+              24.5
+            ],
+            "resolved_count": 15,
+            "rows_touched": 15,
+            "strategy": {
+              "k_neighbors": 9,
+              "tool_id": "engine.repair_with_gower",
+              "weight_mode": "uniform"
+            }
+          },
+          {
+            "after_count": 0,
+            "before_count": 9,
+            "candidate_confidence": 0.851955,
+            "cells_preview": [
+              {
+                "after": 23,
+                "before": 140.0,
+                "row": 73
+              },
+              {
+                "after": 5,
+                "before": 140.0,
+                "row": 255
+              },
+              {
+                "after": 65,
+                "before": 140.0,
+                "row": 330
+              },
+              {
+                "after": 5,
+                "before": 140.0,
+                "row": 532
+              },
+              {
+                "after": 44,
+                "before": 140.0,
+                "row": 704
+              },
+              {
+                "after": 9,
+                "before": 140.0,
+                "row": 978
+              },
+              {
+                "after": 47,
+                "before": 140.0,
+                "row": 1412
+              },
+              {
+                "after": 25,
+                "before": 140.0,
+                "row": 1851
+              },
+              {
+                "after": 59,
+                "before": 140.0,
+                "row": 2146
+              }
+            ],
+            "column": "age",
+            "issue_id": "age::numeric_outlier",
+            "issue_type": "numeric_outlier",
+            "replacement_preview": [
+              23,
+              5,
+              65,
+              44,
+              9,
+              47,
+              25,
+              59
+            ],
+            "resolved_count": 9,
+            "rows_touched": 9,
+            "strategy": {
+              "k_neighbors": 9,
+              "tool_id": "engine.repair_with_gower",
+              "weight_mode": "uniform"
+            }
+          },
+          {
+            "after_count": 0,
+            "before_count": 9,
+            "candidate_confidence": 0.83743,
+            "cells_preview": [
+              {
+                "after": 29.7,
+                "before": null,
+                "row": 14
+              },
+              {
+                "after": 18.9,
+                "before": null,
+                "row": 263
+              },
+              {
+                "after": 27,
+                "before": null,
+                "row": 358
+              },
+              {
+                "after": 28,
+                "before": null,
+                "row": 378
+              },
+              {
+                "after": 21,
+                "before": null,
+                "row": 697
+              },
+              {
+                "after": 19.1,
+                "before": null,
+                "row": 2076
+              },
+              {
+                "after": 36.6,
+                "before": null,
+                "row": 3163
+              },
+              {
+                "after": 29.9,
+                "before": null,
+                "row": 3210
+              },
+              {
+                "after": 30.1,
+                "before": null,
+                "row": 3812
+              }
+            ],
+            "column": "bmi",
+            "issue_id": "bmi::missing_values",
+            "issue_type": "missing_values",
+            "replacement_preview": [
+              29.7,
+              18.9,
+              27,
+              28,
+              21,
+              19.1,
+              36.6,
+              29.9,
+              30.1
+            ],
+            "resolved_count": 9,
+            "rows_touched": 9,
+            "strategy": {
+              "k_neighbors": 9,
+              "tool_id": "engine.repair_with_gower",
+              "weight_mode": "uniform"
+            }
+          },
+          {
+            "after_count": 0,
+            "before_count": 9,
+            "candidate_confidence": 0.839959,
+            "cells_preview": [
+              {
+                "after": "Unknown",
+                "before": null,
+                "row": 1757
+              },
+              {
+                "after": "Unknown",
+                "before": null,
+                "row": 2035
+              },
+              {
+                "after": "never smoked",
+                "before": null,
+                "row": 2050
+              },
+              {
+                "after": "Unknown",
+                "before": null,
+                "row": 2421
+              },
+              {
+                "after": "formerly smoked",
+                "before": null,
+                "row": 2895
+              },
+              {
+                "after": "never smoked",
+                "before": null,
+                "row": 2954
+              },
+              {
+                "after": "formerly smoked",
+                "before": null,
+                "row": 3334
+              },
+              {
+                "after": "never smoked",
+                "before": null,
+                "row": 3604
+              },
+              {
+                "after": "never smoked",
+                "before": null,
+                "row": 3938
+              }
+            ],
+            "column": "smoking_status",
+            "issue_id": "smoking_status::missing_values",
+            "issue_type": "missing_values",
+            "replacement_preview": [
+              "Unknown",
+              "never smoked",
+              "formerly smoked"
+            ],
+            "resolved_count": 9,
+            "rows_touched": 9,
+            "strategy": {
+              "k_neighbors": 9,
+              "tool_id": "engine.repair_with_gower",
+              "weight_mode": "uniform"
+            }
+          },
+          {
+            "after_count": 0,
+            "before_count": 8,
+            "candidate_confidence": 0.823334,
+            "cells_preview": [
+              {
+                "after": 88.69,
+                "before": null,
+                "row": 367
+              },
+              {
+                "after": 93.55,
+                "before": null,
+                "row": 723
+              },
+              {
+                "after": 88.54,
+                "before": null,
+                "row": 969
+              },
+              {
+                "after": 88.2,
+                "before": null,
+                "row": 1517
+              },
+              {
+                "after": 87.74,
+                "before": null,
+                "row": 1595
+              },
+              {
+                "after": 97.27,
+                "before": null,
+                "row": 1817
+              },
+              {
+                "after": 90.21,
+                "before": null,
+                "row": 1871
+              },
+              {
+                "after": 74.64,
+                "before": null,
+                "row": 4061
+              }
+            ],
+            "column": "avg_glucose_level",
+            "issue_id": "avg_glucose_level::missing_values",
+            "issue_type": "missing_values",
+            "replacement_preview": [
+              88.69,
+              93.55,
+              88.54,
+              88.2,
+              87.74,
+              97.27,
+              90.21,
+              74.64
+            ],
+            "resolved_count": 8,
+            "rows_touched": 8,
+            "strategy": {
+              "k_neighbors": 9,
+              "tool_id": "engine.repair_with_gower",
+              "weight_mode": "uniform"
+            }
+          },
+          {
+            "after_count": 0,
+            "before_count": 7,
+            "candidate_confidence": 0.848305,
+            "cells_preview": [
+              {
+                "after": "never smoked",
+                "before": "__M1_RARE_SMOKING_STATUS_010__",
+                "row": 266
+              },
+              {
+                "after": "never smoked",
+                "before": "__M1_RARE_SMOKING_STATUS_001__",
+                "row": 686
+              },
+              {
+                "after": "never smoked",
+                "before": "__M1_RARE_SMOKING_STATUS_005__",
+                "row": 1681
+              },
+              {
+                "after": "never smoked",
+                "before": "__M1_RARE_SMOKING_STATUS_013__",
+                "row": 1836
+              },
+              {
+                "after": "formerly smoked",
+                "before": "__M1_RARE_SMOKING_STATUS_002__",
+                "row": 1868
+              },
+              {
+                "after": "never smoked",
+                "before": "__M1_RARE_SMOKING_STATUS_008__",
+                "row": 2232
+              },
+              {
+                "after": "never smoked",
+                "before": "__M1_RARE_SMOKING_STATUS_009__",
+                "row": 4099
+              }
+            ],
+            "column": "smoking_status",
+            "issue_id": "smoking_status::rare_category",
+            "issue_type": "rare_category",
+            "replacement_preview": [
+              "never smoked",
+              "formerly smoked"
+            ],
+            "resolved_count": 7,
+            "rows_touched": 7,
+            "strategy": {
+              "k_neighbors": 9,
+              "tool_id": "engine.repair_with_gower",
+              "weight_mode": "uniform"
+            }
+          },
+          {
+            "after_count": 0,
+            "before_count": 6,
+            "candidate_confidence": 0.864672,
+            "cells_preview": [
+              {
+                "after": "children",
+                "before": "__M1_RARE_WORK_TYPE_015__",
+                "row": 263
+              },
+              {
+                "after": "Private",
+                "before": "__M1_RARE_WORK_TYPE_006__",
+                "row": 428
+              },
+              {
+                "after": "children",
+                "before": "__M1_RARE_WORK_TYPE_017__",
+                "row": 1940
+              },
+              {
+                "after": "Private",
+                "before": "__M1_RARE_WORK_TYPE_012__",
+                "row": 2456
+              },
+              {
+                "after": "Private",
+                "before": "__M1_RARE_WORK_TYPE_016__",
+                "row": 2463
+              },
+              {
+                "after": "Private",
+                "before": "__M1_RARE_WORK_TYPE_004__",
+                "row": 3925
+              }
+            ],
+            "column": "work_type",
+            "issue_id": "work_type::rare_category",
+            "issue_type": "rare_category",
+            "replacement_preview": [
+              "children",
+              "Private"
+            ],
+            "resolved_count": 6,
+            "rows_touched": 6,
+            "strategy": {
+              "k_neighbors": 9,
+              "tool_id": "engine.repair_with_gower",
+              "weight_mode": "uniform"
+            }
+          },
+          {
+            "after_count": 0,
+            "before_count": 5,
+            "candidate_confidence": 0.859461,
+            "cells_preview": [
+              {
+                "after": "Male",
+                "before": "__M1_RARE_GENDER_000__",
+                "row": 969
+              },
+              {
+                "after": "Male",
+                "before": "__M1_RARE_GENDER_014__",
+                "row": 1519
+              },
+              {
+                "after": "Female",
+                "before": "__M1_RARE_GENDER_011__",
+                "row": 2179
+              },
+              {
+                "after": "Female",
+                "before": "__M1_RARE_GENDER_003__",
+                "row": 3440
+              },
+              {
+                "after": "Male",
+                "before": "__M1_RARE_GENDER_007__",
+                "row": 4084
+              }
+            ],
+            "column": "gender",
+            "issue_id": "gender::rare_category",
+            "issue_type": "rare_category",
+            "replacement_preview": [
+              "Male",
+              "Female"
+            ],
+            "resolved_count": 5,
+            "rows_touched": 5,
+            "strategy": {
+              "k_neighbors": 9,
+              "tool_id": "engine.repair_with_gower",
+              "weight_mode": "uniform"
+            }
+          },
+          {
+            "after_count": 0,
+            "before_count": 4,
+            "candidate_confidence": 0.848989,
+            "cells_preview": [
+              {
+                "after": "Private",
+                "before": null,
+                "row": 70
+              },
+              {
+                "after": "Private",
+                "before": null,
+                "row": 269
+              },
+              {
+                "after": "Govt_job",
+                "before": null,
+                "row": 1417
+              },
+              {
+                "after": "Govt_job",
+                "before": null,
+                "row": 3824
+              }
+            ],
+            "column": "work_type",
+            "issue_id": "work_type::missing_values",
+            "issue_type": "missing_values",
+            "replacement_preview": [
+              "Private",
+              "Govt_job"
+            ],
+            "resolved_count": 4,
+            "rows_touched": 4,
+            "strategy": {
+              "k_neighbors": 9,
+              "tool_id": "engine.repair_with_gower",
+              "weight_mode": "uniform"
+            }
+          }
+        ],
+        "comparison": {
+          "after_column_issue_counts": {
+            "avg_glucose_level": 1,
+            "record_start_day": 1,
+            "source_row_id": 1
+          },
+          "after_issue_count": 3,
+          "after_issue_type_counts": {
+            "cross_column_consistency": 1,
+            "duplicate_record": 1,
+            "numeric_outlier": 1
+          },
+          "before_column_issue_counts": {
+            "age": 1,
+            "avg_glucose_level": 2,
+            "bmi": 2,
+            "gender": 1,
+            "record_start_day": 1,
+            "smoking_status": 2,
+            "source_row_id": 1,
+            "work_type": 2
+          },
+          "before_issue_count": 12,
+          "before_issue_type_counts": {
+            "cross_column_consistency": 1,
+            "duplicate_record": 1,
+            "missing_values": 4,
+            "numeric_outlier": 3,
+            "rare_category": 3
+          },
+          "changed_cell_count": 194,
+          "changed_cells_preview": [
+            {
+              "after": 29.7,
+              "before": null,
+              "column": "bmi",
+              "issue_id": "bmi::missing_values",
+              "row": 14
+            },
+            {
+              "after": "Private",
+              "before": null,
+              "column": "work_type",
+              "issue_id": "work_type::missing_values",
+              "row": 70
+            },
+            {
+              "after": 23,
+              "before": 140.0,
+              "column": "age",
+              "issue_id": "age::numeric_outlier",
+              "row": 73
+            },
+            {
+              "after": 22.2,
+              "before": 95.0,
+              "column": "bmi",
+              "issue_id": "bmi::numeric_outlier",
+              "row": 114
+            },
+            {
+              "after": 30.2,
+              "before": 95.0,
+              "column": "bmi",
+              "issue_id": "bmi::numeric_outlier",
+              "row": 148
+            },
+            {
+              "after": 90.43,
+              "before": 157.77,
+              "column": "avg_glucose_level",
+              "issue_id": "avg_glucose_level::numeric_outlier",
+              "row": 149
+            },
+            {
+              "after": 5,
+              "before": 140.0,
+              "column": "age",
+              "issue_id": "age::numeric_outlier",
+              "row": 255
+            },
+            {
+              "after": 18.9,
+              "before": null,
+              "column": "bmi",
+              "issue_id": "bmi::missing_values",
+              "row": 263
+            },
+            {
+              "after": "children",
+              "before": "__M1_RARE_WORK_TYPE_015__",
+              "column": "work_type",
+              "issue_id": "work_type::rare_category",
+              "row": 263
+            },
+            {
+              "after": "never smoked",
+              "before": "__M1_RARE_SMOKING_STATUS_010__",
+              "column": "smoking_status",
+              "issue_id": "smoking_status::rare_category",
+              "row": 266
+            },
+            {
+              "after": "Private",
+              "before": null,
+              "column": "work_type",
+              "issue_id": "work_type::missing_values",
+              "row": 269
+            },
+            {
+              "after": 65,
+              "before": 140.0,
+              "column": "age",
+              "issue_id": "age::numeric_outlier",
+              "row": 330
+            },
+            {
+              "after": 27,
+              "before": null,
+              "column": "bmi",
+              "issue_id": "bmi::missing_values",
+              "row": 358
+            },
+            {
+              "after": 88.69,
+              "before": null,
+              "column": "avg_glucose_level",
+              "issue_id": "avg_glucose_level::missing_values",
+              "row": 367
+            },
+            {
+              "after": 28,
+              "before": null,
+              "column": "bmi",
+              "issue_id": "bmi::missing_values",
+              "row": 378
+            },
+            {
+              "after": "Private",
+              "before": "__M1_RARE_WORK_TYPE_006__",
+              "column": "work_type",
+              "issue_id": "work_type::rare_category",
+              "row": 428
+            },
+            {
+              "after": 97.95,
+              "before": 158.89,
+              "column": "avg_glucose_level",
+              "issue_id": "avg_glucose_level::numeric_outlier",
+              "row": 430
+            },
+            {
+              "after": 82.35,
+              "before": 163.82,
+              "column": "avg_glucose_level",
+              "issue_id": "avg_glucose_level::numeric_outlier",
+              "row": 525
+            },
+            {
+              "after": 5,
+              "before": 140.0,
+              "column": "age",
+              "issue_id": "age::numeric_outlier",
+              "row": 532
+            },
+            {
+              "after": "never smoked",
+              "before": "__M1_RARE_SMOKING_STATUS_001__",
+              "column": "smoking_status",
+              "issue_id": "smoking_status::rare_category",
+              "row": 686
+            }
+          ],
+          "resolved_issue_count": 9
+        },
+        "execution_steps": [],
+        "issue_source_map": {},
+        "selected_issue_count": 10,
+        "selected_issue_ids": [
+          "avg_glucose_level::numeric_outlier",
+          "bmi::numeric_outlier",
+          "age::numeric_outlier",
+          "bmi::missing_values",
+          "smoking_status::missing_values",
+          "avg_glucose_level::missing_values",
+          "smoking_status::rare_category",
+          "work_type::rare_category",
+          "gender::rare_category",
+          "work_type::missing_values"
+        ],
+        "skipped_issues": []
+      },
+      "repairable_ground_truth_count": 72,
+      "resolved_issue_count": 9,
+      "skipped_issue_count": 0,
+      "status": "ok",
+      "strategy": "gower-k-9",
+      "total_cells_modified": 194
+    }
+  },
+  "k_values": [
+    3,
+    5,
+    7,
+    9,
+    15
+  ],
+  "milestone": "R6",
+  "notes": [
+    "R6 is a side experiment and does not overwrite M1-M3 outputs.",
+    "All K metrics are computed from actual repaired CSV outputs.",
+    "Failed K values are reported with failure reasons instead of fabricated metrics."
+  ],
+  "scan_config": {
+    "consistency_rules": [
+      {
+        "left_col": "record_start_day",
+        "name": "record_start_before_end",
+        "right_col": "record_end_day",
+        "type": "lte"
+      }
+    ],
+    "duplicate_subset": [
+      "source_row_id"
+    ],
+    "enable_cross_column_consistency": true,
+    "enable_duplicate_record": true,
+    "enable_time_series_shift": false,
+    "max_issues": 1000,
+    "preview_limit": 20
+  },
+  "selected_issue_ids": [
+    "avg_glucose_level::numeric_outlier",
+    "bmi::numeric_outlier",
+    "age::numeric_outlier",
+    "bmi::missing_values",
+    "smoking_status::missing_values",
+    "avg_glucose_level::missing_values",
+    "smoking_status::rare_category",
+    "work_type::rare_category",
+    "gender::rare_category",
+    "work_type::missing_values"
+  ],
+  "source": {
+    "clean_csv": "data/experiments/m1_stroke/clean.csv",
+    "corrupted_csv": "data/experiments/m1_stroke/corrupted.csv",
+    "ground_truth_csv": "data/experiments/m1_stroke/ground_truth.csv",
+    "m1_dir": "data/experiments/m1_stroke"
+  }
+}

@@ -97,6 +97,13 @@ def _issue_ids_by_type(scan_result: dict[str, object]) -> dict[str, list[str]]:
     return grouped
 
 
+def _issue_by_type_and_column(scan_result: dict[str, object], issue_type: str, column: str) -> dict[str, object]:
+    for issue in scan_result["issues"]:  # type: ignore[index]
+        if issue["issue_type"] == issue_type and issue["column"] == column:
+            return issue
+    raise AssertionError(f"missing issue type={issue_type} column={column}")
+
+
 def test_m4_scan_file_fixed_mixed_issue_contract(tmp_path: Path) -> None:
     csv_path = tmp_path / "mixed_scan.csv"
     _write_mixed_regression_csv(csv_path)
@@ -127,6 +134,62 @@ def test_m4_scan_file_fixed_mixed_issue_contract(tmp_path: Path) -> None:
         assert "explain_features" in issue
         assert "detail" in issue
         assert "segments" in issue
+
+
+def test_m4_scan_file_numeric_outlier_risk_layers(tmp_path: Path) -> None:
+    csv_path = tmp_path / "outlier_risk_layers.csv"
+    base_values = list(range(10, 20)) * 5
+    pd.DataFrame(
+        {
+            "mild_metric": base_values + [26, 15, 14, 13],
+            "extreme_metric": base_values + [95, 14, 13, 12],
+            "mixed_metric": base_values + [27, 28, 95, 14],
+            "missing_metric": base_values + [np.nan, 14, 13, 12],
+        }
+    ).to_csv(csv_path, index=False)
+
+    response = _run_engine(
+        {
+            "task_id": "m4-outlier-risk-layers",
+            "action": "scan_file",
+            "payload": {
+                "csv_path": str(csv_path),
+                "scan_config": {
+                    "max_bins": 40,
+                    "max_issues": 500,
+                    "enable_time_series_shift": False,
+                    "enable_cross_column_consistency": False,
+                    "enable_duplicate_record": False,
+                },
+            },
+        }
+    )
+
+    assert response["status"] == "ok"
+    result = response["result"]
+    mild_issue = _issue_by_type_and_column(result, "numeric_outlier", "mild_metric")
+    extreme_issue = _issue_by_type_and_column(result, "numeric_outlier", "extreme_metric")
+    mixed_issue = _issue_by_type_and_column(result, "numeric_outlier", "mixed_metric")
+    missing_issue = _issue_by_type_and_column(result, "missing_values", "missing_metric")
+
+    assert mild_issue["outlier_risk_level"] == "mild"
+    assert mild_issue["auto_repair_eligible"] is False
+    assert "outlier_evidence" in mild_issue
+    assert mild_issue["outlier_evidence"]["risk_counts"]["mild"] >= 1  # type: ignore[index]
+
+    assert extreme_issue["outlier_risk_level"] == "extreme"
+    assert extreme_issue["auto_repair_eligible"] is True
+    assert extreme_issue["outlier_evidence"]["risk_counts"]["extreme"] >= 1  # type: ignore[index]
+
+    assert mixed_issue["outlier_risk_level"] == "extreme"
+    assert mixed_issue["auto_repair_eligible"] is False
+    assert mixed_issue["outlier_policy_reason"] == "mixed_outlier_mild_or_tie_prompt_only"
+    mixed_evidence = mixed_issue["outlier_evidence"]
+    assert mixed_evidence["risk_counts"]["mild"] >= mixed_evidence["risk_counts"]["extreme"]  # type: ignore[index]
+    assert mixed_evidence["both_iqr_and_robust_hits"] >= 1  # type: ignore[index]
+
+    for key in ("outlier_risk_level", "auto_repair_eligible", "outlier_policy_reason", "outlier_evidence"):
+        assert key not in missing_issue
 
 
 def test_m4_repair_batch_applies_selected_issues_and_skips_manual_review(tmp_path: Path) -> None:

@@ -290,16 +290,27 @@ func deterministicReasonCodes(buckets issuePlanBuckets, selectedSource string) [
 }
 
 func deterministicRiskNote(buckets issuePlanBuckets) string {
+	notes := []string{}
 	if len(buckets.CautiousIssueIDs)+len(buckets.ManualReviewIssueIDs)+len(buckets.BlockedIssueIDs) == 0 {
-		return "Only deterministic low-risk issue types are selected for automatic execution."
+		if len(buckets.NumericOutlierIssueIDs) > 0 {
+			notes = append(notes, "Only deterministic policy-approved issue types are selected for automatic execution.")
+		} else {
+			notes = append(notes, "Only deterministic low-risk issue types are selected for automatic execution.")
+		}
+	} else {
+		notes = append(notes, fmt.Sprintf(
+			"Automatic execution is limited to %d low-risk issues; %d cautious, %d manual-review, and %d blocked issues remain outside the write payload.",
+			len(buckets.AutoRepairIssueIDs),
+			len(buckets.CautiousIssueIDs),
+			len(buckets.ManualReviewIssueIDs),
+			len(buckets.BlockedIssueIDs),
+		))
 	}
-	return fmt.Sprintf(
-		"Automatic execution is limited to %d low-risk issues; %d cautious, %d manual-review, and %d blocked issues remain outside the write payload.",
-		len(buckets.AutoRepairIssueIDs),
-		len(buckets.CautiousIssueIDs),
-		len(buckets.ManualReviewIssueIDs),
-		len(buckets.BlockedIssueIDs),
-	)
+	if len(buckets.NumericOutlierIssueIDs) > 0 {
+		notes = append(notes, numericOutlierMildRiskNote+".")
+		notes = append(notes, numericOutlierAutoRepairRestrictedRiskNote+".")
+	}
+	return strings.Join(notes, " ")
 }
 
 func deterministicExplanationBullets(buckets issuePlanBuckets, selectedCandidate RepairCandidate) []string {
@@ -309,6 +320,9 @@ func deterministicExplanationBullets(buckets issuePlanBuckets, selectedCandidate
 	}
 	if len(buckets.CautiousIssueIDs) > 0 {
 		bullets = append(bullets, fmt.Sprintf("%d numeric_outlier issues are marked cautious and excluded from automatic write payloads.", len(buckets.CautiousIssueIDs)))
+	}
+	if len(buckets.NumericOutlierIssueIDs) > 0 {
+		bullets = append(bullets, numericOutlierAutoRepairRestrictedRiskNote+".")
 	}
 	if len(buckets.ManualReviewIssueIDs) > 0 {
 		bullets = append(bullets, fmt.Sprintf("%d duplicate or cross-column issues require manual review.", len(buckets.ManualReviewIssueIDs)))

@@ -1,6 +1,6 @@
 ﻿# MEMO
 
-Last updated: 2026-05-05 09:42:18 +08:00
+Last updated: 2026-05-11 14:16:30 +08:00
 
 ## 椤圭洰鎬荤洰鏍?
 - 灏嗏€滄贩鍚堟暟鎹被鍨嬪紓甯告娴嬩笌淇鈥濋」鐩粠绠楁硶鍘熷瀷鎺ㄨ繘涓哄彲浜や粯銆佸彲婕旂ず銆佸彲娴嬭瘯鐨勬闈㈠簲鐢ㄣ€?- 浠?`appshell/` 浣滀负浜у搧鍖栦富璺緞锛屽舰鎴?`Python Engine + Go Backend + Wails Frontend` 鐨勭ǔ瀹氭灦鏋勩€?- 淇濈暀 `app.py` 浣滀负鏃х増 Streamlit 婕旂ず鍏ュ彛锛岀敤浜庣畻娉曢獙璇併€佺粨鏋滃鐓у拰绛旇京灞曠ず銆?- 閫愭琛ラ綈鐪熷疄鐢ㄦ埛闂幆锛氬鍏?CSV -> 璁粌/鎵弿 -> 闂绛涢€?-> 鎵归噺淇 -> 鍥炴粴 -> 鍘嗗彶鏌ョ湅銆?- 鍦ㄤ繚鐣欑幇鏈夌畻娉曡祫浜т笌宸ョ▼楠ㄦ灦鐨勫墠鎻愪笅锛岄€愭鍗囩骇涓衡€滃 agent 鍐崇瓥灞?+ 纭畾鎬у伐鍏峰眰鈥濈殑鏅鸿兘鍖栦骇鍝併€?- 鏈€缁堢洰鏍囨槸璁╃敤鎴峰敖閲忓彧闇€閫夋嫨鏂囦欢锛屽嵆鍙嚜鍔ㄨ幏寰楁壂鎻忋€佷慨澶嶃€侀獙璇併€佸洖婊氫繚鎶ゅ拰鍥捐〃鍖栬В閲婄粨鏋溿€?
@@ -1409,3 +1409,249 @@ Last updated: 2026-05-05 09:42:18 +08:00
   - 当前本地未配置 live LLM，因此完整 benchmark 的 `fallback_rate=1.0`，fallback reason 为 `planner_mode_fallback`；这验证的是无 LLM 配置下的 deterministic fallback 稳定性。若需要 live LLM 多数据集结果，需要在私密环境变量中配置 API key 后重跑，仍不得提交 key 或原始日志。
   - 完整 benchmark 产物位于 ignored `outputs/auto_agent/multi_dataset_benchmark_20260506/` 下；如需答辩归档，建议只复制脱敏后的 summary 摘要，不提交 run logs、SQLite、repaired CSV 或大体积输出。
   - 当前分支仍包含多轮 Auto Agent 相关未提交改动；提交前需要复查 diff，确认没有 API key、无关文件或 ignored outputs 被加入版本控制。
+## Update 2026-05-07 18:28:00
+
+- 改动日期：2026-05-07 18:28:00 +08:00
+- 改动内容简述：新增技术面试准备手册 `INTERVIEW_PREP.md`，将项目定位、架构、算法策略、工程亮点、实验指标、Auto Agent 扩展、局限与高频问答整理为一份可独立阅读的中文面试材料；本次只做文档整理，不修改代码、不修改实验结果、不修改 Python engine action 协议、不修改 Go API 或数据 schema。
+- 最终目标：帮助面试时用一个 Markdown 文件讲清“混合类型数据异常检测与修复系统”的主线价值、个人贡献、关键指标、真实边界和可追问答案。
+- 当前采用的方法：
+  - 先阅读 `MEMO.md` 最近完成情况，确认当前主线已经完成 M0-M6，后续 Auto Agent 增强已形成 live / fallback / multi-dataset benchmark 记录。
+  - 以技术面试为主口径，把毕业设计主贡献与 Auto Agent 加分扩展分开表达：主贡献强调检测、修复、验证、回滚闭环；扩展强调 deterministic fallback、LangGraph/LLM planner、validation gate、trace 和 benchmark。
+  - 文档中的关键数字只引用已有材料中的真实结果，包括 M1 注入数据、M2 检测指标、M3 修复指标、Auto Agent live benchmark、fallback benchmark 和 multi-dataset benchmark。
+  - 明确写入项目局限：numeric outlier 误报较多、重复记录和跨列一致性默认人工复核、Wails/Windows 安装包不是当前最稳主演示路径、LLM live 路径耗时较高且必须保留 fallback。
+- 相关模块/文件：
+  - `INTERVIEW_PREP.md`
+  - `MEMO.md`
+- 已解决的问题 / 新增功能：
+  - 新增一份可作为面试前主复习材料的中文 Markdown，包含 30 秒 / 2 分钟 / 5 分钟项目介绍话术。
+  - 补齐面试视角下的项目一句话定位、输入输出、系统架构图、核心流程、action 协议、算法策略、工程亮点、实验指标、高频问答、简历 bullet 和收尾话术。
+  - 将 Auto Agent 作为加分扩展而不是主贡献夸大，明确 LLM 只做规划和解释，真实修复仍由确定性工具层执行。
+  - 避免写入 API key、原始 live log、SQLite、repaired CSV 或 ignored outputs 中的大体积产物。
+- 验证命令：
+  - `git diff --check`
+- 当前问题 / 待处理事项：
+  - 本次为文档改动，未运行 Python / Go 全量测试；原因是没有触碰代码、协议、测试或实验数据。
+  - 面试前建议人工通读 `INTERVIEW_PREP.md`，根据目标岗位再压缩成 3-5 个最想主动讲的亮点。
+
+## Update 2026-05-09 20:46:14
+
+- 改动日期：2026-05-09 20:46:14 +08:00
+- 改动内容简述：完成 R2 numeric_outlier 风险分层，在 `scan_file` 的数值离群 issue 输出中 additive 增加 `mild / strong / extreme` 风险标签、自动修复候选标记、策略原因和行级证据摘要；本次不改变检测阈值、issue 数量、`issue_id`、action 名称、`repair_batch` 核心修复逻辑或 M1-M3 已生成实验结果。
+- 最终目标：为后续 R3 Auto Agent planner 风险策略收紧和 R4 validation gate 副作用约束提供稳定、可解释的 outlier 风险输入，使系统能区分“统计上略微越界但可能真实”的 mild outlier 和明显极端的 strong/extreme outlier。
+- 当前采用的方法：
+  - 在 Python engine 的 numeric outlier 检测阶段，对每个 outlier 行计算 IQR 命中、robust z-score 命中、超出边界的绝对距离、相对距离、robust z 值和行级风险。
+  - issue 级采用保守混合策略：`outlier_risk_level` 展示最高行级风险，但只有 `strong + extreme` 行数严格多于 `mild` 行数时，`auto_repair_eligible` 才为 `true`。
+  - 只对 `numeric_outlier` issue 增加 `outlier_risk_level`、`auto_repair_eligible`、`outlier_policy_reason`、`outlier_evidence`；非 numeric outlier issue 不带这些字段，保持旧输出兼容。
+- 相关模块/文件：
+  - `appshell/core/python_engine/engine_core.py`
+  - `tests/python_engine/test_m4_core_regression.py`
+  - `MEMO.md`
+- 已解决的问题 / 新增功能：
+  - mild outlier 默认标记为 `mild` 且 `auto_repair_eligible=false`，用于提示但不鼓励无脑自动修。
+  - extreme outlier 可标记为 `extreme` 且在强/极端行占主导时 `auto_repair_eligible=true`，后续仍需 validation gate。
+  - 混合 outlier issue 会保留最高风险展示，但当 mild 行数不小于 strong/extreme 行数时保持 `auto_repair_eligible=false`，避免少量极端值带动整列轻微高值一起自动修。
+  - 新增 M4 回归测试覆盖 mild、extreme、混合保守策略、字段存在性和非 numeric outlier 不受影响。
+- 验证命令：
+  - `.\.venv-win\Scripts\python.exe -m py_compile appshell\core\python_engine\engine_core.py tests\python_engine\test_m4_core_regression.py`
+  - `.\.venv-win\Scripts\python.exe -m pytest tests\python_engine\test_m4_core_regression.py -q`
+  - `.\.venv-win\Scripts\python.exe -m pytest tests\python_engine -q`
+- 验收结果：
+  - `py_compile`：通过。
+  - M4 targeted 回归：`7 passed, 12 warnings`。
+  - Python engine 全量回归：`44 passed, 12 warnings`。
+- 当前问题 / 待处理事项：
+  - R2 只新增 scan 输出风险标签，不修改 Auto Agent planner 分流；planner 使用 `outlier_risk_level` / `auto_repair_eligible` 收紧自动执行策略属于 R3。
+  - R2 不修改 validation gate；对 mild outlier 被自动修改、changed_cell_count 与实际收益不匹配等副作用约束属于 R4。
+  - 本次未重新生成 M2/M3 实验指标，旧结果继续作为 numeric_outlier 误报和误修风险的对照基线。
+
+## Update 2026-05-11 09:42:54 +08:00
+
+- 改动日期：2026-05-11 09:42:54 +08:00
+- 改动内容简述：完成 R3 Auto Agent planner 风险策略收紧，让 Go 侧 deterministic planner 使用 R2 的 `numeric_outlier` 风险分层字段决定是否进入自动修复候选；本次不修改 Python Engine action 协议、不修改 M1-M3 已生成实验结果、不新增依赖、不修改核心修复算法。
+- 最终目标：在保留 missing values 与 rare category 自动修复能力的同时，避免 Auto Agent 将轻微或不确定的数值离群误报直接送入 `repair_batch` / `repair_with_gower` 写出 payload，从 planner 层切断 numeric_outlier 误报到误修的传导链。
+- 当前采用的方法：
+  - planner 分桶从单纯按 `issue_type` 改为读取 scan issue 中的 `outlier_risk_level` 与 `auto_repair_eligible`。
+  - `numeric_outlier.mild` 固定进入 cautious，原因记录为 `numeric_outlier_mild_prompt_only`。
+  - `numeric_outlier.strong` 默认进入 cautious，原因记录为 `numeric_outlier_strong_requires_review`，本阶段不新增用户策略开关。
+  - 缺失或未知风险层级的 `numeric_outlier` 默认进入 cautious，原因记录为 `numeric_outlier_missing_risk_level_cautious`。
+  - 只有 `numeric_outlier.extreme` 且 `auto_repair_eligible=true` 时才进入自动修复候选；否则进入 cautious 并记录 `numeric_outlier_extreme_requires_validation_or_review`。
+  - deterministic `risk_note` 和 explanation bullets 固定保留 numeric outlier 风险口径：mild 统计离群不一定是数据错误，自动修复仅限 eligible extreme cases。
+  - LangGraph / LLM planner 仍只能从 deterministic base plan 的候选中选择，并会合并 deterministic risk note，不能用 LLM 文本覆盖 numeric_outlier 风险底线。
+- 相关模块/文件：
+  - `appshell/backend/internal/agent/planning_support.go`
+  - `appshell/backend/internal/agent/mock_planner.go`
+  - `appshell/backend/internal/agent/langgraph_planner.go`
+  - `appshell/backend/internal/agent/planning_support_test.go`
+  - `appshell/backend/internal/agent/mock_planner_test.go`
+  - `appshell/backend/internal/agent/langgraph_planner_test.go`
+  - `MEMO.md`
+- 已解决的问题 / 新增功能：
+  - mild / strong / unknown numeric_outlier 不再进入 Auto Agent 自动写出候选。
+  - eligible extreme numeric_outlier 可以进入候选，但 plan 中保留风险说明，后续仍需 validation gate。
+  - missing_values 与 rare_category 行为保持不变，仍默认进入自动修复候选。
+  - duplicate_record 与 cross_column_consistency 继续 manual review，不自动修。
+  - LangGraph overlay 无法抹掉 deterministic numeric_outlier risk note，降低 LLM 解释层绕过规则的风险。
+- 验证命令：
+  - `$env:PATH = (Resolve-Path '.\.venv-win\Scripts').Path + ';' + $env:PATH; Push-Location appshell\backend; go test ./internal/agent; Pop-Location`
+  - `$env:PATH = (Resolve-Path '.\.venv-win\Scripts').Path + ';' + $env:PATH; Push-Location appshell\backend; go test ./internal/agent ./internal/task ./internal/engine ./cmd/wails; Pop-Location`
+- 验收结果：
+  - Go agent targeted 回归：`ok appshell/backend/internal/agent`。
+  - Go 完整指定回归：`ok` for `./internal/agent ./internal/task ./internal/engine ./cmd/wails`。
+- 当前问题 / 待处理事项：
+  - R3 只收紧 planner 分流，不修改 validation gate；对 mild outlier 被自动修改、修改过多正常单元格、收益与副作用不匹配的 warn/reject 属于 R4。
+  - 本次未重新生成 M2/M3 指标；旧指标继续作为 numeric_outlier 误报和误修风险的基线证据。
+  - 当前 R1/R2/R3 仍处于本地未提交工作区状态，推送 GitHub 前需要统一审查 diff 并确认不包含无关实验产物。
+
+## Update 2026-05-11 09:55:22 +08:00
+
+- 改动日期：2026-05-11 09:55:22 +08:00
+- 改动内容简述：完成 R4 Validation Gate 副作用约束增强，让 post-execute validation 不只看 issue count 是否下降，还检查 mild numeric_outlier 自动修复、修改/收益比例、numeric_outlier 修改占比和 rollback 可用性；本次不修改 Python Engine、不修改 M1-M3 已生成实验结果、不新增依赖。
+- 最终目标：在 R2 风险分层和 R3 planner 保守分流之后，继续在 validation gate 层拦截误修或副作用过高的自动修复结果，形成 scan -> planner -> validation 的三层风险控制闭环。
+- 当前采用的方法：
+  - 保留既有兼容字段与 verdict 语义：明显变差或高风险违规 `reject`，rollback metadata 缺失保持 `rollback_recommended`，副作用偏多但仍有改善时 `warn`，低风险且改善可控时 `accept`。
+  - 对 baseline scan 中 `issue_type=numeric_outlier` 且 `outlier_risk_level=mild` 的 issue，如果出现在实际 applied issue ids 中，新增 `mild_numeric_outlier_auto_repaired` 风险并直接 reject。
+  - 采用 M3 校准阈值：`modified_cell_count / resolved_issue_items > 10` 且 `modified_cell_count >= 50` 时新增 `modified_cell_count_high_relative_to_resolved` 并 warn。
+  - 当 numeric_outlier 修改单元格数 `>=20` 且占总修改量 `>=50%` 时新增 `numeric_outlier_modification_share_high` 并 warn，风险说明写入 `side_effect_notes`：`numeric_outlier repairs changed many cells; manual review is recommended`。
+  - 新增 numeric_outlier 修改统计 helper，优先读取 `applied_repairs[*].rows_touched / resolved_count / before_count`，缺失时从 hybrid `execution_steps[*].selected_issue_ids` 与 step comparison 做保守汇总。
+  - post validation summary 兼容性新增 `acceptance_reason`、`modified_to_resolved_ratio`、`numeric_outlier_modification_summary`、`rollback_availability` 和 `side_effect_notes`，并补充 metric definitions。
+- 相关模块/文件：
+  - `appshell/backend/internal/agent/validation_gate.go`
+  - `appshell/backend/internal/agent/validation_gate_test.go`
+  - `MEMO.md`
+- 已解决的问题 / 新增功能：
+  - issue count 上升继续 reject。
+  - manual review issue 自动修复继续 reject。
+  - mild numeric_outlier 自动修复现在直接 reject，避免统计轻微离群被无脑 clip。
+  - 修改量相对解决问题数过高时 warn，覆盖 M3 中类似 `194 modified / 8 resolved` 的副作用模式。
+  - numeric_outlier 修改占比过高时 warn，并明确建议人工复核。
+  - accept / warn / reject / rollback_recommended 输出都包含更清晰的接收原因、副作用比例、numeric_outlier 修改摘要和 rollback 可用性。
+- 验证命令：
+  - `$env:PATH = (Resolve-Path '.\.venv-win\Scripts').Path + ';' + $env:PATH; Push-Location appshell\backend; go test ./internal/agent; Pop-Location`
+  - `$env:PATH = (Resolve-Path '.\.venv-win\Scripts').Path + ';' + $env:PATH; Push-Location appshell\backend; go test ./internal/agent ./cmd/wails; Pop-Location`
+- 验收结果：
+  - Go agent targeted 回归：`ok appshell/backend/internal/agent`。
+  - Go 指定回归：`ok` for `./internal/agent ./cmd/wails`。
+- 当前问题 / 待处理事项：
+  - R4 只增强 validation gate，不重新生成 M2/M3 指标；旧指标继续作为风险增强前的对照基线。
+  - R5 可继续做 rule / gower / hybrid 在风险分层后的对比实验，观察副作用 warn 是否减少。
+  - R6 可继续做 Gower K 敏感性实验，评估 numeric_outlier 修复质量与副作用之间的权衡。
+  - 当前 R1-R4 仍处于本地未提交工作区状态，推送 GitHub 前需要统一审查 diff 并确认不包含无关实验产物。
+
+## Update 2026-05-11 10:17:13 +08:00
+
+- 改动日期：2026-05-11 10:17:13 +08:00
+- 改动内容简述：完成 R5 rule / Gower / hybrid 修复策略对比实验脚本和真实旁路实验输出；本次只新增 R5 脚本、轻量测试和 `data/experiments/r5_repair_strategy_comparison/` 输出，不修改 M1-M3 既有目录内容、不覆盖 `data/experiments/m3_stroke_repair/repair_metrics.json`、不修改 Python Engine action 协议、不新增依赖。
+- 最终目标：在 R2/R3/R4 风险控制增强之后，用同一份 M1 corrupted CSV 横向比较 rule-only、gower-only 和 deterministic hybrid approximation 的修复收益与副作用，为后续 R6 Gower K 敏感性实验和最终文档口径提供依据。
+- 当前采用的方法：
+  - 新增 `scripts/evaluate_repair_strategy_comparison.py`，默认读取 `data/experiments/m1_stroke/clean.csv`、`corrupted.csv`、`ground_truth.csv`。
+  - 脚本先调用 `scan_file` 获取同一批 repairable issue IDs，再实际运行三种策略并写出 repaired CSV。
+  - `rule-only` 调用 `engine.repair_batch`；`gower-only` 调用 `engine.repair_with_gower`，使用 `k_neighbors=5`、`max_candidates=512`。
+  - `hybrid` 不调用完整 Go Auto Agent CLI，而是在 Python 脚本中近似现有 deterministic Auto Agent planner：先 plan-only 预览 rule/Gower，再按 `mock_planner.go` 的 per-issue 选择规则比较 `resolved_count`、`candidate_confidence`、`rows_touched`，最终按 rule -> Gower 顺序串联执行。
+  - 指标沿用 M3 评价口径：以 M1 ground truth 中 `repairable=True` 且类型为 missing/numeric/rare 的单元格为主分母，同时单独记录 changed cells outside repairable ground truth。
+- 相关模块/文件：
+  - `scripts/evaluate_repair_strategy_comparison.py`
+  - `tests/python_engine/test_r5_repair_strategy_comparison.py`
+  - `data/experiments/r5_repair_strategy_comparison/strategy_comparison_metrics.json`
+  - `data/experiments/r5_repair_strategy_comparison/strategy_comparison_report.md`
+  - ignored 输出 CSV：`data/experiments/r5_repair_strategy_comparison/rule-only/repaired.csv`
+  - ignored 输出 CSV：`data/experiments/r5_repair_strategy_comparison/gower-only/repaired.csv`
+  - ignored 输出 CSV：`data/experiments/r5_repair_strategy_comparison/hybrid/repaired.csv`
+  - `MEMO.md`
+- 已解决的问题 / 新增功能：
+  - 新增 R5 旁路实验脚本，可一键生成 `strategy_comparison_metrics.json` 和 `strategy_comparison_report.md`。
+  - 新增轻量测试覆盖脚本可导入、指标计算函数、report 生成函数。
+  - 实验结果来自实际运行；若后续某个策略失败，脚本会写入 `status=failed` 与失败原因，不伪造指标。
+  - 本次真实运行中三条策略均成功，且 M1-M3 既有关键输入与 M3 `repair_metrics.json` 经 `git diff` 确认无改动。
+- 验证命令：
+  - `.\.venv-win\Scripts\python.exe -m py_compile scripts\evaluate_repair_strategy_comparison.py tests\python_engine\test_r5_repair_strategy_comparison.py`
+  - `.\.venv-win\Scripts\python.exe -m pytest tests\python_engine\test_r5_repair_strategy_comparison.py -q`
+  - `.\.venv-win\Scripts\python.exe -m pytest tests\python_engine -q`
+  - `.\.venv-win\Scripts\python.exe scripts\evaluate_repair_strategy_comparison.py`
+  - `git diff -- data/experiments/m3_stroke_repair/repair_metrics.json data/experiments/m1_stroke/clean.csv data/experiments/m1_stroke/corrupted.csv data/experiments/m1_stroke/ground_truth.csv`
+- 验收结果：
+  - R5 targeted 测试：`3 passed`。
+  - Python engine 全量回归：`47 passed, 12 warnings`，warnings 仍为既有 pandas categorical dtype deprecation。
+  - R5 实验输出目录：`data/experiments/r5_repair_strategy_comparison/`。
+  - `rule-only`：`before_issue_count=12`、`after_issue_count=4`、`resolved_issue_count=8`、`total_cells_modified=194`、`exact_restored_count=17`、`exact_restoration_rate=0.236111`、`improved_or_exact_count=41`、`improved_or_exact_rate=0.569444`、`non_ground_truth_cells_modified=122`。
+  - `gower-only`：`before_issue_count=12`、`after_issue_count=3`、`resolved_issue_count=9`、`total_cells_modified=194`、`exact_restored_count=14`、`exact_restoration_rate=0.194444`、`improved_or_exact_count=38`、`improved_or_exact_rate=0.527778`、`non_ground_truth_cells_modified=122`。
+  - `hybrid`：`before_issue_count=12`、`after_issue_count=3`、`resolved_issue_count=9`、`total_cells_modified=194`、`exact_restored_count=14`、`exact_restoration_rate=0.194444`、`improved_or_exact_count=38`、`improved_or_exact_rate=0.527778`、`non_ground_truth_cells_modified=122`。
+- 当前问题 / 待处理事项：
+  - 当前 hybrid approximation 在本数据集上选择结果与 Gower-only 等价，说明 per-issue preview 规则倾向 Gower；R6 需要继续做 K 敏感性实验，观察 Gower 参数是否能降低副作用或提升 exact / improved 指标。
+  - 三种策略都仍有 `total_cells_modified=194` 与 `non_ground_truth_cells_modified=122` 的副作用现象，继续支持 R2-R4 风险控制主线：numeric_outlier 不宜无脑自动修。
+  - 当前 R1-R5 仍处于本地未提交工作区状态，推送 GitHub 前需要统一审查 diff，并决定是否提交 R5 JSON/Markdown 指标；CSV repaired outputs 受全局 `*.csv` ignore 规则保护，默认不会进入提交。
+
+## Update 2026-05-11 11:15:26 +08:00
+
+- 改动日期：2026-05-11 11:15:26 +08:00
+- 改动内容简述：完成 R6 Gower-KNN K 敏感性实验脚本和真实实验输出；本次只新增 R6 脚本、轻量测试和 `data/experiments/r6_gower_k_sensitivity/` 输出，不修改 `src/repair_module.py` 默认 K、不修改 M1-M3 既有实验结果、不修改 Python Engine action 协议、不新增依赖。
+- 最终目标：通过固定 M1 stroke corrupted CSV 和同一批 repairable issue IDs，比较 `repair_with_gower` 在不同 `k_neighbors` 下的修复质量、邻居置信度和副作用，用实验支撑默认 `K=5` 作为局部性和稳定性的折中选择。
+- 当前采用的方法：
+  - 新增 `scripts/evaluate_gower_k_sensitivity.py`，默认读取 `data/experiments/m1_stroke/clean.csv`、`corrupted.csv`、`ground_truth.csv`。
+  - 脚本复用 R5 已验证的 ground-truth scoring 口径，先用一致的 scan config 获取 repairable issue IDs，再分别实际运行 `repair_with_gower`。
+  - 默认测试 `K=3,5,7,9,15`，每个 K 单独写出 `k_<K>/repaired.csv`，并聚合 `k_sensitivity_metrics.json` 与 `k_sensitivity_report.md`。
+  - 指标包括 exact / improved-or-exact、total modified cells、non-ground-truth modified cells、before/after/resolved issue count 和 `mean_neighbor_confidence`。
+  - 脚本内置 default K assessment：当 `K=5` 的 improved-or-exact rate 接近最优、额外副作用可控且 resolved issue count 接近最优时，认为继续保留默认 K 有实验支持。
+- 相关模块/文件：
+  - `scripts/evaluate_gower_k_sensitivity.py`
+  - `tests/python_engine/test_r6_gower_k_sensitivity.py`
+  - `data/experiments/r6_gower_k_sensitivity/k_sensitivity_metrics.json`
+  - `data/experiments/r6_gower_k_sensitivity/k_sensitivity_report.md`
+  - ignored 输出 CSV：`data/experiments/r6_gower_k_sensitivity/k_3/repaired.csv`
+  - ignored 输出 CSV：`data/experiments/r6_gower_k_sensitivity/k_5/repaired.csv`
+  - ignored 输出 CSV：`data/experiments/r6_gower_k_sensitivity/k_7/repaired.csv`
+  - ignored 输出 CSV：`data/experiments/r6_gower_k_sensitivity/k_9/repaired.csv`
+  - ignored 输出 CSV：`data/experiments/r6_gower_k_sensitivity/k_15/repaired.csv`
+  - `MEMO.md`
+- 已解决的问题 / 新增功能：
+  - 新增 R6 一键实验脚本，可生成不同 K 的 repaired CSV、JSON 指标和 Markdown 报告。
+  - 新增轻量测试覆盖脚本可导入、`mean_neighbor_confidence` / 指标聚合函数、report 中 K 小/K 大/不用 `sqrt(n)`/失败原因/default K 结论。
+  - 报告明确解释：K 太小容易受单个邻居噪声影响；K 太大会混入不相似样本并向全局 median/mode 靠拢；本项目不是标准 KNN 分类，不能直接套用 `sqrt(n)`。
+  - 本次真实运行中 `K=3,5,7,9,15` 均成功，且 `src/repair_module.py`、M1 目录、M3 `repair_metrics.json` 经 `git diff` 确认无改动。
+- 验证命令：
+  - `.\.venv-win\Scripts\python.exe -m py_compile scripts\evaluate_gower_k_sensitivity.py tests\python_engine\test_r6_gower_k_sensitivity.py`
+  - `.\.venv-win\Scripts\python.exe -m pytest tests\python_engine\test_r6_gower_k_sensitivity.py -q`
+  - `.\.venv-win\Scripts\python.exe -m pytest tests\python_engine -q`
+  - `.\.venv-win\Scripts\python.exe scripts\evaluate_gower_k_sensitivity.py`
+  - `git diff -- data/experiments/m1_stroke data/experiments/m3_stroke_repair/repair_metrics.json src/repair_module.py`
+- 验收结果：
+  - R6 targeted 测试：`3 passed`。
+  - Python engine 全量回归：`50 passed, 12 warnings`，warnings 仍为既有 pandas categorical dtype deprecation。
+  - R6 实验输出目录：`data/experiments/r6_gower_k_sensitivity/`。
+  - `K=3`：`before_issue_count=12`、`after_issue_count=3`、`resolved_issue_count=9`、`total_cells_modified=194`、`exact_restoration_rate=0.152778`、`improved_or_exact_rate=0.486111`、`non_ground_truth_cells_modified=122`、`mean_neighbor_confidence=0.864886`。
+  - `K=5`：`before_issue_count=12`、`after_issue_count=3`、`resolved_issue_count=9`、`total_cells_modified=194`、`exact_restoration_rate=0.194444`、`improved_or_exact_rate=0.527778`、`non_ground_truth_cells_modified=122`、`mean_neighbor_confidence=0.856140`。
+  - `K=7`：`before_issue_count=12`、`after_issue_count=3`、`resolved_issue_count=9`、`total_cells_modified=194`、`exact_restoration_rate=0.152778`、`improved_or_exact_rate=0.486111`、`non_ground_truth_cells_modified=122`、`mean_neighbor_confidence=0.849530`。
+  - `K=9`：`before_issue_count=12`、`after_issue_count=3`、`resolved_issue_count=9`、`total_cells_modified=194`、`exact_restoration_rate=0.194444`、`improved_or_exact_rate=0.513889`、`non_ground_truth_cells_modified=122`、`mean_neighbor_confidence=0.844094`。
+  - `K=15`：`before_issue_count=12`、`after_issue_count=3`、`resolved_issue_count=9`、`total_cells_modified=194`、`exact_restoration_rate=0.208333`、`improved_or_exact_rate=0.527778`、`non_ground_truth_cells_modified=122`、`mean_neighbor_confidence=0.831685`。
+  - default K assessment：`supports_default_k=true`，因为 `K=5` 的 improved-or-exact rate 与最优并列，副作用没有增加，resolved issue count 与最优一致，同时相比 `K=15` 保留更局部的邻居置信度。
+- 当前问题 / 待处理事项：
+  - 各 K 的 `total_cells_modified=194`、`non_ground_truth_cells_modified=122` 均未改善，说明 K 调参不能单独解决 numeric_outlier 误报导致的副作用；核心仍应依赖 R2-R4 风险分层、planner 保守分流和 validation gate 约束。
+  - R7 需要更新文档与简历口径：默认 K=5 是工程折中，不是全局最优宣称；R6 结果支持它在当前数据上达到最优 improved-or-exact，同时避免进一步扩大邻域。
+  - 当前 R1-R6 仍处于本地未提交工作区状态，推送 GitHub 前需要统一审查 diff，并决定是否提交 R5/R6 JSON/Markdown 指标；CSV repaired outputs 受全局 `*.csv` ignore 规则保护，默认不会进入提交。
+
+## Update 2026-05-11 14:16:30 +08:00
+
+- 改动日期：2026-05-11 14:16:30 +08:00
+- 改动内容简述：将 GitHub 最新 `origin/main` 合并到 `feat/algorithm-risk-hardening`，解决 PR 合并冲突；本次只做冲突整合、测试验证、提交与推送，不新增算法逻辑、不修改 M1-M3 既有实验结果、不引入依赖。
+- 最终目标：让 `feat/algorithm-risk-hardening` 在保留 R1-R6 风险增强成果的同时与 GitHub `main` 对齐，清除 PR 页面中的 merge conflict 提示。
+- 当前采用的方法：
+  - 使用 WSL Git 更新远端 `origin/main` 引用，随后在 Windows 工作区执行 merge。
+  - 在 planner 测试冲突中保留 R3 的 numeric_outlier mild/strong/extreme 保守分流断言。
+  - 在 LangGraph planner 测试冲突中保留 deterministic numeric_outlier risk note 合并断言和 safety context 风险策略检查。
+  - 在 validation gate 冲突中保留 R4 新增的 acceptance reason、modified/resolved ratio、numeric_outlier 修改摘要、rollback availability 和 side effect notes 字段。
+  - 在 `MEMO.md` 中保留远端 main 既有 Auto Agent benchmark 记录，并保留本分支 R2-R6 记录。
+- 相关模块/文件：
+  - `MEMO.md`
+  - `appshell/backend/internal/agent/langgraph_planner_test.go`
+  - `appshell/backend/internal/agent/planning_support_test.go`
+  - `appshell/backend/internal/agent/validation_gate.go`
+  - `appshell/backend/internal/agent/validation_gate_test.go`
+- 已解决的问题 / 新增功能：
+  - 解决 GitHub PR 标记的 5 个冲突文件。
+  - 保留 R3 planner 风险策略和 R4 validation gate 副作用约束。
+  - 保留 R5/R6 实验记录与输出摘要。
+- 验证命令：
+  - `$env:PATH = (Resolve-Path '.\.venv-win\Scripts').Path + ';' + $env:PATH; Push-Location appshell\backend; go test ./internal/agent ./cmd/wails; Pop-Location`
+- 验收结果：
+  - Go 指定回归：`ok` for `./internal/agent ./cmd/wails`。
+- 待处理事项：
+  - 提交 merge commit 并推送到 `origin/feat/algorithm-risk-hardening` 后，在 GitHub PR 页面确认 merge conflict 提示消失。

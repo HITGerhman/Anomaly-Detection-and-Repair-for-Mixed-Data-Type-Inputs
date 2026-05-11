@@ -9,19 +9,23 @@ func TestSelectIssuePlanBucketsUsesConservativeA2Rules(t *testing.T) {
 	buckets := selectIssuePlanBuckets(map[string]any{
 		"issues": []any{
 			map[string]any{"issue_id": "i-1", "issue_type": "missing_values", "column": "age"},
-			map[string]any{"issue_id": "i-2", "issue_type": "numeric_outlier", "column": "bmi"},
+			map[string]any{"issue_id": "i-2", "issue_type": "numeric_outlier", "column": "bmi", "outlier_risk_level": "mild", "auto_repair_eligible": false},
 			map[string]any{"issue_id": "i-3", "issue_type": "rare_category", "column": "city"},
 			map[string]any{"issue_id": "i-4", "issue_type": "duplicate_record", "column": "id"},
 			map[string]any{"issue_id": "i-5", "issue_type": "cross_column_consistency", "column": "date"},
 			map[string]any{"issue_id": "i-6", "issue_type": "new_issue_type", "column": "score"},
+			map[string]any{"issue_id": "i-7", "issue_type": "numeric_outlier", "column": "glucose", "outlier_risk_level": "strong", "auto_repair_eligible": true},
+			map[string]any{"issue_id": "i-8", "issue_type": "numeric_outlier", "column": "age", "outlier_risk_level": "extreme", "auto_repair_eligible": true},
+			map[string]any{"issue_id": "i-9", "issue_type": "numeric_outlier", "column": "weight"},
+			map[string]any{"issue_id": "i-10", "issue_type": "numeric_outlier", "column": "height", "outlier_risk_level": "extreme", "auto_repair_eligible": false},
 			map[string]any{"issue_type": "missing_values", "column": "weight"},
 		},
 	})
 
-	if !reflect.DeepEqual(buckets.AutoRepairIssueIDs, []string{"i-1", "i-3"}) {
+	if !reflect.DeepEqual(buckets.AutoRepairIssueIDs, []string{"i-1", "i-3", "i-8"}) {
 		t.Fatalf("unexpected auto issue ids: %#v", buckets.AutoRepairIssueIDs)
 	}
-	if !reflect.DeepEqual(buckets.CautiousIssueIDs, []string{"i-2"}) {
+	if !reflect.DeepEqual(buckets.CautiousIssueIDs, []string{"i-2", "i-7", "i-9", "i-10"}) {
 		t.Fatalf("unexpected cautious issue ids: %#v", buckets.CautiousIssueIDs)
 	}
 	if !reflect.DeepEqual(buckets.ManualReviewIssueIDs, []string{"i-4", "i-5"}) {
@@ -37,8 +41,14 @@ func TestSelectIssuePlanBucketsUsesConservativeA2Rules(t *testing.T) {
 		reasons[item.IssueID] = item.Reason
 		bucketsByIssue[item.IssueID] = asString(item.Details["bucket"])
 	}
-	if reasons["i-2"] != "requires_human_review_before_auto_repair" || bucketsByIssue["i-2"] != issueBucketCautious {
-		t.Fatalf("expected numeric_outlier to be cautious, got reasons=%#v buckets=%#v", reasons, bucketsByIssue)
+	if reasons["i-2"] != numericOutlierMildPromptOnlyReason || bucketsByIssue["i-2"] != issueBucketCautious {
+		t.Fatalf("expected mild numeric_outlier to be cautious, got reasons=%#v buckets=%#v", reasons, bucketsByIssue)
+	}
+	if reasons["i-7"] != numericOutlierStrongRequiresReviewReason || reasons["i-9"] != numericOutlierMissingRiskLevelCautiousReason {
+		t.Fatalf("expected strong and unknown numeric_outlier to be cautious, got %#v", reasons)
+	}
+	if reasons["i-10"] != numericOutlierExtremeRequiresValidationReason {
+		t.Fatalf("expected non-eligible extreme numeric_outlier to be cautious, got %#v", reasons)
 	}
 	if reasons["i-4"] != "manual_review_required" || reasons["i-5"] != "manual_review_required" {
 		t.Fatalf("expected duplicate/consistency to be manual review, got %#v", reasons)
@@ -55,25 +65,24 @@ func TestSelectRepairableIssuesReturnsOnlyAutoAndSkippedIssues(t *testing.T) {
 	selectedIssueIDs, skipped := selectRepairableIssues(map[string]any{
 		"issues": []any{
 			map[string]any{"issue_id": "i-1", "issue_type": "missing_values", "column": "age"},
-			map[string]any{"issue_id": "i-2", "issue_type": "numeric_outlier", "column": "bmi"},
+			map[string]any{"issue_id": "i-2", "issue_type": "numeric_outlier", "column": "bmi", "outlier_risk_level": "mild", "auto_repair_eligible": false},
 			map[string]any{"issue_id": "i-3", "issue_type": "rare_category", "column": "city"},
-			map[string]any{"issue_id": "i-4", "issue_type": "duplicate_record", "column": "id"},
-			map[string]any{"issue_id": "i-5", "issue_type": "cross_column_consistency", "column": "date"},
-			map[string]any{"issue_id": "i-6", "issue_type": "new_issue_type", "column": "score"},
+			map[string]any{"issue_id": "i-4", "issue_type": "numeric_outlier", "column": "age", "outlier_risk_level": "extreme", "auto_repair_eligible": true},
+			map[string]any{"issue_id": "i-5", "issue_type": "duplicate_record", "column": "id"},
 			map[string]any{"issue_type": "missing_values", "column": "weight"},
 		},
 	})
 
-	if len(selectedIssueIDs) != 2 {
-		t.Fatalf("expected 2 auto issue ids, got %d", len(selectedIssueIDs))
+	if len(selectedIssueIDs) != 3 {
+		t.Fatalf("expected 3 auto issue ids, got %d", len(selectedIssueIDs))
 	}
-	if selectedIssueIDs[0] != "i-1" || selectedIssueIDs[1] != "i-3" {
+	if selectedIssueIDs[0] != "i-1" || selectedIssueIDs[1] != "i-3" || selectedIssueIDs[2] != "i-4" {
 		t.Fatalf("unexpected selected issue ids: %#v", selectedIssueIDs)
 	}
-	if len(skipped) != 5 {
-		t.Fatalf("expected 5 skipped issues, got %d", len(skipped))
+	if len(skipped) != 3 {
+		t.Fatalf("expected 3 skipped issues, got %d", len(skipped))
 	}
-	if skipped[0].Reason != "requires_human_review_before_auto_repair" {
+	if skipped[0].Reason != numericOutlierMildPromptOnlyReason {
 		t.Fatalf("expected cautious issue type skip, got %s", skipped[0].Reason)
 	}
 	if skipped[len(skipped)-1].Reason != "missing_issue_id" {
@@ -92,7 +101,7 @@ func TestIssueExplanationDetailsIncludeReasonsAndCounts(t *testing.T) {
 
 	blocked, cautious, counts := issueExplanationDetails(skipped)
 
-	if len(cautious) != 1 || cautious[0].IssueID != "i-1" || cautious[0].RiskReason != "requires_human_review_before_auto_repair" {
+	if len(cautious) != 1 || cautious[0].IssueID != "i-1" || cautious[0].RiskReason != numericOutlierMissingRiskLevelCautiousReason {
 		t.Fatalf("unexpected cautious details: %#v", cautious)
 	}
 	if !cautious[0].ApprovalRequired || cautious[0].SuggestedAction == "" {
