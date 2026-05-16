@@ -1,0 +1,5 @@
+dataset,issue_type,repairable_gt,changed,exact,improved_or_exact,exact_rate,improved_or_exact_rate,non_gt_modified,skipped_non_repairable_count
+stroke,missing_values,30,30,7,7,0.233333,0.233333,0,0
+stroke,numeric_outlier,24,24,0,24,0.000000,1.000000,122,0
+stroke,rare_category,18,18,10,10,0.555556,0.555556,0,0
+stroke,Overall,72,72,17,41,0.236111,0.569444,122,28

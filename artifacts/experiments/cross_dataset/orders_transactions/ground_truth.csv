@@ -1,0 +1,101 @@
+anomaly_id,dataset,expected_issue_type,row_index,column_name,original_value,corrupted_value,repairable,source_row_id,duplicate_group,consistency_rule_name,created_by_seed,notes
+orders_transactions-0001,orders_transactions,missing_values,1310,product_category,grocery,,True,ord-0001310,,,20260614,Cell was replaced with a missing value.
+orders_transactions-0002,orders_transactions,missing_values,4725,unit_price,60.7,,True,ord-0004725,,,20260614,Cell was replaced with a missing value.
+orders_transactions-0003,orders_transactions,missing_values,1390,payment_method,bank_transfer,,True,ord-0001390,,,20260614,Cell was replaced with a missing value.
+orders_transactions-0004,orders_transactions,missing_values,2065,payment_method,paypal,,True,ord-0002065,,,20260614,Cell was replaced with a missing value.
+orders_transactions-0005,orders_transactions,missing_values,4543,unit_price,31.2,,True,ord-0004543,,,20260614,Cell was replaced with a missing value.
+orders_transactions-0006,orders_transactions,missing_values,3049,unit_price,12,,True,ord-0003049,,,20260614,Cell was replaced with a missing value.
+orders_transactions-0007,orders_transactions,missing_values,1321,unit_price,14.6,,True,ord-0001321,,,20260614,Cell was replaced with a missing value.
+orders_transactions-0008,orders_transactions,missing_values,3646,unit_price,46.7,,True,ord-0003646,,,20260614,Cell was replaced with a missing value.
+orders_transactions-0009,orders_transactions,missing_values,3434,payment_method,bank_transfer,,True,ord-0003434,,,20260614,Cell was replaced with a missing value.
+orders_transactions-0010,orders_transactions,missing_values,2132,payment_method,card,,True,ord-0002132,,,20260614,Cell was replaced with a missing value.
+orders_transactions-0011,orders_transactions,missing_values,1205,product_category,sports,,True,ord-0001205,,,20260614,Cell was replaced with a missing value.
+orders_transactions-0012,orders_transactions,missing_values,1504,product_category,home,,True,ord-0001504,,,20260614,Cell was replaced with a missing value.
+orders_transactions-0013,orders_transactions,missing_values,3678,product_category,electronics,,True,ord-0003678,,,20260614,Cell was replaced with a missing value.
+orders_transactions-0014,orders_transactions,missing_values,1261,unit_price,52.4,,True,ord-0001261,,,20260614,Cell was replaced with a missing value.
+orders_transactions-0015,orders_transactions,missing_values,1576,discount,0,,True,ord-0001576,,,20260614,Cell was replaced with a missing value.
+orders_transactions-0016,orders_transactions,missing_values,4250,payment_method,bank_transfer,,True,ord-0004250,,,20260614,Cell was replaced with a missing value.
+orders_transactions-0017,orders_transactions,missing_values,4911,product_category,apparel,,True,ord-0004911,,,20260614,Cell was replaced with a missing value.
+orders_transactions-0018,orders_transactions,missing_values,1036,payment_method,card,,True,ord-0001036,,,20260614,Cell was replaced with a missing value.
+orders_transactions-0019,orders_transactions,missing_values,842,product_category,grocery,,True,ord-0000842,,,20260614,Cell was replaced with a missing value.
+orders_transactions-0020,orders_transactions,missing_values,2726,product_category,grocery,,True,ord-0002726,,,20260614,Cell was replaced with a missing value.
+orders_transactions-0021,orders_transactions,missing_values,3735,unit_price,58,,True,ord-0003735,,,20260614,Cell was replaced with a missing value.
+orders_transactions-0022,orders_transactions,missing_values,4634,unit_price,46.1,,True,ord-0004634,,,20260614,Cell was replaced with a missing value.
+orders_transactions-0023,orders_transactions,missing_values,4985,unit_price,13.2,,True,ord-0004985,,,20260614,Cell was replaced with a missing value.
+orders_transactions-0024,orders_transactions,missing_values,3710,discount,0.1,,True,ord-0003710,,,20260614,Cell was replaced with a missing value.
+orders_transactions-0025,orders_transactions,missing_values,1546,payment_method,bank_transfer,,True,ord-0001546,,,20260614,Cell was replaced with a missing value.
+orders_transactions-0026,orders_transactions,missing_values,533,payment_method,paypal,,True,ord-0000533,,,20260614,Cell was replaced with a missing value.
+orders_transactions-0027,orders_transactions,missing_values,2054,discount,0.1,,True,ord-0002054,,,20260614,Cell was replaced with a missing value.
+orders_transactions-0028,orders_transactions,missing_values,3169,payment_method,paypal,,True,ord-0003169,,,20260614,Cell was replaced with a missing value.
+orders_transactions-0029,orders_transactions,missing_values,2355,unit_price,22.4,,True,ord-0002355,,,20260614,Cell was replaced with a missing value.
+orders_transactions-0030,orders_transactions,missing_values,4692,discount,0,,True,ord-0004692,,,20260614,Cell was replaced with a missing value.
+orders_transactions-0031,orders_transactions,numeric_outlier,3101,discount,0.15,1.5,True,ord-0003101,,,20260614,Numeric value was moved outside the normal synthetic range.
+orders_transactions-0032,orders_transactions,numeric_outlier,2585,quantity,4,999,True,ord-0002585,,,20260614,Numeric value was moved outside the normal synthetic range.
+orders_transactions-0033,orders_transactions,numeric_outlier,1031,quantity,1,999,True,ord-0001031,,,20260614,Numeric value was moved outside the normal synthetic range.
+orders_transactions-0034,orders_transactions,numeric_outlier,992,total_amount,43.8,999999,True,ord-0000992,,,20260614,Numeric value was moved outside the normal synthetic range.
+orders_transactions-0035,orders_transactions,numeric_outlier,4349,unit_price,52.1,9999,True,ord-0004349,,,20260614,Numeric value was moved outside the normal synthetic range.
+orders_transactions-0036,orders_transactions,numeric_outlier,566,total_amount,54.36,999999,True,ord-0000566,,,20260614,Numeric value was moved outside the normal synthetic range.
+orders_transactions-0037,orders_transactions,numeric_outlier,1126,unit_price,32.4,9999,True,ord-0001126,,,20260614,Numeric value was moved outside the normal synthetic range.
+orders_transactions-0038,orders_transactions,numeric_outlier,4729,quantity,2,999,True,ord-0004729,,,20260614,Numeric value was moved outside the normal synthetic range.
+orders_transactions-0039,orders_transactions,numeric_outlier,1249,unit_price,31.3,9999,True,ord-0001249,,,20260614,Numeric value was moved outside the normal synthetic range.
+orders_transactions-0040,orders_transactions,numeric_outlier,904,quantity,2,999,True,ord-0000904,,,20260614,Numeric value was moved outside the normal synthetic range.
+orders_transactions-0041,orders_transactions,numeric_outlier,4496,discount,0,1.5,True,ord-0004496,,,20260614,Numeric value was moved outside the normal synthetic range.
+orders_transactions-0042,orders_transactions,numeric_outlier,4696,unit_price,11.6,9999,True,ord-0004696,,,20260614,Numeric value was moved outside the normal synthetic range.
+orders_transactions-0043,orders_transactions,numeric_outlier,1221,total_amount,46.41,999999,True,ord-0001221,,,20260614,Numeric value was moved outside the normal synthetic range.
+orders_transactions-0044,orders_transactions,numeric_outlier,4821,total_amount,11.9,999999,True,ord-0004821,,,20260614,Numeric value was moved outside the normal synthetic range.
+orders_transactions-0045,orders_transactions,numeric_outlier,4902,quantity,3,999,True,ord-0004902,,,20260614,Numeric value was moved outside the normal synthetic range.
+orders_transactions-0046,orders_transactions,numeric_outlier,2496,unit_price,51.9,9999,True,ord-0002496,,,20260614,Numeric value was moved outside the normal synthetic range.
+orders_transactions-0047,orders_transactions,numeric_outlier,1724,discount,0,1.5,True,ord-0001724,,,20260614,Numeric value was moved outside the normal synthetic range.
+orders_transactions-0048,orders_transactions,numeric_outlier,2598,unit_price,14.7,9999,True,ord-0002598,,,20260614,Numeric value was moved outside the normal synthetic range.
+orders_transactions-0049,orders_transactions,numeric_outlier,4055,total_amount,159.6,999999,True,ord-0004055,,,20260614,Numeric value was moved outside the normal synthetic range.
+orders_transactions-0050,orders_transactions,numeric_outlier,3863,total_amount,312.55,999999,True,ord-0003863,,,20260614,Numeric value was moved outside the normal synthetic range.
+orders_transactions-0051,orders_transactions,numeric_outlier,3048,total_amount,52.5,999999,True,ord-0003048,,,20260614,Numeric value was moved outside the normal synthetic range.
+orders_transactions-0052,orders_transactions,numeric_outlier,799,total_amount,69.54,999999,True,ord-0000799,,,20260614,Numeric value was moved outside the normal synthetic range.
+orders_transactions-0053,orders_transactions,numeric_outlier,3147,quantity,3,999,True,ord-0003147,,,20260614,Numeric value was moved outside the normal synthetic range.
+orders_transactions-0054,orders_transactions,numeric_outlier,2434,quantity,2,999,True,ord-0002434,,,20260614,Numeric value was moved outside the normal synthetic range.
+orders_transactions-0055,orders_transactions,rare_category,3000,payment_method,card,__CD_RARE_ORDERS_TRANSACTIONS_PAYMENT_METHOD_000__,True,ord-0003000,,,20260614,Categorical value was replaced with a deterministic singleton category.
+orders_transactions-0056,orders_transactions,rare_category,2355,payment_method,wallet,__CD_RARE_ORDERS_TRANSACTIONS_PAYMENT_METHOD_001__,True,ord-0002355,,,20260614,Categorical value was replaced with a deterministic singleton category.
+orders_transactions-0057,orders_transactions,rare_category,1177,payment_method,paypal,__CD_RARE_ORDERS_TRANSACTIONS_PAYMENT_METHOD_002__,True,ord-0001177,,,20260614,Categorical value was replaced with a deterministic singleton category.
+orders_transactions-0058,orders_transactions,rare_category,4613,payment_method,paypal,__CD_RARE_ORDERS_TRANSACTIONS_PAYMENT_METHOD_003__,True,ord-0004613,,,20260614,Categorical value was replaced with a deterministic singleton category.
+orders_transactions-0059,orders_transactions,rare_category,4322,payment_method,bank_transfer,__CD_RARE_ORDERS_TRANSACTIONS_PAYMENT_METHOD_004__,True,ord-0004322,,,20260614,Categorical value was replaced with a deterministic singleton category.
+orders_transactions-0060,orders_transactions,rare_category,1225,payment_method,paypal,__CD_RARE_ORDERS_TRANSACTIONS_PAYMENT_METHOD_005__,True,ord-0001225,,,20260614,Categorical value was replaced with a deterministic singleton category.
+orders_transactions-0061,orders_transactions,rare_category,1090,order_status,paid,__CD_RARE_ORDERS_TRANSACTIONS_ORDER_STATUS_006__,True,ord-0001090,,,20260614,Categorical value was replaced with a deterministic singleton category.
+orders_transactions-0062,orders_transactions,rare_category,1772,product_category,grocery,__CD_RARE_ORDERS_TRANSACTIONS_PRODUCT_CATEGORY_007__,True,ord-0001772,,,20260614,Categorical value was replaced with a deterministic singleton category.
+orders_transactions-0063,orders_transactions,rare_category,1617,payment_method,paypal,__CD_RARE_ORDERS_TRANSACTIONS_PAYMENT_METHOD_008__,True,ord-0001617,,,20260614,Categorical value was replaced with a deterministic singleton category.
+orders_transactions-0064,orders_transactions,rare_category,2283,payment_method,wallet,__CD_RARE_ORDERS_TRANSACTIONS_PAYMENT_METHOD_009__,True,ord-0002283,,,20260614,Categorical value was replaced with a deterministic singleton category.
+orders_transactions-0065,orders_transactions,rare_category,4163,order_status,refunded,__CD_RARE_ORDERS_TRANSACTIONS_ORDER_STATUS_010__,True,ord-0004163,,,20260614,Categorical value was replaced with a deterministic singleton category.
+orders_transactions-0066,orders_transactions,rare_category,3508,order_status,refunded,__CD_RARE_ORDERS_TRANSACTIONS_ORDER_STATUS_011__,True,ord-0003508,,,20260614,Categorical value was replaced with a deterministic singleton category.
+orders_transactions-0067,orders_transactions,rare_category,3511,product_category,books,__CD_RARE_ORDERS_TRANSACTIONS_PRODUCT_CATEGORY_012__,True,ord-0003511,,,20260614,Categorical value was replaced with a deterministic singleton category.
+orders_transactions-0068,orders_transactions,rare_category,2455,order_status,paid,__CD_RARE_ORDERS_TRANSACTIONS_ORDER_STATUS_013__,True,ord-0002455,,,20260614,Categorical value was replaced with a deterministic singleton category.
+orders_transactions-0069,orders_transactions,rare_category,3031,order_status,pending,__CD_RARE_ORDERS_TRANSACTIONS_ORDER_STATUS_014__,True,ord-0003031,,,20260614,Categorical value was replaced with a deterministic singleton category.
+orders_transactions-0070,orders_transactions,rare_category,801,payment_method,paypal,__CD_RARE_ORDERS_TRANSACTIONS_PAYMENT_METHOD_015__,True,ord-0000801,,,20260614,Categorical value was replaced with a deterministic singleton category.
+orders_transactions-0071,orders_transactions,rare_category,1108,product_category,home,__CD_RARE_ORDERS_TRANSACTIONS_PRODUCT_CATEGORY_016__,True,ord-0001108,,,20260614,Categorical value was replaced with a deterministic singleton category.
+orders_transactions-0072,orders_transactions,rare_category,2191,payment_method,wallet,__CD_RARE_ORDERS_TRANSACTIONS_PAYMENT_METHOD_017__,True,ord-0002191,,,20260614,Categorical value was replaced with a deterministic singleton category.
+orders_transactions-0073,orders_transactions,cross_column_consistency,405,"order_time,pay_time",1700036450<=1700037245,1700036450>1700036330,False,ord-0000405,,paid_pay_time_not_before_order_time,20260614,pay_time was made smaller than order_time.
+orders_transactions-0074,orders_transactions,cross_column_consistency,2518,"order_time,pay_time",1700226620<=1700226984,1700226620>1700226500,False,ord-0002518,,paid_pay_time_not_before_order_time,20260614,pay_time was made smaller than order_time.
+orders_transactions-0075,orders_transactions,cross_column_consistency,4648,"order_time,pay_time",1700418320<=1700418474,1700418320>1700418200,False,ord-0004648,,paid_pay_time_not_before_order_time,20260614,pay_time was made smaller than order_time.
+orders_transactions-0076,orders_transactions,cross_column_consistency,2031,"order_time,pay_time",1700182790<=1700183123,1700182790>1700182670,False,ord-0002031,,paid_pay_time_not_before_order_time,20260614,pay_time was made smaller than order_time.
+orders_transactions-0077,orders_transactions,cross_column_consistency,3845,"order_time,pay_time",1700346050<=1700346565,1700346050>1700345930,False,ord-0003845,,paid_pay_time_not_before_order_time,20260614,pay_time was made smaller than order_time.
+orders_transactions-0078,orders_transactions,cross_column_consistency,3439,"order_time,pay_time",1700309510<=1700310147,1700309510>1700309390,False,ord-0003439,,paid_pay_time_not_before_order_time,20260614,pay_time was made smaller than order_time.
+orders_transactions-0079,orders_transactions,cross_column_consistency,4004,"order_time,pay_time",1700360360<=1700361142,1700360360>1700360240,False,ord-0004004,,paid_pay_time_not_before_order_time,20260614,pay_time was made smaller than order_time.
+orders_transactions-0080,orders_transactions,cross_column_consistency,2230,"order_time,pay_time",1700200700<=1700200920,1700200700>1700200580,False,ord-0002230,,paid_pay_time_not_before_order_time,20260614,pay_time was made smaller than order_time.
+orders_transactions-0081,orders_transactions,cross_column_consistency,851,"order_time,pay_time",1700076590<=1700076883,1700076590>1700076470,False,ord-0000851,,paid_pay_time_not_before_order_time,20260614,pay_time was made smaller than order_time.
+orders_transactions-0082,orders_transactions,cross_column_consistency,2194,"order_time,pay_time",1700197460<=1700198112,1700197460>1700197340,False,ord-0002194,,paid_pay_time_not_before_order_time,20260614,pay_time was made smaller than order_time.
+orders_transactions-0083,orders_transactions,cross_column_consistency,1211,"order_time,pay_time",1700108990<=1700109463,1700108990>1700108870,False,ord-0001211,,paid_pay_time_not_before_order_time,20260614,pay_time was made smaller than order_time.
+orders_transactions-0084,orders_transactions,cross_column_consistency,3901,"order_time,pay_time",1700351090<=1700351433,1700351090>1700350970,False,ord-0003901,,paid_pay_time_not_before_order_time,20260614,pay_time was made smaller than order_time.
+orders_transactions-0085,orders_transactions,cross_column_consistency,2647,"order_time,pay_time",1700238230<=1700238471,1700238230>1700238110,False,ord-0002647,,paid_pay_time_not_before_order_time,20260614,pay_time was made smaller than order_time.
+orders_transactions-0086,orders_transactions,cross_column_consistency,351,"order_time,pay_time",1700031590<=1700031683,1700031590>1700031470,False,ord-0000351,,paid_pay_time_not_before_order_time,20260614,pay_time was made smaller than order_time.
+orders_transactions-0087,orders_transactions,cross_column_consistency,1321,"order_time,pay_time",1700118890<=1700118993,1700118890>1700118770,False,ord-0001321,,paid_pay_time_not_before_order_time,20260614,pay_time was made smaller than order_time.
+orders_transactions-0088,orders_transactions,cross_column_consistency,4567,"order_time,pay_time",1700411030<=1700411931,1700411030>1700410910,False,ord-0004567,,paid_pay_time_not_before_order_time,20260614,pay_time was made smaller than order_time.
+orders_transactions-0089,orders_transactions,duplicate_record,5000,source_row_id,orders-row-0001043,orders_transactions-dup-00000,False,ord-0001043,ord-0001043,,20260614,A duplicate row was appended with the same source_row_id.
+orders_transactions-0090,orders_transactions,duplicate_record,5001,source_row_id,orders-row-0004547,orders_transactions-dup-00001,False,ord-0004547,ord-0004547,,20260614,A duplicate row was appended with the same source_row_id.
+orders_transactions-0091,orders_transactions,duplicate_record,5002,source_row_id,orders-row-0000541,orders_transactions-dup-00002,False,ord-0000541,ord-0000541,,20260614,A duplicate row was appended with the same source_row_id.
+orders_transactions-0092,orders_transactions,duplicate_record,5003,source_row_id,orders-row-0000568,orders_transactions-dup-00003,False,ord-0000568,ord-0000568,,20260614,A duplicate row was appended with the same source_row_id.
+orders_transactions-0093,orders_transactions,duplicate_record,5004,source_row_id,orders-row-0004986,orders_transactions-dup-00004,False,ord-0004986,ord-0004986,,20260614,A duplicate row was appended with the same source_row_id.
+orders_transactions-0094,orders_transactions,duplicate_record,5005,source_row_id,orders-row-0001004,orders_transactions-dup-00005,False,ord-0001004,ord-0001004,,20260614,A duplicate row was appended with the same source_row_id.
+orders_transactions-0095,orders_transactions,duplicate_record,5006,source_row_id,orders-row-0003295,orders_transactions-dup-00006,False,ord-0003295,ord-0003295,,20260614,A duplicate row was appended with the same source_row_id.
+orders_transactions-0096,orders_transactions,duplicate_record,5007,source_row_id,orders-row-0000504,orders_transactions-dup-00007,False,ord-0000504,ord-0000504,,20260614,A duplicate row was appended with the same source_row_id.
+orders_transactions-0097,orders_transactions,duplicate_record,5008,source_row_id,orders-row-0002391,orders_transactions-dup-00008,False,ord-0002391,ord-0002391,,20260614,A duplicate row was appended with the same source_row_id.
+orders_transactions-0098,orders_transactions,duplicate_record,5009,source_row_id,orders-row-0004176,orders_transactions-dup-00009,False,ord-0004176,ord-0004176,,20260614,A duplicate row was appended with the same source_row_id.
+orders_transactions-0099,orders_transactions,duplicate_record,5010,source_row_id,orders-row-0003646,orders_transactions-dup-00010,False,ord-0003646,ord-0003646,,20260614,A duplicate row was appended with the same source_row_id.
+orders_transactions-0100,orders_transactions,duplicate_record,5011,source_row_id,orders-row-0004094,orders_transactions-dup-00011,False,ord-0004094,ord-0004094,,20260614,A duplicate row was appended with the same source_row_id.

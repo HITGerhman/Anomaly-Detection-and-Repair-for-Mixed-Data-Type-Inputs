@@ -1,0 +1,101 @@
+anomaly_id,dataset,expected_issue_type,row_index,column_name,original_value,corrupted_value,repairable,source_row_id,duplicate_group,consistency_rule_name,created_by_seed,notes
+stroke-0001,stroke,missing_values,1871,avg_glucose_level,79.44,,True,33410,,,20260503,Cell was replaced with a missing value.
+stroke-0002,stroke,missing_values,14,bmi,28.9,,True,354,,,20260503,Cell was replaced with a missing value.
+stroke-0003,stroke,missing_values,3210,bmi,23.6,,True,56021,,,20260503,Cell was replaced with a missing value.
+stroke-0004,stroke,missing_values,378,bmi,23.6,,True,6976,,,20260503,Cell was replaced with a missing value.
+stroke-0005,stroke,missing_values,697,bmi,26.8,,True,12396,,,20260503,Cell was replaced with a missing value.
+stroke-0006,stroke,missing_values,1417,work_type,Private,,True,25404,,,20260503,Cell was replaced with a missing value.
+stroke-0007,stroke,missing_values,4061,avg_glucose_level,77.24,,True,70081,,,20260503,Cell was replaced with a missing value.
+stroke-0008,stroke,missing_values,70,work_type,Private,,True,1323,,,20260503,Cell was replaced with a missing value.
+stroke-0009,stroke,missing_values,269,work_type,Private,,True,5173,,,20260503,Cell was replaced with a missing value.
+stroke-0010,stroke,missing_values,263,bmi,23.4,,True,5046,,,20260503,Cell was replaced with a missing value.
+stroke-0011,stroke,missing_values,2076,bmi,18.1,,True,37025,,,20260503,Cell was replaced with a missing value.
+stroke-0012,stroke,missing_values,2421,smoking_status,formerly smoked,,True,42899,,,20260503,Cell was replaced with a missing value.
+stroke-0013,stroke,missing_values,1517,avg_glucose_level,92.15,,True,27382,,,20260503,Cell was replaced with a missing value.
+stroke-0014,stroke,missing_values,3604,smoking_status,never smoked,,True,62396,,,20260503,Cell was replaced with a missing value.
+stroke-0015,stroke,missing_values,3812,bmi,25.3,,True,65849,,,20260503,Cell was replaced with a missing value.
+stroke-0016,stroke,missing_values,3163,bmi,27.9,,True,55232,,,20260503,Cell was replaced with a missing value.
+stroke-0017,stroke,missing_values,3824,work_type,Self-employed,,True,66051,,,20260503,Cell was replaced with a missing value.
+stroke-0018,stroke,missing_values,2050,smoking_status,smokes,,True,36698,,,20260503,Cell was replaced with a missing value.
+stroke-0019,stroke,missing_values,358,bmi,20.8,,True,6625,,,20260503,Cell was replaced with a missing value.
+stroke-0020,stroke,missing_values,3334,smoking_status,never smoked,,True,57813,,,20260503,Cell was replaced with a missing value.
+stroke-0021,stroke,missing_values,1757,smoking_status,never smoked,,True,31409,,,20260503,Cell was replaced with a missing value.
+stroke-0022,stroke,missing_values,2035,smoking_status,Unknown,,True,36471,,,20260503,Cell was replaced with a missing value.
+stroke-0023,stroke,missing_values,723,avg_glucose_level,73.57,,True,12857,,,20260503,Cell was replaced with a missing value.
+stroke-0024,stroke,missing_values,1817,avg_glucose_level,104.55,,True,32352,,,20260503,Cell was replaced with a missing value.
+stroke-0025,stroke,missing_values,2895,smoking_status,Unknown,,True,50775,,,20260503,Cell was replaced with a missing value.
+stroke-0026,stroke,missing_values,1595,avg_glucose_level,91.98,,True,28500,,,20260503,Cell was replaced with a missing value.
+stroke-0027,stroke,missing_values,3938,smoking_status,never smoked,,True,68034,,,20260503,Cell was replaced with a missing value.
+stroke-0028,stroke,missing_values,367,avg_glucose_level,93.21,,True,6850,,,20260503,Cell was replaced with a missing value.
+stroke-0029,stroke,missing_values,969,avg_glucose_level,96.62,,True,16987,,,20260503,Cell was replaced with a missing value.
+stroke-0030,stroke,missing_values,2954,smoking_status,Unknown,,True,51762,,,20260503,Cell was replaced with a missing value.
+stroke-0031,stroke,numeric_outlier,4135,avg_glucose_level,65.12,420,True,71420,,,20260503,Numeric value was moved outside the clean subset range.
+stroke-0032,stroke,numeric_outlier,2146,age,79,140,True,38184,,,20260503,Numeric value was moved outside the clean subset range.
+stroke-0033,stroke,numeric_outlier,956,avg_glucose_level,77.92,420,True,16837,,,20260503,Numeric value was moved outside the clean subset range.
+stroke-0034,stroke,numeric_outlier,114,bmi,26.7,95,True,2532,,,20260503,Numeric value was moved outside the clean subset range.
+stroke-0035,stroke,numeric_outlier,255,age,5,140,True,4959,,,20260503,Numeric value was moved outside the clean subset range.
+stroke-0036,stroke,numeric_outlier,765,bmi,29.2,95,True,13547,,,20260503,Numeric value was moved outside the clean subset range.
+stroke-0037,stroke,numeric_outlier,4182,avg_glucose_level,107.47,420,True,72188,,,20260503,Numeric value was moved outside the clean subset range.
+stroke-0038,stroke,numeric_outlier,1898,bmi,22.2,95,True,33924,,,20260503,Numeric value was moved outside the clean subset range.
+stroke-0039,stroke,numeric_outlier,855,bmi,24.9,95,True,15104,,,20260503,Numeric value was moved outside the clean subset range.
+stroke-0040,stroke,numeric_outlier,1851,age,20,140,True,33085,,,20260503,Numeric value was moved outside the clean subset range.
+stroke-0041,stroke,numeric_outlier,3020,avg_glucose_level,123.81,420,True,52790,,,20260503,Numeric value was moved outside the clean subset range.
+stroke-0042,stroke,numeric_outlier,4074,avg_glucose_level,112.72,420,True,70392,,,20260503,Numeric value was moved outside the clean subset range.
+stroke-0043,stroke,numeric_outlier,704,age,65,140,True,12487,,,20260503,Numeric value was moved outside the clean subset range.
+stroke-0044,stroke,numeric_outlier,978,age,15,140,True,17175,,,20260503,Numeric value was moved outside the clean subset range.
+stroke-0045,stroke,numeric_outlier,148,bmi,37.6,95,True,3045,,,20260503,Numeric value was moved outside the clean subset range.
+stroke-0046,stroke,numeric_outlier,3978,avg_glucose_level,67.92,420,True,68601,,,20260503,Numeric value was moved outside the clean subset range.
+stroke-0047,stroke,numeric_outlier,532,age,6,140,True,9612,,,20260503,Numeric value was moved outside the clean subset range.
+stroke-0048,stroke,numeric_outlier,3396,bmi,23.4,95,True,59027,,,20260503,Numeric value was moved outside the clean subset range.
+stroke-0049,stroke,numeric_outlier,330,age,67,140,True,6206,,,20260503,Numeric value was moved outside the clean subset range.
+stroke-0050,stroke,numeric_outlier,3502,avg_glucose_level,89.32,420,True,60732,,,20260503,Numeric value was moved outside the clean subset range.
+stroke-0051,stroke,numeric_outlier,1412,age,48,140,True,25283,,,20260503,Numeric value was moved outside the clean subset range.
+stroke-0052,stroke,numeric_outlier,1545,avg_glucose_level,88.39,420,True,27794,,,20260503,Numeric value was moved outside the clean subset range.
+stroke-0053,stroke,numeric_outlier,73,age,17,140,True,1451,,,20260503,Numeric value was moved outside the clean subset range.
+stroke-0054,stroke,numeric_outlier,3952,avg_glucose_level,59.17,420,True,68245,,,20260503,Numeric value was moved outside the clean subset range.
+stroke-0055,stroke,rare_category,969,gender,Female,__M1_RARE_GENDER_000__,True,16987,,,20260503,Categorical value was replaced with a deterministic singleton category.
+stroke-0056,stroke,rare_category,686,smoking_status,never smoked,__M1_RARE_SMOKING_STATUS_001__,True,12204,,,20260503,Categorical value was replaced with a deterministic singleton category.
+stroke-0057,stroke,rare_category,1868,smoking_status,smokes,__M1_RARE_SMOKING_STATUS_002__,True,33400,,,20260503,Categorical value was replaced with a deterministic singleton category.
+stroke-0058,stroke,rare_category,3440,gender,Female,__M1_RARE_GENDER_003__,True,59737,,,20260503,Categorical value was replaced with a deterministic singleton category.
+stroke-0059,stroke,rare_category,3925,work_type,Private,__M1_RARE_WORK_TYPE_004__,True,67864,,,20260503,Categorical value was replaced with a deterministic singleton category.
+stroke-0060,stroke,rare_category,1681,smoking_status,never smoked,__M1_RARE_SMOKING_STATUS_005__,True,30214,,,20260503,Categorical value was replaced with a deterministic singleton category.
+stroke-0061,stroke,rare_category,428,work_type,Private,__M1_RARE_WORK_TYPE_006__,True,7789,,,20260503,Categorical value was replaced with a deterministic singleton category.
+stroke-0062,stroke,rare_category,4084,gender,Female,__M1_RARE_GENDER_007__,True,70610,,,20260503,Categorical value was replaced with a deterministic singleton category.
+stroke-0063,stroke,rare_category,2232,smoking_status,formerly smoked,__M1_RARE_SMOKING_STATUS_008__,True,39708,,,20260503,Categorical value was replaced with a deterministic singleton category.
+stroke-0064,stroke,rare_category,4099,smoking_status,Unknown,__M1_RARE_SMOKING_STATUS_009__,True,70874,,,20260503,Categorical value was replaced with a deterministic singleton category.
+stroke-0065,stroke,rare_category,266,smoking_status,Unknown,__M1_RARE_SMOKING_STATUS_010__,True,5121,,,20260503,Categorical value was replaced with a deterministic singleton category.
+stroke-0066,stroke,rare_category,2179,gender,Female,__M1_RARE_GENDER_011__,True,38673,,,20260503,Categorical value was replaced with a deterministic singleton category.
+stroke-0067,stroke,rare_category,2456,work_type,Private,__M1_RARE_WORK_TYPE_012__,True,43507,,,20260503,Categorical value was replaced with a deterministic singleton category.
+stroke-0068,stroke,rare_category,1836,smoking_status,smokes,__M1_RARE_SMOKING_STATUS_013__,True,32645,,,20260503,Categorical value was replaced with a deterministic singleton category.
+stroke-0069,stroke,rare_category,1519,gender,Female,__M1_RARE_GENDER_014__,True,27435,,,20260503,Categorical value was replaced with a deterministic singleton category.
+stroke-0070,stroke,rare_category,263,work_type,Self-employed,__M1_RARE_WORK_TYPE_015__,True,5046,,,20260503,Categorical value was replaced with a deterministic singleton category.
+stroke-0071,stroke,rare_category,2463,work_type,Govt_job,__M1_RARE_WORK_TYPE_016__,True,43698,,,20260503,Categorical value was replaced with a deterministic singleton category.
+stroke-0072,stroke,rare_category,1940,work_type,children,__M1_RARE_WORK_TYPE_017__,True,34621,,,20260503,Categorical value was replaced with a deterministic singleton category.
+stroke-0073,stroke,cross_column_consistency,1105,"record_start_day,record_end_day",35<=40,50>40,False,19692,,record_start_before_end,20260503,record_start_day was made larger than record_end_day.
+stroke-0074,stroke,cross_column_consistency,95,"record_start_day,record_end_day",105<=110,120>110,False,2092,,record_start_before_end,20260503,record_start_day was made larger than record_end_day.
+stroke-0075,stroke,cross_column_consistency,119,"record_start_day,record_end_day",129<=134,144>134,False,2578,,record_start_before_end,20260503,record_start_day was made larger than record_end_day.
+stroke-0076,stroke,cross_column_consistency,3672,"record_start_day,record_end_day",82<=87,97>87,False,63455,,record_start_before_end,20260503,record_start_day was made larger than record_end_day.
+stroke-0077,stroke,cross_column_consistency,320,"record_start_day,record_end_day",90<=95,105>95,False,6090,,record_start_before_end,20260503,record_start_day was made larger than record_end_day.
+stroke-0078,stroke,cross_column_consistency,128,"record_start_day,record_end_day",18<=23,33>23,False,2751,,record_start_before_end,20260503,record_start_day was made larger than record_end_day.
+stroke-0079,stroke,cross_column_consistency,1632,"record_start_day,record_end_day",82<=87,97>87,False,29229,,record_start_before_end,20260503,record_start_day was made larger than record_end_day.
+stroke-0080,stroke,cross_column_consistency,2230,"record_start_day,record_end_day",80<=85,95>85,False,39683,,record_start_before_end,20260503,record_start_day was made larger than record_end_day.
+stroke-0081,stroke,cross_column_consistency,3026,"record_start_day,record_end_day",36<=41,51>41,False,52847,,record_start_before_end,20260503,record_start_day was made larger than record_end_day.
+stroke-0082,stroke,cross_column_consistency,1148,"record_start_day,record_end_day",78<=83,93>83,False,20421,,record_start_before_end,20260503,record_start_day was made larger than record_end_day.
+stroke-0083,stroke,cross_column_consistency,105,"record_start_day,record_end_day",115<=120,130>120,False,2390,,record_start_before_end,20260503,record_start_day was made larger than record_end_day.
+stroke-0084,stroke,cross_column_consistency,2555,"record_start_day,record_end_day",45<=50,60>50,False,45357,,record_start_before_end,20260503,record_start_day was made larger than record_end_day.
+stroke-0085,stroke,cross_column_consistency,2207,"record_start_day,record_end_day",57<=62,72>62,False,39229,,record_start_before_end,20260503,record_start_day was made larger than record_end_day.
+stroke-0086,stroke,cross_column_consistency,3377,"record_start_day,record_end_day",27<=32,42>32,False,58568,,record_start_before_end,20260503,record_start_day was made larger than record_end_day.
+stroke-0087,stroke,cross_column_consistency,2457,"record_start_day,record_end_day",67<=72,82>72,False,43510,,record_start_before_end,20260503,record_start_day was made larger than record_end_day.
+stroke-0088,stroke,cross_column_consistency,458,"record_start_day,record_end_day",108<=113,123>113,False,8203,,record_start_before_end,20260503,record_start_day was made larger than record_end_day.
+stroke-0089,stroke,duplicate_record,4228,source_row_id,m1-row-02005,m1-dup-00000,False,35737,35737,,20260503,A duplicate row was appended with the same source_row_id.
+stroke-0090,stroke,duplicate_record,4229,source_row_id,m1-row-01092,m1-dup-00001,False,19419,19419,,20260503,A duplicate row was appended with the same source_row_id.
+stroke-0091,stroke,duplicate_record,4230,source_row_id,m1-row-02971,m1-dup-00002,False,52050,52050,,20260503,A duplicate row was appended with the same source_row_id.
+stroke-0092,stroke,duplicate_record,4231,source_row_id,m1-row-03671,m1-dup-00003,False,63453,63453,,20260503,A duplicate row was appended with the same source_row_id.
+stroke-0093,stroke,duplicate_record,4232,source_row_id,m1-row-01845,m1-dup-00004,False,32826,32826,,20260503,A duplicate row was appended with the same source_row_id.
+stroke-0094,stroke,duplicate_record,4233,source_row_id,m1-row-02354,m1-dup-00005,False,41820,41820,,20260503,A duplicate row was appended with the same source_row_id.
+stroke-0095,stroke,duplicate_record,4234,source_row_id,m1-row-01004,m1-dup-00006,False,17683,17683,,20260503,A duplicate row was appended with the same source_row_id.
+stroke-0096,stroke,duplicate_record,4235,source_row_id,m1-row-03076,m1-dup-00007,False,53815,53815,,20260503,A duplicate row was appended with the same source_row_id.
+stroke-0097,stroke,duplicate_record,4236,source_row_id,m1-row-00058,m1-dup-00008,False,1116,1116,,20260503,A duplicate row was appended with the same source_row_id.
+stroke-0098,stroke,duplicate_record,4237,source_row_id,m1-row-02272,m1-dup-00009,False,40390,40390,,20260503,A duplicate row was appended with the same source_row_id.
+stroke-0099,stroke,duplicate_record,4238,source_row_id,m1-row-02138,m1-dup-00010,False,38074,38074,,20260503,A duplicate row was appended with the same source_row_id.
+stroke-0100,stroke,duplicate_record,4239,source_row_id,m1-row-03985,m1-dup-00011,False,68721,68721,,20260503,A duplicate row was appended with the same source_row_id.

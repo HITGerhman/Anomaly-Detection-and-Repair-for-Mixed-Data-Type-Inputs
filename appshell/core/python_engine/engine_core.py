@@ -36,6 +36,8 @@ if str(PROJECT_ROOT) not in sys.path:
 
 _SYSTEM_STATE_CACHE: dict[tuple[Any, ...], tuple[Any, Any, Any]] = {}
 _MODEL_IMPORTANCE_CACHE: dict[tuple[Any, ...], list[float] | None] = {}
+DEFAULT_GOWER_AUTO_MAX_CANDIDATES = 512
+DEFAULT_GOWER_FULL_SCAN_THRESHOLD = 5_000
 
 
 def _emit_stage_progress(
@@ -2114,6 +2116,21 @@ def _gower_strategy_from_payload(payload: dict[str, Any]) -> dict[str, Any]:
         "weight_mode": str(raw.get("weight_mode", "uniform") or "uniform").strip().lower(),
         "feature_weights": raw.get("feature_weights"),
         "preview_limit": _to_positive_int(raw, "preview_limit", default=5, minimum=1, maximum=50),
+        "candidate_policy": str(raw.get("candidate_policy", "auto") or "auto").strip().lower(),
+        "auto_max_candidates": _to_positive_int(
+            raw,
+            "auto_max_candidates",
+            default=DEFAULT_GOWER_AUTO_MAX_CANDIDATES,
+            minimum=32,
+            maximum=1_000_000,
+        ),
+        "full_scan_threshold": _to_positive_int(
+            raw,
+            "full_scan_threshold",
+            default=DEFAULT_GOWER_FULL_SCAN_THRESHOLD,
+            minimum=1,
+            maximum=10_000_000,
+        ),
     }
     if "max_candidates" in raw:
         strategy["max_candidates"] = _to_optional_positive_int(raw, "max_candidates", minimum=1, maximum=1_000_000)
@@ -2121,6 +2138,12 @@ def _gower_strategy_from_payload(payload: dict[str, Any]) -> dict[str, Any]:
         strategy["max_candidates"] = _to_optional_positive_int(raw, "sample_size", minimum=1, maximum=1_000_000)
     else:
         strategy["max_candidates"] = None
+    if strategy["candidate_policy"] not in {"auto", "sample", "full"}:
+        raise KnownEngineError(
+            code=ErrorCode.INVALID_INPUT,
+            message="gower_strategy.candidate_policy must be auto/sample/full",
+            details={"field": "gower_strategy.candidate_policy", "value": strategy["candidate_policy"]},
+        )
     if strategy["weight_mode"] not in {"uniform", "model_importance", "custom"}:
         raise KnownEngineError(
             code=ErrorCode.INVALID_INPUT,
@@ -2212,14 +2235,39 @@ def _limit_gower_candidate_rows(
     issue_id: str,
     column: str,
     row_pos: int,
-) -> tuple[Any, int, int, bool]:
+    candidate_policy: str = "auto",
+    auto_max_candidates: int = DEFAULT_GOWER_AUTO_MAX_CANDIDATES,
+    full_scan_threshold: int = DEFAULT_GOWER_FULL_SCAN_THRESHOLD,
+) -> tuple[Any, int, int, bool, str]:
     pool_size = int(len(candidate_rows))
-    if max_candidates is None or pool_size <= int(max_candidates):
-        return candidate_rows, pool_size, pool_size, False
-    sample_size = int(max_candidates)
+    selection_mode = "full"
+    effective_limit: int | None = None
+    if max_candidates is not None:
+        effective_limit = int(max_candidates)
+        selection_mode = "explicit_max_candidates"
+    else:
+        policy = str(candidate_policy or "auto").strip().lower()
+        if policy == "full":
+            effective_limit = None
+            selection_mode = "full"
+        elif policy == "sample":
+            effective_limit = int(auto_max_candidates)
+            selection_mode = "sample"
+        else:
+            if pool_size <= int(full_scan_threshold):
+                effective_limit = None
+                selection_mode = "auto_full"
+            else:
+                effective_limit = int(auto_max_candidates)
+                selection_mode = "auto_sample"
+
+    if effective_limit is None or pool_size <= effective_limit:
+        return candidate_rows, pool_size, pool_size, False, selection_mode
+    sample_size = int(effective_limit)
     seed = _stable_gower_sample_seed(issue_id, column, row_pos, pool_size, sample_size)
     sampled = candidate_rows.sample(n=sample_size, random_state=seed).sort_index()
-    return sampled, pool_size, sample_size, True
+    return sampled, pool_size, sample_size, True, selection_mode
+
 
 def action_health(_: dict[str, Any]) -> dict[str, Any]:
     dependencies = _runtime_dependency_snapshot()
@@ -3670,7 +3718,7 @@ def action_repair_with_gower(payload: dict[str, Any]) -> dict[str, Any]:
             elif issue_type == "rare_category":
                 healthy_mask = healthy_mask & original_df[column].notna()
 
-            candidate_pool = original_df.loc[healthy_mask].copy()
+            candidate_pool = original_df.loc[healthy_mask]
             if candidate_pool.empty:
                 add_skip(issue_id, "no_healthy_neighbors", {"issue_type": issue_type, "column": column})
                 continue
@@ -3691,22 +3739,31 @@ def action_repair_with_gower(payload: dict[str, Any]) -> dict[str, Any]:
             candidate_pool_sizes: list[int] = []
             candidate_sample_sizes: list[int] = []
             candidate_limit_applied = False
+            candidate_selection_modes: list[str] = []
 
             for pos in positions:
                 row_label = original_df.index[pos]
-                candidate_rows = candidate_pool.drop(index=row_label, errors="ignore")
-                if candidate_rows.empty:
+                if row_label in candidate_pool.index:
+                    candidate_rows = candidate_pool.drop(index=row_label, errors="ignore")
+                    if candidate_rows.empty:
+                        candidate_rows = candidate_pool
+                else:
                     candidate_rows = candidate_pool
-                candidate_rows, pool_size, sample_size, limit_applied = _limit_gower_candidate_rows(
+                candidate_rows, pool_size, sample_size, limit_applied, selection_mode = _limit_gower_candidate_rows(
                     candidate_rows,
                     gower_strategy.get("max_candidates"),
                     issue_id=issue_id,
                     column=column,
                     row_pos=int(pos),
+                    candidate_policy=str(gower_strategy["candidate_policy"]),
+                    auto_max_candidates=int(gower_strategy["auto_max_candidates"]),
+                    full_scan_threshold=int(gower_strategy["full_scan_threshold"]),
                 )
                 candidate_pool_sizes.append(pool_size)
                 candidate_sample_sizes.append(sample_size)
                 candidate_limit_applied = candidate_limit_applied or limit_applied
+                if selection_mode not in candidate_selection_modes:
+                    candidate_selection_modes.append(selection_mode)
                 try:
                     suggestion = suggest_replacement_from_neighbors(
                         candidate_rows,
@@ -3789,6 +3846,10 @@ def action_repair_with_gower(payload: dict[str, Any]) -> dict[str, Any]:
                 "candidate_pool_size": max(candidate_pool_sizes) if candidate_pool_sizes else 0,
                 "candidate_sample_size": max(candidate_sample_sizes) if candidate_sample_sizes else 0,
                 "candidate_limit_applied": bool(candidate_limit_applied),
+                "candidate_policy": str(gower_strategy["candidate_policy"]),
+                "candidate_selection_mode": candidate_selection_modes[0] if len(candidate_selection_modes) == 1 else candidate_selection_modes,
+                "auto_max_candidates": int(gower_strategy["auto_max_candidates"]),
+                "full_scan_threshold": int(gower_strategy["full_scan_threshold"]),
             }
 
         _emit_stage_progress(
@@ -3936,6 +3997,9 @@ def action_repair_with_gower(payload: dict[str, Any]) -> dict[str, Any]:
                 "weight_mode": str(gower_strategy["weight_mode"]),
                 "preview_limit": int(gower_strategy["preview_limit"]),
                 "max_candidates": gower_strategy.get("max_candidates"),
+                "candidate_policy": str(gower_strategy["candidate_policy"]),
+                "auto_max_candidates": int(gower_strategy["auto_max_candidates"]),
+                "full_scan_threshold": int(gower_strategy["full_scan_threshold"]),
             },
             "plan_only": plan_only,
             "execution_mode": "plan_only" if plan_only else "apply",

@@ -270,3 +270,132 @@ appshell/backend/cmd/wails ok
 - 最终论文图号、表号和截图。
 - 导师要求的章节标题、字数比例和格式细节。
 - 若需要提交 Word 版本，还需将本 Markdown 内容人工或单独任务转换为 `.docx` 并检查排版。
+
+## 2026-05-13 Cross-Dataset Thesis Update
+
+The final thesis source file was not found in this repository. The following
+material is therefore maintained here as the paper-facing update source for
+Chapter 5, Chapter 6, and Chapter 7. All numbers below come from the generated
+CSV artifacts under `artifacts/experiments/cross_dataset/`.
+
+### Chapter 5: Supplementary Cross-dataset Validation
+
+The original M1/M2/M3 stroke experiment remains the main controlled experiment.
+The supplementary validation adds `orders_transactions` and `user_device_logs`
+to check whether the same mixed-type CSV scanning, controlled repair, review
+boundary, and side-effect accounting can be reproduced beyond one data source.
+
+Use these table sources directly:
+
+| Thesis table | Artifact source |
+|---|---|
+| Cross-dataset detection metrics summary | `artifacts/experiments/cross_dataset/summary_detection_metrics.csv` |
+| Cross-dataset repair metrics summary | `artifacts/experiments/cross_dataset/summary_repair_metrics.csv` |
+| Numeric outlier threshold sensitivity summary | `artifacts/experiments/cross_dataset/threshold_sensitivity_numeric_outlier.csv` |
+
+Detection overall metrics from the 2026-05-13 run:
+
+| Dataset | GT | Pred | TP | FP | FN | Precision | Recall | F1 |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|
+| `stroke` | 100 | 222 | 100 | 122 | 0 | 0.450450 | 1.000000 | 0.621118 |
+| `orders_transactions` | 100 | 140 | 100 | 40 | 0 | 0.714286 | 1.000000 | 0.833333 |
+| `user_device_logs` | 100 | 100 | 100 | 0 | 0 | 1.000000 | 1.000000 | 1.000000 |
+
+Issue-level discussion:
+
+- `missing_values` reached recall `1.000000` on all three datasets. Precision
+  was `1.000000` on `stroke` and `user_device_logs`, and `0.967742` on
+  `orders_transactions`.
+- `rare_category` reached precision, recall, and F1 of `1.000000` on all three
+  datasets in this controlled setup.
+- `numeric_outlier` remained the main source of false positives. With the
+  default thresholds, `stroke` produced 122 numeric false positives and
+  `orders_transactions` produced 39 numeric false positives. `user_device_logs`
+  did not produce numeric false positives in this run.
+- `duplicate_record` and `cross_column_consistency` were detected correctly in
+  these controlled datasets, but they remain manual-review issue types.
+
+Repair overall metrics from the 2026-05-13 run:
+
+| Dataset | Repairable GT | Changed | Exact | Improved/Exact | Exact Rate | Improved/Exact Rate | Non-GT Modified | Skipped Review-only |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|
+| `stroke` | 72 | 72 | 17 | 41 | 0.236111 | 0.569444 | 122 | 28 |
+| `orders_transactions` | 72 | 72 | 5 | 29 | 0.069444 | 0.402778 | 40 | 28 |
+| `user_device_logs` | 72 | 72 | 20 | 44 | 0.277778 | 0.611111 | 0 | 28 |
+
+The repair discussion should stay conservative. Exact restoration is limited:
+only 17, 5, and 20 of the 72 repairable ground-truth anomalies were restored
+exactly for `stroke`, `orders_transactions`, and `user_device_logs`. The
+improved-or-exact metric is more suitable for numeric outlier repair because
+clipping or median-style repair can reduce error without recovering the true
+original value. Non-GT modified cells are not repair successes; they reveal side
+effects caused mainly by numeric false positives.
+
+Numeric threshold sensitivity:
+
+- On `stroke`, the default `iqr_factor=1.5` produced numeric precision
+  `0.164384` and recall `1.000000`. Raising the IQR factor to `2.0` reduced
+  false positives to 25 and improved precision to `0.489796`. The strict
+  `iqr_factor=3.0, robust_z_threshold=4.5` setting removed numeric false
+  positives but reduced recall to `0.625000`.
+- On `orders_transactions`, `iqr_factor=2.0, robust_z_threshold=4.5` and stricter
+  comparable settings reached precision, recall, and F1 of `1.000000`.
+- On `user_device_logs`, all tested threshold combinations reached precision,
+  recall, and F1 of `1.000000`.
+
+This supports the paper claim that numeric outlier detection is threshold
+sensitive and should be tuned with domain context rather than treated as a
+universal automatic-repair trigger.
+
+### Chapter 6: Extended Sample and Scale Testing
+
+Rename or extend the previous section as:
+
+```text
+6.6 Extended Sample and Scale Testing
+```
+
+Use this table source:
+
+```text
+artifacts/experiments/cross_dataset/summary_scale_metrics.csv
+```
+
+Scale results from the 2026-05-13 run:
+
+| Dataset Name | Rows | Columns | Scan Time (s) | Repair Time (s) | Detected Issues | Changed Cells | Output Size MB |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| `orders_transactions_scale` | 5000 | 13 | 0.252031 | 0.188720 | 152 | 111 | 0.566670 |
+| `orders_transactions_scale` | 10000 | 13 | 0.206418 | 0.217076 | 301 | 221 | 1.133484 |
+| `orders_transactions_scale` | 50000 | 13 | 0.452200 | 0.964246 | 611 | 531 | 5.654707 |
+| `orders_transactions_scale` | 100000 | 13 | 1.053711 | 1.899857 | 974 | 894 | 11.303867 |
+
+These results show that the command-line experimental pipeline can process
+larger mixed CSV files in this local environment. The scale test is a system
+throughput check, not an accuracy proof. Peak memory is not reported because the
+pipeline avoids adding platform-specific memory-measurement dependencies.
+
+### Chapter 7: Limitations and Future Work Update
+
+The conclusion should remain cautious. A suitable statement is:
+
+> The supplementary cross-dataset experiments strengthen the evidence that the
+> system is not tied to a single stroke dataset. Across stroke,
+> orders_transactions, and user_device_logs, the same pipeline produced
+> reproducible scanning, controlled repair, rollback-compatible outputs,
+> review-only handling for duplicate and cross-column issues, and side-effect
+> statistics.
+
+Avoid claiming that the system is production-ready, applicable to all real
+business data, able to repair every anomaly automatically, or able to recover
+all original values.
+
+Keep these limitations:
+
+- Numeric outlier detection still needs threshold tuning and domain rules.
+- Repair quality depends on anomaly type and repair strategy.
+- `duplicate_record` and `cross_column_consistency` still require human
+  confirmation.
+- More real-domain datasets are future work.
+- Front-end, deployment, and full user workflow validation can still be
+  improved.

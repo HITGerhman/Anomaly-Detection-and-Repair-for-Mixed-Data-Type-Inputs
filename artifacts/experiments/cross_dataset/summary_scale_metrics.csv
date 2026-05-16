@@ -1,0 +1,5 @@
+dataset_name,rows,columns,scan_time_seconds,repair_time_seconds,detected_issue_count,changed_cell_count,output_file_size_mb
+orders_transactions_scale,5000,13,0.252031,0.188720,152,111,0.566670
+orders_transactions_scale,10000,13,0.206418,0.217076,301,221,1.133484
+orders_transactions_scale,50000,13,0.452200,0.964246,611,531,5.654707
+orders_transactions_scale,100000,13,1.053711,1.899857,974,894,11.303867

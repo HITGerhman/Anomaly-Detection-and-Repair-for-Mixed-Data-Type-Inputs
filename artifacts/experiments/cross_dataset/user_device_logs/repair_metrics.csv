@@ -1,0 +1,5 @@
+dataset,issue_type,repairable_gt,changed,exact,improved_or_exact,exact_rate,improved_or_exact_rate,non_gt_modified,skipped_non_repairable_count
+user_device_logs,missing_values,30,30,8,8,0.266667,0.266667,0,0
+user_device_logs,numeric_outlier,24,24,0,24,0.000000,1.000000,0,0
+user_device_logs,rare_category,18,18,12,12,0.666667,0.666667,0,0
+user_device_logs,Overall,72,72,20,44,0.277778,0.611111,0,28

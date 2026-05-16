@@ -1,0 +1,39 @@
+{
+  "dataset": "user_device_logs",
+  "issue_count": 12,
+  "issue_type_counts": {
+    "cross_column_consistency": 1,
+    "duplicate_record": 1,
+    "missing_values": 4,
+    "numeric_outlier": 3,
+    "rare_category": 3
+  },
+  "scan_config": {
+    "auto_pair_constraints": false,
+    "consistency_rules": [
+      {
+        "left_col": "login_time",
+        "name": "logout_not_before_login",
+        "right_col": "logout_time",
+        "type": "lte"
+      }
+    ],
+    "duplicate_subset": [
+      "source_row_id"
+    ],
+    "enable_cross_column_consistency": true,
+    "enable_duplicate_record": true,
+    "enable_time_series_shift": false,
+    "max_bins": 120,
+    "max_issues": 5000,
+    "min_categorical_samples": 8,
+    "min_numeric_samples": 6,
+    "numeric_iqr_factor": 1.5,
+    "preview_limit": 20,
+    "rare_count_floor": 2,
+    "rare_ratio_threshold": 0.01,
+    "robust_z_threshold": 3.5,
+    "time_series_min_points": 24,
+    "time_series_z_threshold": 4.0
+  }
+}
