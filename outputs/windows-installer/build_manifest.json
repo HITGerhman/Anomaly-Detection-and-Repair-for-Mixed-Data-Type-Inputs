@@ -1,0 +1,14 @@
+﻿{
+    "version":  "0.1.0",
+    "output_root":  "D:\\code\\pythoncode\\Anomaly Detection and Repair for Mixed Data Type Inputs\\outputs\\windows-installer",
+    "stage_dir":  "D:\\code\\pythoncode\\Anomaly Detection and Repair for Mixed Data Type Inputs\\outputs\\windows-installer\\stage",
+    "main_exe":  "D:\\code\\pythoncode\\Anomaly Detection and Repair for Mixed Data Type Inputs\\outputs\\windows-installer\\stage\\AnomalyDetectionRepair.exe",
+    "engine_exe":  "D:\\code\\pythoncode\\Anomaly Detection and Repair for Mixed Data Type Inputs\\outputs\\windows-installer\\stage\\python_engine\\anomaly_engine.exe",
+    "installer_exe":  "D:\\code\\pythoncode\\Anomaly Detection and Repair for Mixed Data Type Inputs\\outputs\\windows-installer\\installer\\AnomalyDetectionRepairSetup-0.1.0.exe",
+    "installed_dir":  "D:\\code\\pythoncode\\Anomaly Detection and Repair for Mixed Data Type Inputs\\outputs\\windows-installer\\installed",
+    "verification_root":  "D:\\code\\pythoncode\\Anomaly Detection and Repair for Mixed Data Type Inputs\\outputs\\windows-installer\\verification",
+    "skip_installer":  false,
+    "skip_gui_launch":  false,
+    "built_at":  "2026-05-16 07:46:42 +08:00",
+    "note":  "Manifest written after validating installer, installed package smoke test, and repaired output artifacts."
+}

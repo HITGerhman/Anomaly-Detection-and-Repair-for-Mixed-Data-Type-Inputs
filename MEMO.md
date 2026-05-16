@@ -1655,3 +1655,107 @@ Last updated: 2026-05-11 14:16:30 +08:00
   - Go 指定回归：`ok` for `./internal/agent ./cmd/wails`。
 - 待处理事项：
   - 提交 merge commit 并推送到 `origin/feat/algorithm-risk-hardening` 后，在 GitHub PR 页面确认 merge conflict 提示消失。
+
+## Update 2026-05-13 18:29:26 +08:00
+
+- 改动日期：2026-05-13 18:29:26 +08:00
+- 改动内容简述：新增跨数据集验证实验流水线，用于把本科论文实验从单一 stroke 主实验扩展为 `stroke`、`orders_transactions`、`user_device_logs` 三个混合类型 CSV 场景下的可复现检测、受控修复、阈值敏感性和规模测试。本次保持 M1/M2/M3、R5、R6 既有实验目录不被覆盖，不重写 Python Engine 核心算法，不改变 `scan_file`、`repair_batch`、`rollback_repair_batch` 默认行为。
+- 最终目标：让论文从“只在一个 stroke 受控数据集上验证流程”增强为“在多个混合类型 CSV 场景下验证扫描、受控修复、人工复核边界和副作用统计，同时保守说明 numeric_outlier 仍然敏感且需要阈值调优和人工确认”。
+- 当前采用的方法：
+  - 新增 `scripts/run_cross_dataset_validation.py`，作为 Engine 外围实验编排脚本，复用现有 `scan_file` / `_detect_issues_for_frame`、`repair_batch` 和已有阈值入口 `numeric_iqr_factor`、`robust_z_threshold`。
+  - `stroke` 数据集复制并标准化 `data/experiments/m1_stroke/` 到 `artifacts/experiments/cross_dataset/stroke/`，不修改 M1/M2/M3 原始目录。
+  - `orders_transactions` 和 `user_device_logs` 使用固定 seed 生成确定性 5000 行 clean CSV，再注入 100 条异常并生成统一 schema 的 ground truth。
+  - 五类异常默认比例为 `missing_values=30`、`numeric_outlier=24`、`rare_category=18`、`duplicate_record=12`、`cross_column_consistency=16`。
+  - 修复评估只选择 `missing_values`、`numeric_outlier`、`rare_category`，将 `duplicate_record` 和 `cross_column_consistency` 统计为 skipped / review-only，不计入修复失败。
+  - 大规模性能测试临时 CSV 与 repaired CSV 写入 ignored 的 `outputs/cross_dataset_validation/`，论文级 CSV/JSON/MD artifact 写入 `artifacts/experiments/cross_dataset/`。
+- 相关模块/文件：
+  - `scripts/run_cross_dataset_validation.py`
+  - `tests/python_engine/test_cross_dataset_validation.py`
+  - `docs/cross_dataset_experiments.md`
+  - `README.md`
+  - `THESIS_SUPPORT_MATERIALS.md`
+  - `.gitignore`
+  - `artifacts/experiments/cross_dataset/`
+  - `MEMO.md`
+- 已解决的问题 / 新增功能：
+  - 新增一键命令：`.\.venv-win\Scripts\python.exe scripts\run_cross_dataset_validation.py --all`。
+  - 新增分阶段命令：`--generate`、`--detect`、`--repair`、`--threshold-sensitivity`、`--scale`。
+  - 每个数据集输出 `clean.csv`、`corrupted.csv`、`ground_truth.csv`、`injection_summary.json`、`detection_metrics.csv`、`repair_metrics.csv`、`side_effect_summary.csv`。
+  - 汇总输出 `summary_detection_metrics.csv`、`summary_repair_metrics.csv`、`threshold_sensitivity_numeric_outlier.csv`、`summary_scale_metrics.csv`。
+  - 新增轻量测试覆盖固定 seed 生成确定性、GT 数量、三数据集文件生成、检测/修复/阈值/规模 summary CSV 必要列、以及 review-only 类型被跳过。
+  - 文档说明了数据集字段、异常注入、GT 构造、检测/修复指标、副作用含义、manual review 边界、numeric_outlier false positives、运行命令、输出目录、论文写法和实验边界。
+- 验证命令：
+  - `.\.venv-win\Scripts\python.exe -m py_compile scripts\run_cross_dataset_validation.py tests\python_engine\test_cross_dataset_validation.py`
+  - `.\.venv-win\Scripts\python.exe -m pytest tests\python_engine\test_cross_dataset_validation.py -q`
+  - `.\.venv-win\Scripts\python.exe scripts\run_cross_dataset_validation.py --all`
+  - `.\.venv-win\Scripts\python.exe -m pytest tests\python_engine -q`
+- 验收结果：
+  - py_compile：通过。
+  - cross-dataset targeted 测试：`2 passed in 5.32s`。
+  - Python engine 全量回归：`52 passed, 12 warnings in 88.21s`，warnings 仍为既有 pandas categorical dtype deprecation。
+  - 完整 `--all` 实验：通过，生成目录为 `artifacts/experiments/cross_dataset/`。
+  - Detection overall：`stroke` 为 `precision=0.450450, recall=1.000000, f1=0.621118`；`orders_transactions` 为 `precision=0.714286, recall=1.000000, f1=0.833333`；`user_device_logs` 为 `precision=1.000000, recall=1.000000, f1=1.000000`。
+  - Repair overall：`stroke` 为 `exact_rate=0.236111, improved_or_exact_rate=0.569444, non_gt_modified=122`；`orders_transactions` 为 `exact_rate=0.069444, improved_or_exact_rate=0.402778, non_gt_modified=40`；`user_device_logs` 为 `exact_rate=0.277778, improved_or_exact_rate=0.611111, non_gt_modified=0`。
+  - Threshold sensitivity：`stroke` 默认 numeric precision `0.164384`，严格到 `iqr_factor=3.0, robust_z_threshold=4.5` 后 precision `1.000000` 但 recall 降至 `0.625000`；`orders_transactions` 在 `iqr_factor=2.0, robust_z_threshold=4.5` 达到 numeric precision/recall/F1 全部 `1.000000`；`user_device_logs` 全部阈值组合均为 `1.000000`。
+  - Scale test：`orders_transactions_scale` 在 `5000/10000/50000/100000` 行上生成结果；100000 行记录为 `scan_time_seconds=1.053711`、`repair_time_seconds=1.899857`、`detected_issue_count=974`、`changed_cell_count=894`、`output_file_size_mb=11.303867`。
+- 当前问题 / 待处理事项：
+  - 这些实验增强了可复现证据，但不能声称 production-ready，也不能声称适用于所有真实业务数据。
+  - `numeric_outlier` 仍然是主要误报来源，后续论文讨论应强调阈值调优、业务规则和人工确认。
+  - `duplicate_record` 与 `cross_column_consistency` 仍作为人工复核项；后续若要自动修复，需要单独设计可解释的领域策略和交互确认流程。
+  - 规模测试当前不报告 peak memory，因为未新增平台相关内存测量依赖。
+
+## Update 2026-05-16 07:46:49 +08:00
+
+- 改动日期：2026-05-16 07:46:49 +08:00
+- 改动内容简述：新增隔离的 Windows 安装包打包流水线，并完成安装包、安装目录、Python engine、CSV 扫描、修复输出和 GUI 启动的最小自动验收。本次不重排现有成熟目录结构；打包脚本放在 `packaging/windows-installer/`，生成物放在 ignored 的 `outputs/windows-installer/`。
+- 最终目标：交付标准 Windows 安装包和安装后的主程序 `AnomalyDetectionRepair.exe`，目标机器无需系统 Python，安装目录包含 Wails 主程序、前端资源、PyInstaller onedir Python engine、样例 CSV 和说明文件。
+- 当前采用的方法：
+  - 新增 `packaging/windows-installer/build_installer.ps1`，使用 `outputs/windows-installer/build-venv` 作为隔离打包 venv，安装 `requirements.lock.txt` 与 `pyinstaller==6.11.1`。
+  - 使用 PyInstaller `onedir` 打包 `appshell/core/python_engine/engine_main.py` 为 `python_engine/anomaly_engine.exe`，并补充 conda DLL、`lightgbm`、`scipy`、`sklearn` 收集项以解决 `_ctypes` / LightGBM / SciPy 运行时缺失。
+  - 使用 Go 构建 `AnomalyDetectionRepair.exe`；当前采用普通 console 子系统构建，因为 `-H windowsgui` 构建的 Wails 程序在本机 `wails.Run` 约 3 秒后无错误返回并退出。
+  - 新增 `packaging/windows-installer/installer.iss.in`，通过 Inno Setup 生成标准安装包；本机已通过 `winget` 安装 Inno Setup 6.7.1。
+  - 新增 `packaging/windows-installer/smoke_test_package.ps1`，通过异步 stdout/stderr 读取和超时保护执行 packaged engine `health`、`scan_file`、`repair_batch`，并验证 repaired CSV、rollback manifest 和主程序进程启动。
+  - Wails 后端新增 packaged runtime 路径解析：安装目录优先解析 `frontend/` 与 `python_engine/anomaly_engine.exe`，开发模式保留 `appshell/frontend` 与 `appshell/core/python_engine/engine_main.py`。
+  - packaged 模式下相对输出路径、task DB、results 输出和 Go 日志默认写入 `%LOCALAPPDATA%\AnomalyDetectionRepair`，避免写入安装目录。
+- 相关模块/文件：
+  - `packaging/windows-installer/build_installer.ps1`
+  - `packaging/windows-installer/smoke_test_package.ps1`
+  - `packaging/windows-installer/installer.iss.in`
+  - `appshell/backend/internal/engine/runner.go`
+  - `appshell/backend/cmd/wails/main.go`
+  - `appshell/backend/cmd/wails/runtime_paths.go`
+  - `appshell/backend/cmd/wails/app.go`
+  - `appshell/backend/cmd/wails/startup_checks.go`
+  - `outputs/windows-installer/installer/AnomalyDetectionRepairSetup-0.1.0.exe`
+  - `outputs/windows-installer/installed/AnomalyDetectionRepair.exe`
+  - `outputs/windows-installer/verification/installed/verification.md`
+  - `outputs/windows-installer/verification/installed/verification_summary.json`
+  - `outputs/windows-installer/build_manifest.json`
+- 已解决的问题 / 新增功能：
+  - Go engine runner 支持直接执行 PyInstaller 产出的 `.exe`，不再要求安装机具备系统 Python。
+  - 打包脚本可自动查找 Inno Setup；若未找到则通过 `winget install -e --id JRSoftware.InnoSetup --silent --accept-package-agreements --accept-source-agreements` 安装。
+  - 修复 PowerShell 执行策略导致子 smoke 脚本不能直接 `& .ps1` 的问题，改为 `powershell.exe -NoProfile -ExecutionPolicy Bypass -File ...`。
+  - 修复 Inno 静默安装返回后文件尚未完全落盘即进入 smoke 的竞态，新增安装日志与主 exe 轮询等待。
+  - 修复 smoke 脚本同步 pipe 读取导致 `repair_batch` 已写出文件但脚本等待的问题，改为异步读取并设置请求超时。
+  - 修复 smoke report 变量被反引号转义后无法展开的问题。
+- 验证命令：
+  - `$env:PATH = (Resolve-Path '.\.venv-win\Scripts').Path + ';' + $env:PATH; Push-Location appshell\backend; go test ./internal/engine ./internal/task ./cmd/wails; Pop-Location`
+  - `.\.venv-win\Scripts\python.exe -m pytest tests\python_engine\test_engine_health.py -q`
+  - `powershell -NoProfile -ExecutionPolicy Bypass -File .\packaging\windows-installer\smoke_test_package.ps1 -PackageDir .\outputs\windows-installer\installed -OutputRoot .\outputs\windows-installer\verification\installed`
+  - `outputs\windows-installer\installer\AnomalyDetectionRepairSetup-0.1.0.exe /VERYSILENT /SUPPRESSMSGBOXES /NORESTART /NOICONS /DIR=outputs\windows-installer\installed /LOG=outputs\windows-installer\verification\inno-install.log`（通过脚本同等参数执行并等待日志成功）
+- 验收结果：
+  - Go 回归：`ok` for `./internal/engine`、`./internal/task`、`./cmd/wails`。
+  - Python engine health 测试：`2 passed in 5.41s`。
+  - 安装包路径：`outputs/windows-installer/installer/AnomalyDetectionRepairSetup-0.1.0.exe`，大小约 `90.76 MB`。
+  - 安装目录主程序：`outputs/windows-installer/installed/AnomalyDetectionRepair.exe`。
+  - 安装目录 engine：`outputs/windows-installer/installed/python_engine/anomaly_engine.exe`。
+  - installed smoke：`health_status=ok`，`scan_issue_count=17`，修复 issue 为 `bmi::missing_values`。
+  - 修复输出：`outputs/windows-installer/verification/installed/repair-output/m1_stroke_corrupted.repaired.csv`。
+  - rollback manifest：`outputs/windows-installer/verification/installed/repair-output/.rollback/rb-1778888732119-10a330b2.json`。
+  - GUI 启动 smoke：`gui_launch_status=started`，脚本确认主程序进程可启动并保持运行后结束。
+- 当前问题 / 待处理事项：
+  - 当前可交付版本为标准安装包 + 安装目录 onedir 结构，不是单文件 exe。
+  - 当前主程序为 console 子系统构建，双击会同时出现控制台窗口；`-H windowsgui` 在本机导致 Wails 程序无错误快速退出，后续需要单独排查 Wails Windows GUI 子系统生命周期问题。
+  - 自动 smoke 已覆盖 engine health、CSV 扫描、修复执行、输出 CSV、rollback manifest 和主程序启动；由于当前工具无法直接操控桌面 WebView 文件选择和结果页面，UI 内“选择 CSV、查看结果、点击修复”的视觉验收仍需操作者手动确认。
+  - PyInstaller 当前为了运行可靠收集了较多 `scipy/sklearn/pyarrow` 文件，安装包较大且压缩较慢；后续可通过定制 spec 排除 tests/include/pyarrow 等无关内容瘦身。
+  - `build_installer.ps1` 在补齐安装等待逻辑前的最后一次完整重跑停在 installed smoke 的落盘竞态；等待逻辑补齐后已单独复测安装 + 等待 + installed smoke 段通过，最终 package artifact 和 verification artifact 已生成。

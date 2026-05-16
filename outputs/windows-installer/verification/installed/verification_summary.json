@@ -1,0 +1,14 @@
+﻿{
+    "package_dir":  "D:\\code\\pythoncode\\Anomaly Detection and Repair for Mixed Data Type Inputs\\outputs\\windows-installer\\installed",
+    "main_exe":  "D:\\code\\pythoncode\\Anomaly Detection and Repair for Mixed Data Type Inputs\\outputs\\windows-installer\\installed\\AnomalyDetectionRepair.exe",
+    "engine_exe":  "D:\\code\\pythoncode\\Anomaly Detection and Repair for Mixed Data Type Inputs\\outputs\\windows-installer\\installed\\python_engine\\anomaly_engine.exe",
+    "sample_csv":  "D:\\code\\pythoncode\\Anomaly Detection and Repair for Mixed Data Type Inputs\\outputs\\windows-installer\\installed\\samples\\m1_stroke_corrupted.csv",
+    "health_status":  "ok",
+    "scan_issue_count":  17,
+    "repaired_issue_id":  "bmi::missing_values",
+    "repaired_csv":  "D:\\code\\pythoncode\\Anomaly Detection and Repair for Mixed Data Type Inputs\\outputs\\windows-installer\\verification\\installed\\repair-output\\m1_stroke_corrupted.repaired.csv",
+    "rollback_manifest":  "D:\\code\\pythoncode\\Anomaly Detection and Repair for Mixed Data Type Inputs\\outputs\\windows-installer\\verification\\installed\\repair-output\\.rollback\\rb-1778888732119-10a330b2.json",
+    "gui_launch_status":  "started",
+    "gui_pid":  "25844",
+    "report":  "D:\\code\\pythoncode\\Anomaly Detection and Repair for Mixed Data Type Inputs\\outputs\\windows-installer\\verification\\installed\\verification.md"
+}

@@ -7,7 +7,9 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"os"
 	"os/exec"
+	"path/filepath"
 	"runtime"
 	"strings"
 	"sync"
@@ -35,6 +37,9 @@ type Runner struct {
 }
 
 func defaultPythonBin() string {
+	if raw := strings.TrimSpace(os.Getenv("APPSHELL_PYTHON_BIN")); raw != "" {
+		return raw
+	}
 	if runtime.GOOS == "windows" {
 		return "python"
 	}
@@ -94,7 +99,8 @@ func (r *Runner) Run(ctx context.Context, req Request) (Response, error) {
 	ctx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
 
-	cmd := exec.CommandContext(ctx, r.PythonBin, r.EngineScript)
+	command, args := r.commandForEngine()
+	cmd := exec.CommandContext(ctx, command, args...)
 	cmd.Stdin = bytes.NewReader(payload)
 
 	var stdout bytes.Buffer
@@ -165,6 +171,39 @@ func (r *Runner) Run(ctx context.Context, req Request) (Response, error) {
 	})
 
 	return resp, nil
+}
+
+func (r *Runner) commandForEngine() (string, []string) {
+	enginePath := strings.TrimSpace(r.EngineScript)
+	if runEngineDirectly(enginePath) {
+		return enginePath, nil
+	}
+
+	pythonBin := strings.TrimSpace(r.PythonBin)
+	if pythonBin == "" {
+		pythonBin = defaultPythonBin()
+	}
+	return pythonBin, []string{enginePath}
+}
+
+func runEngineDirectly(enginePath string) bool {
+	if strings.TrimSpace(enginePath) == "" {
+		return false
+	}
+
+	ext := strings.ToLower(filepath.Ext(enginePath))
+	if runtime.GOOS == "windows" {
+		return ext == ".exe" || ext == ".com" || ext == ".bat" || ext == ".cmd"
+	}
+	if ext == ".py" {
+		return false
+	}
+
+	info, err := os.Stat(enginePath)
+	if err != nil || info.IsDir() {
+		return false
+	}
+	return info.Mode()&0o111 != 0
 }
 
 func joinStderrLines(lines []string) string {
