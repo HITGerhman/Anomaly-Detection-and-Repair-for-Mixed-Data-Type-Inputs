@@ -311,3 +311,12 @@ scale testing.
 
 See `docs/cross_dataset_experiments.md` for the dataset fields, injection rules,
 metric definitions, output files, and thesis-writing guidance.
+
+## Formal Algorithm Path Update (2026-05-16)
+
+- Detection remains centered on deterministic `scan_file` rules. `numeric_outlier` findings are documented as `mild / strong / extreme`, with `auto_repair_eligible` and `scan_summary.numeric_outlier_risk_counts` exposed for agent and presentation use.
+- Repair now has three production tools: `repair_batch` for rule repair, `repair_with_gower` for Gower-KNN mixed-type repair, and `repair_with_missforest` for iterative MissForest repair.
+- `repair_with_missforest` defaults to `algorithm_mode=iterative`, `max_iter=5`, `convergence_tolerance=0.001`, `max_train_rows=5000`, `min_training_rows=8`, `random_state=42`, and `n_estimators=40`.
+- Iterative MissForest treats only selected issue cells as missing, initializes with median/mode values, trains `RandomForestRegressor` or `RandomForestClassifier` by target column, and writes back only cells covered by selected issue ids.
+- The Go Auto Agent planner compares rule, Gower, MissForest, and hybrid previews with `candidate_score_v1`; it stays plan-only and never writes CSV data directly.
+- Real writes still happen in the runtime execution layer and are followed by post-scan Validation Gate checks plus rollback manifest protection.

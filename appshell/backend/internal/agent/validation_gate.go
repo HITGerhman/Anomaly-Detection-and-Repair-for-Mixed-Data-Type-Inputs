@@ -19,6 +19,7 @@ const (
 	validationRiskMildNumericOutlierAutoRepaired      = "mild_numeric_outlier_auto_repaired"
 	validationRiskModifiedHighRelativeToResolved      = "modified_cell_count_high_relative_to_resolved"
 	validationRiskNumericOutlierModificationShareHigh = "numeric_outlier_modification_share_high"
+	validationRiskMissForestNotConverged              = "missforest_not_converged"
 )
 
 type validationGateInput struct {
@@ -110,6 +111,9 @@ func evaluateValidationGate(input validationGateInput) postValidationResult {
 	if boolValue(numericOutlierSummary["high_share"]) {
 		riskNotes = appendRiskFlag(riskNotes, validationRiskNumericOutlierModificationShareHigh)
 	}
+	if missForestNotConverged(input.RepairResult) {
+		riskNotes = appendRiskFlag(riskNotes, validationRiskMissForestNotConverged)
+	}
 
 	issueCountImproved := afterIssueCount < beforeIssueCount
 	scoreImproved := afterTotalIssueScore < beforeTotalIssueScore
@@ -130,7 +134,7 @@ func evaluateValidationGate(input validationGateInput) postValidationResult {
 	case hasString(riskNotes, "missing_rollback_metadata"):
 		verdict = validationGateRollbackRecommended
 		rollbackRecommended = true
-	case hasAnyString(riskNotes, []string{"changed_cell_count_abnormally_high", validationRiskModifiedHighRelativeToResolved, validationRiskNumericOutlierModificationShareHigh}) || (!issueCountImproved && scoreImproved):
+	case hasAnyString(riskNotes, []string{"changed_cell_count_abnormally_high", validationRiskModifiedHighRelativeToResolved, validationRiskNumericOutlierModificationShareHigh, validationRiskMissForestNotConverged}) || (!issueCountImproved && scoreImproved):
 		verdict = validationGateWarn
 	default:
 		verdict = validationGateAccept
@@ -539,10 +543,32 @@ func containsNumericOutlierIssue(issueIDs []string, issuesByID map[string]map[st
 	return false
 }
 
+func missForestNotConverged(repairResult map[string]any) bool {
+	if repairResult == nil {
+		return false
+	}
+	for _, item := range mapsFromAny(repairResult["model_evidence"]) {
+		if asString(item["algorithm_mode"]) == "iterative" && !boolValue(item["converged"]) {
+			return true
+		}
+	}
+	for _, step := range mapsFromAny(repairResult["execution_steps"]) {
+		for _, item := range mapsFromAny(step["model_evidence"]) {
+			if asString(item["algorithm_mode"]) == "iterative" && !boolValue(item["converged"]) {
+				return true
+			}
+		}
+	}
+	return false
+}
+
 func validationSideEffectNotes(riskNotes []string) []string {
 	notes := []string{}
 	if hasString(riskNotes, validationRiskNumericOutlierModificationShareHigh) {
 		notes = append(notes, "numeric_outlier repairs changed many cells; manual review is recommended")
+	}
+	if hasString(riskNotes, validationRiskMissForestNotConverged) {
+		notes = append(notes, "MissForest iterative repair did not converge within max_iter; manual review is recommended")
 	}
 	if hasString(riskNotes, validationRiskModifiedHighRelativeToResolved) {
 		notes = append(notes, "modified cell count is high relative to resolved issue count; manual review is recommended")

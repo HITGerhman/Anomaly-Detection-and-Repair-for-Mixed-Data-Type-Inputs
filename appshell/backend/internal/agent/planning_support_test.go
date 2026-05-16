@@ -120,14 +120,15 @@ func TestIssueExplanationDetailsIncludeReasonsAndCounts(t *testing.T) {
 
 func TestBuildPlanningInputClonesDeterministicSnapshot(t *testing.T) {
 	params := planningParams{
-		CSVPath:            "demo.csv",
-		Goal:               "scan and repair",
-		OutputDir:          "outputs/results/demo",
-		ModelDir:           "outputs/models",
-		ScanOverrides:      map[string]any{"preview_limit": 5},
-		RepairOverrides:    map[string]any{"strategy": "conservative"},
-		ColumnDependencies: map[string]any{"city": []any{"country"}},
-		GowerOverrides:     map[string]any{"weight_mode": "uniform"},
+		CSVPath:             "demo.csv",
+		Goal:                "scan and repair",
+		OutputDir:           "outputs/results/demo",
+		ModelDir:            "outputs/models",
+		ScanOverrides:       map[string]any{"preview_limit": 5},
+		RepairOverrides:     map[string]any{"strategy": "conservative"},
+		ColumnDependencies:  map[string]any{"city": []any{"country"}},
+		GowerOverrides:      map[string]any{"weight_mode": "uniform"},
+		MissForestOverrides: map[string]any{"n_estimators": 20},
 	}
 	scanResult := map[string]any{
 		"issue_count": 2,
@@ -141,6 +142,7 @@ func TestBuildPlanningInputClonesDeterministicSnapshot(t *testing.T) {
 	}
 	rulePreview := map[string]any{"comparison": map[string]any{"resolved_issue_count": 1}}
 	gowerPreview := map[string]any{"comparison": map[string]any{"resolved_issue_count": 2}}
+	missForestPreview := map[string]any{"comparison": map[string]any{"resolved_issue_count": 3}}
 
 	input := buildPlanningInput(
 		"session-1",
@@ -151,6 +153,7 @@ func TestBuildPlanningInputClonesDeterministicSnapshot(t *testing.T) {
 		skipped,
 		rulePreview,
 		gowerPreview,
+		missForestPreview,
 		map[string]any{"avoid_time_columns": true},
 		map[string]any{"deterministic_required": false},
 	)
@@ -161,9 +164,11 @@ func TestBuildPlanningInputClonesDeterministicSnapshot(t *testing.T) {
 	params.RepairOverrides["strategy"] = "aggressive"
 	params.ColumnDependencies["city"] = []any{"province"}
 	params.GowerOverrides["weight_mode"] = "custom"
+	params.MissForestOverrides["n_estimators"] = 80
 	mapFromAny(scanResult["scan_summary"])["total_issues"] = 9
 	mapFromAny(rulePreview["comparison"])["resolved_issue_count"] = 9
 	mapFromAny(gowerPreview["comparison"])["resolved_issue_count"] = 9
+	mapFromAny(missForestPreview["comparison"])["resolved_issue_count"] = 9
 
 	if input.SessionID != "session-1" {
 		t.Fatalf("unexpected session id: %s", input.SessionID)
@@ -186,6 +191,9 @@ func TestBuildPlanningInputClonesDeterministicSnapshot(t *testing.T) {
 	if mapFromAny(input.GowerPreview["comparison"])["resolved_issue_count"] != 2 {
 		t.Fatalf("expected cloned gower preview, got %#v", input.GowerPreview)
 	}
+	if mapFromAny(input.MissForestPreview["comparison"])["resolved_issue_count"] != 3 {
+		t.Fatalf("expected cloned missforest preview, got %#v", input.MissForestPreview)
+	}
 	if input.ScanConfigOverrides["preview_limit"] != 5 {
 		t.Fatalf("expected cloned scan overrides, got %#v", input.ScanConfigOverrides)
 	}
@@ -194,5 +202,8 @@ func TestBuildPlanningInputClonesDeterministicSnapshot(t *testing.T) {
 	}
 	if input.GowerStrategyOverrides["weight_mode"] != "uniform" {
 		t.Fatalf("expected cloned gower overrides, got %#v", input.GowerStrategyOverrides)
+	}
+	if input.MissForestStrategyOverrides["n_estimators"] != 20 {
+		t.Fatalf("expected cloned missforest overrides, got %#v", input.MissForestStrategyOverrides)
 	}
 }

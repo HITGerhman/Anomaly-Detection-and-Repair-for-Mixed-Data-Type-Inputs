@@ -54,6 +54,7 @@ type LangGraphCandidatePreview struct {
 	CandidateID      string         `json:"candidate_id"`
 	Source           string         `json:"source"`
 	Comparison       map[string]any `json:"comparison"`
+	Score            map[string]any `json:"score,omitempty"`
 	SelectedIssueIDs []string       `json:"selected_issue_ids"`
 	ToolSequence     []string       `json:"tool_sequence"`
 	Summary          string         `json:"summary"`

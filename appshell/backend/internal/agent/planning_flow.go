@@ -138,9 +138,11 @@ func (r *RuntimeRunner) runPlanningFlow(ctx context.Context, req engine.Request,
 
 	rulePreviewPayload := buildRulePreviewPayload(params.CSVPath, selectedIssueIDs, params.ScanOverrides, params.RepairOverrides, params.ColumnDependencies, params.OutputDir)
 	gowerPreviewPayload := buildGowerPreviewPayload(params.CSVPath, selectedIssueIDs, params.ScanOverrides, params.ColumnDependencies, params.GowerOverrides, params.OutputDir, params.ModelDir)
+	missForestPreviewPayload := buildMissForestPreviewPayload(params.CSVPath, selectedIssueIDs, params.ScanOverrides, params.MissForestOverrides, params.OutputDir)
 	rulePreviewPayload = attachPrecomputedIssues(rulePreviewPayload, params.CSVPath, scanResult)
 	gowerPreviewPayload = attachPrecomputedIssues(gowerPreviewPayload, params.CSVPath, scanResult)
-	r.emitStage(req.TaskID, "agent_retrieve", "start", progress.RetrieveStart, "Agent is previewing rule and Gower candidates", map[string]any{"retrieve_mode": retrieveMode})
+	missForestPreviewPayload = attachPrecomputedIssues(missForestPreviewPayload, params.CSVPath, scanResult)
+	r.emitStage(req.TaskID, "agent_retrieve", "start", progress.RetrieveStart, "Agent is previewing rule, Gower, and MissForest candidates", map[string]any{"retrieve_mode": retrieveMode})
 
 	previewSpecs := []previewToolSpec{
 		{
@@ -154,6 +156,12 @@ func (r *RuntimeRunner) runPlanningFlow(ctx context.Context, req engine.Request,
 			CallSummary: "Calling engine.repair_with_gower for Gower preview",
 			DoneSummary: "Gower preview completed",
 			Payload:     gowerPreviewPayload,
+		},
+		{
+			ToolID:      "engine.repair_with_missforest",
+			CallSummary: "Calling engine.repair_with_missforest for MissForest preview",
+			DoneSummary: "MissForest preview completed",
+			Payload:     missForestPreviewPayload,
 		},
 	}
 	for _, spec := range previewSpecs {
@@ -172,12 +180,16 @@ func (r *RuntimeRunner) runPlanningFlow(ctx context.Context, req engine.Request,
 	retrieveDurationMS := int(time.Since(retrieveStarted).Milliseconds())
 	rulePreviewResp := engine.Response{}
 	gowerPreviewResp := engine.Response{}
+	missForestPreviewResp := engine.Response{}
 	for _, outcome := range previewOutcomes {
 		if outcome.Err != nil {
-			if outcome.Spec.ToolID == "engine.repair_batch" {
+			switch outcome.Spec.ToolID {
+			case "engine.repair_batch":
 				r.failSession(session, "Agent planning failed while calling rule preview")
-			} else {
+			case "engine.repair_with_gower":
 				r.failSession(session, "Agent planning failed while calling Gower preview")
+			default:
+				r.failSession(session, "Agent planning failed while calling MissForest preview")
 			}
 			return nil, nil, outcome.Err
 		}
@@ -194,6 +206,8 @@ func (r *RuntimeRunner) runPlanningFlow(ctx context.Context, req engine.Request,
 			rulePreviewResp = outcome.Resp
 		case "engine.repair_with_gower":
 			gowerPreviewResp = outcome.Resp
+		case "engine.repair_with_missforest":
+			missForestPreviewResp = outcome.Resp
 		}
 	}
 	if strings.ToLower(strings.TrimSpace(rulePreviewResp.Status)) != "ok" {
@@ -208,9 +222,15 @@ func (r *RuntimeRunner) runPlanningFlow(ctx context.Context, req engine.Request,
 		resp := r.toolFailureResponseWithSafety(req.TaskID, started, session.SessionID, "", mode, params.Goal, AgentPlan{}, defaultValidationResult(), defaultExecutionResult(mode == "auto"), safety, gowerPreviewResp, "engine.repair_with_gower")
 		return nil, responsePtr(resp), nil
 	}
-	r.emitStage(req.TaskID, "agent_retrieve", "complete", progress.RetrieveComplete, "Rule and Gower previews completed", nil)
+	if strings.ToLower(strings.TrimSpace(missForestPreviewResp.Status)) != "ok" {
+		r.failSession(session, "MissForest preview returned an error")
+		safety := buildSafetyResult("rollback_failed", []string{"missforest_preview_failed"}, cloneMap(baseline), map[string]any{}, buildRollbackRecommendation(false, "Planning preview failed"), map[string]any{"status": "not_run"}, "")
+		resp := r.toolFailureResponseWithSafety(req.TaskID, started, session.SessionID, "", mode, params.Goal, AgentPlan{}, defaultValidationResult(), defaultExecutionResult(mode == "auto"), safety, missForestPreviewResp, "engine.repair_with_missforest")
+		return nil, responsePtr(resp), nil
+	}
+	r.emitStage(req.TaskID, "agent_retrieve", "complete", progress.RetrieveComplete, "Rule, Gower, and MissForest previews completed", nil)
 
-	r.emitStage(req.TaskID, "agent_compare", "start", progress.CompareStart, "Agent is comparing rule, Gower, and hybrid candidates", nil)
+	r.emitStage(req.TaskID, "agent_compare", "start", progress.CompareStart, "Agent is comparing rule, Gower, MissForest, and hybrid candidates", nil)
 	planInput := buildPlanningInput(
 		session.SessionID,
 		params.Goal,
@@ -220,6 +240,7 @@ func (r *RuntimeRunner) runPlanningFlow(ctx context.Context, req engine.Request,
 		skippedIssues,
 		rulePreviewResp.Result,
 		gowerPreviewResp.Result,
+		missForestPreviewResp.Result,
 		preferenceProfileToMap(preferenceSnapshot),
 		approvalContext,
 	)

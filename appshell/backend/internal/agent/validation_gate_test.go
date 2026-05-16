@@ -240,6 +240,51 @@ func TestValidationGateWarnsWhenNumericOutlierModificationShareIsHigh(t *testing
 	}
 }
 
+func TestValidationGateWarnsWhenMissForestDoesNotConverge(t *testing.T) {
+	baseline := validationGateScan(
+		map[string]any{"issue_id": "i-1", "issue_type": "missing_values", "risk_level": "low", "issue_score": 0.5},
+		map[string]any{"issue_id": "i-2", "issue_type": "rare_category", "risk_level": "low", "issue_score": 0.4},
+	)
+	postScan := validationGateScan(
+		map[string]any{"issue_id": "post-1", "issue_type": "rare_category", "risk_level": "low", "issue_score": 0.2},
+	)
+	repair := validationGateRepair(2, true, "i-1")
+	repair["model_evidence"] = []any{
+		map[string]any{"issue_id": "i-1", "algorithm_mode": "iterative", "converged": false},
+	}
+
+	result := buildPostValidation(baseline, repair, postScan, validationGatePlan("i-1"))
+
+	if result.Verdict != validationGateWarn || !result.Accepted {
+		t.Fatalf("expected warn for non-converged MissForest with issue improvement, got %#v", result.Summary)
+	}
+	if !hasString(result.RiskFlags, validationRiskMissForestNotConverged) {
+		t.Fatalf("expected missforest_not_converged risk, got %#v", result.RiskFlags)
+	}
+}
+
+func TestValidationGateRejectsNonConvergedMissForestWithoutImprovement(t *testing.T) {
+	baseline := validationGateScan(
+		map[string]any{"issue_id": "i-1", "issue_type": "missing_values", "risk_level": "low", "issue_score": 0.5},
+	)
+	postScan := validationGateScan(
+		map[string]any{"issue_id": "post-1", "issue_type": "missing_values", "risk_level": "low", "issue_score": 0.5},
+	)
+	repair := validationGateRepair(1, true, "i-1")
+	repair["model_evidence"] = []any{
+		map[string]any{"issue_id": "i-1", "algorithm_mode": "iterative", "converged": false},
+	}
+
+	result := buildPostValidation(baseline, repair, postScan, validationGatePlan("i-1"))
+
+	if result.Verdict != validationGateReject || result.Accepted {
+		t.Fatalf("expected reject for non-converged MissForest without improvement, got %#v", result.Summary)
+	}
+	if !hasString(result.RiskFlags, validationRiskMissForestNotConverged) || !hasString(result.RiskFlags, "issue_score_not_improved") {
+		t.Fatalf("expected convergence and no-improvement risks, got %#v", result.RiskFlags)
+	}
+}
+
 func TestValidationGateRejectsIssueCountIncrease(t *testing.T) {
 	baseline := validationGateScan(
 		map[string]any{"issue_id": "i-1", "issue_type": "missing_values", "risk_level": "medium", "issue_score": 0.3},

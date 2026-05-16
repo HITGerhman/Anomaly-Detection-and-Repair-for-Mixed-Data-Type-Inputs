@@ -648,8 +648,8 @@ func TestRuntimeRunnerBuildsPlanAndPersistsTrace(t *testing.T) {
 	if len(plan.ManualReviewIssueIDs) != 1 || plan.ManualReviewIssueIDs[0] != "i-3" {
 		t.Fatalf("expected duplicate_record to be manual review, got %#v", plan.ManualReviewIssueIDs)
 	}
-	if len(plan.Candidates) != 3 {
-		t.Fatalf("expected 3 candidates, got %d", len(plan.Candidates))
+	if len(plan.Candidates) != 4 {
+		t.Fatalf("expected 4 candidates, got %d", len(plan.Candidates))
 	}
 	if plan.Cognition.Provider != CognitionProviderDeterministic || plan.Cognition.Status != CognitionStatusFallback {
 		t.Fatalf("expected deterministic cognition on mock planner plan, got %+v", plan.Cognition)

@@ -399,3 +399,34 @@ Keep these limitations:
 - More real-domain datasets are future work.
 - Front-end, deployment, and full user workflow validation can still be
   improved.
+
+## Formal Algorithm Upgrade Note (2026-05-16)
+
+This engineering update turns the previous MissForest-style candidate into the
+default iterative MissForest repair path. Thesis and defense wording can now
+describe the system as using rule repair, Gower-KNN repair, and iterative
+MissForest repair under the same validation-first execution boundary.
+
+- Detection layer: `scan_file` remains the deterministic main path. Numeric
+  outliers are split into `mild / strong / extreme`, with
+  `auto_repair_eligible` and `scan_summary.numeric_outlier_risk_counts` used to
+  explain automatic repair boundaries.
+- Repair layer: `repair_batch`, `repair_with_gower`, and
+  `repair_with_missforest` are the three formal tools. MissForest defaults are
+  `algorithm_mode=iterative`, `max_iter=5`, `convergence_tolerance=0.001`,
+  `max_train_rows=5000`, `min_training_rows=8`, `random_state=42`, and
+  `n_estimators=40`.
+- MissForest method: selected issue cells are treated as missing, initialized
+  with median/mode values, then updated column by column with
+  `RandomForestRegressor` or `RandomForestClassifier` until convergence or
+  `max_iter`.
+- Write boundary: intermediate imputations for non-selected cells are feature
+  values only. The final CSV writes back only cells covered by selected issue
+  ids.
+- Decision layer: the Go planner compares rule, Gower, MissForest, and hybrid
+  previews using `candidate_score_v1`, based on resolved issues, remaining
+  issues, changed cells, and improvement ratio.
+- Safety layer: the planner stays plan-only. Runtime execution performs the
+  real CSV write and then runs post-scan Validation Gate checks with rollback
+  metadata. Non-converged MissForest evidence becomes a warning, and is rejected
+  when no issue-score improvement is observed.

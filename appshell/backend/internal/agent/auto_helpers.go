@@ -27,18 +27,19 @@ type planningProgress struct {
 }
 
 type planningParams struct {
-	SessionID          string
-	WorkspaceID        string
-	CSVPath            string
-	Goal               string
-	OutputDir          string
-	ModelDir           string
-	LLMExplainMode     string
-	ScanOverrides      map[string]any
-	RepairOverrides    map[string]any
-	ColumnDependencies map[string]any
-	GowerOverrides     map[string]any
-	UserPreferences    map[string]any
+	SessionID           string
+	WorkspaceID         string
+	CSVPath             string
+	Goal                string
+	OutputDir           string
+	ModelDir            string
+	LLMExplainMode      string
+	ScanOverrides       map[string]any
+	RepairOverrides     map[string]any
+	ColumnDependencies  map[string]any
+	GowerOverrides      map[string]any
+	MissForestOverrides map[string]any
+	UserPreferences     map[string]any
 }
 
 type planningResult struct {
@@ -282,35 +283,36 @@ func newPlanningSession(taskID string, mode string, params planningParams) Agent
 		Mode:          mode,
 		UserGoal:      params.Goal,
 		Context: map[string]any{
-			"csv_path":                  params.CSVPath,
-			"workspace_id":              params.WorkspaceID,
-			"user_goal":                 params.Goal,
-			"scan_summary":              map[string]any{},
-			"selected_issue_ids":        []string{},
-			"selected_issue_catalog":    []map[string]any{},
-			"skipped_issue_types":       []string{},
-			"latest_plan_id":            "",
-			"validation_preview":        map[string]any{},
-			"preview_validation":        map[string]any{},
-			"post_scan":                 map[string]any{},
-			"post_validation":           map[string]any{},
-			"rollback_summary":          map[string]any{},
-			"execution_artifacts":       map[string]any{},
-			"scan_config_overrides":     cloneMap(params.ScanOverrides),
-			"repair_strategy_overrides": cloneMap(params.RepairOverrides),
-			"column_dependencies":       cloneMap(params.ColumnDependencies),
-			"gower_strategy_overrides":  cloneMap(params.GowerOverrides),
-			"llm_explain_mode":          params.LLMExplainMode,
-			"user_preferences":          cloneMap(params.UserPreferences),
-			"preference_snapshot":       preferenceProfileToMap(defaultPreferenceProfile()),
-			"approval_state":            defaultApprovalResult(),
-			"risk_assessment":           map[string]any{},
-			"candidate_columns":         []string{},
-			"time_like_columns":         []string{},
-			"model_dir":                 params.ModelDir,
-			"baseline_scan":             map[string]any{},
-			"final_verdict":             "",
-			"rejected_output_snapshot":  "",
+			"csv_path":                      params.CSVPath,
+			"workspace_id":                  params.WorkspaceID,
+			"user_goal":                     params.Goal,
+			"scan_summary":                  map[string]any{},
+			"selected_issue_ids":            []string{},
+			"selected_issue_catalog":        []map[string]any{},
+			"skipped_issue_types":           []string{},
+			"latest_plan_id":                "",
+			"validation_preview":            map[string]any{},
+			"preview_validation":            map[string]any{},
+			"post_scan":                     map[string]any{},
+			"post_validation":               map[string]any{},
+			"rollback_summary":              map[string]any{},
+			"execution_artifacts":           map[string]any{},
+			"scan_config_overrides":         cloneMap(params.ScanOverrides),
+			"repair_strategy_overrides":     cloneMap(params.RepairOverrides),
+			"column_dependencies":           cloneMap(params.ColumnDependencies),
+			"gower_strategy_overrides":      cloneMap(params.GowerOverrides),
+			"missforest_strategy_overrides": cloneMap(params.MissForestOverrides),
+			"llm_explain_mode":              params.LLMExplainMode,
+			"user_preferences":              cloneMap(params.UserPreferences),
+			"preference_snapshot":           preferenceProfileToMap(defaultPreferenceProfile()),
+			"approval_state":                defaultApprovalResult(),
+			"risk_assessment":               map[string]any{},
+			"candidate_columns":             []string{},
+			"time_like_columns":             []string{},
+			"model_dir":                     params.ModelDir,
+			"baseline_scan":                 map[string]any{},
+			"final_verdict":                 "",
+			"rejected_output_snapshot":      "",
 		},
 		CreatedAt: now,
 		UpdatedAt: now,
@@ -364,6 +366,10 @@ func parsePlanningParams(payload map[string]any, action string) (planningParams,
 		return planningParams{}, err
 	}
 	params.GowerOverrides, err = validateObjectField(payload, "gower_strategy_overrides")
+	if err != nil {
+		return planningParams{}, err
+	}
+	params.MissForestOverrides, err = validateObjectField(payload, "missforest_strategy_overrides")
 	if err != nil {
 		return planningParams{}, err
 	}

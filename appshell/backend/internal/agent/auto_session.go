@@ -10,7 +10,7 @@ import (
 
 func (r *RuntimeRunner) executeCandidate(ctx context.Context, parentTaskID string, sessionID string, taskID string, candidate RepairCandidate, outputDir string) (map[string]any, *engine.Response, string, error) {
 	switch candidate.Source {
-	case "rule", "gower":
+	case "rule", "gower", "missforest":
 		if len(candidate.ExecutePayloads) == 0 || len(candidate.ToolSequence) == 0 {
 			return defaultExecutionResult(false), nil, "", nil
 		}

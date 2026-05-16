@@ -7,24 +7,26 @@ import "context"
 // as read-only planning context rather than fetching additional data on their
 // own.
 type PlanningInput struct {
-	SessionID               string
-	Goal                    string
-	CSVPath                 string
-	ScanResult              map[string]any
-	SelectedIssueIDs        []string
-	SkippedIssues           []AgentSkippedIssue
-	RulePreview             map[string]any
-	GowerPreview            map[string]any
-	ScanConfigOverrides     map[string]any
-	RepairStrategyOverrides map[string]any
-	ColumnDependencies      map[string]any
-	GowerStrategyOverrides  map[string]any
-	ModelDir                string
-	LLMExplainMode          string
-	OutputDir               string
-	WorkspaceID             string
-	PreferenceSnapshot      map[string]any
-	ApprovalContext         map[string]any
+	SessionID                   string
+	Goal                        string
+	CSVPath                     string
+	ScanResult                  map[string]any
+	SelectedIssueIDs            []string
+	SkippedIssues               []AgentSkippedIssue
+	RulePreview                 map[string]any
+	GowerPreview                map[string]any
+	MissForestPreview           map[string]any
+	ScanConfigOverrides         map[string]any
+	RepairStrategyOverrides     map[string]any
+	ColumnDependencies          map[string]any
+	GowerStrategyOverrides      map[string]any
+	MissForestStrategyOverrides map[string]any
+	ModelDir                    string
+	LLMExplainMode              string
+	OutputDir                   string
+	WorkspaceID                 string
+	PreferenceSnapshot          map[string]any
+	ApprovalContext             map[string]any
 }
 
 // Planner is the cognitive planning boundary for agent sessions.

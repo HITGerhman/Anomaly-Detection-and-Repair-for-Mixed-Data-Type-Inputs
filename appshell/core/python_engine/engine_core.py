@@ -38,6 +38,10 @@ _SYSTEM_STATE_CACHE: dict[tuple[Any, ...], tuple[Any, Any, Any]] = {}
 _MODEL_IMPORTANCE_CACHE: dict[tuple[Any, ...], list[float] | None] = {}
 DEFAULT_GOWER_AUTO_MAX_CANDIDATES = 512
 DEFAULT_GOWER_FULL_SCAN_THRESHOLD = 5_000
+DEFAULT_MISSFOREST_MAX_TRAIN_ROWS = 5_000
+DEFAULT_MISSFOREST_RANDOM_STATE = 42
+DEFAULT_MISSFOREST_MAX_ITER = 5
+DEFAULT_MISSFOREST_CONVERGENCE_TOLERANCE = 0.001
 
 
 def _emit_stage_progress(
@@ -2269,6 +2273,605 @@ def _limit_gower_candidate_rows(
     return sampled, pool_size, sample_size, True, selection_mode
 
 
+def _missforest_strategy_from_payload(payload: dict[str, Any]) -> dict[str, Any]:
+    raw = payload.get("missforest_strategy", {})
+    if raw is None:
+        raw = {}
+    if not isinstance(raw, dict):
+        raise KnownEngineError(
+            code=ErrorCode.INVALID_INPUT,
+            message="Field missforest_strategy must be an object",
+            details={"field": "missforest_strategy"},
+        )
+
+    max_features = str(raw.get("max_features", "sqrt") or "sqrt").strip().lower()
+    if max_features == "none":
+        resolved_max_features: str | None = None
+    elif max_features in {"sqrt", "log2"}:
+        resolved_max_features = max_features
+    else:
+        raise KnownEngineError(
+            code=ErrorCode.INVALID_INPUT,
+            message="missforest_strategy.max_features must be sqrt/log2/none",
+            details={"field": "missforest_strategy.max_features", "value": max_features},
+        )
+
+    algorithm_mode = str(raw.get("algorithm_mode", "iterative") or "iterative").strip().lower()
+    if algorithm_mode not in {"iterative", "single_pass"}:
+        raise KnownEngineError(
+            code=ErrorCode.INVALID_INPUT,
+            message="missforest_strategy.algorithm_mode must be iterative/single_pass",
+            details={"field": "missforest_strategy.algorithm_mode", "value": algorithm_mode},
+        )
+
+    return {
+        "algorithm_mode": algorithm_mode,
+        "max_iter": _to_positive_int(
+            raw,
+            "max_iter",
+            default=DEFAULT_MISSFOREST_MAX_ITER,
+            minimum=1,
+            maximum=50,
+        ),
+        "convergence_tolerance": _to_float(
+            raw,
+            "convergence_tolerance",
+            default=DEFAULT_MISSFOREST_CONVERGENCE_TOLERANCE,
+            minimum=0.0,
+            maximum=1.0,
+        ),
+        "n_estimators": _to_positive_int(raw, "n_estimators", default=40, minimum=5, maximum=300),
+        "max_depth": _to_optional_positive_int(raw, "max_depth", minimum=1, maximum=100),
+        "min_training_rows": _to_positive_int(raw, "min_training_rows", default=8, minimum=2, maximum=100_000),
+        "max_train_rows": _to_positive_int(
+            raw,
+            "max_train_rows",
+            default=DEFAULT_MISSFOREST_MAX_TRAIN_ROWS,
+            minimum=32,
+            maximum=1_000_000,
+        ),
+        "random_state": _to_int(
+            raw,
+            "random_state",
+            default=DEFAULT_MISSFOREST_RANDOM_STATE,
+            minimum=0,
+            maximum=2_147_483_647,
+        ),
+        "max_features": resolved_max_features,
+        "preview_limit": _to_positive_int(raw, "preview_limit", default=5, minimum=1, maximum=50),
+    }
+
+
+def _limit_missforest_training_rows(train_rows: Any, strategy: dict[str, Any], *, issue_id: str, column: str) -> tuple[Any, int, int, bool]:
+    pool_size = int(len(train_rows))
+    max_train_rows = int(strategy["max_train_rows"])
+    if pool_size <= max_train_rows:
+        return train_rows, pool_size, pool_size, False
+    seed = _stable_gower_sample_seed("missforest", issue_id, column, pool_size, max_train_rows, strategy["random_state"])
+    sampled = train_rows.sample(n=max_train_rows, random_state=seed).sort_index()
+    return sampled, pool_size, max_train_rows, True
+
+
+def _missforest_feature_matrices(
+    frame_pd: Any,
+    original_df: Any,
+    feature_columns: list[str],
+    train_rows: Any,
+    predict_rows: Any,
+) -> tuple[Any, Any]:
+    if not feature_columns:
+        train_features = frame_pd.DataFrame({"__constant__": [1.0] * int(len(train_rows))})
+        predict_features = frame_pd.DataFrame({"__constant__": [1.0] * int(len(predict_rows))})
+        return train_features, predict_features
+
+    train_features = train_rows[feature_columns].copy()
+    predict_features = predict_rows[feature_columns].copy()
+    combined = frame_pd.concat([train_features, predict_features], axis=0, ignore_index=True)
+    for column in feature_columns:
+        source_series = original_df[column]
+        if frame_pd.api.types.is_numeric_dtype(source_series):
+            values = frame_pd.to_numeric(combined[column], errors="coerce")
+            train_values = frame_pd.to_numeric(train_features[column], errors="coerce")
+            if train_values.notna().any():
+                fill_value = float(train_values.median())
+            else:
+                fill_value = 0.0
+            combined[column] = values.fillna(fill_value)
+        else:
+            combined[column] = combined[column].astype("object").where(combined[column].notna(), "__MISSING__")
+            combined[column] = combined[column].astype(str)
+
+    encoded = frame_pd.get_dummies(combined, dummy_na=False)
+    if encoded.shape[1] == 0:
+        encoded = frame_pd.DataFrame({"__constant__": [1.0] * int(combined.shape[0])})
+    encoded = encoded.astype(float)
+    train_count = int(len(train_rows))
+    return encoded.iloc[:train_count, :], encoded.iloc[train_count:, :]
+
+
+def _missforest_regression_confidence(model: Any, x_pred: Any, train_target: Any) -> float:
+    if np is None or not hasattr(model, "estimators_"):
+        return 0.65
+    try:
+        x_values = x_pred.to_numpy() if hasattr(x_pred, "to_numpy") else x_pred
+        tree_predictions = np.asarray([est.predict(x_values) for est in model.estimators_], dtype=float)
+        if tree_predictions.size == 0:
+            return 0.65
+        prediction_spread = float(np.nanmean(np.nanstd(tree_predictions, axis=0)))
+        target_spread = float(train_target.std()) if hasattr(train_target, "std") else 0.0
+        scale = max(abs(target_spread), 1e-9)
+        confidence = 1.0 - min(0.85, prediction_spread / scale)
+        return round(max(0.1, min(0.95, confidence)), 6)
+    except Exception:
+        return 0.65
+
+
+def _missforest_classifier_confidence(model: Any, x_pred: Any) -> float:
+    try:
+        probabilities = model.predict_proba(x_pred)
+    except Exception:
+        return 0.65
+    if np is None:
+        return 0.65
+    try:
+        max_probabilities = np.max(np.asarray(probabilities, dtype=float), axis=1)
+        return round(max(0.1, min(0.99, float(np.nanmean(max_probabilities)))), 6)
+    except Exception:
+        return 0.65
+
+
+def _missforest_predict_issue(
+    *,
+    frame_pd: Any,
+    original_df: Any,
+    issue: dict[str, Any],
+    mask: Any,
+    positions: list[int],
+    strategy: dict[str, Any],
+    random_forest_regressor: Any,
+    random_forest_classifier: Any,
+) -> tuple[list[dict[str, Any]], dict[str, Any]]:
+    issue_id = str(issue["issue_id"])
+    column = str(issue["column"])
+    series = original_df[column]
+    healthy_mask = (~mask) & series.notna()
+    is_numeric = bool(frame_pd.api.types.is_numeric_dtype(series))
+    if is_numeric:
+        numeric_series = frame_pd.to_numeric(series, errors="coerce")
+        healthy_mask = healthy_mask & numeric_series.notna()
+
+    train_rows = original_df.loc[healthy_mask]
+    train_rows, train_pool_size, train_sample_size, train_sampled = _limit_missforest_training_rows(
+        train_rows,
+        strategy,
+        issue_id=issue_id,
+        column=column,
+    )
+    if int(len(train_rows)) < int(strategy["min_training_rows"]):
+        raise KnownEngineError(
+            code=ErrorCode.INVALID_INPUT,
+            message="Not enough healthy rows for MissForest repair",
+            details={
+                "issue_id": issue_id,
+                "column": column,
+                "train_rows": int(len(train_rows)),
+                "min_training_rows": int(strategy["min_training_rows"]),
+            },
+        )
+
+    predict_rows = original_df.iloc[positions]
+    feature_columns = [str(name) for name in list(original_df.columns) if str(name) != column]
+    x_train, x_pred = _missforest_feature_matrices(frame_pd, original_df, feature_columns, train_rows, predict_rows)
+    if is_numeric:
+        y_train = frame_pd.to_numeric(train_rows[column], errors="coerce")
+        valid_mask = y_train.notna()
+        if int(valid_mask.sum()) < int(strategy["min_training_rows"]):
+            raise KnownEngineError(
+                code=ErrorCode.INVALID_INPUT,
+                message="Not enough numeric training targets for MissForest repair",
+                details={"issue_id": issue_id, "column": column},
+            )
+        valid_positions = [idx for idx, flag in enumerate(valid_mask.tolist()) if bool(flag)]
+        y_valid = y_train.loc[valid_mask]
+        model = random_forest_regressor(
+            n_estimators=int(strategy["n_estimators"]),
+            max_depth=strategy["max_depth"],
+            max_features=strategy["max_features"],
+            random_state=int(strategy["random_state"]),
+            n_jobs=1,
+        )
+        x_train_valid = x_train.iloc[valid_positions, :].to_numpy()
+        x_pred_values = x_pred.to_numpy()
+        model.fit(x_train_valid, y_valid)
+        predictions = list(model.predict(x_pred_values))
+        confidence = _missforest_regression_confidence(model, x_pred_values, y_valid)
+        model_type = "random_forest_regressor"
+    else:
+        y_train = train_rows[column].astype(str)
+        if int(y_train.nunique(dropna=True)) <= 0:
+            raise KnownEngineError(
+                code=ErrorCode.INVALID_INPUT,
+                message="Not enough categorical training targets for MissForest repair",
+                details={"issue_id": issue_id, "column": column},
+            )
+        model = random_forest_classifier(
+            n_estimators=int(strategy["n_estimators"]),
+            max_depth=strategy["max_depth"],
+            max_features=strategy["max_features"],
+            random_state=int(strategy["random_state"]),
+            n_jobs=1,
+        )
+        x_train_values = x_train.to_numpy()
+        x_pred_values = x_pred.to_numpy()
+        model.fit(x_train_values, y_train)
+        predictions = list(model.predict(x_pred_values))
+        confidence = _missforest_classifier_confidence(model, x_pred_values)
+        model_type = "random_forest_classifier"
+
+    changes: list[dict[str, Any]] = []
+    col_pos = int(list(original_df.columns).index(column))
+    for idx, pos in enumerate(positions):
+        before_value = series.iat[pos]
+        after_value = predictions[idx]
+        before_is_nan = bool(frame_pd.isna(before_value))
+        after_is_nan = bool(frame_pd.isna(after_value))
+        if (before_is_nan and after_is_nan) or (
+            (not before_is_nan) and (not after_is_nan) and before_value == after_value
+        ):
+            continue
+        changes.append(
+            {
+                "issue_id": issue_id,
+                "column": column,
+                "row_pos": int(pos),
+                "row": _index_to_builtin(original_df.index[pos]),
+                "col_pos": col_pos,
+                "before": before_value,
+                "after": after_value,
+            }
+        )
+
+    evidence = {
+        "issue_id": issue_id,
+        "column": column,
+        "issue_type": str(issue["issue_type"]),
+        "algorithm_mode": str(strategy["algorithm_mode"]),
+        "iterations_run": 1,
+        "converged": True,
+        "convergence_delta": 0.0,
+        "model_type": model_type,
+        "feature_count": int(x_train.shape[1]),
+        "train_pool_size": train_pool_size,
+        "train_sample_size": train_sample_size,
+        "train_sampled": bool(train_sampled),
+        "target_cell_count": int(len(positions)),
+        "candidate_confidence": confidence,
+        "n_estimators": int(strategy["n_estimators"]),
+        "max_train_rows": int(strategy["max_train_rows"]),
+        "max_iter": int(strategy["max_iter"]),
+        "convergence_tolerance": float(strategy["convergence_tolerance"]),
+    }
+    return changes, evidence
+
+
+def _limit_missforest_training_positions(
+    frame_pd: Any,
+    positions: list[int],
+    strategy: dict[str, Any],
+    *,
+    issue_id: str,
+    column: str,
+) -> tuple[list[int], int, int, bool]:
+    normalized = [int(pos) for pos in positions]
+    pool_size = int(len(normalized))
+    max_train_rows = int(strategy["max_train_rows"])
+    if pool_size <= max_train_rows:
+        return normalized, pool_size, pool_size, False
+    seed = _stable_gower_sample_seed(
+        "missforest_iterative",
+        issue_id,
+        column,
+        pool_size,
+        max_train_rows,
+        strategy["random_state"],
+    )
+    sampled = frame_pd.Series(normalized).sample(n=max_train_rows, random_state=seed).sort_values()
+    return [int(pos) for pos in sampled.tolist()], pool_size, max_train_rows, True
+
+
+def _missforest_initialize_working_frame(frame_pd: Any, original_df: Any, target_masks_by_column: dict[str, Any]) -> Any:
+    working_df = original_df.copy(deep=True)
+    for column, mask in target_masks_by_column.items():
+        if column not in working_df.columns:
+            continue
+        if frame_pd.api.types.is_numeric_dtype(original_df[column]):
+            working_df.loc[mask, column] = np.nan if np is not None else None
+        else:
+            working_df.loc[mask, column] = None
+
+    for column in list(working_df.columns):
+        if frame_pd.api.types.is_numeric_dtype(original_df[column]):
+            values = frame_pd.to_numeric(working_df[column], errors="coerce")
+            non_null = values.dropna()
+            fill_value = float(non_null.median()) if int(non_null.shape[0]) > 0 else 0.0
+            working_df[column] = values.fillna(fill_value)
+            continue
+
+        values = working_df[column].astype("object")
+        non_null = values.dropna()
+        if int(non_null.shape[0]) > 0:
+            mode_values = non_null.mode(dropna=True)
+            fill_value = mode_values.iloc[0] if not mode_values.empty else non_null.iloc[0]
+        else:
+            fill_value = "__MISSING__"
+        working_df[column] = values.where(values.notna(), fill_value)
+    return working_df
+
+
+def _missforest_convergence_delta(
+    frame_pd: Any,
+    original_df: Any,
+    previous_df: Any,
+    current_df: Any,
+    target_positions_by_column: dict[str, list[int]],
+) -> float:
+    deltas: list[float] = []
+    for column, positions in target_positions_by_column.items():
+        is_numeric = bool(frame_pd.api.types.is_numeric_dtype(original_df[column]))
+        for pos in positions:
+            before = previous_df[column].iat[int(pos)]
+            after = current_df[column].iat[int(pos)]
+            if is_numeric:
+                before_value = _finite_float_or_none(before)
+                after_value = _finite_float_or_none(after)
+                if before_value is None or after_value is None:
+                    deltas.append(0.0 if str(before) == str(after) else 1.0)
+                    continue
+                deltas.append(abs(after_value - before_value) / max(1.0, abs(before_value)))
+            else:
+                deltas.append(0.0 if str(before) == str(after) else 1.0)
+    if not deltas:
+        return 0.0
+    return round(sum(deltas) / float(len(deltas)), 6)
+
+
+def _missforest_predict_iterative(
+    *,
+    frame_pd: Any,
+    original_df: Any,
+    selected_issues: list[dict[str, Any]],
+    issue_masks: dict[str, Any],
+    issue_positions: dict[str, list[int]],
+    strategy: dict[str, Any],
+    random_forest_regressor: Any,
+    random_forest_classifier: Any,
+) -> tuple[dict[str, list[dict[str, Any]]], dict[str, dict[str, Any]], list[dict[str, Any]]]:
+    target_masks_by_column: dict[str, Any] = {}
+    target_positions_by_column: dict[str, list[int]] = {}
+    issue_by_id = {str(issue["issue_id"]): issue for issue in selected_issues}
+    skipped: list[dict[str, Any]] = []
+
+    for issue in selected_issues:
+        issue_id = str(issue["issue_id"])
+        column = str(issue["column"])
+        mask = issue_masks.get(issue_id)
+        if mask is None:
+            continue
+        if column not in target_masks_by_column:
+            target_masks_by_column[column] = mask.copy()
+        else:
+            target_masks_by_column[column] = target_masks_by_column[column] | mask
+
+    for column, mask in target_masks_by_column.items():
+        target_positions_by_column[column] = [idx for idx, flag in enumerate(mask.tolist()) if bool(flag)]
+
+    working_df = _missforest_initialize_working_frame(frame_pd, original_df, target_masks_by_column)
+    row_count = max(1, int(original_df.shape[0]))
+    target_columns = sorted(
+        target_positions_by_column.keys(),
+        key=lambda column: (float(len(target_positions_by_column[column])) / float(row_count), str(column)),
+    )
+    if not target_columns:
+        return {}, {}, skipped
+
+    column_meta: dict[str, dict[str, Any]] = {}
+    skipped_columns: dict[str, dict[str, Any]] = {}
+    convergence_delta = 0.0
+    converged = False
+    iterations_run = 0
+    feature_columns_by_target = {
+        column: [str(name) for name in list(original_df.columns) if str(name) != column] for column in target_columns
+    }
+
+    for iteration_idx in range(int(strategy["max_iter"])):
+        previous_df = working_df.copy(deep=True)
+        for column in target_columns:
+            if column in skipped_columns:
+                continue
+            positions = target_positions_by_column.get(column, [])
+            if not positions:
+                continue
+            target_mask = target_masks_by_column[column]
+            series = original_df[column]
+            is_numeric = bool(frame_pd.api.types.is_numeric_dtype(series))
+            train_mask = (~target_mask) & series.notna()
+            if is_numeric:
+                numeric_series = frame_pd.to_numeric(series, errors="coerce")
+                train_mask = train_mask & numeric_series.notna()
+            train_positions = [idx for idx, flag in enumerate(train_mask.tolist()) if bool(flag)]
+            sample_positions, train_pool_size, train_sample_size, train_sampled = _limit_missforest_training_positions(
+                frame_pd,
+                train_positions,
+                strategy,
+                issue_id=f"{column}::iterative",
+                column=column,
+            )
+            if int(len(sample_positions)) < int(strategy["min_training_rows"]):
+                skipped_columns[column] = {
+                    "reason": "missforest_training_unavailable",
+                    "column": column,
+                    "train_rows": int(len(sample_positions)),
+                    "min_training_rows": int(strategy["min_training_rows"]),
+                }
+                continue
+
+            train_rows = working_df.iloc[sample_positions]
+            predict_rows = working_df.iloc[positions]
+            x_train, x_pred = _missforest_feature_matrices(
+                frame_pd,
+                working_df,
+                feature_columns_by_target[column],
+                train_rows,
+                predict_rows,
+            )
+            model_random_state = (int(strategy["random_state"]) + iteration_idx) % 2_147_483_647
+            if is_numeric:
+                y_train = frame_pd.to_numeric(original_df.iloc[sample_positions][column], errors="coerce")
+                valid_mask = y_train.notna()
+                if int(valid_mask.sum()) < int(strategy["min_training_rows"]):
+                    skipped_columns[column] = {
+                        "reason": "missforest_training_unavailable",
+                        "column": column,
+                        "train_rows": int(valid_mask.sum()),
+                        "min_training_rows": int(strategy["min_training_rows"]),
+                    }
+                    continue
+                valid_positions = [idx for idx, flag in enumerate(valid_mask.tolist()) if bool(flag)]
+                y_valid = y_train.loc[valid_mask]
+                model = random_forest_regressor(
+                    n_estimators=int(strategy["n_estimators"]),
+                    max_depth=strategy["max_depth"],
+                    max_features=strategy["max_features"],
+                    random_state=model_random_state,
+                    n_jobs=1,
+                )
+                x_train_valid = x_train.iloc[valid_positions, :].to_numpy()
+                x_pred_values = x_pred.to_numpy()
+                model.fit(x_train_valid, y_valid)
+                predictions = list(model.predict(x_pred_values))
+                confidence = _missforest_regression_confidence(model, x_pred_values, y_valid)
+                model_type = "random_forest_regressor"
+            else:
+                y_train = original_df.iloc[sample_positions][column].astype(str)
+                if int(y_train.nunique(dropna=True)) <= 0:
+                    skipped_columns[column] = {
+                        "reason": "missforest_training_unavailable",
+                        "column": column,
+                        "train_rows": int(len(y_train)),
+                        "min_training_rows": int(strategy["min_training_rows"]),
+                    }
+                    continue
+                model = random_forest_classifier(
+                    n_estimators=int(strategy["n_estimators"]),
+                    max_depth=strategy["max_depth"],
+                    max_features=strategy["max_features"],
+                    random_state=model_random_state,
+                    n_jobs=1,
+                )
+                x_train_values = x_train.to_numpy()
+                x_pred_values = x_pred.to_numpy()
+                model.fit(x_train_values, y_train)
+                predictions = list(model.predict(x_pred_values))
+                confidence = _missforest_classifier_confidence(model, x_pred_values)
+                model_type = "random_forest_classifier"
+
+            col_pos = int(list(working_df.columns).index(column))
+            for idx, pos in enumerate(positions):
+                working_df.iat[int(pos), col_pos] = predictions[idx]
+            column_meta[column] = {
+                "algorithm_mode": "iterative",
+                "model_type": model_type,
+                "feature_count": int(x_train.shape[1]),
+                "train_pool_size": int(train_pool_size),
+                "train_sample_size": int(train_sample_size),
+                "train_sampled": bool(train_sampled),
+                "candidate_confidence": confidence,
+                "n_estimators": int(strategy["n_estimators"]),
+                "max_train_rows": int(strategy["max_train_rows"]),
+            }
+
+        iterations_run = iteration_idx + 1
+        convergence_delta = _missforest_convergence_delta(
+            frame_pd,
+            original_df,
+            previous_df,
+            working_df,
+            {
+                column: positions
+                for column, positions in target_positions_by_column.items()
+                if column not in skipped_columns
+            },
+        )
+        if convergence_delta <= float(strategy["convergence_tolerance"]):
+            converged = True
+            break
+
+    changes_by_issue: dict[str, list[dict[str, Any]]] = {}
+    issue_evidence: dict[str, dict[str, Any]] = {}
+    for issue_id, issue in issue_by_id.items():
+        column = str(issue["column"])
+        if column in skipped_columns:
+            details = dict(skipped_columns[column])
+            details["issue_id"] = issue_id
+            details["issue_type"] = str(issue["issue_type"])
+            skipped.append(details)
+            continue
+        if column not in column_meta:
+            skipped.append(
+                {
+                    "issue_id": issue_id,
+                    "reason": "missforest_training_unavailable",
+                    "issue_type": str(issue["issue_type"]),
+                    "column": column,
+                }
+            )
+            continue
+
+        issue_changes: list[dict[str, Any]] = []
+        col_pos = int(list(original_df.columns).index(column))
+        for pos in issue_positions.get(issue_id, []):
+            before_value = original_df[column].iat[int(pos)]
+            after_value = working_df[column].iat[int(pos)]
+            before_is_nan = bool(frame_pd.isna(before_value))
+            after_is_nan = bool(frame_pd.isna(after_value))
+            if (before_is_nan and after_is_nan) or (
+                (not before_is_nan) and (not after_is_nan) and before_value == after_value
+            ):
+                continue
+            issue_changes.append(
+                {
+                    "issue_id": issue_id,
+                    "column": column,
+                    "row_pos": int(pos),
+                    "row": _index_to_builtin(original_df.index[int(pos)]),
+                    "col_pos": col_pos,
+                    "before": before_value,
+                    "after": after_value,
+                }
+            )
+        if not issue_changes:
+            continue
+
+        evidence = dict(column_meta[column])
+        evidence.update(
+            {
+                "issue_id": issue_id,
+                "column": column,
+                "issue_type": str(issue["issue_type"]),
+                "iterations_run": int(iterations_run),
+                "converged": bool(converged),
+                "convergence_delta": float(convergence_delta),
+                "target_cell_count": int(len(issue_positions.get(issue_id, []))),
+                "max_iter": int(strategy["max_iter"]),
+                "convergence_tolerance": float(strategy["convergence_tolerance"]),
+            }
+        )
+        changes_by_issue[issue_id] = issue_changes
+        issue_evidence[issue_id] = evidence
+
+    return changes_by_issue, issue_evidence, skipped
+
+
 def action_health(_: dict[str, Any]) -> dict[str, Any]:
     dependencies = _runtime_dependency_snapshot()
     return {
@@ -2486,6 +3089,17 @@ def action_scan_file(payload: dict[str, Any]) -> dict[str, Any]:
             str(item.get("column", "")),
         )
     )
+    numeric_outlier_risk_counts = {"mild": 0, "strong": 0, "extreme": 0}
+    numeric_outlier_auto_eligible_count = 0
+    for issue in issues:
+        if issue.get("issue_type") != "numeric_outlier":
+            continue
+        risk_level = str(issue.get("outlier_risk_level") or "mild")
+        if risk_level not in numeric_outlier_risk_counts:
+            numeric_outlier_risk_counts[risk_level] = 0
+        numeric_outlier_risk_counts[risk_level] += 1
+        if bool(issue.get("auto_repair_eligible")):
+            numeric_outlier_auto_eligible_count += 1
 
     _emit_stage_progress(
         "scan_file",
@@ -2519,6 +3133,8 @@ def action_scan_file(payload: dict[str, Any]) -> dict[str, Any]:
                 ],
                 "total_issues": len(issues),
                 "issue_type_counts": issue_type_counts,
+                "numeric_outlier_risk_counts": numeric_outlier_risk_counts,
+                "numeric_outlier_auto_eligible_count": numeric_outlier_auto_eligible_count,
             },
         }
     )
@@ -4013,6 +4629,470 @@ def action_repair_with_gower(payload: dict[str, Any]) -> dict[str, Any]:
             "applied_repairs": applied_repairs,
             "skipped_issues": skipped_issues,
             "neighbor_evidence": neighbor_evidence,
+            "comparison": {
+                "before_issue_count": before_issue_count,
+                "after_issue_count": after_issue_count,
+                "resolved_issue_count": max(0, before_issue_count - after_issue_count),
+                "before_issue_type_counts": before_issue_type_counts,
+                "after_issue_type_counts": after_issue_type_counts,
+                "before_column_issue_counts": before_issue_column_counts,
+                "after_column_issue_counts": after_issue_column_counts,
+                "changed_cell_count": total_cells_modified,
+                "changed_cells_preview": changed_cells_preview,
+            },
+            "rollback": rollback_info,
+        }
+    )
+
+
+def action_repair_with_missforest(payload: dict[str, Any]) -> dict[str, Any]:
+    _emit_stage_progress(
+        "repair_with_missforest",
+        "validate_input",
+        "start",
+        2,
+        "开始校验 MissForest 修复参数",
+    )
+    frame_pd = _load_dataframe_module("Repair with MissForest")
+    csv_path = _require(payload, "csv_path")
+    scan_config = _scan_config_from_payload(payload)
+    missforest_strategy = _missforest_strategy_from_payload(payload)
+    write_output_requested = _to_bool(payload, "write_output", default=True)
+    plan_only = _to_bool(payload, "plan_only", default=False)
+    write_output = write_output_requested and (not plan_only)
+
+    raw_issue_ids = payload.get("issue_ids", [])
+    if raw_issue_ids is None:
+        raw_issue_ids = []
+    if not isinstance(raw_issue_ids, (list, tuple, set)):
+        raise KnownEngineError(
+            code=ErrorCode.INVALID_INPUT,
+            message="Field issue_ids must be a string list",
+            details={"field": "issue_ids", "value": raw_issue_ids},
+        )
+
+    selected_issue_ids: list[str] = []
+    seen_issue_ids: set[str] = set()
+    for raw in raw_issue_ids:
+        issue_id = str(raw).strip()
+        if not issue_id or issue_id in seen_issue_ids:
+            continue
+        seen_issue_ids.add(issue_id)
+        selected_issue_ids.append(issue_id)
+
+    try:
+        from sklearn.ensemble import RandomForestClassifier, RandomForestRegressor  # type: ignore
+    except Exception as exc:
+        raise KnownEngineError(
+            code=ErrorCode.MISSING_DEPENDENCY,
+            message="MissForest repair dependency missing: scikit-learn",
+            details={"reason": str(exc)},
+        ) from exc
+
+    csv_file = _resolve_input_csv(str(csv_path))
+    if not csv_file.exists():
+        _emit_stage_progress(
+            "repair_with_missforest",
+            "validate_input",
+            "error",
+            100,
+            "输入文件不存在",
+            file=str(csv_file),
+            error_code=ErrorCode.FILE_NOT_FOUND,
+        )
+        raise KnownEngineError(
+            code=ErrorCode.FILE_NOT_FOUND,
+            message=f"Input CSV does not exist: {csv_file}",
+            details={"csv_path": str(csv_file)},
+        )
+
+    _emit_stage_progress("repair_with_missforest", "load_csv", "start", 12, "开始读取待修复文件", file=str(csv_file))
+    try:
+        df = frame_pd.read_csv(csv_file)
+    except Exception as exc:
+        _emit_stage_progress(
+            "repair_with_missforest",
+            "load_csv",
+            "error",
+            100,
+            "读取待修复文件失败",
+            file=str(csv_file),
+            error_code=ErrorCode.CSV_READ_FAILED,
+            reason=str(exc),
+        )
+        raise KnownEngineError(
+            code=ErrorCode.CSV_READ_FAILED,
+            message="Failed to read CSV",
+            details={"csv_path": str(csv_file), "reason": str(exc)},
+        ) from exc
+    _emit_stage_progress(
+        "repair_with_missforest",
+        "load_csv",
+        "complete",
+        22,
+        "待修复文件读取完成",
+        file=str(csv_file),
+        rows=int(df.shape[0]),
+        columns=int(df.shape[1]),
+    )
+
+    _emit_stage_progress(
+        "repair_with_missforest",
+        "scan_columns",
+        "start",
+        34,
+        "开始识别 MissForest 可修复问题",
+        file=str(csv_file),
+    )
+    try:
+        precomputed_issues, precomputed_issues_used = _precomputed_issues_from_payload(
+            payload,
+            csv_file,
+            plan_only=plan_only,
+        )
+        if precomputed_issues_used and precomputed_issues is not None:
+            issues_internal = precomputed_issues
+        else:
+            issues_internal = _detect_issues_for_frame(df, frame_pd, scan_config=scan_config)
+        _emit_stage_progress(
+            "repair_with_missforest",
+            "scan_columns",
+            "complete",
+            46,
+            "MissForest 可修复问题识别完成",
+            file=str(csv_file),
+            issue_count=int(len(issues_internal)),
+            precomputed_issues_used=bool(precomputed_issues_used),
+        )
+        issue_map = {str(item["issue_id"]): item for item in issues_internal}
+        original_df = df.copy(deep=True)
+        repaired_df = df.copy(deep=True)
+        supported_issue_types = {"missing_values", "numeric_outlier", "rare_category"}
+        preview_limit = int(missforest_strategy["preview_limit"])
+        skipped_issues: list[dict[str, Any]] = []
+        skipped_ids: set[str] = set()
+        selected_issues: list[dict[str, Any]] = []
+        cell_plan: dict[tuple[int, str], dict[str, Any]] = {}
+        changes_by_issue: dict[str, list[dict[str, Any]]] = {}
+        issue_evidence: dict[str, dict[str, Any]] = {}
+
+        def add_skip(issue_id: str, reason: str, extra: dict[str, Any] | None = None) -> None:
+            if issue_id in skipped_ids:
+                return
+            row: dict[str, Any] = {"issue_id": issue_id, "reason": reason}
+            if extra:
+                row.update(extra)
+            skipped_issues.append(row)
+            skipped_ids.add(issue_id)
+
+        for issue_id in selected_issue_ids:
+            issue = issue_map.get(issue_id)
+            if issue is None:
+                add_skip(issue_id, "issue_not_found")
+                continue
+            column = str(issue["column"])
+            if column not in repaired_df.columns:
+                add_skip(issue_id, "column_not_found")
+                continue
+            selected_issues.append(issue)
+
+        selected_issues.sort(
+            key=lambda item: (
+                -float(item.get("issue_score", 0.0)),
+                str(item.get("column", "")),
+                str(item.get("issue_id", "")),
+            )
+        )
+        _emit_stage_progress(
+            "repair_with_missforest",
+            "repair_search",
+            "start",
+            56,
+            "开始执行 MissForest 候选修复",
+            file=str(csv_file),
+            issue_count=int(len(selected_issues)),
+        )
+
+        issue_masks: dict[str, Any] = {}
+        issue_positions: dict[str, list[int]] = {}
+        active_issues: list[dict[str, Any]] = []
+        for issue in selected_issues:
+            issue_id = str(issue["issue_id"])
+            column = str(issue["column"])
+            issue_type = str(issue["issue_type"])
+            if issue_type not in supported_issue_types:
+                add_skip(
+                    issue_id,
+                    "unsupported_issue_type",
+                    {"issue_type": issue_type, "column": column},
+                )
+                continue
+
+            rule = issue.get("repair_rule", {})
+            mask = _issue_mask_from_rule(original_df[column], issue_type, rule, frame_pd)
+            positions = [idx for idx, flag in enumerate(mask.tolist()) if bool(flag)]
+            if not positions:
+                add_skip(issue_id, "no_rows_matched", {"issue_type": issue_type, "column": column})
+                continue
+            issue_masks[issue_id] = mask
+            issue_positions[issue_id] = positions
+            active_issues.append(issue)
+
+        if str(missforest_strategy["algorithm_mode"]) == "iterative":
+            iterative_changes, iterative_evidence, iterative_skips = _missforest_predict_iterative(
+                frame_pd=frame_pd,
+                original_df=original_df,
+                selected_issues=active_issues,
+                issue_masks=issue_masks,
+                issue_positions=issue_positions,
+                strategy=missforest_strategy,
+                random_forest_regressor=RandomForestRegressor,
+                random_forest_classifier=RandomForestClassifier,
+            )
+            for skipped in iterative_skips:
+                issue_id = str(skipped.get("issue_id") or "")
+                if not issue_id:
+                    continue
+                reason = str(skipped.get("reason") or "missforest_training_unavailable")
+                extra = dict(skipped)
+                extra.pop("issue_id", None)
+                extra.pop("reason", None)
+                add_skip(issue_id, reason, extra)
+            for issue in active_issues:
+                issue_id = str(issue["issue_id"])
+                column = str(issue["column"])
+                issue_type = str(issue["issue_type"])
+                issue_changes = iterative_changes.get(issue_id, [])
+                if not issue_changes:
+                    if issue_id not in skipped_ids:
+                        add_skip(issue_id, "no_prediction_change", {"issue_type": issue_type, "column": column})
+                    continue
+                for proposal in issue_changes:
+                    cell_plan[(int(proposal["row_pos"]), column)] = proposal
+                    changes_by_issue.setdefault(issue_id, []).append(proposal)
+                    repaired_df.iat[int(proposal["row_pos"]), int(proposal["col_pos"])] = proposal["after"]
+                issue_evidence[issue_id] = iterative_evidence.get(issue_id, {})
+        else:
+            for issue in active_issues:
+                issue_id = str(issue["issue_id"])
+                column = str(issue["column"])
+                issue_type = str(issue["issue_type"])
+                try:
+                    issue_changes, evidence = _missforest_predict_issue(
+                        frame_pd=frame_pd,
+                        original_df=original_df,
+                        issue=issue,
+                        mask=issue_masks[issue_id],
+                        positions=issue_positions[issue_id],
+                        strategy=missforest_strategy,
+                        random_forest_regressor=RandomForestRegressor,
+                        random_forest_classifier=RandomForestClassifier,
+                    )
+                except KnownEngineError as exc:
+                    details = dict(exc.details) if isinstance(exc.details, dict) else {}
+                    details.update({"issue_type": issue_type, "column": column})
+                    add_skip(issue_id, "missforest_training_unavailable", details)
+                    continue
+                except Exception as exc:
+                    add_skip(
+                        issue_id,
+                        "missforest_prediction_failed",
+                        {"issue_type": issue_type, "column": column, "reason": str(exc)},
+                    )
+                    continue
+
+                if not issue_changes:
+                    add_skip(issue_id, "no_prediction_change", {"issue_type": issue_type, "column": column})
+                    continue
+
+                for proposal in issue_changes:
+                    cell_plan[(int(proposal["row_pos"]), column)] = proposal
+                    changes_by_issue.setdefault(issue_id, []).append(proposal)
+                    repaired_df.iat[int(proposal["row_pos"]), int(proposal["col_pos"])] = proposal["after"]
+                issue_evidence[issue_id] = evidence
+
+        _emit_stage_progress(
+            "repair_with_missforest",
+            "repair_search",
+            "complete",
+            76,
+            "MissForest 候选修复完成",
+            file=str(csv_file),
+            changed_cells=int(len(cell_plan)),
+        )
+
+        post_issues_internal = _detect_issues_for_frame(repaired_df, frame_pd, scan_config=scan_config)
+        before_issue_type_counts = _issue_type_counter(issues_internal)
+        after_issue_type_counts = _issue_type_counter(post_issues_internal)
+        before_issue_column_counts = _issue_counter_by_column(issues_internal)
+        after_issue_column_counts = _issue_counter_by_column(post_issues_internal)
+        applied_repairs: list[dict[str, Any]] = []
+        model_evidence: list[dict[str, Any]] = []
+
+        for issue_id in selected_issue_ids:
+            issue = issue_map.get(issue_id)
+            if issue is None or issue_id in skipped_ids:
+                continue
+            issue_type = str(issue.get("issue_type"))
+            column = str(issue.get("column"))
+            issue_changes = sorted(changes_by_issue.get(issue_id, []), key=lambda item: int(item["row_pos"]))
+            if not issue_changes:
+                continue
+            rule = issue.get("repair_rule", {})
+            before_count = int(issue.get("count", len(issue_changes)))
+            after_mask = _issue_mask_from_rule(repaired_df[column], issue_type, rule, frame_pd)
+            after_count = int(after_mask.sum())
+            resolved_count = max(0, before_count - after_count)
+            evidence = issue_evidence.get(issue_id, {})
+            replacements: list[Any] = []
+            for change in issue_changes:
+                value = _to_builtin(change["after"])
+                if value not in replacements:
+                    replacements.append(value)
+                if len(replacements) >= preview_limit:
+                    break
+            applied_repairs.append(
+                {
+                    "issue_id": issue_id,
+                    "column": column,
+                    "issue_type": issue_type,
+                    "rows_touched": len(issue_changes),
+                    "replacement_preview": replacements[0] if len(replacements) == 1 else replacements,
+                    "before_count": before_count,
+                    "after_count": after_count,
+                    "resolved_count": resolved_count,
+                    "candidate_confidence": evidence.get("candidate_confidence", 0.0),
+                    "cells_preview": [
+                        {
+                            "row": _index_to_builtin(change["row"]),
+                            "before": _to_builtin(change["before"]),
+                            "after": _to_builtin(change["after"]),
+                        }
+                        for change in issue_changes[:preview_limit]
+                    ],
+                    "strategy": {
+                        "tool_id": "engine.repair_with_missforest",
+                        "model_type": evidence.get("model_type", "random_forest"),
+                        "n_estimators": int(missforest_strategy["n_estimators"]),
+                    },
+                }
+            )
+            if evidence:
+                model_evidence.append(evidence)
+    except KnownEngineError:
+        raise
+    except Exception as exc:
+        _emit_stage_progress(
+            "repair_with_missforest",
+            "repair_search",
+            "error",
+            100,
+            "MissForest 修复失败",
+            file=str(csv_file),
+            error_code=ErrorCode.REPAIR_BATCH_FAILED,
+            reason=str(exc),
+        )
+        raise KnownEngineError(
+            code=ErrorCode.REPAIR_BATCH_FAILED,
+            message="MissForest repair failed",
+            details={"csv_path": str(csv_file), "reason": str(exc)},
+        ) from exc
+
+    output_csv: str | None = None
+    rollback_info: dict[str, Any] | None = None
+    if write_output:
+        _emit_stage_progress(
+            "repair_with_missforest",
+            "write_output",
+            "start",
+            84,
+            "开始写出 MissForest 修复结果",
+            file=str(csv_file),
+        )
+        output_path = _resolve_output_path(csv_file, payload, default_suffix=".repaired.missforest.csv")
+        os.makedirs(output_path.parent, exist_ok=True)
+        if _to_bool(payload, "enable_rollback", default=True):
+            _, rollback_info = _create_rollback_artifacts(
+                source_tool_id="engine.repair_with_missforest",
+                csv_file=csv_file,
+                output_path=output_path,
+                selected_issue_ids=selected_issue_ids,
+                issue_source_map={issue_id: "missforest" for issue_id in selected_issue_ids},
+                execution_steps=[
+                    {
+                        "step": 1,
+                        "tool_id": "engine.repair_with_missforest",
+                        "source": "missforest",
+                    }
+                ],
+                payload=payload,
+                extra={
+                    "scan_config": scan_config,
+                    "missforest_strategy": missforest_strategy,
+                },
+            )
+        repaired_df.to_csv(output_path, index=False)
+        output_csv = str(output_path)
+        _emit_stage_progress(
+            "repair_with_missforest",
+            "write_output",
+            "complete",
+            96,
+            "MissForest 修复结果写出完成",
+            file=str(output_csv),
+        )
+
+    total_cells_modified = int(len(cell_plan))
+    before_issue_count = int(len(issues_internal))
+    after_issue_count = int(len(post_issues_internal))
+    changed_cells_preview = [
+        {
+            "row": _index_to_builtin(change["row"]),
+            "column": str(change["column"]),
+            "issue_id": str(change["issue_id"]),
+            "before": _to_builtin(change["before"]),
+            "after": _to_builtin(change["after"]),
+        }
+        for change in sorted(cell_plan.values(), key=lambda item: (int(item["row_pos"]), str(item["column"])))[:preview_limit]
+    ]
+    _emit_stage_progress(
+        "repair_with_missforest",
+        "complete",
+        "complete",
+        100,
+        "MissForest 修复任务完成",
+        file=str(output_csv or csv_file),
+        selected_issue_count=int(len(selected_issue_ids)),
+        applied_issue_count=int(len(applied_repairs)),
+    )
+    return _to_builtin(
+        {
+            "csv_path": str(csv_file),
+            "scan_config": scan_config,
+            "missforest_strategy": {
+                "algorithm_mode": str(missforest_strategy["algorithm_mode"]),
+                "max_iter": int(missforest_strategy["max_iter"]),
+                "convergence_tolerance": float(missforest_strategy["convergence_tolerance"]),
+                "n_estimators": int(missforest_strategy["n_estimators"]),
+                "max_depth": missforest_strategy["max_depth"],
+                "min_training_rows": int(missforest_strategy["min_training_rows"]),
+                "max_train_rows": int(missforest_strategy["max_train_rows"]),
+                "random_state": int(missforest_strategy["random_state"]),
+                "max_features": missforest_strategy["max_features"],
+                "preview_limit": int(missforest_strategy["preview_limit"]),
+            },
+            "plan_only": plan_only,
+            "execution_mode": "plan_only" if plan_only else "apply",
+            "write_output": write_output,
+            "precomputed_issues_used": bool(precomputed_issues_used),
+            "output_csv": output_csv,
+            "selected_issue_ids": selected_issue_ids,
+            "selected_issue_count": len(selected_issue_ids),
+            "applied_issue_count": len(applied_repairs),
+            "total_cells_modified": total_cells_modified,
+            "applied_repairs": applied_repairs,
+            "skipped_issues": skipped_issues,
+            "model_evidence": model_evidence,
             "comparison": {
                 "before_issue_count": before_issue_count,
                 "after_issue_count": after_issue_count,

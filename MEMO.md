@@ -1,6 +1,6 @@
 ﻿# MEMO
 
-Last updated: 2026-05-16 08:41:09 +08:00
+Last updated: 2026-05-16 12:29:53 +08:00
 
 ## 椤圭洰鎬荤洰鏍?
 - 灏嗏€滄贩鍚堟暟鎹被鍨嬪紓甯告娴嬩笌淇鈥濋」鐩粠绠楁硶鍘熷瀷鎺ㄨ繘涓哄彲浜や粯銆佸彲婕旂ず銆佸彲娴嬭瘯鐨勬闈㈠簲鐢ㄣ€?- 浠?`appshell/` 浣滀负浜у搧鍖栦富璺緞锛屽舰鎴?`Python Engine + Go Backend + Wails Frontend` 鐨勭ǔ瀹氭灦鏋勩€?- 淇濈暀 `app.py` 浣滀负鏃х増 Streamlit 婕旂ず鍏ュ彛锛岀敤浜庣畻娉曢獙璇併€佺粨鏋滃鐓у拰绛旇京灞曠ず銆?- 閫愭琛ラ綈鐪熷疄鐢ㄦ埛闂幆锛氬鍏?CSV -> 璁粌/鎵弿 -> 闂绛涢€?-> 鎵归噺淇 -> 鍥炴粴 -> 鍘嗗彶鏌ョ湅銆?- 鍦ㄤ繚鐣欑幇鏈夌畻娉曡祫浜т笌宸ョ▼楠ㄦ灦鐨勫墠鎻愪笅锛岄€愭鍗囩骇涓衡€滃 agent 鍐崇瓥灞?+ 纭畾鎬у伐鍏峰眰鈥濈殑鏅鸿兘鍖栦骇鍝併€?- 鏈€缁堢洰鏍囨槸璁╃敤鎴峰敖閲忓彧闇€閫夋嫨鏂囦欢锛屽嵆鍙嚜鍔ㄨ幏寰楁壂鎻忋€佷慨澶嶃€侀獙璇併€佸洖婊氫繚鎶ゅ拰鍥捐〃鍖栬В閲婄粨鏋溿€?
@@ -1858,3 +1858,179 @@ Last updated: 2026-05-16 08:41:09 +08:00
   - `gh` 不可用的问题已记录，若后续需要自动 PR 创建，需要安装并登录 GitHub CLI。
 - 当前问题 / 待处理事项：
   - 远端 GitHub HTTPS 连接当前被 reset；若 push 失败，需要网络恢复后重新执行 push。
+
+## Update 2026-05-16 12:29:53 +08:00
+
+- 改动日期：2026-05-16 12:29:53 +08:00
+- 改动内容简述：按用户提出的新算法分层目标做最小升级，复用既有规则扫描、Gower 修复、agent planner、validation gate 和 rollback 链路，新增 MissForest 风格候选修复工具，并把候选评分显式写入 agent plan。
+- 最终目标：将项目算法升级为“检测层：规则检测 + 数值离群风险分层；修复层：rule repair + Gower-KNN repair + MissForest repair；决策层：候选修复评分 + Validation Gate；编排层：Auto Agent planner 选择策略但不直接写数据”的可运行版本。
+- 当前采用的方法：
+  - 保留 `scan_file` 的规则检测主链路，继续使用已有 `numeric_outlier` 的 `mild / strong / extreme` 风险分层和 `auto_repair_eligible` 策略，只在 `scan_summary` 中补充 `numeric_outlier_risk_counts` 与 `numeric_outlier_auto_eligible_count`，便于展示和 agent 解释。
+  - 保留 `repair_batch` 作为 rule repair，保留 `repair_with_gower` 作为 Gower-KNN repair，并新增稳定 action `repair_with_missforest`，输入输出结构尽量贴近既有修复 action。
+  - `repair_with_missforest` 使用 `RandomForestRegressor / RandomForestClassifier` 对健康行训练局部模型，支持数值列与类别列，默认 `max_train_rows=5000` 做稳定抽样保护，支持 `plan_only` 和 `write_output=false`。
+  - Go agent planner 从 rule / gower / hybrid 三候选升级为 rule / gower / missforest / hybrid 四候选；hybrid 现在可按 issue 级来源混合三种工具。
+  - 新增 `candidate_score_v1`，用 resolved issue、remaining issue、changed cells 和 improvement ratio 形成显式候选评分；planner 只选择候选和生成执行 payload，不直接写数据。
+  - 保留 Stage 3 形成的 Validation Gate 与自动回滚边界：真正写出仍由 execution 工具完成，随后 post scan + validation gate 决定接受、警告、拒绝或回滚。
+- 相关模块/文件：
+  - `appshell/core/python_engine/engine_core.py`
+  - `appshell/core/python_engine/action_catalog.py`
+  - `appshell/backend/internal/engine/actions.go`
+  - `appshell/backend/internal/agent/mock_planner.go`
+  - `appshell/backend/internal/agent/planning_flow.go`
+  - `appshell/backend/internal/agent/runtime_runner.go`
+  - `appshell/backend/internal/agent/auto_session.go`
+  - `appshell/backend/internal/agent/planner.go`
+  - `appshell/backend/internal/agent/planning_support.go`
+  - `appshell/backend/internal/agent/types.go`
+  - `appshell/backend/internal/agent/tool_registry.go`
+  - `appshell/backend/internal/agent/langgraph_types.go`
+  - `appshell/backend/internal/agent/langgraph_planner.go`
+  - `appshell/backend/internal/presentation/builder_common.go`
+  - `appshell/backend/internal/presentation/builder_scan_repair.go`
+  - `tests/python_engine/test_engine_cli.py`
+  - `tests/python_engine/test_action_catalog.py`
+  - `appshell/backend/internal/engine/actions_test.go`
+  - `appshell/backend/internal/agent/mock_planner_test.go`
+  - `appshell/backend/internal/agent/planning_support_test.go`
+  - `appshell/backend/internal/agent/runtime_runner_test.go`
+  - `appshell/backend/internal/agent/tool_registry_test.go`
+  - `MEMO.md`
+- 已解决的问题 / 新增功能：
+  - Python engine action catalog 现在包含 `repair_with_missforest`，Go ToolRegistry 现在包含 `engine.repair_with_missforest`。
+  - MissForest 修复支持 missing_values、numeric_outlier、rare_category 三类可自动修复 issue，并返回 `model_evidence`、`candidate_confidence`、`comparison`、`applied_repairs`、`rollback` 等与既有工具一致的审计字段。
+  - agent planning flow 现在会先执行 rule、Gower、MissForest 三路 plan-only preview，再交给 planner 进行候选评分和策略选择。
+  - hybrid execution 继续由 runtime 层串联工具写出，不由 planner 写数据；rollback manifest 仍在最终执行时生成。
+  - presentation 层已识别 MissForest 修复结果和三路 hybrid 来源，避免结果解释层只认识 rule / Gower。
+  - 新增 Python 回归 `test_repair_with_missforest_plan_only_returns_model_evidence`，验证 MissForest 在 plan-only 下生成模型证据且不写 CSV。
+- 验证命令：
+  - `.\.venv-win\Scripts\python.exe -m py_compile appshell\core\python_engine\engine_core.py appshell\core\python_engine\action_catalog.py`
+  - `.\.venv-win\Scripts\python.exe -m pytest tests\python_engine\test_engine_cli.py tests\python_engine\test_action_catalog.py -q`
+  - `.\.venv-win\Scripts\python.exe -m pytest tests\python_engine -q`
+  - `$env:PATH = (Resolve-Path '..\..\.venv-win\Scripts').Path + ';' + $env:PATH; go test ./internal/agent ./internal/engine ./internal/presentation ./cmd/wails`
+  - `$env:PATH = (Resolve-Path '..\..\.venv-win\Scripts').Path + ';' + $env:PATH; go test ./...`
+- 验收结果：
+  - Python targeted：`24 passed in 65.54s`。
+  - Python engine 全量：`54 passed, 12 warnings in 78.82s`，warnings 仍为既有 pandas categorical dtype deprecation。
+  - Go targeted：`ok` for `./internal/agent`、`./internal/engine`、`./internal/presentation`、`./cmd/wails`。
+  - Go 全量：最终复跑 `go test ./...` 通过；首次全量中 `internal/task` 的 `TestTaskHistoryCanBeLoadedAfterServiceRestart` 出现一次 pending/succeeded 异步竞态，单独复跑和全量复跑均通过。
+- 当前问题 / 待处理事项：
+  - MissForest 当前是轻量工程化版本：基于每个 issue 的健康行训练随机森林候选，不是多轮迭代 MissForest 论文完整实现；论文或答辩表述应称为 “MissForest-style random forest imputation candidate” 更稳妥。
+  - 大数据下 MissForest 默认采样 5000 行健康样本保护耗时，但尚未补正式 scale benchmark；后续如要论文级证据，应记录不同 issue 数、训练行数、耗时、内存和修复质量。
+  - 当前 planner 候选评分为可解释启发式 `candidate_score_v1`，不是学习型策略；后续可在 validation 历史上训练或调参，但不应破坏 planner 不直接写数据的边界。
+
+## Update 2026-05-16 13:10:30 +08:00
+
+- 改动日期：2026-05-16 13:10:30 +08:00
+- 改动内容简述：按正式版算法升级计划，把上一轮 MissForest-style 单轮候选升级为默认完整迭代 MissForest 修复，并补齐 evidence、Validation Gate 风险信号、文档表述和回归测试。
+- 最终目标：形成“检测层规则扫描 + 三路正式修复工具 + 四候选评分 + runtime 写出 + post scan Validation Gate + rollback manifest”的工程正式版闭环，其中 Go planner 始终只做 plan-only 预览和策略选择，不直接写 CSV。
+- 当前采用的方法：
+  - `repair_with_missforest` 默认 `algorithm_mode=iterative`，默认参数固定为 `max_iter=5`、`convergence_tolerance=0.001`、`max_train_rows=5000`、`min_training_rows=8`、`random_state=42`、`n_estimators=40`。
+  - MissForest 现在会把 selected issue 覆盖的单元格临时视为 missing，先用 median/mode 初始化，再按目标列缺失比例从低到高训练 `RandomForestRegressor` 或 `RandomForestClassifier`，循环到收敛或达到 `max_iter`。
+  - 迭代中非 selected 单元格的插补值只作为模型特征；最终写回仍只允许修改 selected issue 覆盖的单元格。
+  - 保留 `algorithm_mode=single_pass` 作为内部兼容路径，但 README、论文材料和展示目录都以 `iterative` 作为正式主路径。
+  - Go planner 的 MissForest payload 显式补默认策略；hybrid execution step 会携带 MissForest `model_evidence`，便于 post validation 检测收敛风险。
+  - Validation Gate 新增 `missforest_not_converged` 风险信号：有改善时进入 warning；若同时没有 issue score 改善，则维持 reject 并建议回滚。
+  - MissForest 数值模型训练改为位置索引，避免非连续行索引下 one-hot 矩阵与 boolean mask 不对齐；随机森林训练/预测统一使用 numpy matrix，避免 sklearn feature-name warning 污染 engine stderr。
+- 相关模块/文件：
+  - `appshell/core/python_engine/engine_core.py`
+  - `appshell/core/python_engine/action_catalog.py`
+  - `appshell/backend/internal/agent/mock_planner.go`
+  - `appshell/backend/internal/agent/runtime_runner.go`
+  - `appshell/backend/internal/agent/tool_registry.go`
+  - `appshell/backend/internal/agent/validation_gate.go`
+  - `appshell/backend/internal/agent/validation_gate_test.go`
+  - `appshell/backend/internal/presentation/builder_scan_repair.go`
+  - `tests/python_engine/test_engine_cli.py`
+  - `README.md`
+  - `THESIS_SUPPORT_MATERIALS.md`
+  - `PRESENTATION_CATALOG.md`
+  - `MEMO.md`
+- 已解决的问题 / 新增功能：
+  - `model_evidence` 现在包含 `algorithm_mode`、`iterations_run`、`converged`、`convergence_delta`、`train_sample_size`、`target_cell_count`、`candidate_confidence` 等正式审计字段。
+  - 新增 Python 回归验证 MissForest plan-only 不写出、迭代 evidence 字段存在、mixed numeric/categorical selected cells 可修复、非 selected cells 不被写回。
+  - 新增 Go Validation Gate 回归验证 non-converged MissForest 有改善时 warning、无改善时 reject。
+  - 修复端到端探针暴露的 MissForest 大样本索引错位问题：此前 M1 数据集在非连续训练索引下会触发 `Unalignable boolean Series provided as indexer`。
+  - 文档中已把 MissForest 主路径从 “MissForest-style candidate” 修正为 iterative MissForest repair，并记录默认参数与安全边界。
+- 验证命令：
+  - `.\.venv-win\Scripts\python.exe -m py_compile .\appshell\core\python_engine\engine_core.py`
+  - `.\.venv-win\Scripts\python.exe -m pytest .\tests\python_engine\test_engine_cli.py::test_repair_with_missforest_plan_only_returns_model_evidence .\tests\python_engine\test_engine_cli.py::test_repair_with_missforest_writes_only_selected_cells -q`
+  - `.\.venv-win\Scripts\python.exe -m pytest .\tests\python_engine\test_engine_cli.py .\tests\python_engine\test_action_catalog.py -q`
+  - `$env:PATH = (Resolve-Path '.\.venv-win\Scripts').Path + ';' + $env:PATH; Push-Location .\appshell\backend; go test .\internal\agent .\internal\engine .\internal\presentation .\cmd\wails; Pop-Location`
+  - `.\.venv-win\Scripts\python.exe -m pytest .\tests\python_engine -q`
+  - `$env:PATH = (Resolve-Path '.\.venv-win\Scripts').Path + ';' + $env:PATH; Push-Location .\appshell\backend; go test ./...; Pop-Location`
+  - 使用内联 JSON 调用 `repair_with_missforest` 对 `data/experiments/m1_stroke/corrupted.csv` 做 plan-only 预览。
+  - `$env:PATH = (Resolve-Path '.\.venv-win\Scripts').Path + ';' + $env:PATH; $out = Join-Path (Resolve-Path '.\outputs').Path 'agent_auto_probe_orders_abs'; Push-Location .\appshell\backend; go run .\cmd\demo -action agent.session.auto -csv (Resolve-Path '..\..\data\experiments\auto_agent_multi_dataset\orders_transactions\corrupted.csv').Path -output $out -goal "scan and repair small mixed CSV using formal algorithm candidates" -timeout 180s; Pop-Location`
+- 验收结果：
+  - Python MissForest targeted：`2 passed in 8.92s`。
+  - Python engine targeted：`25 passed in 51.10s`。
+  - Go targeted：`ok` for `./internal/agent`、`./internal/engine`、`./internal/presentation`、`./cmd/wails`。
+  - Python engine 全量：最终复跑 `55 passed, 12 warnings in 71.94s`，warnings 仍为既有 pandas categorical dtype deprecation。
+  - Go 全量：`go test ./...` 通过，`cmd/bench`、`cmd/demo`、`internal/observability` 为 no test files，其余包通过。
+  - M1 MissForest direct plan-only：通过，`applied_issue_count=10`，`total_cells_modified=194`，`model_evidence` 包含 iterative 收敛字段。
+  - 小型 mixed CSV `agent.session.auto`：通过，task `task-1778908761482835100-1` succeeded；闭环完成 scan -> rule/Gower/MissForest previews -> hybrid execute -> post scan -> Validation Gate，输出 `outputs/agent_auto_probe_orders_abs/corrupted.repaired.hybrid.csv`，rollback manifest `outputs/agent_auto_probe_orders_abs/.rollback/rb-1778908771462-hybrid.json`。
+- 当前问题 / 待处理事项：
+  - MissForest 大数据 scale benchmark 仍未补齐；后续建议记录 selected issue 数、训练样本数、迭代次数、收敛率、耗时和内存峰值。
+  - 当前 `candidate_score_v1` 仍是可解释启发式评分，不是学习型策略；后续可以基于 validation 历史调参，但不能破坏 planner plan-only 边界。
+
+## Update 2026-05-16 13:54:01 +08:00
+
+- 改动日期：2026-05-16 13:54:01 +08:00
+- 改动内容简述：按用户要求补做正式版升级后的百万级验证。本次不改核心代码，使用升级后的 Python engine 重新扫描 100 万行混合类型 CSV，并对默认 `algorithm_mode=iterative` 的 `repair_with_missforest` 做 plan-only 探针，验证大数据输入、mixed numeric/categorical 模型路径、证据字段和不写出边界。
+- 最终目标：确认升级后的迭代 MissForest 主路径是否至少能在百万行输入上真实跑通，并把收敛情况、耗时、训练样本、目标单元格数量和风险结论记录下来，避免继续引用升级前的百万级验证作为升级后证据。
+- 当前采用的方法：
+  - 复用升级前生成的 ignored 百万级输入 `outputs/scale_probe_work/scale_inputs/orders_transactions_1000000_corrupted.csv`，文件约 131 MB，扫描后识别为 `1000024` 行、`13` 列。
+  - 重新执行升级后的 `scan_file`，输出写入 `outputs/missforest_scale_probe/scan_1m_after_iterative_upgrade.json`。
+  - 选择 4 个 `missing_values` issue：`discount::missing_values`、`unit_price::missing_values`、`product_category::missing_values`、`payment_method::missing_values`，覆盖数值列和类别列。
+  - 执行 `repair_with_missforest`，保持正式默认策略：`algorithm_mode=iterative`、`max_iter=5`、`convergence_tolerance=0.001`、`max_train_rows=5000`、`min_training_rows=8`、`random_state=42`、`n_estimators=40`。
+  - 使用 `plan_only=true`、`write_output=false`，并指定一个哨兵 `output_csv` 路径确认不会落盘。
+  - 汇总结果写入 `outputs/missforest_scale_probe/summary_1m_iterative_missforest.json`。
+- 相关模块/文件：
+  - `appshell/core/python_engine/engine_main.py`
+  - `appshell/core/python_engine/engine_core.py`
+  - `outputs/scale_probe_work/scale_inputs/orders_transactions_1000000_corrupted.csv`（ignored）
+  - `outputs/missforest_scale_probe/scan_1m_after_iterative_upgrade.json`（ignored）
+  - `outputs/missforest_scale_probe/missforest_iterative_1m_plan_only.json`（ignored）
+  - `outputs/missforest_scale_probe/summary_1m_iterative_missforest.json`（ignored）
+  - `MEMO.md`
+- 已解决的问题 / 新增功能：
+  - 升级后的 `scan_file` 百万级复测通过：`duration_ms=9374`，墙钟约 `10.116s`，发现 `17` 个 issue，`scan_summary.numeric_outlier_risk_counts={"mild":0,"strong":0,"extreme":4}`。
+  - 升级后的迭代 MissForest 百万级 plan-only 复测通过：`duration_ms=248183`，墙钟约 `249.034s`，`selected_issue_count=4`，`applied_issue_count=4`，`total_cells_modified=60`。
+  - Mixed path 已覆盖：`discount` 与 `unit_price` 返回 `random_forest_regressor` evidence，`product_category` 与 `payment_method` 返回 `random_forest_classifier` evidence。
+  - 每个 selected issue 的 `train_sample_size=5000`，说明默认大数据训练采样保护生效；目标单元格分别为 `20`、`15`、`13`、`12`。
+  - 写出边界通过：返回 `plan_only=true`、`write_output=false`、`output_csv=null`，哨兵文件 `outputs/missforest_scale_probe/should_not_be_written.csv` 未生成。
+  - 这次结果明确区分了升级前验证和升级后验证：升级前百万级证据覆盖规则链路与 Gower auto 探针；本次新增覆盖正式迭代 MissForest 主路径。
+- 验证命令：
+  - 使用 PowerShell 构造 JSON payload 调用 `.\.venv-win\Scripts\python.exe .\appshell\core\python_engine\engine_main.py --output .\outputs\missforest_scale_probe\scan_1m_after_iterative_upgrade.json`，action 为 `scan_file`。
+  - 使用 PowerShell 构造 JSON payload 调用 `.\.venv-win\Scripts\python.exe .\appshell\core\python_engine\engine_main.py --output .\outputs\missforest_scale_probe\missforest_iterative_1m_plan_only.json`，action 为 `repair_with_missforest`。
+- 验收结果：
+  - `scan_file`：通过。
+  - `repair_with_missforest` iterative plan-only：通过。
+  - 不写出保护：通过。
+  - 百万级 mixed numeric/categorical evidence：通过。
+  - 收敛状态：未通过完全收敛验收，4 个 evidence 均为 `iterations_run=5`、`converged=false`，共享最终 `convergence_delta=0.09581`，需要作为 `missforest_not_converged` 风险信号处理。
+- 当前问题 / 待处理事项：
+  - 本次是百万级 plan-only 算法路径验证，不是百万级真实写出 + post scan + Validation Gate 全闭环；若要论文级端到端证据，后续应单独运行百万级 runtime 写出并记录 rollback manifest、post scan 改善和 Validation Gate verdict。
+  - 默认 `max_iter=5` 在该 100 万行 mixed CSV 的 4 个 missing issue 上未收敛；当前工程行为是 evidence 记录 + Validation Gate warning/reject 保护，后续可评估是否需要自适应 `max_iter`、分列收敛 delta 或更稳健的 categorical convergence 统计。
+  - 本次没有记录 peak memory；若写入正式论文或答辩材料，建议补充内存采样、不同 selected issue 数量的耗时曲线，以及收敛/未收敛样例对照。
+
+## Update 2026-05-16 14:05:37 +08:00
+
+- 改动日期：2026-05-16 14:05:37 +08:00
+- 改动内容简述：按用户要求尝试将当前正式版算法升级成果同步到 GitHub。本地已完成 stage 与 commit，提交范围覆盖 MissForest 迭代升级、Go agent 四候选规划、Validation Gate 风险信号、文档、测试和百万级验证记录；push 阶段因当前机器无法连接 `github.com:443` 被网络层阻断。
+- 最终目标：把当前 `feat/algorithm-risk-hardening` 分支上的算法正式版升级成果同步到远端 GitHub 分支。
+- 当前采用的方法：
+  - 使用 `git status -sb`、`git diff --stat`、`git diff --name-only` 确认待同步范围。
+  - 使用 `git add -u` 仅 stage 已跟踪文件，避免把 ignored 的 `outputs/` 百万级 CSV、验证 JSON 和安装包加入提交。
+  - 使用 `git commit -m "Upgrade formal repair planning algorithms"` 生成本地提交。
+  - 使用 `git push -u origin feat/algorithm-risk-hardening` 与 `git -c http.version=HTTP/1.1 push -u origin feat/algorithm-risk-hardening` 尝试推送。
+  - 使用 `git ls-remote`、`Test-NetConnection github.com -Port 443` 和 SSH 探测确认问题来自网络连接，而不是业务测试或提交内容。
+- 相关模块/文件：
+  - `MEMO.md`
+  - 当前已提交的正式版升级相关代码、文档与测试文件
+- 已解决的问题 / 新增功能：
+  - 本地提交已生成，当前分支相对 `origin/feat/algorithm-risk-hardening` 领先 1 个 commit。
+  - `git diff --check` 未报告空白错误；仅出现 Windows 环境下 LF/CRLF 提示。
+  - 确认 `gh` CLI 未安装，因此无法自动创建 PR；本次同步目标以 git push 为主。
+- 当前问题 / 待处理事项：
+  - push 尚未成功：HTTPS 报错 `Failed to connect to github.com port 443` / `Recv failure: Connection was reset`，SSH 报错 `Connection reset by 20.205.243.166 port 22`。
+  - 网络恢复或配置可用代理后，继续执行 `git push -u origin feat/algorithm-risk-hardening` 即可完成远端同步。
