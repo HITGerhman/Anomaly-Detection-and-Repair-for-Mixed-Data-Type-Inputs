@@ -1,0 +1,7 @@
+dataset,issue_type,gt,pred,tp,fp,fn,precision,recall,f1
+user_device_logs,missing_values,30,30,30,0,0,1.000000,1.000000,1.000000
+user_device_logs,numeric_outlier,24,24,24,0,0,1.000000,1.000000,1.000000
+user_device_logs,rare_category,18,18,18,0,0,1.000000,1.000000,1.000000
+user_device_logs,duplicate_record,12,12,12,0,0,1.000000,1.000000,1.000000
+user_device_logs,cross_column_consistency,16,16,16,0,0,1.000000,1.000000,1.000000
+user_device_logs,Overall,100,100,100,0,0,1.000000,1.000000,1.000000

@@ -1,0 +1,198 @@
+{
+  "dataset": "user_device_logs",
+  "repair_batch": {
+    "applied_issue_count": 10,
+    "comparison": {
+      "after_column_issue_counts": {
+        "login_time": 1,
+        "session_duration": 1,
+        "source_row_id": 1
+      },
+      "after_issue_count": 3,
+      "after_issue_type_counts": {
+        "cross_column_consistency": 1,
+        "duplicate_record": 1,
+        "numeric_outlier": 1
+      },
+      "before_column_issue_counts": {
+        "app_version": 1,
+        "bytes_received": 1,
+        "bytes_sent": 1,
+        "device_type": 2,
+        "event_type": 1,
+        "login_time": 1,
+        "os": 2,
+        "session_duration": 2,
+        "source_row_id": 1
+      },
+      "before_issue_count": 12,
+      "before_issue_type_counts": {
+        "cross_column_consistency": 1,
+        "duplicate_record": 1,
+        "missing_values": 4,
+        "numeric_outlier": 3,
+        "rare_category": 3
+      },
+      "changed_cell_count": 72,
+      "changed_cells_preview": [
+        {
+          "after": 18805.375,
+          "before": 9999999,
+          "column": "bytes_received",
+          "issue_id": "bytes_received::numeric_outlier",
+          "row": 218
+        },
+        {
+          "after": 18805.375,
+          "before": 9999999,
+          "column": "bytes_received",
+          "issue_id": "bytes_received::numeric_outlier",
+          "row": 220
+        },
+        {
+          "after": "2.5.1",
+          "before": null,
+          "column": "app_version",
+          "issue_id": "app_version::missing_values",
+          "row": 286
+        },
+        {
+          "after": "phone",
+          "before": "__CD_RARE_USER_DEVICE_LOGS_DEVICE_TYPE_016__",
+          "column": "device_type",
+          "issue_id": "device_type::rare_category",
+          "row": 316
+        },
+        {
+          "after": "login",
+          "before": "__CD_RARE_USER_DEVICE_LOGS_EVENT_TYPE_008__",
+          "column": "event_type",
+          "issue_id": "event_type::rare_category",
+          "row": 323
+        },
+        {
+          "after": 18805.375,
+          "before": 9999999,
+          "column": "bytes_received",
+          "issue_id": "bytes_received::numeric_outlier",
+          "row": 428
+        },
+        {
+          "after": "2.5.1",
+          "before": null,
+          "column": "app_version",
+          "issue_id": "app_version::missing_values",
+          "row": 440
+        },
+        {
+          "after": 1526.0,
+          "before": 99999.0,
+          "column": "session_duration",
+          "issue_id": "session_duration::numeric_outlier",
+          "row": 453
+        },
+        {
+          "after": 400.0,
+          "before": null,
+          "column": "session_duration",
+          "issue_id": "session_duration::missing_values",
+          "row": 585
+        },
+        {
+          "after": 18805.375,
+          "before": 9999999,
+          "column": "bytes_received",
+          "issue_id": "bytes_received::numeric_outlier",
+          "row": 667
+        },
+        {
+          "after": 18805.375,
+          "before": 9999999,
+          "column": "bytes_received",
+          "issue_id": "bytes_received::numeric_outlier",
+          "row": 679
+        },
+        {
+          "after": "iOS",
+          "before": null,
+          "column": "os",
+          "issue_id": "os::missing_values",
+          "row": 772
+        },
+        {
+          "after": 400.0,
+          "before": null,
+          "column": "session_duration",
+          "issue_id": "session_duration::missing_values",
+          "row": 936
+        },
+        {
+          "after": "iOS",
+          "before": "__CD_RARE_USER_DEVICE_LOGS_OS_013__",
+          "column": "os",
+          "issue_id": "os::rare_category",
+          "row": 943
+        },
+        {
+          "after": 7908.5,
+          "before": 9999999,
+          "column": "bytes_sent",
+          "issue_id": "bytes_sent::numeric_outlier",
+          "row": 966
+        },
+        {
+          "after": "phone",
+          "before": null,
+          "column": "device_type",
+          "issue_id": "device_type::missing_values",
+          "row": 985
+        },
+        {
+          "after": "iOS",
+          "before": "__CD_RARE_USER_DEVICE_LOGS_OS_012__",
+          "column": "os",
+          "issue_id": "os::rare_category",
+          "row": 989
+        },
+        {
+          "after": 7908.5,
+          "before": 9999999,
+          "column": "bytes_sent",
+          "issue_id": "bytes_sent::numeric_outlier",
+          "row": 994
+        },
+        {
+          "after": 7908.5,
+          "before": 9999999,
+          "column": "bytes_sent",
+          "issue_id": "bytes_sent::numeric_outlier",
+          "row": 1040
+        },
+        {
+          "after": 400.0,
+          "before": null,
+          "column": "session_duration",
+          "issue_id": "session_duration::missing_values",
+          "row": 1086
+        }
+      ],
+      "resolved_issue_count": 9
+    },
+    "selected_issue_count": 10,
+    "skipped_issues": [],
+    "total_cells_modified": 72
+  },
+  "repaired_csv": "outputs/cross_dataset_validation/repair_outputs/user_device_logs/repaired.csv",
+  "selected_issue_ids": [
+    "bytes_received::numeric_outlier",
+    "app_version::missing_values",
+    "bytes_sent::numeric_outlier",
+    "session_duration::missing_values",
+    "os::rare_category",
+    "device_type::missing_values",
+    "os::missing_values",
+    "session_duration::numeric_outlier",
+    "event_type::rare_category",
+    "device_type::rare_category"
+  ]
+}

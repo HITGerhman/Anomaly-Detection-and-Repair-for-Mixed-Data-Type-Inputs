@@ -1,0 +1,7 @@
+dataset,issue_type,gt,pred,tp,fp,fn,precision,recall,f1
+stroke,missing_values,30,30,30,0,0,1.000000,1.000000,1.000000
+stroke,numeric_outlier,24,146,24,122,0,0.164384,1.000000,0.282353
+stroke,rare_category,18,18,18,0,0,1.000000,1.000000,1.000000
+stroke,duplicate_record,12,12,12,0,0,1.000000,1.000000,1.000000
+stroke,cross_column_consistency,16,16,16,0,0,1.000000,1.000000,1.000000
+stroke,Overall,100,222,100,122,0,0.450450,1.000000,0.621118

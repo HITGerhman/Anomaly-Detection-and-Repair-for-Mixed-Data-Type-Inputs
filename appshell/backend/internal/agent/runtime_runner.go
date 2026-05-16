@@ -368,7 +368,15 @@ func withDefaultGowerCandidateLimit(input map[string]any) map[string]any {
 	if _, exists := strategy["sample_size"]; exists {
 		return strategy
 	}
-	strategy["max_candidates"] = 512
+	if _, exists := strategy["candidate_policy"]; !exists {
+		strategy["candidate_policy"] = "auto"
+	}
+	if _, exists := strategy["auto_max_candidates"]; !exists {
+		strategy["auto_max_candidates"] = 512
+	}
+	if _, exists := strategy["full_scan_threshold"]; !exists {
+		strategy["full_scan_threshold"] = 5000
+	}
 	return strategy
 }
 

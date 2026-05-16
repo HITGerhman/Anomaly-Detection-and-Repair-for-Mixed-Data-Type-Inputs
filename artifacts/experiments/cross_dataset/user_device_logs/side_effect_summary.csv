@@ -1,0 +1,7 @@
+dataset,metric,issue_type,count,notes
+user_device_logs,non_gt_modified,missing_values,0,Changed cells outside repairable ground truth attributed to this repair issue type.
+user_device_logs,non_gt_modified,numeric_outlier,0,Changed cells outside repairable ground truth attributed to this repair issue type.
+user_device_logs,non_gt_modified,rare_category,0,Changed cells outside repairable ground truth attributed to this repair issue type.
+user_device_logs,review_only_skipped,duplicate_record,12,Skipped / review-only; not counted as automatic repair failure.
+user_device_logs,review_only_skipped,cross_column_consistency,16,Skipped / review-only; not counted as automatic repair failure.
+user_device_logs,changed_cells_observed,Overall,72,All observed changed cells between corrupted and repaired CSV.

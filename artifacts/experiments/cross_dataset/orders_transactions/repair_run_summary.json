@@ -1,0 +1,200 @@
+{
+  "dataset": "orders_transactions",
+  "repair_batch": {
+    "applied_issue_count": 11,
+    "comparison": {
+      "after_column_issue_counts": {
+        "discount": 1,
+        "order_time": 1,
+        "source_row_id": 1,
+        "unit_price": 1
+      },
+      "after_issue_count": 4,
+      "after_issue_type_counts": {
+        "cross_column_consistency": 1,
+        "duplicate_record": 1,
+        "numeric_outlier": 2
+      },
+      "before_column_issue_counts": {
+        "discount": 2,
+        "order_status": 1,
+        "order_time": 1,
+        "payment_method": 2,
+        "product_category": 2,
+        "quantity": 1,
+        "source_row_id": 1,
+        "total_amount": 1,
+        "unit_price": 2
+      },
+      "before_issue_count": 13,
+      "before_issue_type_counts": {
+        "cross_column_consistency": 1,
+        "duplicate_record": 1,
+        "missing_values": 4,
+        "numeric_outlier": 4,
+        "rare_category": 3
+      },
+      "changed_cell_count": 112,
+      "changed_cells_preview": [
+        {
+          "after": 354.03375,
+          "before": 366.22,
+          "column": "total_amount",
+          "issue_id": "total_amount::numeric_outlier",
+          "row": 123
+        },
+        {
+          "after": 354.03375,
+          "before": 360.05,
+          "column": "total_amount",
+          "issue_id": "total_amount::numeric_outlier",
+          "row": 163
+        },
+        {
+          "after": 354.03375,
+          "before": 381.0,
+          "column": "total_amount",
+          "issue_id": "total_amount::numeric_outlier",
+          "row": 328
+        },
+        {
+          "after": 354.03375,
+          "before": 368.5,
+          "column": "total_amount",
+          "issue_id": "total_amount::numeric_outlier",
+          "row": 368
+        },
+        {
+          "after": 354.03375,
+          "before": 362.0,
+          "column": "total_amount",
+          "issue_id": "total_amount::numeric_outlier",
+          "row": 408
+        },
+        {
+          "after": "card",
+          "before": null,
+          "column": "payment_method",
+          "issue_id": "payment_method::missing_values",
+          "row": 533
+        },
+        {
+          "after": 354.03375,
+          "before": 999999.0,
+          "column": "total_amount",
+          "issue_id": "total_amount::numeric_outlier",
+          "row": 566
+        },
+        {
+          "after": 354.03375,
+          "before": 999999.0,
+          "column": "total_amount",
+          "issue_id": "total_amount::numeric_outlier",
+          "row": 799
+        },
+        {
+          "after": "card",
+          "before": "__CD_RARE_ORDERS_TRANSACTIONS_PAYMENT_METHOD_015__",
+          "column": "payment_method",
+          "issue_id": "payment_method::rare_category",
+          "row": 801
+        },
+        {
+          "after": 354.03375,
+          "before": 369.55,
+          "column": "total_amount",
+          "issue_id": "total_amount::numeric_outlier",
+          "row": 823
+        },
+        {
+          "after": "electronics",
+          "before": null,
+          "column": "product_category",
+          "issue_id": "product_category::missing_values",
+          "row": 842
+        },
+        {
+          "after": 354.03375,
+          "before": 357.68,
+          "column": "total_amount",
+          "issue_id": "total_amount::numeric_outlier",
+          "row": 863
+        },
+        {
+          "after": 7.0,
+          "before": 999,
+          "column": "quantity",
+          "issue_id": "quantity::numeric_outlier",
+          "row": 904
+        },
+        {
+          "after": 354.03375,
+          "before": 999999.0,
+          "column": "total_amount",
+          "issue_id": "total_amount::numeric_outlier",
+          "row": 992
+        },
+        {
+          "after": 354.03375,
+          "before": 378.0,
+          "column": "total_amount",
+          "issue_id": "total_amount::numeric_outlier",
+          "row": 1028
+        },
+        {
+          "after": 7.0,
+          "before": 999,
+          "column": "quantity",
+          "issue_id": "quantity::numeric_outlier",
+          "row": 1031
+        },
+        {
+          "after": "card",
+          "before": null,
+          "column": "payment_method",
+          "issue_id": "payment_method::missing_values",
+          "row": 1036
+        },
+        {
+          "after": 354.03375,
+          "before": 369.0,
+          "column": "total_amount",
+          "issue_id": "total_amount::numeric_outlier",
+          "row": 1068
+        },
+        {
+          "after": "pending",
+          "before": "__CD_RARE_ORDERS_TRANSACTIONS_ORDER_STATUS_006__",
+          "column": "order_status",
+          "issue_id": "order_status::rare_category",
+          "row": 1090
+        },
+        {
+          "after": "electronics",
+          "before": "__CD_RARE_ORDERS_TRANSACTIONS_PRODUCT_CATEGORY_016__",
+          "column": "product_category",
+          "issue_id": "product_category::rare_category",
+          "row": 1108
+        }
+      ],
+      "resolved_issue_count": 9
+    },
+    "selected_issue_count": 11,
+    "skipped_issues": [],
+    "total_cells_modified": 112
+  },
+  "repaired_csv": "outputs/cross_dataset_validation/repair_outputs/orders_transactions/repaired.csv",
+  "selected_issue_ids": [
+    "total_amount::numeric_outlier",
+    "unit_price::missing_values",
+    "payment_method::missing_values",
+    "payment_method::rare_category",
+    "quantity::numeric_outlier",
+    "product_category::missing_values",
+    "unit_price::numeric_outlier",
+    "order_status::rare_category",
+    "discount::missing_values",
+    "discount::numeric_outlier",
+    "product_category::rare_category"
+  ]
+}

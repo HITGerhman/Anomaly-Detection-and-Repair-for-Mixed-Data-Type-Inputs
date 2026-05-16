@@ -66,6 +66,7 @@ out/figma-verify/
 !data/experiments/m1_stroke/ground_truth.csv
 !data/experiments/auto_agent_multi_dataset/orders_transactions/corrupted.csv
 !data/experiments/auto_agent_multi_dataset/user_device_logs/corrupted.csv
+!artifacts/experiments/cross_dataset/**/*.csv
 
 scripts/langgraph.local.ps1
 # M3 repaired output is a small evaluation artifact required by the repair report.

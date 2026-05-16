@@ -1,0 +1,198 @@
+{
+  "dataset": "stroke",
+  "repair_batch": {
+    "applied_issue_count": 10,
+    "comparison": {
+      "after_column_issue_counts": {
+        "avg_glucose_level": 1,
+        "bmi": 1,
+        "record_start_day": 1,
+        "source_row_id": 1
+      },
+      "after_issue_count": 4,
+      "after_issue_type_counts": {
+        "cross_column_consistency": 1,
+        "duplicate_record": 1,
+        "numeric_outlier": 2
+      },
+      "before_column_issue_counts": {
+        "age": 1,
+        "avg_glucose_level": 2,
+        "bmi": 2,
+        "gender": 1,
+        "record_start_day": 1,
+        "smoking_status": 2,
+        "source_row_id": 1,
+        "work_type": 2
+      },
+      "before_issue_count": 12,
+      "before_issue_type_counts": {
+        "cross_column_consistency": 1,
+        "duplicate_record": 1,
+        "missing_values": 4,
+        "numeric_outlier": 3,
+        "rare_category": 3
+      },
+      "changed_cell_count": 194,
+      "changed_cells_preview": [
+        {
+          "after": 27.5,
+          "before": null,
+          "column": "bmi",
+          "issue_id": "bmi::missing_values",
+          "row": 14
+        },
+        {
+          "after": "Private",
+          "before": null,
+          "column": "work_type",
+          "issue_id": "work_type::missing_values",
+          "row": 70
+        },
+        {
+          "after": 110.5,
+          "before": 140.0,
+          "column": "age",
+          "issue_id": "age::numeric_outlier",
+          "row": 73
+        },
+        {
+          "after": 45.675,
+          "before": 95.0,
+          "column": "bmi",
+          "issue_id": "bmi::numeric_outlier",
+          "row": 114
+        },
+        {
+          "after": 45.675,
+          "before": 95.0,
+          "column": "bmi",
+          "issue_id": "bmi::numeric_outlier",
+          "row": 148
+        },
+        {
+          "after": 147.70875,
+          "before": 157.77,
+          "column": "avg_glucose_level",
+          "issue_id": "avg_glucose_level::numeric_outlier",
+          "row": 149
+        },
+        {
+          "after": 110.5,
+          "before": 140.0,
+          "column": "age",
+          "issue_id": "age::numeric_outlier",
+          "row": 255
+        },
+        {
+          "after": 27.5,
+          "before": null,
+          "column": "bmi",
+          "issue_id": "bmi::missing_values",
+          "row": 263
+        },
+        {
+          "after": "Private",
+          "before": "__M1_RARE_WORK_TYPE_015__",
+          "column": "work_type",
+          "issue_id": "work_type::rare_category",
+          "row": 263
+        },
+        {
+          "after": "never smoked",
+          "before": "__M1_RARE_SMOKING_STATUS_010__",
+          "column": "smoking_status",
+          "issue_id": "smoking_status::rare_category",
+          "row": 266
+        },
+        {
+          "after": "Private",
+          "before": null,
+          "column": "work_type",
+          "issue_id": "work_type::missing_values",
+          "row": 269
+        },
+        {
+          "after": 110.5,
+          "before": 140.0,
+          "column": "age",
+          "issue_id": "age::numeric_outlier",
+          "row": 330
+        },
+        {
+          "after": 27.5,
+          "before": null,
+          "column": "bmi",
+          "issue_id": "bmi::missing_values",
+          "row": 358
+        },
+        {
+          "after": 88.185,
+          "before": null,
+          "column": "avg_glucose_level",
+          "issue_id": "avg_glucose_level::missing_values",
+          "row": 367
+        },
+        {
+          "after": 27.5,
+          "before": null,
+          "column": "bmi",
+          "issue_id": "bmi::missing_values",
+          "row": 378
+        },
+        {
+          "after": "Private",
+          "before": "__M1_RARE_WORK_TYPE_006__",
+          "column": "work_type",
+          "issue_id": "work_type::rare_category",
+          "row": 428
+        },
+        {
+          "after": 147.70875,
+          "before": 158.89,
+          "column": "avg_glucose_level",
+          "issue_id": "avg_glucose_level::numeric_outlier",
+          "row": 430
+        },
+        {
+          "after": 147.70875,
+          "before": 163.82,
+          "column": "avg_glucose_level",
+          "issue_id": "avg_glucose_level::numeric_outlier",
+          "row": 525
+        },
+        {
+          "after": 110.5,
+          "before": 140.0,
+          "column": "age",
+          "issue_id": "age::numeric_outlier",
+          "row": 532
+        },
+        {
+          "after": "never smoked",
+          "before": "__M1_RARE_SMOKING_STATUS_001__",
+          "column": "smoking_status",
+          "issue_id": "smoking_status::rare_category",
+          "row": 686
+        }
+      ],
+      "resolved_issue_count": 8
+    },
+    "selected_issue_count": 10,
+    "skipped_issues": [],
+    "total_cells_modified": 194
+  },
+  "repaired_csv": "outputs/cross_dataset_validation/repair_outputs/stroke/repaired.csv",
+  "selected_issue_ids": [
+    "avg_glucose_level::numeric_outlier",
+    "bmi::numeric_outlier",
+    "age::numeric_outlier",
+    "bmi::missing_values",
+    "smoking_status::missing_values",
+    "avg_glucose_level::missing_values",
+    "smoking_status::rare_category",
+    "work_type::rare_category",
+    "gender::rare_category",
+    "work_type::missing_values"
+  ]
+}

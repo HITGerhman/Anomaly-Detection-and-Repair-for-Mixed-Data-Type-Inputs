@@ -1,0 +1,50 @@
+{
+  "clean_columns": 13,
+  "clean_rows": 5000,
+  "corrupted_columns": 13,
+  "corrupted_rows": 5012,
+  "dataset": "orders_transactions",
+  "ground_truth_rows": 100,
+  "injection_counts_by_type": {
+    "cross_column_consistency": 16,
+    "duplicate_record": 12,
+    "missing_values": 30,
+    "numeric_outlier": 24,
+    "rare_category": 18
+  },
+  "non_repairable_ground_truth_rows": 28,
+  "notes": [
+    "Synthetic clean data and injected anomalies are deterministic for the recorded seed.",
+    "The 30-row Auto Agent sample CSVs are retained separately and are not used as ground truth inputs."
+  ],
+  "repairable_ground_truth_rows": 72,
+  "scan_config": {
+    "auto_pair_constraints": false,
+    "consistency_rules": [
+      {
+        "left_col": "order_time",
+        "name": "paid_pay_time_not_before_order_time",
+        "right_col": "pay_time",
+        "type": "lte"
+      }
+    ],
+    "duplicate_subset": [
+      "source_row_id"
+    ],
+    "enable_cross_column_consistency": true,
+    "enable_duplicate_record": true,
+    "enable_time_series_shift": false,
+    "max_bins": 120,
+    "max_issues": 5000,
+    "min_categorical_samples": 8,
+    "min_numeric_samples": 6,
+    "numeric_iqr_factor": 1.5,
+    "preview_limit": 20,
+    "rare_count_floor": 2,
+    "rare_ratio_threshold": 0.01,
+    "robust_z_threshold": 3.5,
+    "time_series_min_points": 24,
+    "time_series_z_threshold": 4.0
+  },
+  "seed": 20260614
+}

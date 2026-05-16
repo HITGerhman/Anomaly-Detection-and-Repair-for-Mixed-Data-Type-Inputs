@@ -141,6 +141,14 @@ func resolveTaskDBPath() (string, error) {
 		return abs, nil
 	}
 
+	if _, ok := packagedRuntimeDir(); ok {
+		root, err := packagedDataRoot()
+		if err != nil {
+			return "", err
+		}
+		return filepath.Join(root, "outputs", "appshell", "task_history.sqlite"), nil
+	}
+
 	abs, err := filepath.Abs(filepath.Join("..", "..", "outputs", "appshell", "task_history.sqlite"))
 	if err != nil {
 		return "", fmt.Errorf("resolve default task history path failed: %w", err)
@@ -256,7 +264,7 @@ func normalizeRequest(payload map[string]any) (engine.Request, time.Duration, er
 		req.Payload["csv_path"] = csvPath
 		req.Payload["target_col"] = targetCol
 		if outputDir != "" {
-			req.Payload["output_dir"] = outputDir
+			req.Payload["output_dir"] = resolvePackagedWritablePath(outputDir)
 		}
 		if taskType != "" {
 			req.Payload["task_type"] = taskType
@@ -290,7 +298,7 @@ func normalizeRequest(payload map[string]any) (engine.Request, time.Duration, er
 			req.Payload["k_neighbors"] = kNeighbors
 		}
 		if outputDir := asString(payload["output_dir"]); outputDir != "" {
-			req.Payload["output_dir"] = outputDir
+			req.Payload["output_dir"] = resolvePackagedWritablePath(outputDir)
 		}
 		if immutableColumns, ok := payload["immutable_columns"]; ok {
 			req.Payload["immutable_columns"] = immutableColumns
@@ -343,10 +351,10 @@ func normalizeRequest(payload map[string]any) (engine.Request, time.Duration, er
 			req.Payload["issue_ids"] = []string{}
 		}
 		if outputCSV, ok := payload["output_csv"]; ok {
-			req.Payload["output_csv"] = outputCSV
+			req.Payload["output_csv"] = resolvePackagedWritableValue(outputCSV)
 		}
 		if outputDir, ok := payload["output_dir"]; ok {
-			req.Payload["output_dir"] = outputDir
+			req.Payload["output_dir"] = resolvePackagedWritableValue(outputDir)
 		}
 		if writeOutput, ok := payload["write_output"]; ok {
 			req.Payload["write_output"] = writeOutput
@@ -358,7 +366,7 @@ func normalizeRequest(payload map[string]any) (engine.Request, time.Duration, er
 			req.Payload["enable_rollback"] = enableRollback
 		}
 		if rollbackDir, ok := payload["rollback_dir"]; ok {
-			req.Payload["rollback_dir"] = rollbackDir
+			req.Payload["rollback_dir"] = resolvePackagedWritableValue(rollbackDir)
 		}
 		if repairStrategy, ok := payload["repair_strategy"]; ok {
 			req.Payload["repair_strategy"] = repairStrategy
@@ -402,10 +410,10 @@ func normalizeRequest(payload map[string]any) (engine.Request, time.Duration, er
 			req.Payload["issue_ids"] = []string{}
 		}
 		if outputCSV, ok := payload["output_csv"]; ok {
-			req.Payload["output_csv"] = outputCSV
+			req.Payload["output_csv"] = resolvePackagedWritableValue(outputCSV)
 		}
 		if outputDir, ok := payload["output_dir"]; ok {
-			req.Payload["output_dir"] = outputDir
+			req.Payload["output_dir"] = resolvePackagedWritableValue(outputDir)
 		}
 		if writeOutput, ok := payload["write_output"]; ok {
 			req.Payload["write_output"] = writeOutput
@@ -417,7 +425,7 @@ func normalizeRequest(payload map[string]any) (engine.Request, time.Duration, er
 			req.Payload["enable_rollback"] = enableRollback
 		}
 		if rollbackDir, ok := payload["rollback_dir"]; ok {
-			req.Payload["rollback_dir"] = rollbackDir
+			req.Payload["rollback_dir"] = resolvePackagedWritableValue(rollbackDir)
 		}
 		if columnDependencies, ok := payload["column_dependencies"]; ok {
 			req.Payload["column_dependencies"] = columnDependencies
@@ -534,6 +542,9 @@ func (a *App) RunAgentSession(payload map[string]any) (task.Task, error) {
 	}
 
 	reqPayload := clonePayload(payload)
+	if outputDir := asString(reqPayload["output_dir"]); outputDir != "" {
+		reqPayload["output_dir"] = resolvePackagedWritablePath(outputDir)
+	}
 	timeout := timeoutFromPayload(reqPayload, 90*time.Second)
 	taskID, err := service.RunTask(engine.Request{
 		TaskID:  asString(reqPayload["task_id"]),
@@ -558,6 +569,9 @@ func (a *App) ExecuteAgentPlan(payload map[string]any) (task.Task, error) {
 	}
 
 	reqPayload := clonePayload(payload)
+	if outputDir := asString(reqPayload["output_dir"]); outputDir != "" {
+		reqPayload["output_dir"] = resolvePackagedWritablePath(outputDir)
+	}
 	timeout := timeoutFromPayload(reqPayload, 90*time.Second)
 	taskID, err := service.RunTask(engine.Request{
 		TaskID:  asString(reqPayload["task_id"]),
@@ -582,6 +596,9 @@ func (a *App) RunAgentAutofixSession(payload map[string]any) (task.Task, error) 
 	}
 
 	reqPayload := clonePayload(payload)
+	if outputDir := asString(reqPayload["output_dir"]); outputDir != "" {
+		reqPayload["output_dir"] = resolvePackagedWritablePath(outputDir)
+	}
 	timeout := timeoutFromPayload(reqPayload, 90*time.Second)
 	taskID, err := service.RunTask(engine.Request{
 		TaskID:  asString(reqPayload["task_id"]),
@@ -606,6 +623,9 @@ func (a *App) ApproveAgentSession(payload map[string]any) (task.Task, error) {
 	}
 
 	reqPayload := clonePayload(payload)
+	if outputDir := asString(reqPayload["output_dir"]); outputDir != "" {
+		reqPayload["output_dir"] = resolvePackagedWritablePath(outputDir)
+	}
 	timeout := timeoutFromPayload(reqPayload, 90*time.Second)
 	taskID, err := service.RunTask(engine.Request{
 		TaskID:  asString(reqPayload["task_id"]),

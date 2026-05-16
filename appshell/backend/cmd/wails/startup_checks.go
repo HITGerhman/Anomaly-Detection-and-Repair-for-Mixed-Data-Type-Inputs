@@ -422,6 +422,13 @@ func checkTaskHistorySQLite(dbPath string) StartupCheckItem {
 }
 
 func resolveResultsOutputRoot() (string, error) {
+	if _, ok := packagedRuntimeDir(); ok {
+		root, err := packagedDataRoot()
+		if err != nil {
+			return "", err
+		}
+		return filepath.Join(root, "outputs", "results"), nil
+	}
 	return filepath.Abs(filepath.Join("..", "..", "outputs", "results"))
 }
 
@@ -484,6 +491,16 @@ func resolveDefaultModelCandidates() ([]string, error) {
 	candidates := []string{
 		filepath.Join("..", "..", "outputs", "results", "wails_repair"),
 		filepath.Join("..", "..", "data", "processed"),
+	}
+	if _, ok := packagedRuntimeDir(); ok {
+		root, err := packagedDataRoot()
+		if err != nil {
+			return nil, err
+		}
+		candidates = []string{
+			filepath.Join(root, "outputs", "results", "wails_repair"),
+			filepath.Join(root, "data", "processed"),
+		}
 	}
 
 	out := make([]string, 0, len(candidates))

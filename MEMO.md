@@ -1,6 +1,6 @@
 ﻿# MEMO
 
-Last updated: 2026-05-11 14:16:30 +08:00
+Last updated: 2026-05-16 08:41:09 +08:00
 
 ## 椤圭洰鎬荤洰鏍?
 - 灏嗏€滄贩鍚堟暟鎹被鍨嬪紓甯告娴嬩笌淇鈥濋」鐩粠绠楁硶鍘熷瀷鎺ㄨ繘涓哄彲浜や粯銆佸彲婕旂ず銆佸彲娴嬭瘯鐨勬闈㈠簲鐢ㄣ€?- 浠?`appshell/` 浣滀负浜у搧鍖栦富璺緞锛屽舰鎴?`Python Engine + Go Backend + Wails Frontend` 鐨勭ǔ瀹氭灦鏋勩€?- 淇濈暀 `app.py` 浣滀负鏃х増 Streamlit 婕旂ず鍏ュ彛锛岀敤浜庣畻娉曢獙璇併€佺粨鏋滃鐓у拰绛旇京灞曠ず銆?- 閫愭琛ラ綈鐪熷疄鐢ㄦ埛闂幆锛氬鍏?CSV -> 璁粌/鎵弿 -> 闂绛涢€?-> 鎵归噺淇 -> 鍥炴粴 -> 鍘嗗彶鏌ョ湅銆?- 鍦ㄤ繚鐣欑幇鏈夌畻娉曡祫浜т笌宸ョ▼楠ㄦ灦鐨勫墠鎻愪笅锛岄€愭鍗囩骇涓衡€滃 agent 鍐崇瓥灞?+ 纭畾鎬у伐鍏峰眰鈥濈殑鏅鸿兘鍖栦骇鍝併€?- 鏈€缁堢洰鏍囨槸璁╃敤鎴峰敖閲忓彧闇€閫夋嫨鏂囦欢锛屽嵆鍙嚜鍔ㄨ幏寰楁壂鎻忋€佷慨澶嶃€侀獙璇併€佸洖婊氫繚鎶ゅ拰鍥捐〃鍖栬В閲婄粨鏋溿€?
@@ -1655,3 +1655,206 @@ Last updated: 2026-05-11 14:16:30 +08:00
   - Go 指定回归：`ok` for `./internal/agent ./cmd/wails`。
 - 待处理事项：
   - 提交 merge commit 并推送到 `origin/feat/algorithm-risk-hardening` 后，在 GitHub PR 页面确认 merge conflict 提示消失。
+
+## Update 2026-05-13 18:29:26 +08:00
+
+- 改动日期：2026-05-13 18:29:26 +08:00
+- 改动内容简述：新增跨数据集验证实验流水线，用于把本科论文实验从单一 stroke 主实验扩展为 `stroke`、`orders_transactions`、`user_device_logs` 三个混合类型 CSV 场景下的可复现检测、受控修复、阈值敏感性和规模测试。本次保持 M1/M2/M3、R5、R6 既有实验目录不被覆盖，不重写 Python Engine 核心算法，不改变 `scan_file`、`repair_batch`、`rollback_repair_batch` 默认行为。
+- 最终目标：让论文从“只在一个 stroke 受控数据集上验证流程”增强为“在多个混合类型 CSV 场景下验证扫描、受控修复、人工复核边界和副作用统计，同时保守说明 numeric_outlier 仍然敏感且需要阈值调优和人工确认”。
+- 当前采用的方法：
+  - 新增 `scripts/run_cross_dataset_validation.py`，作为 Engine 外围实验编排脚本，复用现有 `scan_file` / `_detect_issues_for_frame`、`repair_batch` 和已有阈值入口 `numeric_iqr_factor`、`robust_z_threshold`。
+  - `stroke` 数据集复制并标准化 `data/experiments/m1_stroke/` 到 `artifacts/experiments/cross_dataset/stroke/`，不修改 M1/M2/M3 原始目录。
+  - `orders_transactions` 和 `user_device_logs` 使用固定 seed 生成确定性 5000 行 clean CSV，再注入 100 条异常并生成统一 schema 的 ground truth。
+  - 五类异常默认比例为 `missing_values=30`、`numeric_outlier=24`、`rare_category=18`、`duplicate_record=12`、`cross_column_consistency=16`。
+  - 修复评估只选择 `missing_values`、`numeric_outlier`、`rare_category`，将 `duplicate_record` 和 `cross_column_consistency` 统计为 skipped / review-only，不计入修复失败。
+  - 大规模性能测试临时 CSV 与 repaired CSV 写入 ignored 的 `outputs/cross_dataset_validation/`，论文级 CSV/JSON/MD artifact 写入 `artifacts/experiments/cross_dataset/`。
+- 相关模块/文件：
+  - `scripts/run_cross_dataset_validation.py`
+  - `tests/python_engine/test_cross_dataset_validation.py`
+  - `docs/cross_dataset_experiments.md`
+  - `README.md`
+  - `THESIS_SUPPORT_MATERIALS.md`
+  - `.gitignore`
+  - `artifacts/experiments/cross_dataset/`
+  - `MEMO.md`
+- 已解决的问题 / 新增功能：
+  - 新增一键命令：`.\.venv-win\Scripts\python.exe scripts\run_cross_dataset_validation.py --all`。
+  - 新增分阶段命令：`--generate`、`--detect`、`--repair`、`--threshold-sensitivity`、`--scale`。
+  - 每个数据集输出 `clean.csv`、`corrupted.csv`、`ground_truth.csv`、`injection_summary.json`、`detection_metrics.csv`、`repair_metrics.csv`、`side_effect_summary.csv`。
+  - 汇总输出 `summary_detection_metrics.csv`、`summary_repair_metrics.csv`、`threshold_sensitivity_numeric_outlier.csv`、`summary_scale_metrics.csv`。
+  - 新增轻量测试覆盖固定 seed 生成确定性、GT 数量、三数据集文件生成、检测/修复/阈值/规模 summary CSV 必要列、以及 review-only 类型被跳过。
+  - 文档说明了数据集字段、异常注入、GT 构造、检测/修复指标、副作用含义、manual review 边界、numeric_outlier false positives、运行命令、输出目录、论文写法和实验边界。
+- 验证命令：
+  - `.\.venv-win\Scripts\python.exe -m py_compile scripts\run_cross_dataset_validation.py tests\python_engine\test_cross_dataset_validation.py`
+  - `.\.venv-win\Scripts\python.exe -m pytest tests\python_engine\test_cross_dataset_validation.py -q`
+  - `.\.venv-win\Scripts\python.exe scripts\run_cross_dataset_validation.py --all`
+  - `.\.venv-win\Scripts\python.exe -m pytest tests\python_engine -q`
+- 验收结果：
+  - py_compile：通过。
+  - cross-dataset targeted 测试：`2 passed in 5.32s`。
+  - Python engine 全量回归：`52 passed, 12 warnings in 88.21s`，warnings 仍为既有 pandas categorical dtype deprecation。
+  - 完整 `--all` 实验：通过，生成目录为 `artifacts/experiments/cross_dataset/`。
+  - Detection overall：`stroke` 为 `precision=0.450450, recall=1.000000, f1=0.621118`；`orders_transactions` 为 `precision=0.714286, recall=1.000000, f1=0.833333`；`user_device_logs` 为 `precision=1.000000, recall=1.000000, f1=1.000000`。
+  - Repair overall：`stroke` 为 `exact_rate=0.236111, improved_or_exact_rate=0.569444, non_gt_modified=122`；`orders_transactions` 为 `exact_rate=0.069444, improved_or_exact_rate=0.402778, non_gt_modified=40`；`user_device_logs` 为 `exact_rate=0.277778, improved_or_exact_rate=0.611111, non_gt_modified=0`。
+  - Threshold sensitivity：`stroke` 默认 numeric precision `0.164384`，严格到 `iqr_factor=3.0, robust_z_threshold=4.5` 后 precision `1.000000` 但 recall 降至 `0.625000`；`orders_transactions` 在 `iqr_factor=2.0, robust_z_threshold=4.5` 达到 numeric precision/recall/F1 全部 `1.000000`；`user_device_logs` 全部阈值组合均为 `1.000000`。
+  - Scale test：`orders_transactions_scale` 在 `5000/10000/50000/100000` 行上生成结果；100000 行记录为 `scan_time_seconds=1.053711`、`repair_time_seconds=1.899857`、`detected_issue_count=974`、`changed_cell_count=894`、`output_file_size_mb=11.303867`。
+- 当前问题 / 待处理事项：
+  - 这些实验增强了可复现证据，但不能声称 production-ready，也不能声称适用于所有真实业务数据。
+  - `numeric_outlier` 仍然是主要误报来源，后续论文讨论应强调阈值调优、业务规则和人工确认。
+  - `duplicate_record` 与 `cross_column_consistency` 仍作为人工复核项；后续若要自动修复，需要单独设计可解释的领域策略和交互确认流程。
+  - 规模测试当前不报告 peak memory，因为未新增平台相关内存测量依赖。
+
+## Update 2026-05-16 07:46:49 +08:00
+
+- 改动日期：2026-05-16 07:46:49 +08:00
+- 改动内容简述：新增隔离的 Windows 安装包打包流水线，并完成安装包、安装目录、Python engine、CSV 扫描、修复输出和 GUI 启动的最小自动验收。本次不重排现有成熟目录结构；打包脚本放在 `packaging/windows-installer/`，生成物放在 ignored 的 `outputs/windows-installer/`。
+- 最终目标：交付标准 Windows 安装包和安装后的主程序 `AnomalyDetectionRepair.exe`，目标机器无需系统 Python，安装目录包含 Wails 主程序、前端资源、PyInstaller onedir Python engine、样例 CSV 和说明文件。
+- 当前采用的方法：
+  - 新增 `packaging/windows-installer/build_installer.ps1`，使用 `outputs/windows-installer/build-venv` 作为隔离打包 venv，安装 `requirements.lock.txt` 与 `pyinstaller==6.11.1`。
+  - 使用 PyInstaller `onedir` 打包 `appshell/core/python_engine/engine_main.py` 为 `python_engine/anomaly_engine.exe`，并补充 conda DLL、`lightgbm`、`scipy`、`sklearn` 收集项以解决 `_ctypes` / LightGBM / SciPy 运行时缺失。
+  - 使用 Go 构建 `AnomalyDetectionRepair.exe`；当前采用普通 console 子系统构建，因为 `-H windowsgui` 构建的 Wails 程序在本机 `wails.Run` 约 3 秒后无错误返回并退出。
+  - 新增 `packaging/windows-installer/installer.iss.in`，通过 Inno Setup 生成标准安装包；本机已通过 `winget` 安装 Inno Setup 6.7.1。
+  - 新增 `packaging/windows-installer/smoke_test_package.ps1`，通过异步 stdout/stderr 读取和超时保护执行 packaged engine `health`、`scan_file`、`repair_batch`，并验证 repaired CSV、rollback manifest 和主程序进程启动。
+  - Wails 后端新增 packaged runtime 路径解析：安装目录优先解析 `frontend/` 与 `python_engine/anomaly_engine.exe`，开发模式保留 `appshell/frontend` 与 `appshell/core/python_engine/engine_main.py`。
+  - packaged 模式下相对输出路径、task DB、results 输出和 Go 日志默认写入 `%LOCALAPPDATA%\AnomalyDetectionRepair`，避免写入安装目录。
+- 相关模块/文件：
+  - `packaging/windows-installer/build_installer.ps1`
+  - `packaging/windows-installer/smoke_test_package.ps1`
+  - `packaging/windows-installer/installer.iss.in`
+  - `appshell/backend/internal/engine/runner.go`
+  - `appshell/backend/cmd/wails/main.go`
+  - `appshell/backend/cmd/wails/runtime_paths.go`
+  - `appshell/backend/cmd/wails/app.go`
+  - `appshell/backend/cmd/wails/startup_checks.go`
+  - `outputs/windows-installer/installer/AnomalyDetectionRepairSetup-0.1.0.exe`
+  - `outputs/windows-installer/installed/AnomalyDetectionRepair.exe`
+  - `outputs/windows-installer/verification/installed/verification.md`
+  - `outputs/windows-installer/verification/installed/verification_summary.json`
+  - `outputs/windows-installer/build_manifest.json`
+- 已解决的问题 / 新增功能：
+  - Go engine runner 支持直接执行 PyInstaller 产出的 `.exe`，不再要求安装机具备系统 Python。
+  - 打包脚本可自动查找 Inno Setup；若未找到则通过 `winget install -e --id JRSoftware.InnoSetup --silent --accept-package-agreements --accept-source-agreements` 安装。
+  - 修复 PowerShell 执行策略导致子 smoke 脚本不能直接 `& .ps1` 的问题，改为 `powershell.exe -NoProfile -ExecutionPolicy Bypass -File ...`。
+  - 修复 Inno 静默安装返回后文件尚未完全落盘即进入 smoke 的竞态，新增安装日志与主 exe 轮询等待。
+  - 修复 smoke 脚本同步 pipe 读取导致 `repair_batch` 已写出文件但脚本等待的问题，改为异步读取并设置请求超时。
+  - 修复 smoke report 变量被反引号转义后无法展开的问题。
+- 验证命令：
+  - `$env:PATH = (Resolve-Path '.\.venv-win\Scripts').Path + ';' + $env:PATH; Push-Location appshell\backend; go test ./internal/engine ./internal/task ./cmd/wails; Pop-Location`
+  - `.\.venv-win\Scripts\python.exe -m pytest tests\python_engine\test_engine_health.py -q`
+  - `powershell -NoProfile -ExecutionPolicy Bypass -File .\packaging\windows-installer\smoke_test_package.ps1 -PackageDir .\outputs\windows-installer\installed -OutputRoot .\outputs\windows-installer\verification\installed`
+  - `outputs\windows-installer\installer\AnomalyDetectionRepairSetup-0.1.0.exe /VERYSILENT /SUPPRESSMSGBOXES /NORESTART /NOICONS /DIR=outputs\windows-installer\installed /LOG=outputs\windows-installer\verification\inno-install.log`（通过脚本同等参数执行并等待日志成功）
+- 验收结果：
+  - Go 回归：`ok` for `./internal/engine`、`./internal/task`、`./cmd/wails`。
+  - Python engine health 测试：`2 passed in 5.41s`。
+  - 安装包路径：`outputs/windows-installer/installer/AnomalyDetectionRepairSetup-0.1.0.exe`，大小约 `90.76 MB`。
+  - 安装目录主程序：`outputs/windows-installer/installed/AnomalyDetectionRepair.exe`。
+  - 安装目录 engine：`outputs/windows-installer/installed/python_engine/anomaly_engine.exe`。
+  - installed smoke：`health_status=ok`，`scan_issue_count=17`，修复 issue 为 `bmi::missing_values`。
+  - 修复输出：`outputs/windows-installer/verification/installed/repair-output/m1_stroke_corrupted.repaired.csv`。
+  - rollback manifest：`outputs/windows-installer/verification/installed/repair-output/.rollback/rb-1778888732119-10a330b2.json`。
+  - GUI 启动 smoke：`gui_launch_status=started`，脚本确认主程序进程可启动并保持运行后结束。
+- 当前问题 / 待处理事项：
+  - 当前可交付版本为标准安装包 + 安装目录 onedir 结构，不是单文件 exe。
+  - 当前主程序为 console 子系统构建，双击会同时出现控制台窗口；`-H windowsgui` 在本机导致 Wails 程序无错误快速退出，后续需要单独排查 Wails Windows GUI 子系统生命周期问题。
+  - 自动 smoke 已覆盖 engine health、CSV 扫描、修复执行、输出 CSV、rollback manifest 和主程序启动；由于当前工具无法直接操控桌面 WebView 文件选择和结果页面，UI 内“选择 CSV、查看结果、点击修复”的视觉验收仍需操作者手动确认。
+  - PyInstaller 当前为了运行可靠收集了较多 `scipy/sklearn/pyarrow` 文件，安装包较大且压缩较慢；后续可通过定制 spec 排除 tests/include/pyarrow 等无关内容瘦身。
+  - `build_installer.ps1` 在补齐安装等待逻辑前的最后一次完整重跑停在 installed smoke 的落盘竞态；等待逻辑补齐后已单独复测安装 + 等待 + installed smoke 段通过，最终 package artifact 和 verification artifact 已生成。
+
+## Update 2026-05-16 08:21:46 +08:00
+
+- 改动日期：2026-05-16 08:21:46 +08:00
+- 改动内容简述：响应“系统规模测试极限”问题，使用现有跨数据集规模测试脚本做了一次隔离的 20 万、50 万、100 万行规则扫描/规则修复探针。本次不修改核心代码、不覆盖论文级 `artifacts/experiments/cross_dataset/` 结果，只把大文件与探针汇总写入 ignored 的 `outputs/`。
+- 最终目标：确认当前系统是否能从几千行 stroke 数据集扩展到更有说服力的几十万/百万级混合类型 CSV，并为后续论文或答辩补充更强规模证据提供依据。
+- 当前采用的方法：
+  - 复用 `scripts/run_cross_dataset_validation.py --scale`，选择 `orders_transactions` 风格混合类型数据集。
+  - 使用命令 `.\.venv-win\Scripts\python.exe scripts\run_cross_dataset_validation.py --scale --scale-rows 200000,500000,1000000 --output-dir outputs\scale_probe --scale-work-dir outputs\scale_probe_work`。
+  - 仅测试 `scan_file` + `repair_batch` 规则链路，未把结论外推为 Gower 全量近邻修复能力。
+  - 输出 CSV 写入 `outputs/scale_probe_work/scale_inputs/`，汇总指标写入 `outputs/scale_probe/summary_scale_metrics.csv`。
+- 相关模块/文件：
+  - `scripts/run_cross_dataset_validation.py`
+  - `outputs/scale_probe/summary_scale_metrics.csv`（ignored）
+  - `outputs/scale_probe_work/scale_inputs/orders_transactions_200000_corrupted.csv`（ignored）
+  - `outputs/scale_probe_work/scale_inputs/orders_transactions_200000_repaired.csv`（ignored）
+  - `outputs/scale_probe_work/scale_inputs/orders_transactions_500000_corrupted.csv`（ignored）
+  - `outputs/scale_probe_work/scale_inputs/orders_transactions_500000_repaired.csv`（ignored）
+  - `outputs/scale_probe_work/scale_inputs/orders_transactions_1000000_corrupted.csv`（ignored）
+  - `outputs/scale_probe_work/scale_inputs/orders_transactions_1000000_repaired.csv`（ignored）
+  - `MEMO.md`
+- 已解决的问题 / 新增功能：
+  - 实测 200000 行、13 列：`scan_time_seconds=1.457672`，`repair_time_seconds=3.129601`，`detected_issue_count=1758`，`changed_cell_count=1678`，输出约 `22.605334 MB`。
+  - 实测 500000 行、13 列：`scan_time_seconds=3.088624`，`repair_time_seconds=7.376319`，`detected_issue_count=4044`，`changed_cell_count=3964`，输出约 `56.505656 MB`。
+  - 实测 1000000 行、13 列：`scan_time_seconds=8.135716`，`repair_time_seconds=19.113864`，`detected_issue_count=7818`，`changed_cell_count=7738`，输出约 `113.007414 MB`。
+  - 当前证据支持：规则扫描/规则修复链路已经可以支撑百万行级混合 CSV 的本地实验；之前“最高只有几千行 stroke”的证据不足问题，可以通过规模测试补强。
+- 当前问题 / 待处理事项：
+  - 这次规模探针不包含 peak memory 指标，后续若要严谨写入论文，建议新增内存采样或外部记录。
+  - 这次规模探针使用确定性合成数据，证明吞吐能力，但不能替代真实公开大数据集上的泛化验证。
+  - Gower 修复当前按异常点逐个检索候选近邻，大数据下复杂度明显高于规则修复；百万行全量 Gower 需要候选采样、分块、近似近邻或仅对高风险小样本启用。
+  - 后续建议增加一个“大规模证据包”：真实公开数据集 1 个、合成百万级压力数据 1 个、内存/耗时曲线 1 张、规则链路与 Gower 限制分开表述。
+
+## Update 2026-05-16 08:31:35 +08:00
+
+- 改动日期：2026-05-16 08:31:35 +08:00
+- 改动内容简述：为 Gower 近邻修复补齐百万级数据的默认保护策略。此前 Go agent 路径会默认把 Gower 候选池限制到 512，但 Python engine 直调 `repair_with_gower` 时若未传 `max_candidates` 仍可能对百万行健康候选做全量距离计算；本次在 Python 侧新增 `candidate_policy=auto`，让小数据继续全量检索，大数据自动稳定抽样。
+- 最终目标：让 Gower 修复从“只适合小样本或 agent 默认限流场景”推进为“可在百万行 CSV 上作为局部精修工具使用”，同时保留 `candidate_policy=full` 作为小规模精确对照入口。
+- 当前采用的方法：
+  - 新增默认常量 `DEFAULT_GOWER_AUTO_MAX_CANDIDATES=512` 与 `DEFAULT_GOWER_FULL_SCAN_THRESHOLD=5000`。
+  - `gower_strategy` 新增 `candidate_policy`、`auto_max_candidates`、`full_scan_threshold` 三个参数；默认 `candidate_policy=auto`。
+  - 当候选池行数不超过阈值时使用全量 Gower；超过阈值时按 issue、column、row_pos、pool_size 和 sample_size 生成稳定 seed，抽样 `auto_max_candidates` 行候选。
+  - 显式传入 `max_candidates` / `sample_size` 时继续优先生效；显式传入 `candidate_policy=full` 时可恢复全量候选。
+  - 去掉 `candidate_pool = original_df.loc[healthy_mask].copy()` 的不必要深拷贝，并避免在异常行本来不属于健康候选池时对大候选池反复执行 `drop`。
+  - Go agent 默认 Gower 策略从直接塞 `max_candidates=512` 调整为传入 `candidate_policy=auto`、`auto_max_candidates=512`、`full_scan_threshold=5000`，让小数据保留全量候选，大数据再自动限流。
+  - `neighbor_evidence` 与返回的 `gower_strategy` 增加候选策略元数据，便于实验报告解释是否启用了抽样。
+- 相关模块/文件：
+  - `appshell/core/python_engine/engine_core.py`
+  - `appshell/backend/internal/agent/runtime_runner.go`
+  - `tests/python_engine/test_engine_cli.py`
+  - `outputs/gower_scale_probe/gower_auto_1m_missing_probe.json`（ignored）
+  - `MEMO.md`
+- 已解决的问题 / 新增功能：
+  - Python engine 直调 Gower 现在默认具备大候选池保护，不再依赖 Go agent 包装层才有 512 候选限制。
+  - 新增回归测试 `test_repair_with_gower_auto_limits_large_candidate_pool`，覆盖默认 auto 策略在 5205 行候选池上自动抽样 512 行。
+  - 既有显式 `max_candidates` 确定性抽样测试继续通过，说明旧的手动限流入口没有被破坏。
+  - 百万行探针：在 `orders_transactions_1000000_corrupted.csv` 上选择 `discount::missing_values` 一个 Gower issue，`candidate_pool_size=1000004`，`candidate_sample_size=512`，`candidate_selection_mode=auto_sample`，Gower plan-only 总耗时约 `14.966688s`，其中日志显示实际 `repair_search` 阶段约 1 秒，主要时间仍花在读 CSV、扫描与后验扫描。
+- 验证命令：
+  - `.\.venv-win\Scripts\python.exe -m py_compile appshell\core\python_engine\engine_core.py tests\python_engine\test_engine_cli.py`
+  - `.\.venv-win\Scripts\python.exe -m pytest tests\python_engine\test_engine_cli.py -q`
+  - `.\.venv-win\Scripts\python.exe -m pytest tests\python_engine -q`
+  - `$env:PATH = (Resolve-Path '.\.venv-win\Scripts').Path + ';' + $env:PATH; Push-Location appshell\backend; go test ./internal/agent ./cmd/wails; Pop-Location`
+  - 使用内联 Python 调用 `action_scan_file` + `action_repair_with_gower` 对 100 万行 ignored CSV 做 Gower auto 探针，并写出 `outputs/gower_scale_probe/gower_auto_1m_missing_probe.json`。
+- 验收结果：
+  - py_compile：通过。
+  - `test_engine_cli.py` targeted 回归：`20 passed in 55.85s`。
+  - Python engine 全量回归：`53 passed, 12 warnings in 82.92s`，warnings 仍为既有 pandas categorical dtype deprecation。
+  - Go 指定回归：`ok` for `./internal/agent` 与 `./cmd/wails`。
+  - 百万行 Gower auto 探针：通过，默认策略确实从 1000004 个健康候选中稳定抽样 512 个候选，完成 20 个缺失值的 plan-only 近邻建议。
+- 当前问题 / 待处理事项：
+  - 当前优化是“受控候选抽样 + 避免大拷贝”的工程保护，不是严格 ANN 索引；它适合把 Gower 用作局部精修，但不应宣称百万行全量精确 KNN。
+  - 如果要让 Gower 在百万行上修复数千到数万个异常单元格，需要继续做候选缓存、分块检索、类别分桶、近似近邻索引或只对 planner 判定的高价值 issue 启用。
+  - 后续建议补一个正式 Gower scale benchmark 脚本，把 selected issue 数量、候选池大小、抽样大小、repair_search 时间、总耗时、内存峰值分开记录。
+
+## Update 2026-05-16 08:41:09 +08:00
+
+- 改动日期：2026-05-16 08:41:09 +08:00
+- 改动内容简述：按用户要求整理当前全部成果，准备提交并推送到 GitHub。范围包括跨数据集验证流水线与 artifact、百万级规则链路证据记录、Gower auto 候选池优化、测试、文档和 MEMO。
+- 最终目标：将当前 `feat/algorithm-risk-hardening` 分支上的所有成果提交到 GitHub，便于后续在远端 PR/分支中继续审查与答辩材料整理。
+- 当前采用的方法：
+  - 使用显式 `git add` staged 当前成果，避免把 ignored 的 `outputs/` 大文件、安装包、百万行临时 CSV 和探针中间文件提交到仓库。
+  - 当前本机没有 `gh` CLI，因此无法自动创建或更新 PR；本次以 `git commit` + `git push origin feat/algorithm-risk-hardening` 为主。
+  - `git fetch origin` / `git ls-remote origin HEAD` 首次尝试均遇到 `Recv failure: Connection was reset`，后续仍会继续尝试 push。
+- 相关模块/文件：
+  - `.gitignore`
+  - `README.md`
+  - `THESIS_SUPPORT_MATERIALS.md`
+  - `docs/cross_dataset_experiments.md`
+  - `scripts/run_cross_dataset_validation.py`
+  - `tests/python_engine/test_cross_dataset_validation.py`
+  - `tests/python_engine/test_engine_cli.py`
+  - `appshell/core/python_engine/engine_core.py`
+  - `appshell/backend/internal/agent/runtime_runner.go`
+  - `artifacts/experiments/cross_dataset/`
+  - `MEMO.md`
+- 已解决的问题 / 新增功能：
+  - 本地待提交成果已确认不包含 ignored 的大规模临时输出。
+  - `gh` 不可用的问题已记录，若后续需要自动 PR 创建，需要安装并登录 GitHub CLI。
+- 当前问题 / 待处理事项：
+  - 远端 GitHub HTTPS 连接当前被 reset；若 push 失败，需要网络恢复后重新执行 push。

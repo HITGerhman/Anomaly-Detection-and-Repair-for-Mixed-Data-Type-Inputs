@@ -276,3 +276,38 @@ data_dir = PATHS["data_processed"]
 ## 📄 License
 
 MIT License
+
+## Cross-Dataset Validation Pipeline
+
+The thesis experiment workflow now includes a reproducible cross-dataset
+validation pipeline. It keeps the existing M1/M2/M3 stroke artifacts intact and
+writes new paper-level outputs under:
+
+```text
+artifacts/experiments/cross_dataset/
+```
+
+Run the complete validation:
+
+```powershell
+.\.venv-win\Scripts\python.exe scripts\run_cross_dataset_validation.py --all
+```
+
+Run individual stages:
+
+```powershell
+.\.venv-win\Scripts\python.exe scripts\run_cross_dataset_validation.py --generate
+.\.venv-win\Scripts\python.exe scripts\run_cross_dataset_validation.py --detect
+.\.venv-win\Scripts\python.exe scripts\run_cross_dataset_validation.py --repair
+.\.venv-win\Scripts\python.exe scripts\run_cross_dataset_validation.py --threshold-sensitivity
+.\.venv-win\Scripts\python.exe scripts\run_cross_dataset_validation.py --scale
+```
+
+The pipeline covers `stroke`, `orders_transactions`, and `user_device_logs`.
+It generates or reuses clean CSVs, injects five issue types, writes ground truth,
+runs the existing Python Engine scan and `repair_batch` paths, and emits summary
+CSV files for detection, repair, numeric outlier threshold sensitivity, and
+scale testing.
+
+See `docs/cross_dataset_experiments.md` for the dataset fields, injection rules,
+metric definitions, output files, and thesis-writing guidance.

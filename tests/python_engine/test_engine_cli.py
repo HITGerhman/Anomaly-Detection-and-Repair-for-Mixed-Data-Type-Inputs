@@ -389,6 +389,57 @@ def test_repair_with_gower_limits_candidate_sample_deterministically(tmp_path: P
     assert first["result"]["neighbor_evidence"] == second["result"]["neighbor_evidence"]
 
 
+def test_repair_with_gower_auto_limits_large_candidate_pool(tmp_path: Path) -> None:
+    csv_path = tmp_path / "gower_auto_limited.csv"
+    rows = 5205
+    df = pd.DataFrame(
+        {
+            "age": np.arange(rows, dtype=float) + 20.0,
+            "bmi": 20.0 + (np.arange(rows, dtype=float) % 40.0) / 10.0,
+            "work_type": np.resize(np.array(["Private", "Govt", "Self"], dtype=object), rows),
+        }
+    )
+    df.loc[17, "age"] = np.nan
+    df.to_csv(csv_path, index=False)
+
+    scan_resp = _run_engine(
+        json.dumps(
+            {
+                "task_id": "scan-gower-auto-limited",
+                "action": "scan_file",
+                "payload": {"csv_path": str(csv_path)},
+            }
+        )
+    )
+    assert scan_resp["status"] == "ok"
+    selected_ids = [
+        item["issue_id"]
+        for item in scan_resp["result"]["issues"]
+        if item["issue_type"] == "missing_values"
+    ]
+    assert selected_ids
+
+    payload = {
+        "csv_path": str(csv_path),
+        "issue_ids": selected_ids,
+        "plan_only": True,
+        "write_output": False,
+        "gower_strategy": {"k_neighbors": 3},
+    }
+    repair_resp = _run_engine(
+        json.dumps({"task_id": "gower-auto-limited", "action": "repair_with_gower", "payload": payload})
+    )
+    assert repair_resp["status"] == "ok"
+    result = repair_resp["result"]
+    assert result["gower_strategy"]["candidate_policy"] == "auto"
+    evidence = result["neighbor_evidence"]
+    assert evidence
+    assert evidence[0]["candidate_limit_applied"] is True
+    assert evidence[0]["candidate_selection_mode"] == "auto_sample"
+    assert evidence[0]["candidate_sample_size"] == 512
+    assert evidence[0]["candidate_pool_size"] > evidence[0]["candidate_sample_size"]
+
+
 def test_repair_with_gower_write_output_and_model_importance(tmp_path: Path) -> None:
     csv_path = tmp_path / "repair_with_gower_weighted.csv"
     rows = 120

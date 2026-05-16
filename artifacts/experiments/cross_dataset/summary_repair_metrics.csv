@@ -1,0 +1,13 @@
+dataset,issue_type,repairable_gt,changed,exact,improved_or_exact,exact_rate,improved_or_exact_rate,non_gt_modified,skipped_non_repairable_count
+stroke,missing_values,30,30,7,7,0.233333,0.233333,0,0
+stroke,numeric_outlier,24,24,0,24,0.000000,1.000000,122,0
+stroke,rare_category,18,18,10,10,0.555556,0.555556,0,0
+stroke,Overall,72,72,17,41,0.236111,0.569444,122,28
+orders_transactions,missing_values,30,30,3,3,0.100000,0.100000,1,0
+orders_transactions,numeric_outlier,24,24,0,24,0.000000,1.000000,39,0
+orders_transactions,rare_category,18,18,2,2,0.111111,0.111111,0,0
+orders_transactions,Overall,72,72,5,29,0.069444,0.402778,40,28
+user_device_logs,missing_values,30,30,8,8,0.266667,0.266667,0,0
+user_device_logs,numeric_outlier,24,24,0,24,0.000000,1.000000,0,0
+user_device_logs,rare_category,18,18,12,12,0.666667,0.666667,0,0
+user_device_logs,Overall,72,72,20,44,0.277778,0.611111,0,28

@@ -1,0 +1,101 @@
+anomaly_id,dataset,expected_issue_type,row_index,column_name,original_value,corrupted_value,repairable,source_row_id,duplicate_group,consistency_rule_name,created_by_seed,notes
+user_device_logs-0001,user_device_logs,missing_values,985,device_type,laptop,,True,log-0000985,,,20260715,Cell was replaced with a missing value.
+user_device_logs-0002,user_device_logs,missing_values,1917,os,iOS,,True,log-0001917,,,20260715,Cell was replaced with a missing value.
+user_device_logs-0003,user_device_logs,missing_values,585,session_duration,387,,True,log-0000585,,,20260715,Cell was replaced with a missing value.
+user_device_logs-0004,user_device_logs,missing_values,4920,os,iOS,,True,log-0004920,,,20260715,Cell was replaced with a missing value.
+user_device_logs-0005,user_device_logs,missing_values,1663,app_version,2.4.1,,True,log-0001663,,,20260715,Cell was replaced with a missing value.
+user_device_logs-0006,user_device_logs,missing_values,1503,session_duration,727,,True,log-0001503,,,20260715,Cell was replaced with a missing value.
+user_device_logs-0007,user_device_logs,missing_values,1781,session_duration,604,,True,log-0001781,,,20260715,Cell was replaced with a missing value.
+user_device_logs-0008,user_device_logs,missing_values,2785,device_type,laptop,,True,log-0002785,,,20260715,Cell was replaced with a missing value.
+user_device_logs-0009,user_device_logs,missing_values,1976,os,iOS,,True,log-0001976,,,20260715,Cell was replaced with a missing value.
+user_device_logs-0010,user_device_logs,missing_values,3751,device_type,tablet,,True,log-0003751,,,20260715,Cell was replaced with a missing value.
+user_device_logs-0011,user_device_logs,missing_values,286,app_version,2.5.0,,True,log-0000286,,,20260715,Cell was replaced with a missing value.
+user_device_logs-0012,user_device_logs,missing_values,1086,session_duration,906,,True,log-0001086,,,20260715,Cell was replaced with a missing value.
+user_device_logs-0013,user_device_logs,missing_values,2634,device_type,desktop,,True,log-0002634,,,20260715,Cell was replaced with a missing value.
+user_device_logs-0014,user_device_logs,missing_values,4288,session_duration,542,,True,log-0004288,,,20260715,Cell was replaced with a missing value.
+user_device_logs-0015,user_device_logs,missing_values,1200,os,iOS,,True,log-0001200,,,20260715,Cell was replaced with a missing value.
+user_device_logs-0016,user_device_logs,missing_values,1698,app_version,2.5.0,,True,log-0001698,,,20260715,Cell was replaced with a missing value.
+user_device_logs-0017,user_device_logs,missing_values,4979,app_version,2.4.1,,True,log-0004979,,,20260715,Cell was replaced with a missing value.
+user_device_logs-0018,user_device_logs,missing_values,772,os,iOS,,True,log-0000772,,,20260715,Cell was replaced with a missing value.
+user_device_logs-0019,user_device_logs,missing_values,2004,app_version,2.4.0,,True,log-0002004,,,20260715,Cell was replaced with a missing value.
+user_device_logs-0020,user_device_logs,missing_values,2269,device_type,laptop,,True,log-0002269,,,20260715,Cell was replaced with a missing value.
+user_device_logs-0021,user_device_logs,missing_values,3380,app_version,2.4.0,,True,log-0003380,,,20260715,Cell was replaced with a missing value.
+user_device_logs-0022,user_device_logs,missing_values,2693,device_type,laptop,,True,log-0002693,,,20260715,Cell was replaced with a missing value.
+user_device_logs-0023,user_device_logs,missing_values,3409,app_version,2.5.1,,True,log-0003409,,,20260715,Cell was replaced with a missing value.
+user_device_logs-0024,user_device_logs,missing_values,2383,app_version,2.4.1,,True,log-0002383,,,20260715,Cell was replaced with a missing value.
+user_device_logs-0025,user_device_logs,missing_values,1758,os,iOS,,True,log-0001758,,,20260715,Cell was replaced with a missing value.
+user_device_logs-0026,user_device_logs,missing_values,4381,app_version,2.5.1,,True,log-0004381,,,20260715,Cell was replaced with a missing value.
+user_device_logs-0027,user_device_logs,missing_values,440,app_version,2.4.0,,True,log-0000440,,,20260715,Cell was replaced with a missing value.
+user_device_logs-0028,user_device_logs,missing_values,1280,session_duration,92,,True,log-0001280,,,20260715,Cell was replaced with a missing value.
+user_device_logs-0029,user_device_logs,missing_values,2370,session_duration,98,,True,log-0002370,,,20260715,Cell was replaced with a missing value.
+user_device_logs-0030,user_device_logs,missing_values,936,session_duration,756,,True,log-0000936,,,20260715,Cell was replaced with a missing value.
+user_device_logs-0031,user_device_logs,numeric_outlier,3788,bytes_received,8956,9999999,True,log-0003788,,,20260715,Numeric value was moved outside the normal synthetic range.
+user_device_logs-0032,user_device_logs,numeric_outlier,679,bytes_received,1923,9999999,True,log-0000679,,,20260715,Numeric value was moved outside the normal synthetic range.
+user_device_logs-0033,user_device_logs,numeric_outlier,3660,bytes_sent,3860,9999999,True,log-0003660,,,20260715,Numeric value was moved outside the normal synthetic range.
+user_device_logs-0034,user_device_logs,numeric_outlier,1373,bytes_received,3601,9999999,True,log-0001373,,,20260715,Numeric value was moved outside the normal synthetic range.
+user_device_logs-0035,user_device_logs,numeric_outlier,218,bytes_received,8866,9999999,True,log-0000218,,,20260715,Numeric value was moved outside the normal synthetic range.
+user_device_logs-0036,user_device_logs,numeric_outlier,4466,bytes_sent,3846,9999999,True,log-0004466,,,20260715,Numeric value was moved outside the normal synthetic range.
+user_device_logs-0037,user_device_logs,numeric_outlier,4129,bytes_received,9573,9999999,True,log-0004129,,,20260715,Numeric value was moved outside the normal synthetic range.
+user_device_logs-0038,user_device_logs,numeric_outlier,2769,bytes_received,7253,9999999,True,log-0002769,,,20260715,Numeric value was moved outside the normal synthetic range.
+user_device_logs-0039,user_device_logs,numeric_outlier,966,bytes_sent,5346,9999999,True,log-0000966,,,20260715,Numeric value was moved outside the normal synthetic range.
+user_device_logs-0040,user_device_logs,numeric_outlier,1536,session_duration,450,99999,True,log-0001536,,,20260715,Numeric value was moved outside the normal synthetic range.
+user_device_logs-0041,user_device_logs,numeric_outlier,1040,bytes_sent,2640,9999999,True,log-0001040,,,20260715,Numeric value was moved outside the normal synthetic range.
+user_device_logs-0042,user_device_logs,numeric_outlier,453,session_duration,576,99999,True,log-0000453,,,20260715,Numeric value was moved outside the normal synthetic range.
+user_device_logs-0043,user_device_logs,numeric_outlier,428,bytes_received,4636,9999999,True,log-0000428,,,20260715,Numeric value was moved outside the normal synthetic range.
+user_device_logs-0044,user_device_logs,numeric_outlier,4990,bytes_sent,5090,9999999,True,log-0004990,,,20260715,Numeric value was moved outside the normal synthetic range.
+user_device_logs-0045,user_device_logs,numeric_outlier,667,bytes_received,1479,9999999,True,log-0000667,,,20260715,Numeric value was moved outside the normal synthetic range.
+user_device_logs-0046,user_device_logs,numeric_outlier,220,bytes_received,8940,9999999,True,log-0000220,,,20260715,Numeric value was moved outside the normal synthetic range.
+user_device_logs-0047,user_device_logs,numeric_outlier,2392,session_duration,45,99999,True,log-0002392,,,20260715,Numeric value was moved outside the normal synthetic range.
+user_device_logs-0048,user_device_logs,numeric_outlier,3227,bytes_received,12199,9999999,True,log-0003227,,,20260715,Numeric value was moved outside the normal synthetic range.
+user_device_logs-0049,user_device_logs,numeric_outlier,2377,bytes_received,4749,9999999,True,log-0002377,,,20260715,Numeric value was moved outside the normal synthetic range.
+user_device_logs-0050,user_device_logs,numeric_outlier,3549,bytes_sent,419,9999999,True,log-0003549,,,20260715,Numeric value was moved outside the normal synthetic range.
+user_device_logs-0051,user_device_logs,numeric_outlier,1295,bytes_sent,545,9999999,True,log-0001295,,,20260715,Numeric value was moved outside the normal synthetic range.
+user_device_logs-0052,user_device_logs,numeric_outlier,994,bytes_sent,1214,9999999,True,log-0000994,,,20260715,Numeric value was moved outside the normal synthetic range.
+user_device_logs-0053,user_device_logs,numeric_outlier,2109,session_duration,543,99999,True,log-0002109,,,20260715,Numeric value was moved outside the normal synthetic range.
+user_device_logs-0054,user_device_logs,numeric_outlier,4969,session_duration,878,99999,True,log-0004969,,,20260715,Numeric value was moved outside the normal synthetic range.
+user_device_logs-0055,user_device_logs,rare_category,4675,device_type,tablet,__CD_RARE_USER_DEVICE_LOGS_DEVICE_TYPE_000__,True,log-0004675,,,20260715,Categorical value was replaced with a deterministic singleton category.
+user_device_logs-0056,user_device_logs,rare_category,2793,os,iOS,__CD_RARE_USER_DEVICE_LOGS_OS_001__,True,log-0002793,,,20260715,Categorical value was replaced with a deterministic singleton category.
+user_device_logs-0057,user_device_logs,rare_category,2303,os,iOS,__CD_RARE_USER_DEVICE_LOGS_OS_002__,True,log-0002303,,,20260715,Categorical value was replaced with a deterministic singleton category.
+user_device_logs-0058,user_device_logs,rare_category,3885,os,iOS,__CD_RARE_USER_DEVICE_LOGS_OS_003__,True,log-0003885,,,20260715,Categorical value was replaced with a deterministic singleton category.
+user_device_logs-0059,user_device_logs,rare_category,4414,os,iOS,__CD_RARE_USER_DEVICE_LOGS_OS_004__,True,log-0004414,,,20260715,Categorical value was replaced with a deterministic singleton category.
+user_device_logs-0060,user_device_logs,rare_category,4384,event_type,logout,__CD_RARE_USER_DEVICE_LOGS_EVENT_TYPE_005__,True,log-0004384,,,20260715,Categorical value was replaced with a deterministic singleton category.
+user_device_logs-0061,user_device_logs,rare_category,4895,event_type,login,__CD_RARE_USER_DEVICE_LOGS_EVENT_TYPE_006__,True,log-0004895,,,20260715,Categorical value was replaced with a deterministic singleton category.
+user_device_logs-0062,user_device_logs,rare_category,1777,event_type,login_failed,__CD_RARE_USER_DEVICE_LOGS_EVENT_TYPE_007__,True,log-0001777,,,20260715,Categorical value was replaced with a deterministic singleton category.
+user_device_logs-0063,user_device_logs,rare_category,323,event_type,view,__CD_RARE_USER_DEVICE_LOGS_EVENT_TYPE_008__,True,log-0000323,,,20260715,Categorical value was replaced with a deterministic singleton category.
+user_device_logs-0064,user_device_logs,rare_category,2752,device_type,phone,__CD_RARE_USER_DEVICE_LOGS_DEVICE_TYPE_009__,True,log-0002752,,,20260715,Categorical value was replaced with a deterministic singleton category.
+user_device_logs-0065,user_device_logs,rare_category,2051,device_type,tablet,__CD_RARE_USER_DEVICE_LOGS_DEVICE_TYPE_010__,True,log-0002051,,,20260715,Categorical value was replaced with a deterministic singleton category.
+user_device_logs-0066,user_device_logs,rare_category,4107,os,iOS,__CD_RARE_USER_DEVICE_LOGS_OS_011__,True,log-0004107,,,20260715,Categorical value was replaced with a deterministic singleton category.
+user_device_logs-0067,user_device_logs,rare_category,989,os,iOS,__CD_RARE_USER_DEVICE_LOGS_OS_012__,True,log-0000989,,,20260715,Categorical value was replaced with a deterministic singleton category.
+user_device_logs-0068,user_device_logs,rare_category,943,os,iOS,__CD_RARE_USER_DEVICE_LOGS_OS_013__,True,log-0000943,,,20260715,Categorical value was replaced with a deterministic singleton category.
+user_device_logs-0069,user_device_logs,rare_category,2328,os,iOS,__CD_RARE_USER_DEVICE_LOGS_OS_014__,True,log-0002328,,,20260715,Categorical value was replaced with a deterministic singleton category.
+user_device_logs-0070,user_device_logs,rare_category,2070,os,iOS,__CD_RARE_USER_DEVICE_LOGS_OS_015__,True,log-0002070,,,20260715,Categorical value was replaced with a deterministic singleton category.
+user_device_logs-0071,user_device_logs,rare_category,316,device_type,phone,__CD_RARE_USER_DEVICE_LOGS_DEVICE_TYPE_016__,True,log-0000316,,,20260715,Categorical value was replaced with a deterministic singleton category.
+user_device_logs-0072,user_device_logs,rare_category,4597,event_type,login_failed,__CD_RARE_USER_DEVICE_LOGS_EVENT_TYPE_017__,True,log-0004597,,,20260715,Categorical value was replaced with a deterministic singleton category.
+user_device_logs-0073,user_device_logs,cross_column_consistency,3619,"login_time,logout_time",1800271425<=1800271851,1800271425>1800271305,False,log-0003619,,logout_not_before_login,20260715,logout_time was made smaller than login_time.
+user_device_logs-0074,user_device_logs,cross_column_consistency,1905,"login_time,logout_time",1800142875<=1800143139,1800142875>1800142755,False,log-0001905,,logout_not_before_login,20260715,logout_time was made smaller than login_time.
+user_device_logs-0075,user_device_logs,cross_column_consistency,2114,"login_time,logout_time",1800158550<=1800159185,1800158550>1800158430,False,log-0002114,,logout_not_before_login,20260715,logout_time was made smaller than login_time.
+user_device_logs-0076,user_device_logs,cross_column_consistency,2404,"login_time,logout_time",1800180300<=1800181041,1800180300>1800180180,False,log-0002404,,logout_not_before_login,20260715,logout_time was made smaller than login_time.
+user_device_logs-0077,user_device_logs,cross_column_consistency,4651,"login_time,logout_time",1800348825<=1800349060,1800348825>1800348705,False,log-0004651,,logout_not_before_login,20260715,logout_time was made smaller than login_time.
+user_device_logs-0078,user_device_logs,cross_column_consistency,1551,"login_time,logout_time",1800116325<=1800117061,1800116325>1800116205,False,log-0001551,,logout_not_before_login,20260715,logout_time was made smaller than login_time.
+user_device_logs-0079,user_device_logs,cross_column_consistency,4626,"login_time,logout_time",1800346950<=1800347609,1800346950>1800346830,False,log-0004626,,logout_not_before_login,20260715,logout_time was made smaller than login_time.
+user_device_logs-0080,user_device_logs,cross_column_consistency,2703,"login_time,logout_time",1800202725<=1800202850,1800202725>1800202605,False,log-0002703,,logout_not_before_login,20260715,logout_time was made smaller than login_time.
+user_device_logs-0081,user_device_logs,cross_column_consistency,2809,"login_time,logout_time",1800210675<=1800211012,1800210675>1800210555,False,log-0002809,,logout_not_before_login,20260715,logout_time was made smaller than login_time.
+user_device_logs-0082,user_device_logs,cross_column_consistency,2042,"login_time,logout_time",1800153150<=1800153195,1800153150>1800153030,False,log-0002042,,logout_not_before_login,20260715,logout_time was made smaller than login_time.
+user_device_logs-0083,user_device_logs,cross_column_consistency,2109,"login_time,logout_time",1800158175<=1800158718,1800158175>1800158055,False,log-0002109,,logout_not_before_login,20260715,logout_time was made smaller than login_time.
+user_device_logs-0084,user_device_logs,cross_column_consistency,1792,"login_time,logout_time",1800134400<=1800134445,1800134400>1800134280,False,log-0001792,,logout_not_before_login,20260715,logout_time was made smaller than login_time.
+user_device_logs-0085,user_device_logs,cross_column_consistency,2666,"login_time,logout_time",1800199950<=1800200273,1800199950>1800199830,False,log-0002666,,logout_not_before_login,20260715,logout_time was made smaller than login_time.
+user_device_logs-0086,user_device_logs,cross_column_consistency,4647,"login_time,logout_time",1800348525<=1800348570,1800348525>1800348405,False,log-0004647,,logout_not_before_login,20260715,logout_time was made smaller than login_time.
+user_device_logs-0087,user_device_logs,cross_column_consistency,4074,"login_time,logout_time",1800305550<=1800305623,1800305550>1800305430,False,log-0004074,,logout_not_before_login,20260715,logout_time was made smaller than login_time.
+user_device_logs-0088,user_device_logs,cross_column_consistency,3767,"login_time,logout_time",1800282525<=1800282570,1800282525>1800282405,False,log-0003767,,logout_not_before_login,20260715,logout_time was made smaller than login_time.
+user_device_logs-0089,user_device_logs,duplicate_record,5000,source_row_id,logs-row-0002730,user_device_logs-dup-00000,False,log-0002730,log-0002730,,20260715,A duplicate row was appended with the same source_row_id.
+user_device_logs-0090,user_device_logs,duplicate_record,5001,source_row_id,logs-row-0001528,user_device_logs-dup-00001,False,log-0001528,log-0001528,,20260715,A duplicate row was appended with the same source_row_id.
+user_device_logs-0091,user_device_logs,duplicate_record,5002,source_row_id,logs-row-0000385,user_device_logs-dup-00002,False,log-0000385,log-0000385,,20260715,A duplicate row was appended with the same source_row_id.
+user_device_logs-0092,user_device_logs,duplicate_record,5003,source_row_id,logs-row-0004485,user_device_logs-dup-00003,False,log-0004485,log-0004485,,20260715,A duplicate row was appended with the same source_row_id.
+user_device_logs-0093,user_device_logs,duplicate_record,5004,source_row_id,logs-row-0002716,user_device_logs-dup-00004,False,log-0002716,log-0002716,,20260715,A duplicate row was appended with the same source_row_id.
+user_device_logs-0094,user_device_logs,duplicate_record,5005,source_row_id,logs-row-0004933,user_device_logs-dup-00005,False,log-0004933,log-0004933,,20260715,A duplicate row was appended with the same source_row_id.
+user_device_logs-0095,user_device_logs,duplicate_record,5006,source_row_id,logs-row-0000708,user_device_logs-dup-00006,False,log-0000708,log-0000708,,20260715,A duplicate row was appended with the same source_row_id.
+user_device_logs-0096,user_device_logs,duplicate_record,5007,source_row_id,logs-row-0002028,user_device_logs-dup-00007,False,log-0002028,log-0002028,,20260715,A duplicate row was appended with the same source_row_id.
+user_device_logs-0097,user_device_logs,duplicate_record,5008,source_row_id,logs-row-0000405,user_device_logs-dup-00008,False,log-0000405,log-0000405,,20260715,A duplicate row was appended with the same source_row_id.
+user_device_logs-0098,user_device_logs,duplicate_record,5009,source_row_id,logs-row-0004278,user_device_logs-dup-00009,False,log-0004278,log-0004278,,20260715,A duplicate row was appended with the same source_row_id.
+user_device_logs-0099,user_device_logs,duplicate_record,5010,source_row_id,logs-row-0000615,user_device_logs-dup-00010,False,log-0000615,log-0000615,,20260715,A duplicate row was appended with the same source_row_id.
+user_device_logs-0100,user_device_logs,duplicate_record,5011,source_row_id,logs-row-0001937,user_device_logs-dup-00011,False,log-0001937,log-0001937,,20260715,A duplicate row was appended with the same source_row_id.
