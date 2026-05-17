@@ -91,9 +91,9 @@ server.serve_forever()
 func withTempBackendWorkingDir(t *testing.T) string {
 	t.Helper()
 
-	if _, err := exec.LookPath("python"); err != nil {
-		t.Skipf("python not found: %v", err)
-	}
+	pythonBin := requireStartupPythonBin(t)
+	t.Setenv("APPSHELL_PYTHON_BIN", pythonBin)
+	t.Setenv("APPSHELL_LANGGRAPH_PYTHON_BIN", pythonBin)
 
 	root := t.TempDir()
 	backendDir := filepath.Join(root, "appshell", "backend")
@@ -112,6 +112,34 @@ func withTempBackendWorkingDir(t *testing.T) string {
 		_ = os.Chdir(prevWD)
 	})
 	return root
+}
+
+func requireStartupPythonBin(t *testing.T) string {
+	t.Helper()
+	for _, envName := range []string{"APPSHELL_LANGGRAPH_PYTHON_BIN", "APPSHELL_PYTHON_BIN"} {
+		if pythonBin := strings.TrimSpace(os.Getenv(envName)); pythonBin != "" {
+			if usableStartupPythonBin(pythonBin) {
+				return pythonBin
+			}
+			t.Skipf("%s is set but is not a runnable Python 3 interpreter: %s", envName, pythonBin)
+		}
+	}
+	for _, name := range []string{"python3", "python"} {
+		pythonBin, err := exec.LookPath(name)
+		if err != nil {
+			continue
+		}
+		if usableStartupPythonBin(pythonBin) {
+			return pythonBin
+		}
+	}
+	t.Skipf("usable Python 3 interpreter not found")
+	return ""
+}
+
+func usableStartupPythonBin(pythonBin string) bool {
+	cmd := exec.Command(pythonBin, "-c", "import sys; raise SystemExit(0 if sys.version_info[0] == 3 else 1)")
+	return cmd.Run() == nil
 }
 
 func findStartupItem(t *testing.T, report StartupCheckReport, key string) StartupCheckItem {

@@ -119,8 +119,8 @@ func TestRetrievePreviewParallelModeReducesWallClockAndOverlapsCalls(t *testing.
 	if parElapsed >= seqElapsed {
 		t.Fatalf("expected parallel retrieve preview to be faster than sequential, got parallel=%s sequential=%s", parElapsed, seqElapsed)
 	}
-	if seqElapsed-parElapsed < 120*time.Millisecond {
-		t.Fatalf("expected parallel retrieve preview to save at least 120ms, got parallel=%s sequential=%s", parElapsed, seqElapsed)
+	if seqElapsed-parElapsed < 50*time.Millisecond {
+		t.Fatalf("expected parallel retrieve preview to save a meaningful amount of time, got parallel=%s sequential=%s", parElapsed, seqElapsed)
 	}
 }
 

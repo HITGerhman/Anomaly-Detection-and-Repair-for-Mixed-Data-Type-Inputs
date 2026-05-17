@@ -52,6 +52,18 @@ func (r *RuntimeRunner) executeCandidate(ctx context.Context, parentTaskID strin
 		execution["applied_issue_count"] = intFromAny(resp.Result["applied_issue_count"])
 		execution["rollback"] = cloneMap(mapFromAny(resp.Result["rollback"]))
 		execution["comparison"] = cloneMap(mapFromAny(resp.Result["comparison"]))
+		execution["applied_repairs"] = cloneValue(resp.Result["applied_repairs"])
+		execution["selected_issue_ids"] = cloneValue(resp.Result["selected_issue_ids"])
+		execution["total_cells_modified"] = intFromAny(resp.Result["total_cells_modified"])
+		if size := intFromAny(resp.Result["output_size_bytes"]); size > 0 {
+			execution["output_size_bytes"] = size
+		}
+		if evidence := mapsFromAny(resp.Result["model_evidence"]); len(evidence) > 0 {
+			execution["model_evidence"] = cloneValue(evidence)
+		}
+		if evidence := mapsFromAny(resp.Result["neighbor_evidence"]); len(evidence) > 0 {
+			execution["neighbor_evidence"] = cloneValue(evidence)
+		}
 		return execution, nil, toolID, nil
 	case "hybrid":
 		execution, err := r.executeHybridCandidate(ctx, parentTaskID, sessionID, taskID, candidate, outputDir)
@@ -64,8 +76,13 @@ func (r *RuntimeRunner) executeCandidate(ctx context.Context, parentTaskID strin
 	}
 }
 
-func (r *RuntimeRunner) rescanOutput(ctx context.Context, parentTaskID string, sessionID string, taskID string, outputCSV string, scanOverrides map[string]any) (map[string]any, map[string]any, *engine.Response, string, error) {
+func (r *RuntimeRunner) rescanOutput(ctx context.Context, parentTaskID string, sessionID string, taskID string, outputCSV string, scanOverrides map[string]any, extraPayload ...map[string]any) (map[string]any, map[string]any, *engine.Response, string, error) {
 	scanPayload := buildScanPayload(outputCSV, scanOverrides)
+	for _, extra := range extraPayload {
+		for key, value := range extra {
+			scanPayload[key] = cloneValue(value)
+		}
+	}
 	toolID := "engine.scan_table"
 	_ = r.saveTrace(AgentTraceEvent{
 		SessionID: sessionID,

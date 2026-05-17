@@ -320,3 +320,29 @@ metric definitions, output files, and thesis-writing guidance.
 - Iterative MissForest treats only selected issue cells as missing, initializes with median/mode values, trains `RandomForestRegressor` or `RandomForestClassifier` by target column, and writes back only cells covered by selected issue ids.
 - The Go Auto Agent planner compares rule, Gower, MissForest, and hybrid previews with `candidate_score_v1`; it stays plan-only and never writes CSV data directly.
 - Real writes still happen in the runtime execution layer and are followed by post-scan Validation Gate checks plus rollback manifest protection.
+
+## Large-scale Stability Validation (2026-05-17)
+
+The latest paper-facing stability run is documented in
+`docs/large_scale_stability_20260517.md`. A short companion presentation deck is
+available at `thesis-defense/Scale_Validation_Update_2026-05-17.pptx`. Together
+they cover real 500k, 1M, and 10M row mixed-type CSV runs through the AppShell
+auto path.
+
+Key results:
+
+| Run | Rows | Output size | Total time | Write strategy | Post validation | Verdict |
+|---|---:|---:|---:|---|---|---|
+| 500k auto | 500,024 | 59,253,174 bytes | 42.761 s | `pandas_full` | scoped precheck + full scan | `warn` accepted |
+| 1M auto | 1,000,024 | 118,500,360 bytes | 62.255 s | `streaming` | scoped precheck + full scan | `warn` accepted |
+| 10M auto | 10,000,024 | 1,192,963,894 bytes | 584.805 s | `streaming` | affected-column incremental estimate | `warn` accepted |
+
+The 10M run produced rollback metadata and a rejected-output-safe execution
+trace. Large-output post validation is explicitly marked as
+`post_scan_incremental_estimate`; it is not presented as a full post scan.
+
+Validation Gate now also records per-column issue counts and rejects written
+auto-session outputs when any affected column has a higher issue count after
+repair than it had in the baseline scan. The risk flag is
+`affected_column_issue_count_increased`, and the auto path rolls back such
+outputs.

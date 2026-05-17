@@ -330,8 +330,37 @@ func (r *RuntimeRunner) continueAutoApprovedSession(ctx context.Context, started
 
 	validationStarted := time.Now()
 	r.emitStage(req.TaskID, "agent_rescan", "start", 86, "Agent is rescanning the repaired output", map[string]any{"output_csv": outputCSV})
-	_, postScanSummary, postScanResp, postScanToolID, err := r.rescanOutput(ctx, req.TaskID, session.SessionID, req.TaskID, outputCSV, scanOverrides)
-	if err != nil {
+	affectedColumns := affectedColumnsFromExecution(execution)
+	outputSizeBytes, outputSizeKnown := outputSizeBytesForValidation(execution, outputCSV)
+	var postScanSummary map[string]any
+	var postScanResp *engine.Response
+	var postScanToolID string
+	var postScanErr error
+	if len(affectedColumns) > 0 {
+		scopedExtra := buildScopedScanPayloadFields(affectedColumns)
+		_, scopedSummary, scopedResp, scopedToolID, scopedErr := r.rescanOutput(ctx, req.TaskID, session.SessionID, req.TaskID, outputCSV, scanOverrides, scopedExtra)
+		if scopedErr != nil {
+			postScanErr = scopedErr
+			postScanToolID = scopedToolID
+		} else if scopedResp != nil {
+			postScanResp = scopedResp
+			postScanToolID = scopedToolID
+		} else if outputSizeKnown && outputSizeBytes > postValidationIncrementalThresholdBytes {
+			postScanSummary = markIncrementalPostScanEstimate(scopedSummary, affectedColumns, outputSizeBytes)
+			execution["post_scan_incremental_estimate"] = true
+			riskFlags = appendRiskFlag(riskFlags, "post_scan_incremental_estimate")
+		} else {
+			_, postScanSummary, postScanResp, postScanToolID, postScanErr = r.rescanOutput(ctx, req.TaskID, session.SessionID, req.TaskID, outputCSV, scanOverrides)
+			if postScanSummary != nil {
+				postScanSummary["scoped_precheck"] = cloneMap(scopedSummary)
+				postScanSummary["scan_scope"] = "full"
+				postScanSummary["affected_columns"] = append([]string{}, affectedColumns...)
+			}
+		}
+	} else {
+		_, postScanSummary, postScanResp, postScanToolID, postScanErr = r.rescanOutput(ctx, req.TaskID, session.SessionID, req.TaskID, outputCSV, scanOverrides)
+	}
+	if postScanErr != nil {
 		riskFlags = appendRiskFlag(riskFlags, "post_scan_failed")
 		postValidation := buildPostValidationFailure(validationGateReject, "Post-execute scan failed and requires rollback.", riskFlags, baseline, execution, map[string]any{}, plan)
 		validation = attachPostValidation(validation, postValidation.Summary)
@@ -397,7 +426,13 @@ func (r *RuntimeRunner) continueAutoApprovedSession(ctx context.Context, started
 	r.emitStage(req.TaskID, "agent_rescan", "complete", 90, "Repaired output rescanned", map[string]any{"issue_count": intFromAny(postScanSummary["issue_count"])})
 
 	r.emitStage(req.TaskID, "agent_post_validate", "start", 92, "Agent is evaluating post-execute safety checks", nil)
-	postValidation := buildPostValidation(baseline, execution, postScanSummary, plan)
+	postValidation := evaluateValidationGate(validationGateInput{
+		BaselineScan:   baseline,
+		RepairResult:   execution,
+		PostScan:       postScanSummary,
+		Plan:           plan,
+		ExtraRiskFlags: riskFlags,
+	})
 	validationDurationMS := int(time.Since(validationStarted).Milliseconds())
 	execution["timings_ms"] = mergeTimingMS(mapFromAny(execution["timings_ms"]), map[string]any{
 		"validation_duration_ms": validationDurationMS,

@@ -707,6 +707,7 @@ func (r *RuntimeRunner) executeHybridCandidate(ctx context.Context, parentTaskID
 
 	currentCSV := sourceCSV
 	executionSteps := make([]map[string]any, 0, len(candidate.ExecutePayloads))
+	outputSizeBytes := 0
 	for idx, payload := range candidate.ExecutePayloads {
 		if idx >= len(candidate.ToolSequence) {
 			break
@@ -738,12 +739,16 @@ func (r *RuntimeRunner) executeHybridCandidate(ctx context.Context, parentTaskID
 		if stepOutput := asString(resp.Result["output_csv"]); stepOutput != "" {
 			currentCSV = stepOutput
 		}
+		if size := intFromAny(resp.Result["output_size_bytes"]); size > outputSizeBytes {
+			outputSizeBytes = size
+		}
 		executionStep := map[string]any{
 			"step":               idx + 1,
 			"tool_id":            toolID,
 			"selected_issue_ids": cloneValue(callPayload["issue_ids"]),
 			"output_csv":         currentCSV,
 			"comparison":         cloneMap(mapFromAny(resp.Result["comparison"])),
+			"applied_repairs":    cloneValue(resp.Result["applied_repairs"]),
 		}
 		if evidence := mapsFromAny(resp.Result["model_evidence"]); len(evidence) > 0 {
 			executionStep["model_evidence"] = cloneValue(evidence)
@@ -786,7 +791,7 @@ func (r *RuntimeRunner) executeHybridCandidate(ctx context.Context, parentTaskID
 	}
 	rollbackManifestDurationMS := int(time.Since(manifestStarted).Milliseconds())
 
-	return map[string]any{
+	result := map[string]any{
 		"status":              "executed",
 		"selected_source":     "hybrid",
 		"output_csv":          finalOutput,
@@ -804,7 +809,11 @@ func (r *RuntimeRunner) executeHybridCandidate(ctx context.Context, parentTaskID
 		"timings_ms": map[string]any{
 			"rollback_manifest_duration_ms": rollbackManifestDurationMS,
 		},
-	}, nil
+	}
+	if outputSizeBytes > 0 {
+		result["output_size_bytes"] = outputSizeBytes
+	}
+	return result, nil
 }
 
 func (r *RuntimeRunner) runExecutePlan(ctx context.Context, req engine.Request) (engine.Response, error) {

@@ -42,6 +42,16 @@ DEFAULT_MISSFOREST_MAX_TRAIN_ROWS = 5_000
 DEFAULT_MISSFOREST_RANDOM_STATE = 42
 DEFAULT_MISSFOREST_MAX_ITER = 5
 DEFAULT_MISSFOREST_CONVERGENCE_TOLERANCE = 0.001
+DEFAULT_LIGHTWEIGHT_COMPARISON_BYTES = 64 * 1024 * 1024
+DEFAULT_LIGHTWEIGHT_COMPARISON_ROWS = 250_000
+DEFAULT_STREAMING_WRITE_BYTES = 64 * 1024 * 1024
+DEFAULT_STREAMING_CHUNK_SIZE = 100_000
+DEFAULT_SCHEMA_SAMPLE_ROWS = 100_000
+DEFAULT_FEATURE_CARDINALITY_LIMIT = 64
+DEFAULT_FEATURE_UNIQUE_RATIO_LIMIT = 0.2
+DEFAULT_MISSFOREST_MAX_ENCODED_FEATURES = 512
+DEFAULT_GOWER_BUCKET_MIN_CANDIDATES = DEFAULT_GOWER_AUTO_MAX_CANDIDATES
+SCHEMA_CACHE_DIR = PROJECT_ROOT / "outputs" / "engine_cache" / "schema"
 
 
 def _emit_stage_progress(
@@ -178,6 +188,14 @@ def _to_builtin(value: Any) -> Any:
         return round(value, 12)
     if pd is not None and isinstance(value, (pd.Timestamp,)):
         return value.isoformat()
+    if pd is not None:
+        try:
+            if value is pd.NA or value is pd.NaT:
+                return None
+            if not isinstance(value, (dict, list, tuple)) and bool(pd.isna(value)):
+                return None
+        except Exception:
+            pass
     return value
 
 
@@ -615,6 +633,430 @@ def _load_dataframe_module(action_label: str) -> Any:
             details={"reason": str(exc)},
         ) from exc
     return runtime_pd
+
+
+def _csv_cache_key(csv_file: Path) -> str:
+    stat = csv_file.stat()
+    raw = f"{csv_file.expanduser().resolve()}|{int(stat.st_size)}|{int(stat.st_mtime_ns)}"
+    return hashlib.sha256(raw.encode("utf-8")).hexdigest()
+
+
+def _is_id_like_column_name(column: str) -> bool:
+    name = str(column or "").strip().lower()
+    if name in {"id", "row_id", "source_row_id", "order_id"}:
+        return True
+    return name.endswith("_id")
+
+
+def _schema_cache_path(csv_file: Path) -> Path:
+    return SCHEMA_CACHE_DIR / f"{_csv_cache_key(csv_file)}.json"
+
+
+def _read_json_file(path: Path) -> dict[str, Any] | None:
+    try:
+        return json.loads(path.read_text(encoding="utf-8"))
+    except Exception:
+        return None
+
+
+def _infer_csv_dtype_schema(frame_pd: Any, csv_file: Path, *, sample_rows: int = DEFAULT_SCHEMA_SAMPLE_ROWS) -> dict[str, Any]:
+    sample = frame_pd.read_csv(csv_file, nrows=int(sample_rows))
+    row_sample_count = int(sample.shape[0])
+    dtypes: dict[str, str] = {}
+    category_columns: list[str] = []
+    id_like_columns: list[str] = []
+    high_cardinality_columns: list[str] = []
+    for column in list(sample.columns):
+        column_name = str(column)
+        series = sample[column]
+        if _is_id_like_column_name(column_name):
+            dtypes[column_name] = "string"
+            id_like_columns.append(column_name)
+            continue
+        is_text = bool(
+            frame_pd.api.types.is_object_dtype(series)
+            or frame_pd.api.types.is_string_dtype(series)
+            or frame_pd.api.types.is_categorical_dtype(series)
+        )
+        if not is_text:
+            continue
+        non_null = series.dropna()
+        unique_count = int(non_null.nunique(dropna=True))
+        unique_ratio = float(unique_count) / float(max(1, int(non_null.shape[0])))
+        if unique_count <= DEFAULT_FEATURE_CARDINALITY_LIMIT and unique_ratio <= DEFAULT_FEATURE_UNIQUE_RATIO_LIMIT:
+            dtypes[column_name] = "category"
+            category_columns.append(column_name)
+        else:
+            dtypes[column_name] = "string"
+            high_cardinality_columns.append(column_name)
+    return {
+        "schema_version": 1,
+        "csv_path": str(csv_file.expanduser().resolve()),
+        "csv_size": int(csv_file.stat().st_size),
+        "csv_mtime_unix_nano": int(csv_file.stat().st_mtime_ns),
+        "sample_rows": int(sample_rows),
+        "sampled_rows": row_sample_count,
+        "dtypes": dtypes,
+        "category_columns": category_columns,
+        "id_like_columns": id_like_columns,
+        "high_cardinality_columns": high_cardinality_columns,
+    }
+
+
+def _read_csv_optimized(
+    frame_pd: Any,
+    csv_file: Path,
+    *,
+    usecols: list[str] | None = None,
+    chunksize: int | None = None,
+) -> tuple[Any, dict[str, Any]]:
+    cache_path = _schema_cache_path(csv_file)
+    schema = _read_json_file(cache_path)
+    cache_hit = False
+    if not isinstance(schema, dict):
+        schema = None
+    if schema is not None:
+        try:
+            stat = csv_file.stat()
+            cache_hit = (
+                str(Path(str(schema.get("csv_path"))).expanduser().resolve()) == str(csv_file.expanduser().resolve())
+                and int(schema.get("csv_size")) == int(stat.st_size)
+                and int(schema.get("csv_mtime_unix_nano")) == int(stat.st_mtime_ns)
+            )
+        except Exception:
+            cache_hit = False
+    if not cache_hit:
+        schema = _infer_csv_dtype_schema(frame_pd, csv_file)
+        try:
+            cache_path.parent.mkdir(parents=True, exist_ok=True)
+            cache_path.write_text(json.dumps(_to_builtin(schema), ensure_ascii=True, indent=2) + "\n", encoding="utf-8")
+        except Exception:
+            pass
+    dtypes = dict(schema.get("dtypes", {})) if isinstance(schema, dict) else {}
+    if usecols:
+        allowed = {str(col) for col in usecols}
+        dtypes = {key: value for key, value in dtypes.items() if key in allowed}
+    read_kwargs: dict[str, Any] = {}
+    if dtypes:
+        read_kwargs["dtype"] = dtypes
+    if usecols:
+        read_kwargs["usecols"] = usecols
+    if chunksize is not None:
+        read_kwargs["chunksize"] = int(chunksize)
+    frame = frame_pd.read_csv(csv_file, **read_kwargs)
+    evidence = {
+        "schema_cache_hit": bool(cache_hit),
+        "schema_cache_path": str(cache_path),
+        "schema_sample_rows": int(schema.get("sample_rows", DEFAULT_SCHEMA_SAMPLE_ROWS)) if isinstance(schema, dict) else DEFAULT_SCHEMA_SAMPLE_ROWS,
+        "category_column_count": len(schema.get("category_columns", [])) if isinstance(schema, dict) else 0,
+        "id_like_column_count": len(schema.get("id_like_columns", [])) if isinstance(schema, dict) else 0,
+        "high_cardinality_column_count": len(schema.get("high_cardinality_columns", [])) if isinstance(schema, dict) else 0,
+        "usecols": list(usecols or []),
+        "chunksize": chunksize,
+    }
+    return frame, evidence
+
+
+def _comparison_mode_from_payload(
+    payload: dict[str, Any],
+    *,
+    csv_file: Path,
+    row_count: int,
+    plan_only: bool,
+    write_output: bool,
+    write_strategy_used: str = "",
+) -> tuple[str, bool]:
+    requested = str(payload.get("comparison_mode") or "auto").strip().lower()
+    if requested not in {"auto", "exact", "lightweight"}:
+        raise KnownEngineError(
+            code=ErrorCode.INVALID_INPUT,
+            message="Field comparison_mode must be auto/exact/lightweight",
+            details={"field": "comparison_mode", "value": requested},
+        )
+    if requested == "exact":
+        return "exact", True
+    if requested == "lightweight":
+        return "lightweight", False
+    size = int(csv_file.stat().st_size)
+    if (plan_only and not write_output and (size > DEFAULT_LIGHTWEIGHT_COMPARISON_BYTES or row_count > DEFAULT_LIGHTWEIGHT_COMPARISON_ROWS)) or write_strategy_used == "streaming":
+        return "lightweight", False
+    return "exact", True
+
+
+def _write_strategy_from_payload(payload: dict[str, Any], *, csv_file: Path, write_output: bool) -> str:
+    if not write_output:
+        return "not_written"
+    requested = str(payload.get("write_strategy") or "auto").strip().lower()
+    if requested not in {"auto", "pandas_full", "streaming"}:
+        raise KnownEngineError(
+            code=ErrorCode.INVALID_INPUT,
+            message="Field write_strategy must be auto/pandas_full/streaming",
+            details={"field": "write_strategy", "value": requested},
+        )
+    if requested != "auto":
+        return requested
+    return "streaming" if int(csv_file.stat().st_size) > DEFAULT_STREAMING_WRITE_BYTES else "pandas_full"
+
+
+def _write_repaired_csv_streaming(
+    frame_pd: Any,
+    csv_file: Path,
+    output_path: Path,
+    cell_plan: dict[tuple[int, str], dict[str, Any]],
+    *,
+    chunk_size: int = DEFAULT_STREAMING_CHUNK_SIZE,
+) -> int:
+    replacements: dict[int, dict[str, Any]] = {}
+    for (row_pos, column), proposal in cell_plan.items():
+        replacements.setdefault(int(row_pos), {})[str(column)] = proposal.get("after")
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    replaced = 0
+    start = 0
+    first = True
+    for chunk in frame_pd.read_csv(csv_file, chunksize=int(chunk_size)):
+        stop = start + int(chunk.shape[0])
+        column_positions = {str(column): idx for idx, column in enumerate(list(chunk.columns))}
+        for row_pos, values in replacements.items():
+            if row_pos < start or row_pos >= stop:
+                continue
+            local_pos = row_pos - start
+            for column, value in values.items():
+                if column in column_positions:
+                    chunk.iat[int(local_pos), int(column_positions[column])] = value
+                    replaced += 1
+        chunk.to_csv(output_path, index=False, mode="w" if first else "a", header=first)
+        first = False
+        start = stop
+    return replaced
+
+
+def _comparison_from_cell_plan(
+    issues_internal: list[dict[str, Any]],
+    post_issues_internal: list[dict[str, Any]] | None,
+    applied_repairs: list[dict[str, Any]],
+    cell_plan: dict[tuple[int, str], dict[str, Any]],
+    *,
+    exact: bool,
+    changed_cells_preview: list[dict[str, Any]],
+) -> dict[str, Any]:
+    before_issue_type_counts = _issue_type_counter(issues_internal)
+    before_issue_column_counts = _issue_counter_by_column(issues_internal)
+    before_issue_count = int(len(issues_internal))
+    if exact and post_issues_internal is not None:
+        after_issue_type_counts = _issue_type_counter(post_issues_internal)
+        after_issue_column_counts = _issue_counter_by_column(post_issues_internal)
+        after_issue_count = int(len(post_issues_internal))
+        resolved_issue_count = max(0, before_issue_count - after_issue_count)
+    else:
+        resolved_issue_ids = {
+            str(item.get("issue_id"))
+            for item in applied_repairs
+            if int(item.get("resolved_count", 0) or 0) > 0 and str(item.get("issue_id") or "")
+        }
+        resolved_issue_count = len(resolved_issue_ids)
+        after_issue_count = max(0, before_issue_count - resolved_issue_count)
+        after_issue_type_counts = dict(before_issue_type_counts)
+        after_issue_column_counts = dict(before_issue_column_counts)
+        for item in applied_repairs:
+            if int(item.get("resolved_count", 0) or 0) <= 0:
+                continue
+            issue_type = str(item.get("issue_type") or "")
+            column = str(item.get("column") or "")
+            if issue_type:
+                after_issue_type_counts[issue_type] = max(0, int(after_issue_type_counts.get(issue_type, 0)) - 1)
+            if column:
+                after_issue_column_counts[column] = max(0, int(after_issue_column_counts.get(column, 0)) - 1)
+    return {
+        "before_issue_count": before_issue_count,
+        "after_issue_count": after_issue_count,
+        "resolved_issue_count": resolved_issue_count,
+        "before_issue_type_counts": before_issue_type_counts,
+        "after_issue_type_counts": after_issue_type_counts,
+        "before_column_issue_counts": before_issue_column_counts,
+        "after_column_issue_counts": after_issue_column_counts,
+        "changed_cell_count": int(len(cell_plan)),
+        "changed_cells_preview": changed_cells_preview,
+        "comparison_exact": bool(exact),
+        "post_scan_performed": bool(exact and post_issues_internal is not None),
+    }
+
+
+def _feature_policy_from_raw(raw: Any) -> dict[str, Any]:
+    if raw is None:
+        raw = {}
+    if not isinstance(raw, dict):
+        raise KnownEngineError(
+            code=ErrorCode.INVALID_INPUT,
+            message="feature_column_policy must be an object",
+            details={"field": "feature_column_policy"},
+        )
+    mode = str(raw.get("mode", "auto") or "auto").strip().lower()
+    if mode not in {"auto", "all", "custom"}:
+        raise KnownEngineError(
+            code=ErrorCode.INVALID_INPUT,
+            message="feature_column_policy.mode must be auto/all/custom",
+            details={"field": "feature_column_policy.mode", "value": mode},
+        )
+    return {
+        "mode": mode,
+        "exclude_columns": _to_string_list(raw, "exclude_columns", default=[]),
+        "include_columns": _to_string_list(raw, "include_columns", default=[]),
+        "max_string_unique": _to_positive_int(
+            raw,
+            "max_string_unique",
+            default=DEFAULT_FEATURE_CARDINALITY_LIMIT,
+            minimum=1,
+            maximum=1_000_000,
+        ),
+        "max_string_unique_ratio": _to_float(
+            raw,
+            "max_string_unique_ratio",
+            default=DEFAULT_FEATURE_UNIQUE_RATIO_LIMIT,
+            minimum=0.0,
+            maximum=1.0,
+        ),
+        "max_encoded_features": _to_positive_int(
+            raw,
+            "max_encoded_features",
+            default=DEFAULT_MISSFOREST_MAX_ENCODED_FEATURES,
+            minimum=16,
+            maximum=100_000,
+        ),
+    }
+
+
+def _is_string_like_series(frame_pd: Any, series: Any) -> bool:
+    return bool(
+        frame_pd.api.types.is_object_dtype(series)
+        or frame_pd.api.types.is_string_dtype(series)
+        or frame_pd.api.types.is_categorical_dtype(series)
+    )
+
+
+def _is_feature_policy_id_like(column: str, series: Any, frame_pd: Any) -> bool:
+    name = str(column or "").strip().lower()
+    if name in {"row_id", "source_row_id", "order_id"}:
+        return True
+    if name == "id" or name.endswith("_id"):
+        return _is_string_like_series(frame_pd, series)
+    return False
+
+
+def _string_cardinality(series: Any) -> tuple[int, float, int]:
+    non_null = series.dropna()
+    count = int(non_null.shape[0])
+    unique_count = int(non_null.nunique(dropna=True))
+    ratio = float(unique_count) / float(max(1, count))
+    return unique_count, ratio, count
+
+
+def _derived_feature_frame(
+    frame_pd: Any,
+    source_df: Any,
+    scan_config: dict[str, Any],
+    *,
+    exclude_target: str,
+) -> tuple[Any, list[str]]:
+    derived: dict[str, Any] = {}
+    for rule in list(scan_config.get("consistency_rules", [])):
+        if str(rule.get("type")) != "lte":
+            continue
+        left_col = str(rule.get("left_col") or "").strip()
+        right_col = str(rule.get("right_col") or "").strip()
+        if not left_col or not right_col or left_col not in source_df.columns or right_col not in source_df.columns:
+            continue
+        if left_col == exclude_target or right_col == exclude_target:
+            continue
+        feature_name = f"{right_col}_minus_{left_col}"
+        if feature_name in source_df.columns or feature_name in derived:
+            continue
+        left_numeric = frame_pd.to_numeric(source_df[left_col], errors="coerce")
+        right_numeric = frame_pd.to_numeric(source_df[right_col], errors="coerce")
+        if int(left_numeric.notna().sum()) > 0 and int(right_numeric.notna().sum()) > 0:
+            derived[feature_name] = right_numeric - left_numeric
+            continue
+        left_time = frame_pd.to_datetime(source_df[left_col], errors="coerce")
+        right_time = frame_pd.to_datetime(source_df[right_col], errors="coerce")
+        if int(left_time.notna().sum()) > 0 and int(right_time.notna().sum()) > 0:
+            derived[feature_name] = (right_time - left_time).dt.total_seconds()
+    if not derived:
+        return source_df, []
+    derived_df = source_df.copy(deep=False)
+    derived_names: list[str] = []
+    for name, values in derived.items():
+        derived_df[name] = values
+        derived_names.append(name)
+    return derived_df, derived_names
+
+
+def _resolve_feature_columns(
+    frame_pd: Any,
+    source_df: Any,
+    target_column: str,
+    scan_config: dict[str, Any],
+    feature_policy: dict[str, Any],
+) -> tuple[Any, list[str], dict[str, Any]]:
+    policy_mode = str(feature_policy.get("mode", "auto") or "auto")
+    working_df, derived_columns = _derived_feature_frame(
+        frame_pd,
+        source_df,
+        scan_config,
+        exclude_target=target_column,
+    )
+    original_candidates = [str(column) for column in list(source_df.columns) if str(column) != target_column]
+    candidates = [str(column) for column in list(working_df.columns) if str(column) != target_column]
+    include_columns = [column for column in list(feature_policy.get("include_columns", [])) if column in candidates]
+    explicit_excludes = {str(column) for column in list(feature_policy.get("exclude_columns", []))}
+    excluded: list[str] = []
+    selected: list[str] = []
+    max_unique = int(feature_policy.get("max_string_unique", DEFAULT_FEATURE_CARDINALITY_LIMIT))
+    max_ratio = float(feature_policy.get("max_string_unique_ratio", DEFAULT_FEATURE_UNIQUE_RATIO_LIMIT))
+    for column in candidates:
+        if include_columns and column not in include_columns:
+            continue
+        if column in explicit_excludes:
+            excluded.append(column)
+            continue
+        if policy_mode == "all" or column in derived_columns:
+            selected.append(column)
+            continue
+        series = working_df[column]
+        if _is_feature_policy_id_like(column, series, frame_pd):
+            excluded.append(column)
+            continue
+        if _is_string_like_series(frame_pd, series):
+            unique_count, unique_ratio, non_null_count = _string_cardinality(series)
+            ratio_is_high = non_null_count >= 100 and unique_ratio > max_ratio and unique_count > max(8, max_unique // 2)
+            if unique_count > max_unique or ratio_is_high:
+                excluded.append(column)
+                continue
+        selected.append(column)
+    if not selected and candidates:
+        for column in candidates:
+            if column not in explicit_excludes:
+                selected.append(column)
+                break
+    evidence = {
+        "feature_count_before": int(len(original_candidates)),
+        "feature_count_after": int(len(selected)),
+        "excluded_feature_columns": excluded,
+        "derived_feature_columns": derived_columns,
+        "feature_policy_mode": policy_mode,
+    }
+    return working_df, selected, evidence
+
+
+def _limit_encoded_features(
+    frame_pd: Any,
+    encoded: Any,
+    max_features: int,
+) -> tuple[Any, int, bool]:
+    before_count = int(encoded.shape[1])
+    if before_count <= int(max_features):
+        return encoded, before_count, False
+    variances = encoded.var(axis=0).sort_values(ascending=False)
+    keep_columns = [str(column) for column in list(variances.index[: int(max_features)])]
+    return encoded.loc[:, keep_columns], before_count, True
 
 
 def _scan_config_from_payload(payload: dict[str, Any]) -> dict[str, Any]:
@@ -2121,6 +2563,8 @@ def _gower_strategy_from_payload(payload: dict[str, Any]) -> dict[str, Any]:
         "feature_weights": raw.get("feature_weights"),
         "preview_limit": _to_positive_int(raw, "preview_limit", default=5, minimum=1, maximum=50),
         "candidate_policy": str(raw.get("candidate_policy", "auto") or "auto").strip().lower(),
+        "candidate_prefilter_policy": str(raw.get("candidate_prefilter_policy", "auto_bucket") or "auto_bucket").strip().lower(),
+        "feature_column_policy": _feature_policy_from_raw(raw.get("feature_column_policy")),
         "auto_max_candidates": _to_positive_int(
             raw,
             "auto_max_candidates",
@@ -2147,6 +2591,15 @@ def _gower_strategy_from_payload(payload: dict[str, Any]) -> dict[str, Any]:
             code=ErrorCode.INVALID_INPUT,
             message="gower_strategy.candidate_policy must be auto/sample/full",
             details={"field": "gower_strategy.candidate_policy", "value": strategy["candidate_policy"]},
+        )
+    if strategy["candidate_prefilter_policy"] not in {"auto_bucket", "off"}:
+        raise KnownEngineError(
+            code=ErrorCode.INVALID_INPUT,
+            message="gower_strategy.candidate_prefilter_policy must be auto_bucket/off",
+            details={
+                "field": "gower_strategy.candidate_prefilter_policy",
+                "value": strategy["candidate_prefilter_policy"],
+            },
         )
     if strategy["weight_mode"] not in {"uniform", "model_importance", "custom"}:
         raise KnownEngineError(
@@ -2273,6 +2726,47 @@ def _limit_gower_candidate_rows(
     return sampled, pool_size, sample_size, True, selection_mode
 
 
+def _gower_prefilter_columns(frame_pd: Any, source_df: Any, feature_columns: list[str]) -> list[str]:
+    columns: list[str] = []
+    for column in feature_columns:
+        if column not in source_df.columns:
+            continue
+        series = source_df[column]
+        if not _is_string_like_series(frame_pd, series):
+            continue
+        unique_count, _, _ = _string_cardinality(series)
+        if 1 < unique_count <= DEFAULT_FEATURE_CARDINALITY_LIMIT:
+            columns.append(column)
+        if len(columns) >= 2:
+            break
+    return columns
+
+
+def _prefilter_gower_candidates(
+    frame_pd: Any,
+    candidate_rows: Any,
+    query_row: Any,
+    prefilter_columns: list[str],
+    *,
+    min_candidates: int,
+) -> tuple[Any, list[str], int, int]:
+    original_size = int(len(candidate_rows))
+    filtered = candidate_rows
+    used_columns: list[str] = []
+    for column in prefilter_columns:
+        if column not in filtered.columns or column not in query_row.index:
+            continue
+        value = query_row[column]
+        if bool(frame_pd.isna(value)):
+            continue
+        candidate = filtered.loc[filtered[column] == value]
+        if int(len(candidate)) < int(min_candidates):
+            continue
+        filtered = candidate
+        used_columns.append(column)
+    return filtered, used_columns, original_size, int(len(filtered))
+
+
 def _missforest_strategy_from_payload(payload: dict[str, Any]) -> dict[str, Any]:
     raw = payload.get("missforest_strategy", {})
     if raw is None:
@@ -2339,6 +2833,7 @@ def _missforest_strategy_from_payload(payload: dict[str, Any]) -> dict[str, Any]
         ),
         "max_features": resolved_max_features,
         "preview_limit": _to_positive_int(raw, "preview_limit", default=5, minimum=1, maximum=50),
+        "feature_column_policy": _feature_policy_from_raw(raw.get("feature_column_policy")),
     }
 
 
@@ -2358,6 +2853,8 @@ def _missforest_feature_matrices(
     feature_columns: list[str],
     train_rows: Any,
     predict_rows: Any,
+    *,
+    max_encoded_features: int | None = None,
 ) -> tuple[Any, Any]:
     if not feature_columns:
         train_features = frame_pd.DataFrame({"__constant__": [1.0] * int(len(train_rows))})
@@ -2385,6 +2882,8 @@ def _missforest_feature_matrices(
     if encoded.shape[1] == 0:
         encoded = frame_pd.DataFrame({"__constant__": [1.0] * int(combined.shape[0])})
     encoded = encoded.astype(float)
+    if max_encoded_features is not None:
+        encoded, _, _ = _limit_encoded_features(frame_pd, encoded, int(max_encoded_features))
     train_count = int(len(train_rows))
     return encoded.iloc[:train_count, :], encoded.iloc[train_count:, :]
 
@@ -2427,6 +2926,7 @@ def _missforest_predict_issue(
     issue: dict[str, Any],
     mask: Any,
     positions: list[int],
+    scan_config: dict[str, Any],
     strategy: dict[str, Any],
     random_forest_regressor: Any,
     random_forest_classifier: Any,
@@ -2459,9 +2959,23 @@ def _missforest_predict_issue(
             },
         )
 
-    predict_rows = original_df.iloc[positions]
-    feature_columns = [str(name) for name in list(original_df.columns) if str(name) != column]
-    x_train, x_pred = _missforest_feature_matrices(frame_pd, original_df, feature_columns, train_rows, predict_rows)
+    feature_df, feature_columns, feature_policy_evidence = _resolve_feature_columns(
+        frame_pd,
+        original_df,
+        column,
+        scan_config,
+        dict(strategy.get("feature_column_policy", {})),
+    )
+    train_rows = feature_df.loc[train_rows.index]
+    predict_rows = feature_df.iloc[positions]
+    x_train, x_pred = _missforest_feature_matrices(
+        frame_pd,
+        feature_df,
+        feature_columns,
+        train_rows,
+        predict_rows,
+        max_encoded_features=int(strategy["feature_column_policy"]["max_encoded_features"]),
+    )
     if is_numeric:
         y_train = frame_pd.to_numeric(train_rows[column], errors="coerce")
         valid_mask = y_train.notna()
@@ -2551,6 +3065,7 @@ def _missforest_predict_issue(
         "max_iter": int(strategy["max_iter"]),
         "convergence_tolerance": float(strategy["convergence_tolerance"]),
     }
+    evidence.update(feature_policy_evidence)
     return changes, evidence
 
 
@@ -2608,6 +3123,45 @@ def _missforest_initialize_working_frame(frame_pd: Any, original_df: Any, target
     return working_df
 
 
+def _missforest_initialize_compact_working_frame(
+    frame_pd: Any,
+    original_df: Any,
+    row_positions: list[int],
+    target_local_positions_by_column: dict[str, list[int]],
+) -> Any:
+    working_df = original_df.iloc[row_positions].copy(deep=True)
+    working_df.index = range(int(working_df.shape[0]))
+    column_positions = {str(column): idx for idx, column in enumerate(list(working_df.columns))}
+    for column, local_positions in target_local_positions_by_column.items():
+        if column not in column_positions:
+            continue
+        col_pos = int(column_positions[column])
+        if frame_pd.api.types.is_numeric_dtype(original_df[column]):
+            fill_missing = np.nan if np is not None else None
+        else:
+            fill_missing = None
+        for local_pos in local_positions:
+            working_df.iat[int(local_pos), col_pos] = fill_missing
+
+    for column in list(working_df.columns):
+        if frame_pd.api.types.is_numeric_dtype(original_df[column]):
+            values = frame_pd.to_numeric(working_df[column], errors="coerce")
+            non_null = values.dropna()
+            fill_value = float(non_null.median()) if int(non_null.shape[0]) > 0 else 0.0
+            working_df[column] = values.fillna(fill_value)
+            continue
+
+        values = working_df[column].astype("object")
+        non_null = values.dropna()
+        if int(non_null.shape[0]) > 0:
+            mode_values = non_null.mode(dropna=True)
+            fill_value = mode_values.iloc[0] if not mode_values.empty else non_null.iloc[0]
+        else:
+            fill_value = "__MISSING__"
+        working_df[column] = values.where(values.notna(), fill_value)
+    return working_df
+
+
 def _missforest_convergence_delta(
     frame_pd: Any,
     original_df: Any,
@@ -2642,6 +3196,7 @@ def _missforest_predict_iterative(
     selected_issues: list[dict[str, Any]],
     issue_masks: dict[str, Any],
     issue_positions: dict[str, list[int]],
+    scan_config: dict[str, Any],
     strategy: dict[str, Any],
     random_forest_regressor: Any,
     random_forest_classifier: Any,
@@ -2665,7 +3220,6 @@ def _missforest_predict_iterative(
     for column, mask in target_masks_by_column.items():
         target_positions_by_column[column] = [idx for idx, flag in enumerate(mask.tolist()) if bool(flag)]
 
-    working_df = _missforest_initialize_working_frame(frame_pd, original_df, target_masks_by_column)
     row_count = max(1, int(original_df.shape[0]))
     target_columns = sorted(
         target_positions_by_column.keys(),
@@ -2676,12 +3230,61 @@ def _missforest_predict_iterative(
 
     column_meta: dict[str, dict[str, Any]] = {}
     skipped_columns: dict[str, dict[str, Any]] = {}
+    sample_positions_by_column: dict[str, list[int]] = {}
+    train_stats_by_column: dict[str, tuple[int, int, bool]] = {}
+    compact_positions_set: set[int] = set()
+    for column in target_columns:
+        positions = target_positions_by_column.get(column, [])
+        if not positions:
+            continue
+        target_mask = target_masks_by_column[column]
+        series = original_df[column]
+        is_numeric = bool(frame_pd.api.types.is_numeric_dtype(series))
+        train_mask = (~target_mask) & series.notna()
+        if is_numeric:
+            numeric_series = frame_pd.to_numeric(series, errors="coerce")
+            train_mask = train_mask & numeric_series.notna()
+        train_positions = [idx for idx, flag in enumerate(train_mask.tolist()) if bool(flag)]
+        sample_positions, train_pool_size, train_sample_size, train_sampled = _limit_missforest_training_positions(
+            frame_pd,
+            train_positions,
+            strategy,
+            issue_id=f"{column}::iterative",
+            column=column,
+        )
+        if int(len(sample_positions)) < int(strategy["min_training_rows"]):
+            skipped_columns[column] = {
+                "reason": "missforest_training_unavailable",
+                "column": column,
+                "train_rows": int(len(sample_positions)),
+                "min_training_rows": int(strategy["min_training_rows"]),
+            }
+            continue
+        sample_positions_by_column[column] = sample_positions
+        train_stats_by_column[column] = (int(train_pool_size), int(train_sample_size), bool(train_sampled))
+        compact_positions_set.update(int(pos) for pos in sample_positions)
+        compact_positions_set.update(int(pos) for pos in positions)
+
+    compact_positions = sorted(compact_positions_set)
+    position_to_local = {int(pos): idx for idx, pos in enumerate(compact_positions)}
+    target_local_positions_by_column = {
+        column: [position_to_local[int(pos)] for pos in positions if int(pos) in position_to_local]
+        for column, positions in target_positions_by_column.items()
+    }
+    sample_local_positions_by_column = {
+        column: [position_to_local[int(pos)] for pos in positions if int(pos) in position_to_local]
+        for column, positions in sample_positions_by_column.items()
+    }
+    working_df = _missforest_initialize_compact_working_frame(
+        frame_pd,
+        original_df,
+        compact_positions,
+        target_local_positions_by_column,
+    )
     convergence_delta = 0.0
     converged = False
     iterations_run = 0
-    feature_columns_by_target = {
-        column: [str(name) for name in list(original_df.columns) if str(name) != column] for column in target_columns
-    }
+    feature_policy_evidence_by_target: dict[str, dict[str, Any]] = {}
 
     for iteration_idx in range(int(strategy["max_iter"])):
         previous_df = working_df.copy(deep=True)
@@ -2689,40 +3292,35 @@ def _missforest_predict_iterative(
             if column in skipped_columns:
                 continue
             positions = target_positions_by_column.get(column, [])
-            if not positions:
+            local_positions = target_local_positions_by_column.get(column, [])
+            sample_positions = sample_positions_by_column.get(column, [])
+            sample_local_positions = sample_local_positions_by_column.get(column, [])
+            if not positions or not local_positions or not sample_positions or not sample_local_positions:
                 continue
-            target_mask = target_masks_by_column[column]
             series = original_df[column]
             is_numeric = bool(frame_pd.api.types.is_numeric_dtype(series))
-            train_mask = (~target_mask) & series.notna()
-            if is_numeric:
-                numeric_series = frame_pd.to_numeric(series, errors="coerce")
-                train_mask = train_mask & numeric_series.notna()
-            train_positions = [idx for idx, flag in enumerate(train_mask.tolist()) if bool(flag)]
-            sample_positions, train_pool_size, train_sample_size, train_sampled = _limit_missforest_training_positions(
-                frame_pd,
-                train_positions,
-                strategy,
-                issue_id=f"{column}::iterative",
-                column=column,
+            train_pool_size, train_sample_size, train_sampled = train_stats_by_column.get(
+                column,
+                (int(len(sample_positions)), int(len(sample_positions)), False),
             )
-            if int(len(sample_positions)) < int(strategy["min_training_rows"]):
-                skipped_columns[column] = {
-                    "reason": "missforest_training_unavailable",
-                    "column": column,
-                    "train_rows": int(len(sample_positions)),
-                    "min_training_rows": int(strategy["min_training_rows"]),
-                }
-                continue
 
-            train_rows = working_df.iloc[sample_positions]
-            predict_rows = working_df.iloc[positions]
-            x_train, x_pred = _missforest_feature_matrices(
+            feature_df, feature_columns, feature_policy_evidence = _resolve_feature_columns(
                 frame_pd,
                 working_df,
-                feature_columns_by_target[column],
+                column,
+                scan_config,
+                dict(strategy.get("feature_column_policy", {})),
+            )
+            feature_policy_evidence_by_target[column] = feature_policy_evidence
+            train_rows = feature_df.iloc[sample_local_positions]
+            predict_rows = feature_df.iloc[local_positions]
+            x_train, x_pred = _missforest_feature_matrices(
+                frame_pd,
+                feature_df,
+                feature_columns,
                 train_rows,
                 predict_rows,
+                max_encoded_features=int(strategy["feature_column_policy"]["max_encoded_features"]),
             )
             model_random_state = (int(strategy["random_state"]) + iteration_idx) % 2_147_483_647
             if is_numeric:
@@ -2776,8 +3374,8 @@ def _missforest_predict_iterative(
                 model_type = "random_forest_classifier"
 
             col_pos = int(list(working_df.columns).index(column))
-            for idx, pos in enumerate(positions):
-                working_df.iat[int(pos), col_pos] = predictions[idx]
+            for idx, local_pos in enumerate(local_positions):
+                working_df.iat[int(local_pos), col_pos] = predictions[idx]
             column_meta[column] = {
                 "algorithm_mode": "iterative",
                 "model_type": model_type,
@@ -2785,10 +3383,13 @@ def _missforest_predict_iterative(
                 "train_pool_size": int(train_pool_size),
                 "train_sample_size": int(train_sample_size),
                 "train_sampled": bool(train_sampled),
+                "compact_working_frame": True,
+                "working_row_count": int(working_df.shape[0]),
                 "candidate_confidence": confidence,
                 "n_estimators": int(strategy["n_estimators"]),
                 "max_train_rows": int(strategy["max_train_rows"]),
             }
+            column_meta[column].update(feature_policy_evidence_by_target.get(column, {}))
 
         iterations_run = iteration_idx + 1
         convergence_delta = _missforest_convergence_delta(
@@ -2798,7 +3399,7 @@ def _missforest_predict_iterative(
             working_df,
             {
                 column: positions
-                for column, positions in target_positions_by_column.items()
+                for column, positions in target_local_positions_by_column.items()
                 if column not in skipped_columns
             },
         )
@@ -2830,8 +3431,11 @@ def _missforest_predict_iterative(
         issue_changes: list[dict[str, Any]] = []
         col_pos = int(list(original_df.columns).index(column))
         for pos in issue_positions.get(issue_id, []):
+            local_pos = position_to_local.get(int(pos))
+            if local_pos is None:
+                continue
             before_value = original_df[column].iat[int(pos)]
-            after_value = working_df[column].iat[int(pos)]
+            after_value = working_df[column].iat[int(local_pos)]
             before_is_nan = bool(frame_pd.isna(before_value))
             after_is_nan = bool(frame_pd.isna(after_value))
             if (before_is_nan and after_is_nan) or (
@@ -2890,6 +3494,14 @@ def action_scan_file(payload: dict[str, Any]) -> dict[str, Any]:
     csv_path = _require(payload, "csv_path")
     scan_config = _scan_config_from_payload(payload)
     max_bins = int(scan_config["max_bins"])
+    scan_scope = str(payload.get("scan_scope") or "full").strip().lower()
+    if scan_scope not in {"full", "affected_columns"}:
+        raise KnownEngineError(
+            code=ErrorCode.INVALID_INPUT,
+            message="Field scan_scope must be full/affected_columns",
+            details={"field": "scan_scope", "value": scan_scope},
+        )
+    requested_affected_columns = _to_string_list(payload, "affected_columns", default=[])
 
     csv_file = _resolve_input_csv(str(csv_path))
     if not csv_file.exists():
@@ -2910,7 +3522,7 @@ def action_scan_file(payload: dict[str, Any]) -> dict[str, Any]:
 
     _emit_stage_progress("scan_file", "load_csv", "start", 14, "开始读取待扫描文件", file=str(csv_file))
     try:
-        df = frame_pd.read_csv(csv_file)
+        df, csv_read_evidence = _read_csv_optimized(frame_pd, csv_file)
     except Exception as exc:
         _emit_stage_progress(
             "scan_file",
@@ -2939,8 +3551,28 @@ def action_scan_file(payload: dict[str, Any]) -> dict[str, Any]:
     )
 
     _emit_stage_progress("scan_file", "scan_columns", "start", 42, "开始扫描列级异常", file=str(csv_file))
+    effective_affected_columns: list[str] = []
+    scan_df = df
+    if scan_scope == "affected_columns":
+        requested_set = {str(column) for column in requested_affected_columns}
+        effective_affected_columns = [str(column) for column in list(df.columns) if str(column) in requested_set]
+        if not effective_affected_columns:
+            raise KnownEngineError(
+                code=ErrorCode.INVALID_INPUT,
+                message="Field affected_columns must include at least one existing column when scan_scope=affected_columns",
+                details={
+                    "field": "affected_columns",
+                    "requested": requested_affected_columns,
+                    "available_columns": [str(column) for column in list(df.columns)],
+                },
+            )
+        scan_df = df[effective_affected_columns]
+        scan_config = dict(scan_config)
+        scan_config["enable_duplicate_record"] = False
+        scan_config["enable_cross_column_consistency"] = False
+
     try:
-        issues_internal = _detect_issues_for_frame(df, frame_pd, scan_config=scan_config)
+        issues_internal = _detect_issues_for_frame(scan_df, frame_pd, scan_config=scan_config)
     except KnownEngineError:
         raise
     except Exception as exc:
@@ -2969,10 +3601,10 @@ def action_scan_file(payload: dict[str, Any]) -> dict[str, Any]:
         issue_count=int(len(issues_internal)),
     )
 
-    row_count = int(df.shape[0])
+    row_count = int(scan_df.shape[0])
     issue_type_counts = _issue_type_counter(issues_internal)
-    column_names = [str(col) for col in list(df.columns)]
-    column_masks: dict[str, Any] = {col: frame_pd.Series(False, index=df.index, dtype=bool) for col in column_names}
+    column_names = [str(col) for col in list(scan_df.columns)]
+    column_masks: dict[str, Any] = {col: frame_pd.Series(False, index=scan_df.index, dtype=bool) for col in column_names}
     issue_counts_by_column: dict[str, int] = {col: 0 for col in column_names}
     issue_score_by_column: dict[str, float] = {col: 0.0 for col in column_names}
     issue_types_by_column: dict[str, list[str]] = {col: [] for col in column_names}
@@ -2982,7 +3614,7 @@ def action_scan_file(payload: dict[str, Any]) -> dict[str, Any]:
         column = str(issue["column"])
         mask = issue["mask"]
         if column not in column_masks:
-            column_masks[column] = frame_pd.Series(False, index=df.index, dtype=bool)
+            column_masks[column] = frame_pd.Series(False, index=scan_df.index, dtype=bool)
         column_masks[column] = column_masks[column] | mask
         issue_counts_by_column[column] = issue_counts_by_column.get(column, 0) + 1
         issue_score_by_column[column] = float(issue_score_by_column.get(column, 0.0)) + float(issue["issue_score"])
@@ -3020,9 +3652,9 @@ def action_scan_file(payload: dict[str, Any]) -> dict[str, Any]:
     column_thumbnails: list[dict[str, Any]] = []
     anomaly_columns: list[str] = []
 
-    for raw_col in list(df.columns):
+    for raw_col in list(scan_df.columns):
         column = str(raw_col)
-        series = df[raw_col]
+        series = scan_df[raw_col]
         missing_count = int(series.isna().sum())
         missing_ratio = float(missing_count) / float(row_count) if row_count > 0 else 0.0
         dtype_text = str(series.dtype)
@@ -3115,10 +3747,13 @@ def action_scan_file(payload: dict[str, Any]) -> dict[str, Any]:
     return _to_builtin(
         {
             "csv_path": str(csv_file),
+            "csv_read_evidence": csv_read_evidence,
+            "scan_scope": scan_scope,
+            "affected_columns": effective_affected_columns,
             "scan_config": scan_config,
             "data_profile": {
                 "rows": row_count,
-                "columns": int(df.shape[1]),
+                "columns": int(scan_df.shape[1]),
             },
             "column_profiles": column_profiles,
             "column_thumbnails": column_thumbnails,
@@ -3646,7 +4281,7 @@ def action_repair_batch(payload: dict[str, Any]) -> dict[str, Any]:
 
     _emit_stage_progress("repair_batch", "load_csv", "start", 12, "开始读取待修复文件", file=str(csv_file))
     try:
-        df = frame_pd.read_csv(csv_file)
+        df, csv_read_evidence = _read_csv_optimized(frame_pd, csv_file)
     except Exception as exc:
         _emit_stage_progress(
             "repair_batch",
@@ -3696,9 +4331,19 @@ def action_repair_batch(payload: dict[str, Any]) -> dict[str, Any]:
             precomputed_issues_used=bool(precomputed_issues_used),
         )
         issue_map = {str(item["issue_id"]): item for item in issues_internal}
+        write_strategy_used = _write_strategy_from_payload(payload, csv_file=csv_file, write_output=write_output)
+        comparison_mode_used, comparison_exact = _comparison_mode_from_payload(
+            payload,
+            csv_file=csv_file,
+            row_count=int(df.shape[0]),
+            plan_only=plan_only,
+            write_output=write_output,
+            write_strategy_used=write_strategy_used,
+        )
+        build_repaired_df = bool(comparison_exact or write_strategy_used == "pandas_full")
 
-        original_df = df.copy(deep=True)
-        repaired_df = df.copy(deep=True)
+        original_df = df
+        repaired_df = df.copy(deep=True) if build_repaired_df else None
         applied_repairs: list[dict[str, Any]] = []
         skipped_issues: list[dict[str, Any]] = []
         skipped_ids: set[str] = set()
@@ -3728,7 +4373,7 @@ def action_repair_batch(payload: dict[str, Any]) -> dict[str, Any]:
                 continue
 
             column = str(issue["column"])
-            if column not in repaired_df.columns:
+            if column not in df.columns:
                 add_skip(issue_id, "column_not_found")
                 continue
             selected_issues.append(issue)
@@ -3754,7 +4399,7 @@ def action_repair_batch(payload: dict[str, Any]) -> dict[str, Any]:
             remaining_by_column[col] = remaining_by_column.get(col, 0) + 1
         completed_columns: set[str] = set()
 
-        column_position = {str(col): idx for idx, col in enumerate(repaired_df.columns)}
+        column_position = {str(col): idx for idx, col in enumerate(df.columns)}
         conflict_policy = str(repair_strategy["conflict_policy"])
         preview_limit = int(repair_strategy["preview_limit"])
         cell_plan: dict[tuple[int, str], dict[str, Any]] = {}
@@ -3927,10 +4572,15 @@ def action_repair_batch(payload: dict[str, Any]) -> dict[str, Any]:
             if remaining_by_column.get(column, 0) <= 0:
                 completed_columns.add(column)
 
-        for proposal in cell_plan.values():
-            repaired_df.iat[int(proposal["row_pos"]), int(proposal["col_pos"])] = proposal["after"]
+        if repaired_df is not None:
+            for proposal in cell_plan.values():
+                repaired_df.iat[int(proposal["row_pos"]), int(proposal["col_pos"])] = proposal["after"]
 
-        post_issues_internal = _detect_issues_for_frame(repaired_df, frame_pd, scan_config=scan_config)
+        post_issues_internal = (
+            _detect_issues_for_frame(repaired_df, frame_pd, scan_config=scan_config)
+            if comparison_exact and repaired_df is not None
+            else None
+        )
         _emit_stage_progress(
             "repair_batch",
             "apply_repairs",
@@ -3940,11 +4590,6 @@ def action_repair_batch(payload: dict[str, Any]) -> dict[str, Any]:
             file=str(csv_file),
             changed_cells=int(len(cell_plan)),
         )
-        before_issue_type_counts = _issue_type_counter(issues_internal)
-        after_issue_type_counts = _issue_type_counter(post_issues_internal)
-        before_issue_column_counts = _issue_counter_by_column(issues_internal)
-        after_issue_column_counts = _issue_counter_by_column(post_issues_internal)
-
         changes_by_issue: dict[str, list[dict[str, Any]]] = {}
         for proposal in cell_plan.values():
             issue_id = str(proposal["issue_id"])
@@ -3973,8 +4618,11 @@ def action_repair_batch(payload: dict[str, Any]) -> dict[str, Any]:
 
             rule = issue.get("repair_rule", {})
             before_count = int(issue.get("count", issue_raw_counts.get(issue_id, rows_touched)))
-            after_mask = _issue_mask_from_rule(repaired_df[column], issue_type, rule, frame_pd)
-            after_count = int(after_mask.sum())
+            if comparison_exact and repaired_df is not None:
+                after_mask = _issue_mask_from_rule(repaired_df[column], issue_type, rule, frame_pd)
+                after_count = int(after_mask.sum())
+            else:
+                after_count = max(0, before_count - rows_touched)
             resolved_count = max(0, before_count - after_count)
             cells_preview = [
                 {
@@ -4040,6 +4688,7 @@ def action_repair_batch(payload: dict[str, Any]) -> dict[str, Any]:
 
     output_csv: str | None = None
     rollback_info: dict[str, Any] | None = None
+    streaming_replaced_cell_count = 0
     if write_output:
         _emit_stage_progress("repair_batch", "write_output", "start", 86, "开始写出修复结果", file=str(csv_file))
         output_csv_raw = str(payload.get("output_csv") or "").strip()
@@ -4075,13 +4724,25 @@ def action_repair_batch(payload: dict[str, Any]) -> dict[str, Any]:
                 },
             )
 
-        repaired_df.to_csv(output_path, index=False)
+        if write_strategy_used == "streaming":
+            streaming_replaced_cell_count = _write_repaired_csv_streaming(
+                frame_pd,
+                csv_file,
+                output_path,
+                cell_plan,
+                chunk_size=DEFAULT_STREAMING_CHUNK_SIZE,
+            )
+        else:
+            if repaired_df is None:
+                repaired_df = df.copy(deep=True)
+                for proposal in cell_plan.values():
+                    repaired_df.iat[int(proposal["row_pos"]), int(proposal["col_pos"])] = proposal["after"]
+            repaired_df.to_csv(output_path, index=False)
         output_csv = str(output_path)
         _emit_stage_progress("repair_batch", "write_output", "complete", 96, "修复结果写出完成", file=str(output_csv))
 
     total_cells_modified = int(len(cell_plan))
     before_issue_count = int(len(issues_internal))
-    after_issue_count = int(len(post_issues_internal))
     changed_cells_preview = [
         {
             "row": _index_to_builtin(change["row"]),
@@ -4105,6 +4766,7 @@ def action_repair_batch(payload: dict[str, Any]) -> dict[str, Any]:
     return _to_builtin(
         {
             "csv_path": str(csv_file),
+            "csv_read_evidence": csv_read_evidence,
             "scan_config": scan_config,
             "repair_strategy": repair_strategy,
             "column_dependencies": column_dependencies,
@@ -4112,6 +4774,12 @@ def action_repair_batch(payload: dict[str, Any]) -> dict[str, Any]:
             "execution_mode": "plan_only" if plan_only else "apply",
             "write_output_requested": write_output_requested,
             "write_output": write_output,
+            "write_strategy_used": write_strategy_used,
+            "streaming_chunk_size": DEFAULT_STREAMING_CHUNK_SIZE if write_strategy_used == "streaming" else None,
+            "streaming_replaced_cell_count": streaming_replaced_cell_count,
+            "comparison_mode": comparison_mode_used,
+            "comparison_exact": bool(comparison_exact),
+            "post_scan_performed": bool(comparison_exact and post_issues_internal is not None),
             "precomputed_issues_used": bool(precomputed_issues_used),
             "output_csv": output_csv,
             "selected_issue_count": len(selected_issue_ids),
@@ -4126,17 +4794,14 @@ def action_repair_batch(payload: dict[str, Any]) -> dict[str, Any]:
                 "total_conflicts": len(conflict_events),
                 "events_preview": conflict_events[:preview_limit],
             },
-            "comparison": {
-                "before_issue_count": before_issue_count,
-                "after_issue_count": after_issue_count,
-                "resolved_issue_count": max(0, before_issue_count - after_issue_count),
-                "before_issue_type_counts": before_issue_type_counts,
-                "after_issue_type_counts": after_issue_type_counts,
-                "before_column_issue_counts": before_issue_column_counts,
-                "after_column_issue_counts": after_issue_column_counts,
-                "changed_cell_count": total_cells_modified,
-                "changed_cells_preview": changed_cells_preview,
-            },
+            "comparison": _comparison_from_cell_plan(
+                issues_internal,
+                post_issues_internal,
+                applied_repairs,
+                cell_plan,
+                exact=comparison_exact,
+                changed_cells_preview=changed_cells_preview,
+            ),
             "rollback": rollback_info,
         }
     )
@@ -4206,8 +4871,10 @@ def action_repair_with_gower(payload: dict[str, Any]) -> dict[str, Any]:
         )
 
     _emit_stage_progress("repair_with_gower", "load_csv", "start", 12, "开始读取待修复文件", file=str(csv_file))
+    write_strategy_used = _write_strategy_from_payload(payload, csv_file=csv_file, write_output=write_output)
+
     try:
-        df = frame_pd.read_csv(csv_file)
+        df, csv_read_evidence = _read_csv_optimized(frame_pd, csv_file)
     except Exception as exc:
         _emit_stage_progress(
             "repair_with_gower",
@@ -4257,8 +4924,17 @@ def action_repair_with_gower(payload: dict[str, Any]) -> dict[str, Any]:
             precomputed_issues_used=bool(precomputed_issues_used),
         )
         issue_map = {str(item["issue_id"]): item for item in issues_internal}
-        original_df = df.copy(deep=True)
-        repaired_df = df.copy(deep=True)
+        comparison_mode_used, comparison_exact = _comparison_mode_from_payload(
+            payload,
+            csv_file=csv_file,
+            row_count=int(df.shape[0]),
+            plan_only=plan_only,
+            write_output=write_output,
+            write_strategy_used=write_strategy_used,
+        )
+        build_repaired_df = bool(comparison_exact or write_strategy_used == "pandas_full")
+        original_df = df
+        repaired_df = df.copy(deep=True) if build_repaired_df else None
         preview_limit = int(gower_strategy["preview_limit"])
         supported_issue_types = {"missing_values", "numeric_outlier", "rare_category"}
         skipped_issues: list[dict[str, Any]] = []
@@ -4283,7 +4959,7 @@ def action_repair_with_gower(payload: dict[str, Any]) -> dict[str, Any]:
                 add_skip(issue_id, "issue_not_found")
                 continue
             column = str(issue["column"])
-            if column not in repaired_df.columns:
+            if column not in df.columns:
                 add_skip(issue_id, "column_not_found")
                 continue
             selected_issues.append(issue)
@@ -4334,17 +5010,24 @@ def action_repair_with_gower(payload: dict[str, Any]) -> dict[str, Any]:
             elif issue_type == "rare_category":
                 healthy_mask = healthy_mask & original_df[column].notna()
 
-            candidate_pool = original_df.loc[healthy_mask]
+            feature_df, feature_columns, feature_policy_evidence = _resolve_feature_columns(
+                frame_pd,
+                original_df,
+                column,
+                scan_config,
+                dict(gower_strategy.get("feature_column_policy", {})),
+            )
+            candidate_pool = feature_df.loc[healthy_mask]
             if candidate_pool.empty:
                 add_skip(issue_id, "no_healthy_neighbors", {"issue_type": issue_type, "column": column})
                 continue
 
-            feature_columns = [str(name) for name in repaired_df.columns if str(name) != column]
             feature_weights, effective_weight_mode = _resolve_gower_feature_weights(
                 feature_columns,
                 gower_strategy,
                 model_dir,
             )
+            prefilter_columns = _gower_prefilter_columns(frame_pd, feature_df, feature_columns)
 
             issue_changes: list[dict[str, Any]] = []
             mean_distances: list[float] = []
@@ -4356,6 +5039,8 @@ def action_repair_with_gower(payload: dict[str, Any]) -> dict[str, Any]:
             candidate_sample_sizes: list[int] = []
             candidate_limit_applied = False
             candidate_selection_modes: list[str] = []
+            prefilter_used_columns: list[str] = []
+            prefilter_pool_sizes: list[int] = []
 
             for pos in positions:
                 row_label = original_df.index[pos]
@@ -4365,6 +5050,18 @@ def action_repair_with_gower(payload: dict[str, Any]) -> dict[str, Any]:
                         candidate_rows = candidate_pool
                 else:
                     candidate_rows = candidate_pool
+                if str(gower_strategy["candidate_prefilter_policy"]) == "auto_bucket":
+                    candidate_rows, used_prefilter_columns, _, prefilter_pool_size = _prefilter_gower_candidates(
+                        frame_pd,
+                        candidate_rows,
+                        feature_df.iloc[pos],
+                        prefilter_columns,
+                        min_candidates=DEFAULT_GOWER_BUCKET_MIN_CANDIDATES,
+                    )
+                    prefilter_pool_sizes.append(prefilter_pool_size)
+                    for used_column in used_prefilter_columns:
+                        if used_column not in prefilter_used_columns:
+                            prefilter_used_columns.append(used_column)
                 candidate_rows, pool_size, sample_size, limit_applied, selection_mode = _limit_gower_candidate_rows(
                     candidate_rows,
                     gower_strategy.get("max_candidates"),
@@ -4383,7 +5080,7 @@ def action_repair_with_gower(payload: dict[str, Any]) -> dict[str, Any]:
                 try:
                     suggestion = suggest_replacement_from_neighbors(
                         candidate_rows,
-                        original_df.iloc[[pos]],
+                        feature_df.iloc[[pos]],
                         column,
                         feature_columns=feature_columns,
                         k_neighbors=int(gower_strategy["k_neighbors"]),
@@ -4407,7 +5104,7 @@ def action_repair_with_gower(payload: dict[str, Any]) -> dict[str, Any]:
                     "column": column,
                     "row_pos": pos,
                     "row": _index_to_builtin(original_df.index[pos]),
-                    "col_pos": int(list(repaired_df.columns).index(column)),
+                    "col_pos": int(list(df.columns).index(column)),
                     "before": before_value,
                     "after": after_value,
                 }
@@ -4427,8 +5124,9 @@ def action_repair_with_gower(payload: dict[str, Any]) -> dict[str, Any]:
                 add_skip(issue_id, "no_healthy_neighbors", {"issue_type": issue_type, "column": column})
                 continue
 
-            for proposal in issue_changes:
-                repaired_df.iat[int(proposal["row_pos"]), int(proposal["col_pos"])] = proposal["after"]
+            if repaired_df is not None:
+                for proposal in issue_changes:
+                    repaired_df.iat[int(proposal["row_pos"]), int(proposal["col_pos"])] = proposal["after"]
 
             unique_replacements: list[Any] = []
             for item in replacement_values:
@@ -4466,7 +5164,11 @@ def action_repair_with_gower(payload: dict[str, Any]) -> dict[str, Any]:
                 "candidate_selection_mode": candidate_selection_modes[0] if len(candidate_selection_modes) == 1 else candidate_selection_modes,
                 "auto_max_candidates": int(gower_strategy["auto_max_candidates"]),
                 "full_scan_threshold": int(gower_strategy["full_scan_threshold"]),
+                "prefilter_mode": str(gower_strategy["candidate_prefilter_policy"]),
+                "prefilter_columns": prefilter_used_columns,
+                "prefilter_pool_size": min(prefilter_pool_sizes) if prefilter_pool_sizes else 0,
             }
+            issue_evidence[issue_id].update(feature_policy_evidence)
 
         _emit_stage_progress(
             "repair_with_gower",
@@ -4478,11 +5180,11 @@ def action_repair_with_gower(payload: dict[str, Any]) -> dict[str, Any]:
             changed_cells=int(len(cell_plan)),
         )
 
-        post_issues_internal = _detect_issues_for_frame(repaired_df, frame_pd, scan_config=scan_config)
-        before_issue_type_counts = _issue_type_counter(issues_internal)
-        after_issue_type_counts = _issue_type_counter(post_issues_internal)
-        before_issue_column_counts = _issue_counter_by_column(issues_internal)
-        after_issue_column_counts = _issue_counter_by_column(post_issues_internal)
+        post_issues_internal = (
+            _detect_issues_for_frame(repaired_df, frame_pd, scan_config=scan_config)
+            if comparison_exact and repaired_df is not None
+            else None
+        )
         applied_repairs: list[dict[str, Any]] = []
         neighbor_evidence: list[dict[str, Any]] = []
 
@@ -4497,8 +5199,11 @@ def action_repair_with_gower(payload: dict[str, Any]) -> dict[str, Any]:
                 continue
             rule = issue.get("repair_rule", {})
             before_count = int(issue.get("count", len(issue_changes)))
-            after_mask = _issue_mask_from_rule(repaired_df[column], issue_type, rule, frame_pd)
-            after_count = int(after_mask.sum())
+            if comparison_exact and repaired_df is not None:
+                after_mask = _issue_mask_from_rule(repaired_df[column], issue_type, rule, frame_pd)
+                after_count = int(after_mask.sum())
+            else:
+                after_count = max(0, before_count - len(issue_changes))
             resolved_count = max(0, before_count - after_count)
             evidence = issue_evidence.get(issue_id, {})
             applied_repairs.append(
@@ -4550,6 +5255,7 @@ def action_repair_with_gower(payload: dict[str, Any]) -> dict[str, Any]:
 
     output_csv: str | None = None
     rollback_info: dict[str, Any] | None = None
+    streaming_replaced_cell_count = 0
     if write_output:
         _emit_stage_progress("repair_with_gower", "write_output", "start", 84, "开始写出 Gower 修复结果", file=str(csv_file))
         output_path = _resolve_output_path(csv_file, payload, default_suffix=".repaired.gower.csv")
@@ -4576,13 +5282,25 @@ def action_repair_with_gower(payload: dict[str, Any]) -> dict[str, Any]:
                     "model_dir": str(model_dir) if model_dir is not None else None,
                 },
             )
-        repaired_df.to_csv(output_path, index=False)
+        if write_strategy_used == "streaming":
+            streaming_replaced_cell_count = _write_repaired_csv_streaming(
+                frame_pd,
+                csv_file,
+                output_path,
+                cell_plan,
+                chunk_size=DEFAULT_STREAMING_CHUNK_SIZE,
+            )
+        else:
+            if repaired_df is None:
+                repaired_df = df.copy(deep=True)
+                for proposal in cell_plan.values():
+                    repaired_df.iat[int(proposal["row_pos"]), int(proposal["col_pos"])] = proposal["after"]
+            repaired_df.to_csv(output_path, index=False)
         output_csv = str(output_path)
         _emit_stage_progress("repair_with_gower", "write_output", "complete", 96, "Gower 修复结果写出完成", file=str(output_csv))
 
     total_cells_modified = int(len(cell_plan))
     before_issue_count = int(len(issues_internal))
-    after_issue_count = int(len(post_issues_internal))
     changed_cells_preview = [
         {
             "row": _index_to_builtin(change["row"]),
@@ -4606,6 +5324,7 @@ def action_repair_with_gower(payload: dict[str, Any]) -> dict[str, Any]:
     return _to_builtin(
         {
             "csv_path": str(csv_file),
+            "csv_read_evidence": csv_read_evidence,
             "scan_config": scan_config,
             "column_dependencies": column_dependencies,
             "gower_strategy": {
@@ -4614,12 +5333,20 @@ def action_repair_with_gower(payload: dict[str, Any]) -> dict[str, Any]:
                 "preview_limit": int(gower_strategy["preview_limit"]),
                 "max_candidates": gower_strategy.get("max_candidates"),
                 "candidate_policy": str(gower_strategy["candidate_policy"]),
+                "candidate_prefilter_policy": str(gower_strategy["candidate_prefilter_policy"]),
                 "auto_max_candidates": int(gower_strategy["auto_max_candidates"]),
                 "full_scan_threshold": int(gower_strategy["full_scan_threshold"]),
+                "feature_column_policy": gower_strategy["feature_column_policy"],
             },
             "plan_only": plan_only,
             "execution_mode": "plan_only" if plan_only else "apply",
             "write_output": write_output,
+            "write_strategy_used": write_strategy_used,
+            "streaming_chunk_size": DEFAULT_STREAMING_CHUNK_SIZE if write_strategy_used == "streaming" else None,
+            "streaming_replaced_cell_count": streaming_replaced_cell_count,
+            "comparison_mode": comparison_mode_used,
+            "comparison_exact": bool(comparison_exact),
+            "post_scan_performed": bool(comparison_exact and post_issues_internal is not None),
             "precomputed_issues_used": bool(precomputed_issues_used),
             "output_csv": output_csv,
             "selected_issue_ids": selected_issue_ids,
@@ -4629,17 +5356,14 @@ def action_repair_with_gower(payload: dict[str, Any]) -> dict[str, Any]:
             "applied_repairs": applied_repairs,
             "skipped_issues": skipped_issues,
             "neighbor_evidence": neighbor_evidence,
-            "comparison": {
-                "before_issue_count": before_issue_count,
-                "after_issue_count": after_issue_count,
-                "resolved_issue_count": max(0, before_issue_count - after_issue_count),
-                "before_issue_type_counts": before_issue_type_counts,
-                "after_issue_type_counts": after_issue_type_counts,
-                "before_column_issue_counts": before_issue_column_counts,
-                "after_column_issue_counts": after_issue_column_counts,
-                "changed_cell_count": total_cells_modified,
-                "changed_cells_preview": changed_cells_preview,
-            },
+            "comparison": _comparison_from_cell_plan(
+                issues_internal,
+                post_issues_internal,
+                applied_repairs,
+                cell_plan,
+                exact=comparison_exact,
+                changed_cells_preview=changed_cells_preview,
+            ),
             "rollback": rollback_info,
         }
     )
@@ -4705,10 +5429,11 @@ def action_repair_with_missforest(payload: dict[str, Any]) -> dict[str, Any]:
             message=f"Input CSV does not exist: {csv_file}",
             details={"csv_path": str(csv_file)},
         )
+    write_strategy_used = _write_strategy_from_payload(payload, csv_file=csv_file, write_output=write_output)
 
     _emit_stage_progress("repair_with_missforest", "load_csv", "start", 12, "开始读取待修复文件", file=str(csv_file))
     try:
-        df = frame_pd.read_csv(csv_file)
+        df, csv_read_evidence = _read_csv_optimized(frame_pd, csv_file)
     except Exception as exc:
         _emit_stage_progress(
             "repair_with_missforest",
@@ -4744,6 +5469,16 @@ def action_repair_with_missforest(payload: dict[str, Any]) -> dict[str, Any]:
         "开始识别 MissForest 可修复问题",
         file=str(csv_file),
     )
+    comparison_mode_used, comparison_exact = _comparison_mode_from_payload(
+        payload,
+        csv_file=csv_file,
+        row_count=int(df.shape[0]),
+        plan_only=plan_only,
+        write_output=write_output,
+        write_strategy_used=write_strategy_used,
+    )
+    build_repaired_df = bool(comparison_exact or write_strategy_used == "pandas_full")
+
     try:
         precomputed_issues, precomputed_issues_used = _precomputed_issues_from_payload(
             payload,
@@ -4765,8 +5500,8 @@ def action_repair_with_missforest(payload: dict[str, Any]) -> dict[str, Any]:
             precomputed_issues_used=bool(precomputed_issues_used),
         )
         issue_map = {str(item["issue_id"]): item for item in issues_internal}
-        original_df = df.copy(deep=True)
-        repaired_df = df.copy(deep=True)
+        original_df = df
+        repaired_df = df.copy(deep=True) if build_repaired_df else None
         supported_issue_types = {"missing_values", "numeric_outlier", "rare_category"}
         preview_limit = int(missforest_strategy["preview_limit"])
         skipped_issues: list[dict[str, Any]] = []
@@ -4791,7 +5526,7 @@ def action_repair_with_missforest(payload: dict[str, Any]) -> dict[str, Any]:
                 add_skip(issue_id, "issue_not_found")
                 continue
             column = str(issue["column"])
-            if column not in repaired_df.columns:
+            if column not in df.columns:
                 add_skip(issue_id, "column_not_found")
                 continue
             selected_issues.append(issue)
@@ -4845,6 +5580,7 @@ def action_repair_with_missforest(payload: dict[str, Any]) -> dict[str, Any]:
                 selected_issues=active_issues,
                 issue_masks=issue_masks,
                 issue_positions=issue_positions,
+                scan_config=scan_config,
                 strategy=missforest_strategy,
                 random_forest_regressor=RandomForestRegressor,
                 random_forest_classifier=RandomForestClassifier,
@@ -4870,7 +5606,8 @@ def action_repair_with_missforest(payload: dict[str, Any]) -> dict[str, Any]:
                 for proposal in issue_changes:
                     cell_plan[(int(proposal["row_pos"]), column)] = proposal
                     changes_by_issue.setdefault(issue_id, []).append(proposal)
-                    repaired_df.iat[int(proposal["row_pos"]), int(proposal["col_pos"])] = proposal["after"]
+                    if repaired_df is not None:
+                        repaired_df.iat[int(proposal["row_pos"]), int(proposal["col_pos"])] = proposal["after"]
                 issue_evidence[issue_id] = iterative_evidence.get(issue_id, {})
         else:
             for issue in active_issues:
@@ -4884,6 +5621,7 @@ def action_repair_with_missforest(payload: dict[str, Any]) -> dict[str, Any]:
                         issue=issue,
                         mask=issue_masks[issue_id],
                         positions=issue_positions[issue_id],
+                        scan_config=scan_config,
                         strategy=missforest_strategy,
                         random_forest_regressor=RandomForestRegressor,
                         random_forest_classifier=RandomForestClassifier,
@@ -4908,7 +5646,8 @@ def action_repair_with_missforest(payload: dict[str, Any]) -> dict[str, Any]:
                 for proposal in issue_changes:
                     cell_plan[(int(proposal["row_pos"]), column)] = proposal
                     changes_by_issue.setdefault(issue_id, []).append(proposal)
-                    repaired_df.iat[int(proposal["row_pos"]), int(proposal["col_pos"])] = proposal["after"]
+                    if repaired_df is not None:
+                        repaired_df.iat[int(proposal["row_pos"]), int(proposal["col_pos"])] = proposal["after"]
                 issue_evidence[issue_id] = evidence
 
         _emit_stage_progress(
@@ -4921,11 +5660,11 @@ def action_repair_with_missforest(payload: dict[str, Any]) -> dict[str, Any]:
             changed_cells=int(len(cell_plan)),
         )
 
-        post_issues_internal = _detect_issues_for_frame(repaired_df, frame_pd, scan_config=scan_config)
-        before_issue_type_counts = _issue_type_counter(issues_internal)
-        after_issue_type_counts = _issue_type_counter(post_issues_internal)
-        before_issue_column_counts = _issue_counter_by_column(issues_internal)
-        after_issue_column_counts = _issue_counter_by_column(post_issues_internal)
+        post_issues_internal = (
+            _detect_issues_for_frame(repaired_df, frame_pd, scan_config=scan_config)
+            if comparison_exact and repaired_df is not None
+            else None
+        )
         applied_repairs: list[dict[str, Any]] = []
         model_evidence: list[dict[str, Any]] = []
 
@@ -4940,8 +5679,11 @@ def action_repair_with_missforest(payload: dict[str, Any]) -> dict[str, Any]:
                 continue
             rule = issue.get("repair_rule", {})
             before_count = int(issue.get("count", len(issue_changes)))
-            after_mask = _issue_mask_from_rule(repaired_df[column], issue_type, rule, frame_pd)
-            after_count = int(after_mask.sum())
+            if comparison_exact and repaired_df is not None:
+                after_mask = _issue_mask_from_rule(repaired_df[column], issue_type, rule, frame_pd)
+                after_count = int(after_mask.sum())
+            else:
+                after_count = max(0, before_count - len(issue_changes))
             resolved_count = max(0, before_count - after_count)
             evidence = issue_evidence.get(issue_id, {})
             replacements: list[Any] = []
@@ -5000,6 +5742,7 @@ def action_repair_with_missforest(payload: dict[str, Any]) -> dict[str, Any]:
 
     output_csv: str | None = None
     rollback_info: dict[str, Any] | None = None
+    streaming_replaced_cell_count = 0
     if write_output:
         _emit_stage_progress(
             "repair_with_missforest",
@@ -5031,7 +5774,20 @@ def action_repair_with_missforest(payload: dict[str, Any]) -> dict[str, Any]:
                     "missforest_strategy": missforest_strategy,
                 },
             )
-        repaired_df.to_csv(output_path, index=False)
+        if write_strategy_used == "streaming":
+            streaming_replaced_cell_count = _write_repaired_csv_streaming(
+                frame_pd,
+                csv_file,
+                output_path,
+                cell_plan,
+                chunk_size=DEFAULT_STREAMING_CHUNK_SIZE,
+            )
+        else:
+            if repaired_df is None:
+                repaired_df = df.copy(deep=True)
+                for proposal in cell_plan.values():
+                    repaired_df.iat[int(proposal["row_pos"]), int(proposal["col_pos"])] = proposal["after"]
+            repaired_df.to_csv(output_path, index=False)
         output_csv = str(output_path)
         _emit_stage_progress(
             "repair_with_missforest",
@@ -5044,7 +5800,6 @@ def action_repair_with_missforest(payload: dict[str, Any]) -> dict[str, Any]:
 
     total_cells_modified = int(len(cell_plan))
     before_issue_count = int(len(issues_internal))
-    after_issue_count = int(len(post_issues_internal))
     changed_cells_preview = [
         {
             "row": _index_to_builtin(change["row"]),
@@ -5065,9 +5820,18 @@ def action_repair_with_missforest(payload: dict[str, Any]) -> dict[str, Any]:
         selected_issue_count=int(len(selected_issue_ids)),
         applied_issue_count=int(len(applied_repairs)),
     )
+    comparison = _comparison_from_cell_plan(
+        issues_internal,
+        post_issues_internal,
+        applied_repairs,
+        cell_plan,
+        exact=comparison_exact,
+        changed_cells_preview=changed_cells_preview,
+    )
     return _to_builtin(
         {
             "csv_path": str(csv_file),
+            "csv_read_evidence": csv_read_evidence,
             "scan_config": scan_config,
             "missforest_strategy": {
                 "algorithm_mode": str(missforest_strategy["algorithm_mode"]),
@@ -5080,10 +5844,17 @@ def action_repair_with_missforest(payload: dict[str, Any]) -> dict[str, Any]:
                 "random_state": int(missforest_strategy["random_state"]),
                 "max_features": missforest_strategy["max_features"],
                 "preview_limit": int(missforest_strategy["preview_limit"]),
+                "feature_column_policy": missforest_strategy["feature_column_policy"],
             },
             "plan_only": plan_only,
             "execution_mode": "plan_only" if plan_only else "apply",
             "write_output": write_output,
+            "write_strategy_used": write_strategy_used,
+            "streaming_chunk_size": DEFAULT_STREAMING_CHUNK_SIZE if write_strategy_used == "streaming" else None,
+            "streaming_replaced_cell_count": streaming_replaced_cell_count,
+            "comparison_mode": comparison_mode_used,
+            "comparison_exact": bool(comparison_exact),
+            "post_scan_performed": bool(comparison_exact and post_issues_internal is not None),
             "precomputed_issues_used": bool(precomputed_issues_used),
             "output_csv": output_csv,
             "selected_issue_ids": selected_issue_ids,
@@ -5093,17 +5864,14 @@ def action_repair_with_missforest(payload: dict[str, Any]) -> dict[str, Any]:
             "applied_repairs": applied_repairs,
             "skipped_issues": skipped_issues,
             "model_evidence": model_evidence,
-            "comparison": {
-                "before_issue_count": before_issue_count,
-                "after_issue_count": after_issue_count,
-                "resolved_issue_count": max(0, before_issue_count - after_issue_count),
-                "before_issue_type_counts": before_issue_type_counts,
-                "after_issue_type_counts": after_issue_type_counts,
-                "before_column_issue_counts": before_issue_column_counts,
-                "after_column_issue_counts": after_issue_column_counts,
-                "changed_cell_count": total_cells_modified,
-                "changed_cells_preview": changed_cells_preview,
-            },
+            "comparison": _comparison_from_cell_plan(
+                issues_internal,
+                post_issues_internal,
+                applied_repairs,
+                cell_plan,
+                exact=comparison_exact,
+                changed_cells_preview=changed_cells_preview,
+            ),
             "rollback": rollback_info,
         }
     )

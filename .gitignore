@@ -96,4 +96,6 @@ Pic/**/*.pdf
 # ------------------------------
 # Thesis defense assets
 # ------------------------------
-thesis-defense/
+thesis-defense/*
+!thesis-defense/Scale_Validation_Update_2026-05-17.pptx
+!thesis-defense/generate_scale_validation_update_deck.js

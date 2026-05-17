@@ -207,6 +207,9 @@ func main() {
 		os.Exit(1)
 	}
 	baseRunner := engine.NewRunner(absEngine)
+	if *timeout > 0 {
+		baseRunner.DefaultTimeout = *timeout
+	}
 	planner, langGraphManager := agent.NewPhaseBPlannerStack(absEngine)
 	runner := agent.NewRuntimeRunner(baseRunner, agentStore, planner)
 	svc := task.NewServiceWithConfig(runner, task.Config{

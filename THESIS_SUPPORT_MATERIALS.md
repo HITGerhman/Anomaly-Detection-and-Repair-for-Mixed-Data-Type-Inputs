@@ -430,3 +430,104 @@ MissForest repair under the same validation-first execution boundary.
   real CSV write and then runs post-scan Validation Gate checks with rollback
   metadata. Non-converged MissForest evidence becomes a warning, and is rejected
   when no issue-score improvement is observed.
+
+## Large-scale Stability and Validation Update (2026-05-17)
+
+Use `docs/large_scale_stability_20260517.md` as the detailed paper reference
+for this section. The note contains thesis-ready tables, commands, safe claims,
+and wording for the 500k / 1M / 10M stability experiment. A compact companion
+deck for defense or progress reporting is available at
+`thesis-defense/Scale_Validation_Update_2026-05-17.pptx`.
+
+### Chapter 5/6 Additional Experiment Material
+
+The 2026-05-17 stability run extends the previous scale check from synthetic
+throughput testing to real AppShell auto-session execution. The experiment
+validated scan, plan-only preview, streaming write, post validation, and rollback
+metadata on mixed-type `orders_transactions` CSV files up to 10,000,024 rows.
+
+End-to-end auto-session results:
+
+| Run | Rows checked after repair | Output size | Total time | Repair time | Validation time | Write strategy | Post validation | Verdict |
+|---|---:|---:|---:|---:|---:|---|---|---|
+| 500k auto | 500,024 | 59,253,174 bytes | 42.761 s | 15.728 s | 7.561 s | `pandas_full` | scoped precheck + full scan | `warn` accepted |
+| 1M auto | 1,000,024 | 118,500,360 bytes | 62.255 s | 24.705 s | 13.652 s | `streaming` | scoped precheck + full scan | `warn` accepted |
+| 10M auto | 10,000,024 | 1,192,963,894 bytes | 584.805 s | 371.740 s | 27.824 s | `streaming` | affected-column incremental estimate | `warn` accepted |
+
+Engine probe results:
+
+| Dataset | Rows | `scan_file` | `repair_batch` plan-only | Gower single issue | MissForest single issue |
+|---|---:|---:|---:|---:|---:|
+| 1M | 1,000,024 | 10.182 s | 2.311 s | 4.461 s | 3.880 s |
+| 10M | 10,000,024 | 129.359 s | 27.674 s | 31.180 s | 29.720 s |
+
+10M optimization comparison:
+
+| Operation | Earlier baseline | 2026-05-17 result | Speedup |
+|---|---:|---:|---:|
+| `repair_batch plan_only` | 146.192 s | 27.674 s | 5.28x |
+| Gower single issue | 93.140 s | 31.180 s | 2.99x |
+| MissForest single issue | 189.083 s | 29.720 s | 6.36x |
+
+Interpretation:
+
+- The 10M auto run completed in 584.805 seconds and wrote a 1.19 GB repaired
+  CSV.
+- Gower used bucket prefiltering on `product_category` and `payment_method`,
+  then sampled 512 candidates.
+- MissForest reduced the encoded feature count to 21 and used a compact working
+  frame of 5,012 rows.
+- The 10M post validation used affected-column incremental validation because
+  the output exceeded the 512 MiB threshold. This is explicitly marked by
+  `post_scan_incremental_estimate`, so it should not be described as a full
+  post scan.
+
+### Validation Gate Update for Chapter 4/6
+
+The system now records `column_issue_counts` in scan summaries and applies a
+fine-grained affected-column safety rule:
+
+```text
+If a repaired column has more issue items after repair than it had in the
+baseline scan, Validation Gate rejects the output and the auto path rolls it
+back.
+```
+
+The machine-readable risk flag is:
+
+```text
+affected_column_issue_count_increased
+```
+
+This rule matters for large outputs. When full post scan is too expensive and
+the system uses affected-column incremental validation, the validation result is
+still guarded by a per-column before/after comparison. A local side effect in a
+touched column is therefore rejected rather than accepted as a warning.
+
+Suggested thesis wording:
+
+> In the large-scale stability experiment, the 10M-row auto run produced a
+> 1.19 GB repaired CSV and completed in 584.805 seconds. Because the output was
+> larger than the post-validation full-scan threshold, the system used
+> affected-column incremental validation and marked the result with
+> `post_scan_incremental_estimate`. To avoid treating this incremental scan as a
+> full safety proof, the Validation Gate compares issue counts for each repaired
+> column against the baseline scan. If any affected column becomes worse, the
+> output is rejected and rolled back.
+
+Safe claims:
+
+- The system completed real 500k, 1M, and 10M row AppShell auto-session runs on
+  the tested Windows development machine.
+- The large-file path can write repaired CSV output with rollback metadata.
+- Incremental validation is explicit and conservative, not hidden as a full scan.
+- The system has evidence for improved preview performance after schema cache,
+  lightweight comparison, Gower prefiltering, and compact MissForest changes.
+
+Avoid these claims:
+
+- Do not claim production readiness.
+- Do not claim affected-column incremental validation is equivalent to full
+  post-scan validation.
+- Do not claim the system can scale to arbitrary billion-row inputs.
+- Do not claim all anomalies are safe for automatic repair.

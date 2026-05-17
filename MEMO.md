@@ -2034,3 +2034,266 @@ Last updated: 2026-05-16 12:29:53 +08:00
 - 当前问题 / 待处理事项：
   - push 尚未成功：HTTPS 报错 `Failed to connect to github.com port 443` / `Recv failure: Connection was reset`，SSH 报错 `Connection reset by 20.205.243.166 port 22`。
   - 网络恢复或配置可用代理后，继续执行 `git push -u origin feat/algorithm-risk-hardening` 即可完成远端同步。
+
+## Update 2026-05-16 17:10:27 +08:00
+
+- 改动日期：2026-05-16 17:10:27 +08:00
+- 改动内容简述：按用户要求做了一次千万级试探性验证，并记录能跑通的范围与瓶颈。本次不改核心算法代码，使用 ignored 的 `outputs/ten_million_probe/` 作为实验目录，先流式生成 1000 万行混合类型 CSV，再分别验证 `scan_file`、`repair_batch` plan-only、`repair_with_gower` 单 issue plan-only、`repair_with_missforest` 默认策略单 issue plan-only。
+- 最终目标：判断当前正式版系统是否只能到百万级，还是可以在单机 pandas 架构下试探性跑到千万级；如果不能完整闭环，也要明确瓶颈来自哪里。
+- 当前采用的方法：
+  - 不使用 `scripts/run_cross_dataset_validation.py --scale-rows 10000000` 直接生成，因为该脚本会先构造 1000 万行 pandas DataFrame，容易把“数据生成器内存峰值”误判为引擎瓶颈。
+  - 使用流式 `csv.writer` 生成 orders_transactions 风格 CSV，写入 `outputs/ten_million_probe/scale_inputs/orders_transactions_10000000_corrupted_stream.csv`。
+  - 注入计划沿用 scale harness 的 200 异常比例：`missing_values=60`、`numeric_outlier=48`、`rare_category=36`、`duplicate_record=24`、`cross_column_consistency=32`。
+  - `scan_file` 使用正式 engine CLI 和 orders_transactions scan config。
+  - `repair_batch` 使用 `plan_only=true`、`write_output=false`，选择 scan 中可自动修复且未被标为 `auto_repair_eligible=false` 的 10 个 issue。
+  - `repair_with_gower` 选择 `discount::missing_values` 单 issue，使用 `candidate_policy=auto`，并传入 precomputed issues 避免重复扫描。
+  - `repair_with_missforest` 选择 `discount::missing_values` 单 issue，故意不传 `missforest_strategy`，验证正式默认策略：`algorithm_mode=iterative`、`max_iter=5`、`convergence_tolerance=0.001`、`max_train_rows=5000`、`n_estimators=40`。
+  - MissForest 探针加了空闲物理内存保护阈值：如果 free memory 低于约 2.5GB 就停止并记录瓶颈；本次未触发。
+- 相关模块/文件：
+  - `appshell/core/python_engine/engine_main.py`
+  - `appshell/core/python_engine/engine_core.py`
+  - `outputs/ten_million_probe/scale_inputs/orders_transactions_10000000_corrupted_stream.csv`（ignored，约 1.1GB）
+  - `outputs/ten_million_probe/generation_10m_summary.json`（ignored）
+  - `outputs/ten_million_probe/scan_10m_response.json`（ignored）
+  - `outputs/ten_million_probe/scan_10m_monitor.json`（ignored）
+  - `outputs/ten_million_probe/repair_batch_10m_plan_only_summary.json`（ignored）
+  - `outputs/ten_million_probe/gower_10m_single_issue_summary.json`（ignored）
+  - `outputs/ten_million_probe/missforest_10m_single_issue_default_summary.json`（ignored）
+  - `outputs/ten_million_probe/summary_10m_probe.json`（ignored）
+  - `MEMO.md`
+- 已解决的问题 / 新增功能：
+  - 1000 万行输入生成通过：生成 `10000024` 行、`13` 列 CSV，文件大小 `1128.161941 MB`，耗时 `133.738466s`。
+  - `scan_file` 千万级通过：`rows=10000024`，`columns=13`，engine `duration_ms=81873`，墙钟约 `85.654s`，发现 `13` 个 issue，`numeric_outlier_risk_counts={"mild":0,"strong":0,"extreme":4}`。
+  - `repair_batch` 千万级 plan-only 通过：选择 10 个可自动规则修复 issue，engine `duration_ms=146192`，墙钟约 `146.910s`，`applied_issue_count=10`，`total_cells_modified=131`，未写出 repaired CSV。
+  - `repair_with_gower` 千万级单 issue plan-only 通过：engine `duration_ms=93140`，墙钟约 `94.548s`，`candidate_pool_size=10000012`，`candidate_sample_size=512`，`candidate_selection_mode=auto_sample`，`total_cells_modified=12`，未写出 CSV。
+  - `repair_with_missforest` 千万级单 issue 默认策略 plan-only 通过：engine `duration_ms=189083`，墙钟约 `191.771s`，`train_pool_size=10000012`，`train_sample_size=5000`，`feature_count=20039`，`target_cell_count=12`，`total_cells_modified=12`，未写出 CSV。
+  - MissForest 默认策略本次未触发内存保护；采样期间系统空闲物理内存最低约 `5609.7 MB`，说明单 issue 默认路径在本机可运行。
+- 验证命令：
+  - 使用内联 Python 流式生成 `orders_transactions_10000000_corrupted_stream.csv`。
+  - 使用 PowerShell payload 调用 `.\.venv-win\Scripts\python.exe .\appshell\core\python_engine\engine_main.py --input ... --output ...` 运行 `scan_file`。
+  - 使用同一 engine CLI 运行 `repair_batch`、`repair_with_gower`、`repair_with_missforest` 的 plan-only 探针。
+- 验收结果：
+  - 千万级规则扫描：通过。
+  - 千万级规则修复 plan-only：通过。
+  - 千万级 Gower 单 issue auto-sample plan-only：通过。
+  - 千万级 MissForest 单 issue 默认 iterative plan-only：通过但未收敛，`iterations_run=5`、`converged=false`、`convergence_delta=0.004375`，需要继续由 `missforest_not_converged` 风险信号管理。
+  - 写出边界：通过，所有 plan-only 探针均未生成哨兵 repaired CSV。
+- 当前问题 / 待处理事项：
+  - 这次不是千万级完整 `agent.session.auto` 闭环；尚未验证千万级真实写出、post scan、Validation Gate verdict、rollback manifest。
+  - 当前架构仍是 pandas 全量读 CSV；千万级能够跑通并不等于亿级可行。瓶颈主要是全表读入、全表拷贝、完整 CSV 写出和 post scan 反复扫描。
+  - `repair_batch` 如果 `write_output=true`，预计还要写出约 1GB repaired CSV，并承担后续 post scan 的二次全表读取；应单独作为更重的端到端压力测试。
+  - MissForest 单 issue 默认策略能跑，但 evidence 显示 `feature_count=20039`，且迭代流程会产生全表工作副本；多 issue 默认 MissForest 或 hybrid 全自动在千万级上需要更严格的内存保护、列选择和分块策略。
+  - 本次 per-process WorkingSet 采样在 `Start-Process` 路径下不可靠，正式报告建议改用 psutil/Performance Counter 或外部采样器记录峰值 RSS。
+
+## Update 2026-05-17 08:25:14 +08:00
+
+- 改动日期：2026-05-17 08:25:14 +08:00
+- 改动内容简述：继续执行“千万级稳定性优化计划”的完整中期路径，本轮重点落在 Python engine 大文件 plan-only/write-output 稳定性、Gower/MissForest 特征治理、preview 复用 scan 结果和 scoped scan 接口。目标是减少重复 scan、全表 deep copy、高基数字符串特征、完整 pandas 写出和不透明估算。
+- 最终目标：在不改变架构边界的前提下，让千万级 scan、preview、局部 Gower/MissForest 和中大文件写出更稳、更快、更可解释；Python engine 仍负责确定性工具执行，Go agent 仍负责预览、评分、策略选择和 Validation Gate。
+- 当前采用的方法：
+  - 新增优化读取入口 `_read_csv_optimized`，schema cache 写入 `outputs/engine_cache/schema/`，key 使用 CSV path/size/mtime；首读抽样前 `100000` 行推断低基数字符串 category、ID-like string，并在结果中返回 `csv_read_evidence`。
+  - `repair_batch`、`repair_with_gower`、`repair_with_missforest` 新增 root payload 字段 `comparison_mode` 与 `write_strategy`；默认 `comparison_mode=auto`、`write_strategy=auto`。
+  - 大文件 plan-only 且不写出时走 lightweight comparison，返回 `comparison_mode`、`comparison_exact=false`、`post_scan_performed=false`，避免把估算误写成全量 post scan 结论。
+  - `write_strategy=streaming` 按 chunk 读取原 CSV，并按 `cell_plan[(row_pos,column)]` 替换单元格写出，不再依赖完整 `repaired_df.to_csv`；rollback manifest 仍保留原 source backup。
+  - Gower/MissForest 接入 `feature_column_policy`：默认排除 `row_id/source_row_id/order_id`、字符串 `id`/`*_id`、高基数字符串列，保留数值业务列和低基数类别列，并从 consistency rules 派生差值特征。
+  - MissForest one-hot 后默认限制为 `512` 个 encoded features；iterative 模式改为 compact working frame，只包含 sampled train rows 与 selected target rows，evidence 增加 `compact_working_frame` 与 `working_row_count`。
+  - Gower 接入 `candidate_prefilter_policy=auto_bucket`，最多使用 2 个低基数类别特征做候选桶过滤，若过滤后候选数低于 `512` 则回退该过滤；evidence 返回 prefilter 和 feature policy 字段。
+  - `scan_file` 新增 `scan_scope=affected_columns` 与 `affected_columns`，scoped 模式只扫描指定列，并关闭 duplicate/cross-column 全表关系规则，为后续 Go incremental post scan 提供接口。
+  - Go planning flow 测试补充三路 preview payload 断言：rule/Gower/MissForest plan-only preview 均携带 fingerprint 匹配的 `precomputed_issues` 和 `precomputed_issues_meta`。
+- 相关模块/文件：
+  - `appshell/core/python_engine/engine_core.py`
+  - `appshell/core/python_engine/action_catalog.py`
+  - `appshell/backend/internal/agent/runtime_runner_test.go`
+  - `tests/python_engine/test_engine_cli.py`
+  - `MEMO.md`
+- 已解决的问题 / 新增功能：
+  - 减少大文件 plan-only 的全量 repaired DataFrame 构造和全量 post scan 成本；小文件默认仍保留 exact comparison。
+  - 中大文件写出可显式或自动使用 streaming writer，返回 `write_strategy_used`、`streaming_chunk_size`、`streaming_replaced_cell_count`。
+  - Gower evidence 现在包含 `feature_count_before`、`feature_count_after`、`excluded_feature_columns`、`derived_feature_columns`、`feature_policy_mode`、`prefilter_mode`、`prefilter_columns`、`prefilter_pool_size`、`candidate_sample_size`。
+  - MissForest evidence 现在能证明 ID-like/high-cardinality 字符串被排除，encoded feature 数受 `max_encoded_features` 约束，iterative 工作帧不再默认 full-table deep copy。
+  - `scan_file` 可执行 affected-column scoped scan，结果显式返回 `scan_scope`、`affected_columns`。
+  - `_to_builtin` 增强为可安全序列化 pandas `NA/NaT`，修复 optimized CSV string/category dtype 下 JSON 输出失败风险。
+- 验证命令：
+  - `.\.venv-win\Scripts\python.exe -m py_compile .\appshell\core\python_engine\engine_core.py .\appshell\core\python_engine\action_catalog.py`
+  - `.\.venv-win\Scripts\python.exe -m pytest .\tests\python_engine -q`
+  - `go test ./internal/agent -run "TestRuntimeRunnerBuildsDeterministicPlanningSnapshotBeforeCallingPlanner|TestRuntimeRunnerAuto"`（在 `appshell/backend`）
+  - `go test ./internal/agent` 与 `go test ./internal/engine` 也已尝试，但当前 Windows 环境中的 `WindowsApps\python.exe` 启动测试脚本返回 `exit status 9009`，导致 LangGraph sidecar / engine runner 相关既有测试无法完成。
+- 验收结果：
+  - Python engine 全量通过：`59 passed, 12 warnings in 74.94s`；warnings 仍为既有 pandas categorical dtype deprecation。
+  - Go 目标测试通过：`ok appshell/backend/internal/agent`，覆盖 planning preview 三路 precomputed issue 断言和 auto 相关目标用例。
+  - Go 全包/engine 包未完成：失败点为测试环境 Python launcher `exit status 9009`，不是本轮代码路径断言失败。
+- 当前问题 / 待处理事项：
+  - Go auto post validation 尚未完整接入“大于 512MB scoped scan + merged estimate + `post_scan_incremental_estimate` 风险旗标”的闭环；本轮已先完成 Python `scan_scope=affected_columns` 接口。
+  - 尚未复跑 1M/10M probe；下一步应复跑 10M `repair_batch plan_only`、Gower 单 issue、MissForest 单 issue，确认耗时和 feature evidence 从 `feature_count=20039` 降到 `<=512`。
+  - streaming writer 已有单元测试确认只替换目标单元格，但仍需要中等文件 `write_output=true` auto run 来验证 streaming output + post validation + rollback manifest 的端到端闭环。
+  - schema cache 当前按 CSV path/size/mtime 写 ignored cache，后续可增加 cache 清理策略和更细的 dtype 推断阈值记录。
+
+## Update 2026-05-17 08:31:40 +08:00
+
+- 改动日期：2026-05-17 08:31:40 +08:00
+- 改动内容简述：继续补齐上一条记录中尚未完成的 Go auto post validation 增量闭环。现在 RuntimeRunner 会从执行结果的 `applied_repairs` / `comparison.changed_cells_preview` / hybrid `execution_steps` 推导 affected columns，并基于输出大小选择 scoped/full post scan 策略。
+- 最终目标：让千万级真实写出后的 Validation Gate 不必总是无条件二次全表扫描，同时不把局部扫描伪装成完整验证。
+- 当前采用的方法：
+  - `rescanOutput` 支持额外 root payload，因此 Go 可以调用 Python `scan_file` 的 `scan_scope=affected_columns`。
+  - 单工具执行结果现在保留 `applied_repairs`、`selected_issue_ids`、`total_cells_modified`、`model_evidence` / `neighbor_evidence` 和可选 `output_size_bytes`；hybrid execution step 也保留每步 `applied_repairs`。
+  - 小输出：若能推导 affected columns，先跑 scoped scan，再跑 full scan，最终 Validation Gate 使用 full scan，并把 scoped 结果记录为 `scoped_precheck`。
+  - 大输出：若输出大小超过 `512MB`，只跑 scoped scan，生成 `post_scan_incremental_estimate=true` 的 post scan summary，并把风险旗标 `post_scan_incremental_estimate` 送入 Validation Gate。
+  - Validation Gate 对 `post_scan_incremental_estimate` 最高给 `warn`，并在 side-effect notes 中明确说明使用的是 affected-column incremental estimate，不是 full scan。
+- 相关模块/文件：
+  - `appshell/backend/internal/agent/auto_helpers.go`
+  - `appshell/backend/internal/agent/auto_session.go`
+  - `appshell/backend/internal/agent/approval_runtime.go`
+  - `appshell/backend/internal/agent/runtime_runner.go`
+  - `appshell/backend/internal/agent/runtime_runner_test.go`
+  - `appshell/backend/internal/agent/validation_gate.go`
+  - `MEMO.md`
+- 已解决的问题 / 新增功能：
+  - Go auto post validation 已具备大文件 scoped scan + incremental estimate 风险标记路径。
+  - 增加测试 `TestRuntimeRunnerAutoSessionUsesScopedPostScanEstimateForLargeOutput`，断言大输出只触发 scoped post scan、不触发 full post scan，并且 post validation verdict 为 `warn`。
+  - 保持 rollback 保护：incremental estimate 是 warning，不是静默 accept；若其他 reject 风险出现，仍按原 Validation Gate/rollback 规则处理。
+- 验证命令：
+  - `gofmt -w .\internal\agent\auto_helpers.go .\internal\agent\auto_session.go .\internal\agent\approval_runtime.go .\internal\agent\runtime_runner.go .\internal\agent\runtime_runner_test.go .\internal\agent\validation_gate.go`
+  - `go test ./internal/agent -run "TestRuntimeRunnerAutoSessionUsesScopedPostScanEstimateForLargeOutput|TestRuntimeRunnerAutoSessionAccepted|TestRuntimeRunnerBuildsDeterministicPlanningSnapshotBeforeCallingPlanner|TestRuntimeRunnerAutoSessionRollsBackRejectedOutput"`
+  - `go test ./internal/agent -run "TestValidationGate|TestRuntimeRunnerAutoSessionUsesScopedPostScanEstimateForLargeOutput|TestRuntimeRunnerAutoSessionAccepted|TestRuntimeRunnerAutoSessionRollsBackRejectedOutput|TestRuntimeRunnerBuildsDeterministicPlanningSnapshotBeforeCallingPlanner"`
+  - `.\.venv-win\Scripts\python.exe -m pytest .\tests\python_engine\test_engine_cli.py::test_scan_file_scoped_to_affected_columns .\tests\python_engine\test_engine_cli.py::test_repair_batch_streaming_write_only_replaces_planned_cells .\tests\python_engine\test_engine_cli.py::test_repair_with_missforest_feature_policy_excludes_id_like_and_high_cardinality -q`
+- 验收结果：
+  - Go 目标测试通过：`ok appshell/backend/internal/agent`。
+  - Python 相关目标测试通过：`3 passed in 7.76s`。
+- 当前问题 / 待处理事项：
+  - scoped scan 目前通过整体 Validation Gate 指标和风险旗标保护；尚未实现“按 affected column 的 baseline/post issue count 单独比较并在变差时立即 reject”的更细粒度规则。
+  - 仍需复跑中等文件 `write_output=true` auto run，确认 streaming output + scoped/full post validation + rollback manifest 在真实 engine CLI 下闭环。
+  - 仍需复跑 1M/10M probe，记录 before/after 耗时、Gower prefilter evidence、MissForest `feature_count <= 512`、compact working frame `working_row_count`。
+  - Go 全包测试仍受当前 Windows Python launcher `exit status 9009` 影响；需修复测试环境 Python 路径后再跑 `go test ./...`。
+
+## Update 2026-05-17 09:13:28 +08:00
+
+- 改动日期：2026-05-17 09:13:28 +08:00
+- 改动内容简述：复跑中等/1M/10M 真实闭环与 probe，验证 streaming write、scoped/incremental post validation、Gower bucket prefilter、MissForest feature cap 的实际收益。复跑中发现 `cmd/demo` 的 task timeout 没有传递给 Python engine runner，10M auto scan 会在 60s 被杀；已修复 demo runner 的 per-tool timeout 继承 CLI timeout。
+- 最终目标：把“千万级可试探跑通”推进为“千万级更稳、更快、更可解释”，并用真实输出证明大文件 plan-only、局部模型修复、streaming 写出和增量验证路径都能闭环。
+- 当前采用的方法：
+  - 新增输出目录辅助脚本 `outputs/stability_reprobe_20260517/run_engine_probes.py`，统一运行 `scan_file`、`repair_batch plan_only`、Gower 单 issue、MissForest 单 issue，并落盘 request/response/stderr/summary。
+  - 汇总文件写入 `outputs/stability_reprobe_20260517/reprobe_summary.json`，集中记录 auto run、engine probe、before/after 对比和失败重试原因。
+  - `appshell/backend/cmd/demo/main.go` 中将 `baseRunner.DefaultTimeout` 设置为 CLI `-timeout`，避免 10M engine 子调用仍受默认 60s 限制。
+- 相关模块/文件：
+  - `appshell/backend/cmd/demo/main.go`
+  - `outputs/stability_reprobe_20260517/run_engine_probes.py`
+  - `outputs/stability_reprobe_20260517/reprobe_summary.json`
+  - `outputs/stability_reprobe_20260517/medium_auto_500k/`
+  - `outputs/stability_reprobe_20260517/auto_1m_streaming/`
+  - `outputs/stability_reprobe_20260517/auto_10m_streaming_incremental_retry/`
+  - `outputs/stability_reprobe_20260517/engine_probes/1m/`
+  - `outputs/stability_reprobe_20260517/engine_probes/10m/`
+  - `MEMO.md`
+- 已解决的问题 / 新增功能：
+  - 真实 500k auto 闭环通过：`total_duration_ms=42761`，输出 `59,253,174` bytes，rollback manifest 存在；因源文件低于 64MiB 阈值，执行写出使用 `pandas_full`，post validation 先 scoped scan 再 full scan，最终 `warn` accepted。
+  - 真实 1M auto 闭环通过：`total_duration_ms=62255`，输出 `118,500,360` bytes，hybrid execution 使用 `write_strategy_used=streaming`，`streaming_replaced_cell_count=60`；post validation scoped precheck 后 full scan，rollback manifest 存在，最终 `warn` accepted。
+  - 真实 10M auto 大输出闭环通过：`total_duration_ms=584805`，输出 `1,192,963,894` bytes，hybrid 两步均使用 streaming，分别替换 45 与 15 个单元格；post validation 只跑 affected-columns scoped scan，`post_scan_incremental_estimate=true`，风险旗标为 `post_scan_incremental_estimate`，最终 `warn` accepted，rollback manifest 和 `1,182,963,535` bytes source backup 均存在。
+  - 10M engine probe 通过：`scan_file` 成功扫描 `10,000,024` 行、13 列、18 个 issue；schema cache 首次 miss，后续 repair/Gower/MissForest 均 hit，识别 category 列 3 个、ID-like 列 4 个。
+  - 10M `repair_batch plan_only` 从旧基线 `146192ms` 降到 `27674ms`，约 `5.28x`；返回 `comparison_mode=lightweight`、`comparison_exact=false`、`post_scan_performed=false`、`precomputed_issues_used=true`。
+  - 10M Gower 单 issue 从旧基线 `93140ms` 降到 `31180ms`，约 `2.99x`；bucket prefilter 将候选池从旧路径的 `10,000,012` 级别降到 `833,325/833,332`，之后仍按 512 抽样保护；evidence 中包含 `prefilter_columns=["product_category","payment_method"]`、`candidate_sample_size=512`。
+  - 10M MissForest 单 issue 从旧基线 `189083ms` 降到 `29720ms`，约 `6.36x`；`feature_count` 从旧 `20039` 降到 `21`，满足 `<=512`；`compact_working_frame=true`，`working_row_count=5012`，`train_sample_size=5000`，`converged=true`。
+  - 1M probe 同样通过：`repair_batch=2311ms`、Gower `4461ms`、MissForest `3880ms`；Gower prefilter pool `83327/83332` 后 512 抽样，MissForest `feature_count=21`、`working_row_count=5020`。
+- 验证命令：
+  - `.\.venv-win\Scripts\python.exe -m py_compile .\outputs\stability_reprobe_20260517\run_engine_probes.py`
+  - `.\.venv-win\Scripts\python.exe .\outputs\stability_reprobe_20260517\run_engine_probes.py --label 1m --csv .\outputs\scale_probe_work\scale_inputs\orders_transactions_1000000_corrupted.csv --steps scan repair_batch gower missforest --force-scan`
+  - `.\.venv-win\Scripts\python.exe .\outputs\stability_reprobe_20260517\run_engine_probes.py --label 10m --csv .\outputs\ten_million_probe\scale_inputs\orders_transactions_10000000_corrupted_stream.csv --steps scan repair_batch gower missforest --force-scan`
+  - `.\.venv-win\Scripts\python.exe .\appshell\core\python_engine\auto_agent_cli.py --csv .\outputs\scale_probe_work\scale_inputs\orders_transactions_500000_corrupted.csv --output-dir .\outputs\stability_reprobe_20260517\medium_auto_500k --timeout-seconds 1800`
+  - `.\.venv-win\Scripts\python.exe .\appshell\core\python_engine\auto_agent_cli.py --csv .\outputs\scale_probe_work\scale_inputs\orders_transactions_1000000_corrupted.csv --output-dir .\outputs\stability_reprobe_20260517\auto_1m_streaming --timeout-seconds 3600`
+  - `.\.venv-win\Scripts\python.exe .\appshell\core\python_engine\auto_agent_cli.py --csv .\outputs\ten_million_probe\scale_inputs\orders_transactions_10000000_corrupted_stream.csv --output-dir .\outputs\stability_reprobe_20260517\auto_10m_streaming_incremental_retry --timeout-seconds 3600`
+  - `gofmt -w .\cmd\demo\main.go`
+  - `go test ./cmd/demo`
+- 验收结果：
+  - `go test ./cmd/demo` 通过。
+  - 500k/1M/10M auto 均真实写出并通过 Validation Gate；1M/10M 写出均确认 streaming，10M 确认大输出 incremental estimate 风险标记。
+  - 1M/10M engine probe 均通过，且 Gower/MissForest evidence 明确记录 feature policy、bucket prefilter、schema cache、lightweight comparison 和 compact working frame。
+- 当前问题 / 待处理事项：
+  - 500k 文件大小低于 64MiB，因此 auto 执行按预期使用 `pandas_full`；streaming 阈值已由 1M 和 10M 真实 run 覆盖。
+  - 10M auto 大输出 validation 是 affected-columns incremental estimate，最高 verdict 为 `warn`；这符合安全边界，但仍不是 full post scan。
+  - 仍未实现“affected columns baseline/post issue count 逐列变差即 reject”的更细粒度规则，目前依赖整体 Validation Gate 和 `post_scan_incremental_estimate` 风险旗标保护。
+  - README / thesis / presentation 仍需更新为本轮实测后的能力边界与耗时数据。
+  - Go 全包测试仍需在修复 Windows Python launcher / `APPSHELL_PYTHON_BIN` 测试环境后再跑 `go test ./...`。
+
+## Update 2026-05-17 09:46:00 +08:00
+
+- 改动日期：2026-05-17 09:46:00 +08:00
+- 改动内容简述：根据上一次额度中断后的现场继续收尾，先核对 `MEMO.md` 与 `outputs/stability_reprobe_20260517/reprobe_summary.json`，确认千万级真实执行本体已在 09:13 前完成；本次中断点实际落在结果收口与 Go 全包回归验证。随后补齐输出完整性检查，并修复 Windows Python launcher 导致的 LangGraph sidecar 测试失败，以及并行 preview 耗时断言在 Windows 调度下过紧的问题。
+- 最终目标：让千万级真实执行结果、rollback 产物、probe 汇总和 Go/Python 回归状态形成可复现闭环，避免下一轮误以为 10M auto run 仍需重跑。
+- 当前采用的方法：
+  - 核对 10M repaired CSV、rollback manifest、1M/10M engine probe summary 与总汇总文件是否存在。
+  - 保持 09:13 已完成的 500k/1M/10M auto run 结果不重复执行，只补跑缺失的回归验证。
+  - `ResolveLangGraphConfig` 现在在未设置 `APPSHELL_LANGGRAPH_PYTHON_BIN` 时会回退复用 `APPSHELL_PYTHON_BIN`，使 engine runner 与 LangGraph sidecar 在 Windows 测试环境中使用同一可执行 Python。
+  - LangGraph sidecar 相关测试 helper 改为验证 Python 3 是否真的可启动，避免 WindowsApps `python.exe` 占位符被误认为可用解释器。
+  - 并行 retrieve preview 测试继续断言实际并发与 wall-clock 加速，但将绝对节省阈值从 120ms 放宽到 50ms，以降低 Windows 调度抖动导致的假失败。
+- 相关模块/文件：
+  - `appshell/backend/internal/agent/langgraph_types.go`
+  - `appshell/backend/internal/agent/langgraph_manager_test.go`
+  - `appshell/backend/internal/agent/retrieve_preview_test.go`
+  - `appshell/backend/cmd/wails/startup_checks_test.go`
+  - `outputs/stability_reprobe_20260517/reprobe_summary.json`
+  - `MEMO.md`
+- 已解决的问题 / 新增功能：
+  - 确认 10M 真实 auto 输出已存在：`orders_transactions_10000000_corrupted_stream.repaired.hybrid.csv`，大小 `1,192,963,894` bytes；rollback manifest 已存在。
+  - 确认 1M/10M probe summary 和总 `reprobe_summary.json` 已存在，说明中断前 10M scan、repair_batch plan-only、Gower 单 issue、MissForest 单 issue均已完成。
+  - Go 全包测试已不再受 WindowsApps Python launcher `exit status 9009` 阻断。
+  - LangGraph sidecar pass/fallback 启动自检测试与 retrieve preview 并行测试均恢复稳定通过。
+- 验证命令：
+  - `.\.venv-win\Scripts\python.exe -m pytest .\tests\python_engine -q`
+  - 在 `appshell/backend` 下设置 `APPSHELL_PYTHON_BIN` 与 `APPSHELL_PROJECT_ROOT` 后执行：`go test ./internal/agent ./cmd/wails`
+  - 在 `appshell/backend` 下设置同样环境变量后执行：`go test ./...`
+- 验收结果：
+  - Python engine 全量通过：`59 passed, 12 warnings in 78.85s`；warnings 仍为既有 pandas categorical dtype deprecation。
+  - Go 目标包通过：`ok appshell/backend/internal/agent`，`ok appshell/backend/cmd/wails`。
+  - Go 全包通过：`go test ./...` 全部通过；`cmd/bench`、`cmd/demo`、`internal/observability` 为无测试文件包。
+- 当前问题 / 待处理事项：
+  - README / thesis / presentation 仍需更新为本轮 500k/1M/10M 实测后的能力边界、耗时数据、风险标记与验证口径。
+  - 10M auto 大输出 validation 仍是 affected-columns incremental estimate，不是 full post scan；后续仍应实现 affected column baseline/post issue count 逐列比较，变差时直接 reject。
+  - pandas categorical dtype deprecation warnings 仍未清理，不影响本轮稳定性验证。
+
+## Update 2026-05-17 10:04:15 +08:00
+
+- 改动日期：2026-05-17 10:04:15 +08:00
+- 改动内容简述：完成“论文参考材料 + 更细 Validation Gate”的收口。本轮把 500k/1M/10M 实测数据整理到 README、论文支撑材料和独立 scale 文档中，并新增一个 5 页 PPTX 更新包；同时实现 affected-column baseline/post issue count 逐列比较，若任一修复列 post issue count 高于 baseline，则 Validation Gate 直接 reject 并触发 auto rollback。
+- 最终目标：让论文写作可以直接引用本轮大规模稳定性实验的表格、结论边界、复现实验命令和安全验证口径，同时把 10M 大输出 incremental validation 从“只标记 warning”推进为“局部变差立即拒绝”。
+- 当前采用的方法：
+  - 新增 `docs/large_scale_stability_20260517.md`，集中记录实验目的、500k/1M/10M auto 结果、1M/10M engine probe、before/after speedup、Validation Gate 边界、可声称/不可声称内容和论文段落草稿。
+  - README 追加 Large-scale Stability Validation 摘要表，并链接详细文档与 PPTX 更新包。
+  - `THESIS_SUPPORT_MATERIALS.md` 追加 2026-05-17 大规模稳定性章节材料，可直接改写进论文第 5/6/7 章。
+  - 新增 `thesis-defense/generate_scale_validation_update_deck.js`，生成 `thesis-defense/Scale_Validation_Update_2026-05-17.pptx`，作为答辩/阶段汇报的 5 页 presentation 更新包。
+  - `.gitignore` 从继续忽略旧 `thesis-defense/*` 资产，调整为只放开本次 scale deck 与生成脚本，避免旧大文件一起进入 Git 状态。
+  - Go `scanSummaryFromResult` 现在保留 `scan_scope`、`affected_columns` 和 `column_issue_counts`，为后续 Validation Gate 提供逐列比较输入。
+  - Validation Gate 新增风险旗标 `affected_column_issue_count_increased`；当 post scan 带有 affected columns 且某个修复列 issue count 变差时，verdict 为 `reject`，auto session 会走 rollback 路径。
+- 相关模块/文件：
+  - `.gitignore`
+  - `README.md`
+  - `THESIS_SUPPORT_MATERIALS.md`
+  - `docs/large_scale_stability_20260517.md`
+  - `thesis-defense/generate_scale_validation_update_deck.js`
+  - `thesis-defense/Scale_Validation_Update_2026-05-17.pptx`
+  - `appshell/backend/internal/agent/auto_helpers.go`
+  - `appshell/backend/internal/agent/validation_gate.go`
+  - `appshell/backend/internal/agent/validation_gate_test.go`
+  - `appshell/backend/internal/agent/runtime_runner_test.go`
+  - `MEMO.md`
+- 已解决的问题 / 新增功能：
+  - 论文材料现在包含 500k/1M/10M auto run 表：10M run 为 `10,000,024` 行、输出 `1,192,963,894` bytes、总耗时 `584.805s`、streaming 写出、affected-column incremental validation、`warn` accepted。
+  - 论文材料现在包含 1M/10M engine probe 表：10M `scan_file=129.359s`、`repair_batch plan-only=27.674s`、Gower 单 issue `31.180s`、MissForest 单 issue `29.720s`。
+  - 论文材料现在包含 10M 优化前后对比：`repair_batch plan-only` 约 `5.28x`、Gower 约 `2.99x`、MissForest 约 `6.36x`。
+  - 新增可直接引用的论文措辞，明确 incremental validation 不等于 full post scan，并列出避免过度声称的边界。
+  - Validation Gate 对 affected column 的局部变差已具备 reject/rollback 保护；新增单元测试和 auto session 集成测试覆盖该路径。
+  - 新增 PPTX 更新包经 OpenXML zip 校验通过：`slide_count=5`、`zip_test=None`。
+- 验证命令：
+  - 在 `appshell/backend` 下设置 `APPSHELL_PYTHON_BIN` 与 `APPSHELL_PROJECT_ROOT` 后执行：`go test ./...`
+  - `.\.venv-win\Scripts\python.exe -m pytest .\tests\python_engine -q`
+  - `node --check .\thesis-defense\generate_scale_validation_update_deck.js`
+  - 使用 Python `zipfile.testzip()` 检查 `thesis-defense/Scale_Validation_Update_2026-05-17.pptx`
+  - `git diff --check`
+- 验收结果：
+  - Go 全包通过：`go test ./...` 全部通过。
+  - Python engine 全量通过：`59 passed, 12 warnings in 89.73s`；warnings 仍为既有 pandas categorical dtype deprecation。
+  - PPTX 生成脚本语法检查通过；PPTX 包完整性通过，包含 5 张 slide。
+  - `git diff --check` 仅提示 Windows CRLF 转换 warning，无 whitespace error。
+- 当前问题 / 待处理事项：
+  - `DEFENSE_DEMO_RUNBOOK.md` 不是干净 UTF-8，未强行 patch，避免扩大乱码；本轮答辩 scale 内容已放入独立文档与新 PPTX。
+  - PPTX 已做 OpenXML 包完整性检查，但当前环境没有 PowerPoint/LibreOffice headless render，因此未做逐页 PNG 渲染和 PPTX 视觉 parity 检查。
+  - 10M auto 大输出仍是 affected-column incremental validation，不是 full post scan；现在已增加逐列变差 reject，但论文里仍必须保持该边界表述。
+  - pandas categorical dtype deprecation warnings 仍未清理。

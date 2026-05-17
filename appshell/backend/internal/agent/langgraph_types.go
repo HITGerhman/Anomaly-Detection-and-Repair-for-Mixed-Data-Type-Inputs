@@ -174,6 +174,8 @@ func ResolveLangGraphConfig(engineScript string) LangGraphConfig {
 	}
 	if pythonBin := strings.TrimSpace(os.Getenv("APPSHELL_LANGGRAPH_PYTHON_BIN")); pythonBin != "" {
 		config.PythonBin = pythonBin
+	} else if pythonBin := strings.TrimSpace(os.Getenv("APPSHELL_PYTHON_BIN")); pythonBin != "" {
+		config.PythonBin = pythonBin
 	}
 	config.StartupTimeout = parseEnvDurationMS(os.Getenv("APPSHELL_LANGGRAPH_STARTUP_TIMEOUT_MS"), defaultLangGraphStartupTimeout)
 	config.RequestTimeout = parseEnvDurationMS(os.Getenv("APPSHELL_LANGGRAPH_REQUEST_TIMEOUT_MS"), defaultLangGraphRequestTimeout)

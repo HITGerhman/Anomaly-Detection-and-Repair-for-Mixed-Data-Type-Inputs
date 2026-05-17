@@ -7,17 +7,37 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strings"
 	"testing"
 	"time"
 )
 
 func requirePythonBin(t *testing.T) string {
 	t.Helper()
-	pythonBin, err := exec.LookPath("python")
-	if err != nil {
-		t.Skipf("python not found: %v", err)
+	for _, envName := range []string{"APPSHELL_LANGGRAPH_PYTHON_BIN", "APPSHELL_PYTHON_BIN"} {
+		if pythonBin := strings.TrimSpace(os.Getenv(envName)); pythonBin != "" {
+			if usablePythonBin(pythonBin) {
+				return pythonBin
+			}
+			t.Skipf("%s is set but is not a runnable Python 3 interpreter: %s", envName, pythonBin)
+		}
 	}
-	return pythonBin
+	for _, name := range []string{"python3", "python"} {
+		pythonBin, err := exec.LookPath(name)
+		if err != nil {
+			continue
+		}
+		if usablePythonBin(pythonBin) {
+			return pythonBin
+		}
+	}
+	t.Skipf("usable Python 3 interpreter not found")
+	return ""
+}
+
+func usablePythonBin(pythonBin string) bool {
+	cmd := exec.Command(pythonBin, "-c", "import sys; raise SystemExit(0 if sys.version_info[0] == 3 else 1)")
+	return cmd.Run() == nil
 }
 
 func findFreeTCPPort(t *testing.T) int {
