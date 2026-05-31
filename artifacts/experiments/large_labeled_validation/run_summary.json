@@ -1,0 +1,678 @@
+{
+  "artifact_dir": "artifacts/experiments/large_labeled_validation",
+  "assumptions": [
+    "Each labeled scale uses 100 injected anomalies to match the controlled baseline proportions.",
+    "10M repair accuracy is not evaluated in this run; only labeled detection scan metrics are reported.",
+    "Peak memory is current-process working set/private memory sampled during the stage."
+  ],
+  "created_at": "2026-05-31 18:29:56 +0800",
+  "experiments": [
+    {
+      "artifact_dir": "artifacts/experiments/large_labeled_validation/orders_transactions_1m_labeled",
+      "corrupted_rows": 1000012,
+      "dataset": "orders_transactions_1m_labeled",
+      "detection_metrics": [
+        {
+          "dataset": "orders_transactions_1m_labeled",
+          "f1": 1.0,
+          "fn": 0,
+          "fp": 0,
+          "gt": 30,
+          "issue_type": "missing_values",
+          "precision": 1.0,
+          "pred": 30,
+          "recall": 1.0,
+          "tp": 30
+        },
+        {
+          "dataset": "orders_transactions_1m_labeled",
+          "f1": 0.006293,
+          "fn": 0,
+          "fp": 7580,
+          "gt": 24,
+          "issue_type": "numeric_outlier",
+          "precision": 0.003156,
+          "pred": 7604,
+          "recall": 1.0,
+          "tp": 24
+        },
+        {
+          "dataset": "orders_transactions_1m_labeled",
+          "f1": 1.0,
+          "fn": 0,
+          "fp": 0,
+          "gt": 18,
+          "issue_type": "rare_category",
+          "precision": 1.0,
+          "pred": 18,
+          "recall": 1.0,
+          "tp": 18
+        },
+        {
+          "dataset": "orders_transactions_1m_labeled",
+          "f1": 1.0,
+          "fn": 0,
+          "fp": 0,
+          "gt": 12,
+          "issue_type": "duplicate_record",
+          "precision": 1.0,
+          "pred": 12,
+          "recall": 1.0,
+          "tp": 12
+        },
+        {
+          "dataset": "orders_transactions_1m_labeled",
+          "f1": 1.0,
+          "fn": 0,
+          "fp": 0,
+          "gt": 16,
+          "issue_type": "cross_column_consistency",
+          "precision": 1.0,
+          "pred": 16,
+          "recall": 1.0,
+          "tp": 16
+        },
+        {
+          "dataset": "orders_transactions_1m_labeled",
+          "f1": 0.025707,
+          "fn": 0,
+          "fp": 7580,
+          "gt": 100,
+          "issue_type": "Overall",
+          "precision": 0.013021,
+          "pred": 7680,
+          "recall": 1.0,
+          "tp": 100
+        }
+      ],
+      "ground_truth_rows": 100,
+      "repair_metrics": [
+        {
+          "changed": 30,
+          "dataset": "orders_transactions_1m_labeled",
+          "exact": 5,
+          "exact_rate": 0.166667,
+          "improved_or_exact": 5,
+          "improved_or_exact_rate": 0.166667,
+          "issue_type": "missing_values",
+          "non_gt_modified": 0,
+          "repairable_gt": 30,
+          "skipped_non_repairable_count": 0
+        },
+        {
+          "changed": 24,
+          "dataset": "orders_transactions_1m_labeled",
+          "exact": 0,
+          "exact_rate": 0.0,
+          "improved_or_exact": 24,
+          "improved_or_exact_rate": 1.0,
+          "issue_type": "numeric_outlier",
+          "non_gt_modified": 7580,
+          "repairable_gt": 24,
+          "skipped_non_repairable_count": 0
+        },
+        {
+          "changed": 18,
+          "dataset": "orders_transactions_1m_labeled",
+          "exact": 2,
+          "exact_rate": 0.111111,
+          "improved_or_exact": 2,
+          "improved_or_exact_rate": 0.111111,
+          "issue_type": "rare_category",
+          "non_gt_modified": 0,
+          "repairable_gt": 18,
+          "skipped_non_repairable_count": 0
+        },
+        {
+          "changed": 72,
+          "dataset": "orders_transactions_1m_labeled",
+          "exact": 7,
+          "exact_rate": 0.097222,
+          "improved_or_exact": 31,
+          "improved_or_exact_rate": 0.430556,
+          "issue_type": "Overall",
+          "non_gt_modified": 7580,
+          "repairable_gt": 72,
+          "skipped_non_repairable_count": 28
+        }
+      ],
+      "repair_summary": {
+        "dataset": "orders_transactions_1m_labeled",
+        "repair_batch": {
+          "applied_issue_count": 11,
+          "comparison": {
+            "after_column_issue_counts": {
+              "discount": 0,
+              "order_status": 0,
+              "order_time": 1,
+              "payment_method": 0,
+              "product_category": 0,
+              "quantity": 0,
+              "source_row_id": 1,
+              "total_amount": 0,
+              "unit_price": 0
+            },
+            "after_issue_count": 2,
+            "after_issue_type_counts": {
+              "cross_column_consistency": 1,
+              "duplicate_record": 1,
+              "missing_values": 0,
+              "numeric_outlier": 0,
+              "rare_category": 0
+            },
+            "before_column_issue_counts": {
+              "discount": 2,
+              "order_status": 1,
+              "order_time": 1,
+              "payment_method": 2,
+              "product_category": 2,
+              "quantity": 1,
+              "source_row_id": 1,
+              "total_amount": 1,
+              "unit_price": 2
+            },
+            "before_issue_count": 13,
+            "before_issue_type_counts": {
+              "cross_column_consistency": 1,
+              "duplicate_record": 1,
+              "missing_values": 4,
+              "numeric_outlier": 4,
+              "rare_category": 3
+            },
+            "changed_cell_count": 7652,
+            "changed_cells_preview": [
+              {
+                "after": 353.1,
+                "before": 367.65,
+                "column": "total_amount",
+                "issue_id": "total_amount::numeric_outlier",
+                "row": 123
+              },
+              {
+                "after": 353.1,
+                "before": 356.72,
+                "column": "total_amount",
+                "issue_id": "total_amount::numeric_outlier",
+                "row": 163
+              },
+              {
+                "after": 353.1,
+                "before": 380.5,
+                "column": "total_amount",
+                "issue_id": "total_amount::numeric_outlier",
+                "row": 328
+              },
+              {
+                "after": 353.1,
+                "before": 368.5,
+                "column": "total_amount",
+                "issue_id": "total_amount::numeric_outlier",
+                "row": 368
+              },
+              {
+                "after": 353.1,
+                "before": 360.0,
+                "column": "total_amount",
+                "issue_id": "total_amount::numeric_outlier",
+                "row": 408
+              },
+              {
+                "after": 353.1,
+                "before": 999999.0,
+                "column": "total_amount",
+                "issue_id": "total_amount::numeric_outlier",
+                "row": 613
+              },
+              {
+                "after": 353.1,
+                "before": 366.22,
+                "column": "total_amount",
+                "issue_id": "total_amount::numeric_outlier",
+                "row": 823
+              },
+              {
+                "after": 353.1,
+                "before": 359.57,
+                "column": "total_amount",
+                "issue_id": "total_amount::numeric_outlier",
+                "row": 863
+              },
+              {
+                "after": 353.1,
+                "before": 381.5,
+                "column": "total_amount",
+                "issue_id": "total_amount::numeric_outlier",
+                "row": 1028
+              },
+              {
+                "after": 353.1,
+                "before": 370.5,
+                "column": "total_amount",
+                "issue_id": "total_amount::numeric_outlier",
+                "row": 1068
+              },
+              {
+                "after": 353.1,
+                "before": 360.5,
+                "column": "total_amount",
+                "issue_id": "total_amount::numeric_outlier",
+                "row": 1108
+              },
+              {
+                "after": 353.1,
+                "before": 369.07,
+                "column": "total_amount",
+                "issue_id": "total_amount::numeric_outlier",
+                "row": 1523
+              },
+              {
+                "after": 353.1,
+                "before": 359.57,
+                "column": "total_amount",
+                "issue_id": "total_amount::numeric_outlier",
+                "row": 1563
+              },
+              {
+                "after": 353.1,
+                "before": 381.5,
+                "column": "total_amount",
+                "issue_id": "total_amount::numeric_outlier",
+                "row": 1728
+              },
+              {
+                "after": 353.1,
+                "before": 369.0,
+                "column": "total_amount",
+                "issue_id": "total_amount::numeric_outlier",
+                "row": 1768
+              },
+              {
+                "after": 353.1,
+                "before": 359.5,
+                "column": "total_amount",
+                "issue_id": "total_amount::numeric_outlier",
+                "row": 1808
+              },
+              {
+                "after": 353.1,
+                "before": 359.57,
+                "column": "total_amount",
+                "issue_id": "total_amount::numeric_outlier",
+                "row": 2263
+              },
+              {
+                "after": 353.1,
+                "before": 379.0,
+                "column": "total_amount",
+                "issue_id": "total_amount::numeric_outlier",
+                "row": 2428
+              },
+              {
+                "after": 353.1,
+                "before": 370.5,
+                "column": "total_amount",
+                "issue_id": "total_amount::numeric_outlier",
+                "row": 2468
+              },
+              {
+                "after": 353.1,
+                "before": 358.0,
+                "column": "total_amount",
+                "issue_id": "total_amount::numeric_outlier",
+                "row": 2508
+              }
+            ],
+            "comparison_exact": false,
+            "post_scan_performed": false,
+            "resolved_issue_count": 11
+          },
+          "selected_issue_count": 11,
+          "skipped_issues": [],
+          "streaming_replaced_cell_count": 7652,
+          "total_cells_modified": 7652,
+          "write_strategy_used": "streaming"
+        },
+        "repaired_csv": "outputs/large_labeled_validation_20260531/orders_transactions_1m_labeled/repaired.csv",
+        "repaired_file_size_bytes": 118496077,
+        "rollback_manifest": "D:\\code\\pythoncode\\Anomaly Detection and Repair for Mixed Data Type Inputs\\outputs\\large_labeled_validation_20260531\\orders_transactions_1m_labeled\\.rollback\\rb-1780222699871-b4f91f18.json",
+        "rollback_manifest_generated": true,
+        "runtime": {
+          "columns": 13,
+          "dataset": "orders_transactions_1m_labeled",
+          "engine_duration_ms": 17074,
+          "notes": "repair_batch write_output=true with rollback manifest enabled",
+          "output_size_mb": 113.006665,
+          "peak_private_memory_mb": 1007.015625,
+          "peak_working_set_mb": 523.503906,
+          "rows": 1000012,
+          "stage": "repair_evaluate",
+          "status": "ok",
+          "wall_seconds": 17.074468
+        },
+        "selected_issue_ids": [
+          "total_amount::numeric_outlier",
+          "payment_method::missing_values",
+          "unit_price::missing_values",
+          "discount::numeric_outlier",
+          "payment_method::rare_category",
+          "quantity::numeric_outlier",
+          "product_category::rare_category",
+          "discount::missing_values",
+          "product_category::missing_values",
+          "unit_price::numeric_outlier",
+          "order_status::rare_category"
+        ],
+        "source_dataset": "orders_transactions"
+      },
+      "repairable_ground_truth_rows": 72,
+      "row_count": 1000000,
+      "run_repair": true,
+      "runtime_rows": [
+        {
+          "columns": 13,
+          "dataset": "orders_transactions_1m_labeled",
+          "engine_duration_ms": 8289,
+          "notes": "streaming deterministic generation and 100-anomaly injection",
+          "output_size_mb": 112.055097,
+          "peak_private_memory_mb": 538.671875,
+          "peak_working_set_mb": 80.804688,
+          "rows": 1000000,
+          "stage": "generate_labeled_csv",
+          "status": "ok",
+          "wall_seconds": 8.288857
+        },
+        {
+          "columns": 13,
+          "dataset": "orders_transactions_1m_labeled",
+          "engine_duration_ms": 11481,
+          "notes": "in-process full scan with ground-truth matching",
+          "output_size_mb": 0.0,
+          "peak_private_memory_mb": 966.125,
+          "peak_working_set_mb": 494.695312,
+          "rows": 1000012,
+          "stage": "scan_detect",
+          "status": "ok",
+          "wall_seconds": 11.481219
+        },
+        {
+          "columns": 13,
+          "dataset": "orders_transactions_1m_labeled",
+          "engine_duration_ms": 17074,
+          "notes": "repair_batch write_output=true with rollback manifest enabled",
+          "output_size_mb": 113.006665,
+          "peak_private_memory_mb": 1007.015625,
+          "peak_working_set_mb": 523.503906,
+          "rows": 1000012,
+          "stage": "repair_evaluate",
+          "status": "ok",
+          "wall_seconds": 17.074468
+        }
+      ],
+      "scan_summary": {
+        "columns": 13,
+        "csv_path": "outputs/large_labeled_validation_20260531/orders_transactions_1m_labeled/corrupted.csv",
+        "dataset": "orders_transactions_1m_labeled",
+        "detected_item_count": 7692,
+        "issue_count": 13,
+        "issue_type_counts": {
+          "cross_column_consistency": 1,
+          "duplicate_record": 1,
+          "missing_values": 4,
+          "numeric_outlier": 4,
+          "rare_category": 3
+        },
+        "rows": 1000012,
+        "runtime": {
+          "columns": 13,
+          "dataset": "orders_transactions_1m_labeled",
+          "engine_duration_ms": 11481,
+          "notes": "in-process full scan with ground-truth matching",
+          "output_size_mb": 0.0,
+          "peak_private_memory_mb": 966.125,
+          "peak_working_set_mb": 494.695312,
+          "rows": 1000012,
+          "stage": "scan_detect",
+          "status": "ok",
+          "wall_seconds": 11.481219
+        },
+        "scan_config": {
+          "auto_pair_constraints": false,
+          "consistency_rules": [
+            {
+              "left_col": "order_time",
+              "name": "paid_pay_time_not_before_order_time",
+              "right_col": "pay_time",
+              "type": "lte"
+            }
+          ],
+          "duplicate_subset": [
+            "source_row_id"
+          ],
+          "enable_cross_column_consistency": true,
+          "enable_duplicate_record": true,
+          "enable_time_series_shift": false,
+          "max_bins": 120,
+          "max_issues": 5000,
+          "min_categorical_samples": 8,
+          "min_numeric_samples": 6,
+          "numeric_iqr_factor": 1.5,
+          "preview_limit": 20,
+          "rare_count_floor": 2,
+          "rare_ratio_threshold": 0.01,
+          "robust_z_threshold": 3.5,
+          "time_series_min_points": 24,
+          "time_series_z_threshold": 4.0
+        },
+        "selected_repair_issue_ids": [
+          "total_amount::numeric_outlier",
+          "payment_method::missing_values",
+          "unit_price::missing_values",
+          "discount::numeric_outlier",
+          "payment_method::rare_category",
+          "quantity::numeric_outlier",
+          "product_category::rare_category",
+          "discount::missing_values",
+          "product_category::missing_values",
+          "unit_price::numeric_outlier",
+          "order_status::rare_category"
+        ],
+        "source_dataset": "orders_transactions"
+      },
+      "work_dir": "outputs/large_labeled_validation_20260531/orders_transactions_1m_labeled"
+    },
+    {
+      "artifact_dir": "artifacts/experiments/large_labeled_validation/orders_transactions_10m_labeled",
+      "corrupted_rows": 10000012,
+      "dataset": "orders_transactions_10m_labeled",
+      "detection_metrics": [
+        {
+          "dataset": "orders_transactions_10m_labeled",
+          "f1": 1.0,
+          "fn": 0,
+          "fp": 0,
+          "gt": 30,
+          "issue_type": "missing_values",
+          "precision": 1.0,
+          "pred": 30,
+          "recall": 1.0,
+          "tp": 30
+        },
+        {
+          "dataset": "orders_transactions_10m_labeled",
+          "f1": 0.000633,
+          "fn": 0,
+          "fp": 75764,
+          "gt": 24,
+          "issue_type": "numeric_outlier",
+          "precision": 0.000317,
+          "pred": 75788,
+          "recall": 1.0,
+          "tp": 24
+        },
+        {
+          "dataset": "orders_transactions_10m_labeled",
+          "f1": 1.0,
+          "fn": 0,
+          "fp": 0,
+          "gt": 18,
+          "issue_type": "rare_category",
+          "precision": 1.0,
+          "pred": 18,
+          "recall": 1.0,
+          "tp": 18
+        },
+        {
+          "dataset": "orders_transactions_10m_labeled",
+          "f1": 1.0,
+          "fn": 0,
+          "fp": 0,
+          "gt": 12,
+          "issue_type": "duplicate_record",
+          "precision": 1.0,
+          "pred": 12,
+          "recall": 1.0,
+          "tp": 12
+        },
+        {
+          "dataset": "orders_transactions_10m_labeled",
+          "f1": 1.0,
+          "fn": 0,
+          "fp": 0,
+          "gt": 16,
+          "issue_type": "cross_column_consistency",
+          "precision": 1.0,
+          "pred": 16,
+          "recall": 1.0,
+          "tp": 16
+        },
+        {
+          "dataset": "orders_transactions_10m_labeled",
+          "f1": 0.002633,
+          "fn": 0,
+          "fp": 75764,
+          "gt": 100,
+          "issue_type": "Overall",
+          "precision": 0.001318,
+          "pred": 75864,
+          "recall": 1.0,
+          "tp": 100
+        }
+      ],
+      "ground_truth_rows": 100,
+      "repair_metrics": [],
+      "repair_summary": null,
+      "repairable_ground_truth_rows": 72,
+      "row_count": 10000000,
+      "run_repair": false,
+      "runtime_rows": [
+        {
+          "columns": 13,
+          "dataset": "orders_transactions_10m_labeled",
+          "engine_duration_ms": 213854,
+          "notes": "streaming deterministic generation and 100-anomaly injection",
+          "output_size_mb": 1128.158732,
+          "peak_private_memory_mb": 661.511719,
+          "peak_working_set_mb": 203.511719,
+          "rows": 10000000,
+          "stage": "generate_labeled_csv",
+          "status": "ok",
+          "wall_seconds": 213.853509
+        },
+        {
+          "columns": 13,
+          "dataset": "orders_transactions_10m_labeled",
+          "engine_duration_ms": 147100,
+          "notes": "in-process full scan with ground-truth matching",
+          "output_size_mb": 0.0,
+          "peak_private_memory_mb": 5598.25,
+          "peak_working_set_mb": 4931.457031,
+          "rows": 10000012,
+          "stage": "scan_detect",
+          "status": "ok",
+          "wall_seconds": 147.100454
+        }
+      ],
+      "scan_summary": {
+        "columns": 13,
+        "csv_path": "outputs/large_labeled_validation_20260531/orders_transactions_10m_labeled/corrupted.csv",
+        "dataset": "orders_transactions_10m_labeled",
+        "detected_item_count": 75876,
+        "issue_count": 13,
+        "issue_type_counts": {
+          "cross_column_consistency": 1,
+          "duplicate_record": 1,
+          "missing_values": 4,
+          "numeric_outlier": 4,
+          "rare_category": 3
+        },
+        "rows": 10000012,
+        "runtime": {
+          "columns": 13,
+          "dataset": "orders_transactions_10m_labeled",
+          "engine_duration_ms": 147100,
+          "notes": "in-process full scan with ground-truth matching",
+          "output_size_mb": 0.0,
+          "peak_private_memory_mb": 5598.25,
+          "peak_working_set_mb": 4931.457031,
+          "rows": 10000012,
+          "stage": "scan_detect",
+          "status": "ok",
+          "wall_seconds": 147.100454
+        },
+        "scan_config": {
+          "auto_pair_constraints": false,
+          "consistency_rules": [
+            {
+              "left_col": "order_time",
+              "name": "paid_pay_time_not_before_order_time",
+              "right_col": "pay_time",
+              "type": "lte"
+            }
+          ],
+          "duplicate_subset": [
+            "source_row_id"
+          ],
+          "enable_cross_column_consistency": true,
+          "enable_duplicate_record": true,
+          "enable_time_series_shift": false,
+          "max_bins": 120,
+          "max_issues": 5000,
+          "min_categorical_samples": 8,
+          "min_numeric_samples": 6,
+          "numeric_iqr_factor": 1.5,
+          "preview_limit": 20,
+          "rare_count_floor": 2,
+          "rare_ratio_threshold": 0.01,
+          "robust_z_threshold": 3.5,
+          "time_series_min_points": 24,
+          "time_series_z_threshold": 4.0
+        },
+        "selected_repair_issue_ids": [
+          "total_amount::numeric_outlier",
+          "discount::numeric_outlier",
+          "payment_method::missing_values",
+          "discount::missing_values",
+          "product_category::missing_values",
+          "payment_method::rare_category",
+          "order_status::rare_category",
+          "quantity::numeric_outlier",
+          "product_category::rare_category",
+          "unit_price::missing_values",
+          "unit_price::numeric_outlier"
+        ],
+        "source_dataset": "orders_transactions"
+      },
+      "work_dir": "outputs/large_labeled_validation_20260531/orders_transactions_10m_labeled"
+    }
+  ],
+  "injection_plan": {
+    "cross_column_consistency": 16,
+    "duplicate_record": 12,
+    "missing_values": 30,
+    "numeric_outlier": 24,
+    "rare_category": 18
+  },
+  "scope": "large labeled validation bridge between controlled accuracy and large-scale stability experiments",
+  "source_dataset": "orders_transactions",
+  "work_dir": "outputs/large_labeled_validation_20260531"
+}

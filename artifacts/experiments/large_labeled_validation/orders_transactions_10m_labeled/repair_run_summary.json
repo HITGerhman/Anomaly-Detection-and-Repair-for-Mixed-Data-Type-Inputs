@@ -1,0 +1,6 @@
+{
+  "dataset": "orders_transactions_10m_labeled",
+  "reason": "10M labeled run is scan/detection-only; repair accuracy at this scale is future work.",
+  "repair_evaluated": false,
+  "source_dataset": "orders_transactions"
+}

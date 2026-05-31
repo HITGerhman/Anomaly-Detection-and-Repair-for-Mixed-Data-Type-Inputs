@@ -1,0 +1,70 @@
+{
+  "columns": 13,
+  "csv_path": "outputs/large_labeled_validation_20260531/orders_transactions_1m_labeled/corrupted.csv",
+  "dataset": "orders_transactions_1m_labeled",
+  "detected_item_count": 7692,
+  "issue_count": 13,
+  "issue_type_counts": {
+    "cross_column_consistency": 1,
+    "duplicate_record": 1,
+    "missing_values": 4,
+    "numeric_outlier": 4,
+    "rare_category": 3
+  },
+  "rows": 1000012,
+  "runtime": {
+    "columns": 13,
+    "dataset": "orders_transactions_1m_labeled",
+    "engine_duration_ms": 11481,
+    "notes": "in-process full scan with ground-truth matching",
+    "output_size_mb": 0.0,
+    "peak_private_memory_mb": 966.125,
+    "peak_working_set_mb": 494.695312,
+    "rows": 1000012,
+    "stage": "scan_detect",
+    "status": "ok",
+    "wall_seconds": 11.481219
+  },
+  "scan_config": {
+    "auto_pair_constraints": false,
+    "consistency_rules": [
+      {
+        "left_col": "order_time",
+        "name": "paid_pay_time_not_before_order_time",
+        "right_col": "pay_time",
+        "type": "lte"
+      }
+    ],
+    "duplicate_subset": [
+      "source_row_id"
+    ],
+    "enable_cross_column_consistency": true,
+    "enable_duplicate_record": true,
+    "enable_time_series_shift": false,
+    "max_bins": 120,
+    "max_issues": 5000,
+    "min_categorical_samples": 8,
+    "min_numeric_samples": 6,
+    "numeric_iqr_factor": 1.5,
+    "preview_limit": 20,
+    "rare_count_floor": 2,
+    "rare_ratio_threshold": 0.01,
+    "robust_z_threshold": 3.5,
+    "time_series_min_points": 24,
+    "time_series_z_threshold": 4.0
+  },
+  "selected_repair_issue_ids": [
+    "total_amount::numeric_outlier",
+    "payment_method::missing_values",
+    "unit_price::missing_values",
+    "discount::numeric_outlier",
+    "payment_method::rare_category",
+    "quantity::numeric_outlier",
+    "product_category::rare_category",
+    "discount::missing_values",
+    "product_category::missing_values",
+    "unit_price::numeric_outlier",
+    "order_status::rare_category"
+  ],
+  "source_dataset": "orders_transactions"
+}

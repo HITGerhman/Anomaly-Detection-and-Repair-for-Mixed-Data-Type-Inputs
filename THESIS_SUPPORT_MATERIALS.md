@@ -531,3 +531,72 @@ Avoid these claims:
   post-scan validation.
 - Do not claim the system can scale to arbitrary billion-row inputs.
 - Do not claim all anomalies are safe for automatic repair.
+
+## 2026-05-31 Large-scale Labeled Validation Update
+
+This update is the bridge between the controlled accuracy baseline and the
+large-scale stability validation. It uses generated `orders_transactions` data
+with the same 100 injected anomalies as the controlled baseline proportions:
+30 missing values, 24 numeric outliers, 18 rare categories, 12 duplicate
+records, and 16 cross-column inconsistencies.
+
+Use these table sources:
+
+| Thesis table | Artifact source |
+|---|---|
+| Large labeled detection metrics | `artifacts/experiments/large_labeled_validation/summary_detection_metrics.csv` |
+| 1M labeled repair metrics | `artifacts/experiments/large_labeled_validation/summary_repair_metrics.csv` |
+| Runtime and peak memory | `artifacts/experiments/large_labeled_validation/summary_runtime_memory.csv` |
+| Detailed note | `docs/large_scale_labeled_validation_20260531.md` |
+
+Detection summary:
+
+| Dataset | Rows | GT | Pred | TP | FP | FN | Precision | Recall | F1 |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|
+| `orders_transactions_1m_labeled` | 1,000,012 | 100 | 7,680 | 100 | 7,580 | 0 | 0.013021 | 1.000000 | 0.025707 |
+| `orders_transactions_10m_labeled` | 10,000,012 | 100 | 75,864 | 100 | 75,764 | 0 | 0.001318 | 1.000000 | 0.002633 |
+
+Issue-level interpretation:
+
+- The system detected all injected anomalies in both labeled scale datasets.
+- Missing values, rare categories, duplicate records, and cross-column
+  inconsistencies reached precision/recall/F1 of `1.000000`.
+- Numeric outlier recall was also `1.000000`, but precision was very low because
+  the default threshold flagged many naturally high generated `total_amount`
+  values. This is an important limitation and should be discussed plainly.
+
+1M repair summary:
+
+| Repairable GT | Changed | Exact | Improved/Exact | Exact Rate | Improved/Exact Rate | Non-GT Modified | Rollback |
+|---:|---:|---:|---:|---:|---:|---:|---|
+| 72 | 72 | 7 | 31 | 0.097222 | 0.430556 | 7,580 | generated |
+
+Runtime and peak memory:
+
+| Dataset | Stage | Runtime | Peak working set | Peak private memory |
+|---|---|---:|---:|---:|
+| 1M | Generate labeled CSV | 8.289 s | 80.805 MB | 538.672 MB |
+| 1M | Full scan + GT matching | 11.481 s | 494.695 MB | 966.125 MB |
+| 1M | Repair + GT evaluation | 17.074 s | 523.504 MB | 1007.016 MB |
+| 10M | Generate labeled CSV | 213.854 s | 203.512 MB | 661.512 MB |
+| 10M | Full scan + GT matching | 147.100 s | 4931.457 MB | 5598.250 MB |
+
+Suggested thesis paragraph:
+
+> To connect the controlled accuracy experiment with the large-scale stability
+> validation, a supplementary labeled scale experiment was conducted on
+> generated `orders_transactions` data. The experiment injected 100 known
+> anomalies using the same type proportions as the controlled baseline. On both
+> the 1M-row and 10M-row labeled datasets, the system recalled all injected
+> anomalies. However, numeric outlier precision decreased sharply because the
+> default threshold also marked many naturally high generated transaction
+> amounts. This result strengthens the evidence for large-scale recall while
+> reinforcing the need for domain-specific numeric threshold tuning.
+
+Boundary statement:
+
+> The 10M labeled experiment evaluates detection only. Repair accuracy at 10M
+> scale is not claimed in this thesis and remains future work. The 1M labeled
+> repair run produced a repaired CSV and rollback manifest, but it also modified
+> 7,580 non-ground-truth cells due to numeric outlier false positives; these are
+> counted as side effects, not repair successes.

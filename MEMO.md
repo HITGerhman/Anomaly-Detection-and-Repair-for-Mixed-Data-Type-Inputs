@@ -2297,3 +2297,56 @@ Last updated: 2026-05-16 12:29:53 +08:00
   - PPTX 已做 OpenXML 包完整性检查，但当前环境没有 PowerPoint/LibreOffice headless render，因此未做逐页 PNG 渲染和 PPTX 视觉 parity 检查。
   - 10M auto 大输出仍是 affected-column incremental validation，不是 full post scan；现在已增加逐列变差 reject，但论文里仍必须保持该边界表述。
   - pandas categorical dtype deprecation warnings 仍未清理。
+
+## Update 2026-05-31 18:43:04 +08:00
+
+- 改动日期：2026-05-31 18:43:04 +08:00
+- 改动内容简述：按“稳妥全面”方案补齐大规模带标签实验。本轮新增 `orders_transactions_1m_labeled` 完整检测+修复+回滚评价，以及 `orders_transactions_10m_labeled` 带标签 detection-only scan，并将结果整理到实验汇总、论文支撑材料、README、独立文档和答辩 PPT 补充页。
+- 最终目标：弥合“受控数据集有 accuracy/repair metrics、10M 稳定性实验无 ground truth”的证据空档，让答辩时可以说明大规模实验不只是跑通流程，也能在带标签注入场景下验证已知异常召回。
+- 当前采用的方法：
+  - 新增 `scripts/run_large_labeled_validation.py`，复用现有 `orders_transactions` schema、scan config、GT matching 和 repair metric 逻辑。
+  - 1M/10M 均注入 100 条异常，比例固定为 `missing_values=30`、`numeric_outlier=24`、`rare_category=18`、`duplicate_record=12`、`cross_column_consistency=16`。
+  - 生成阶段使用 streaming CSV writer，避免 10M 数据生成时一次性构造 pandas DataFrame。
+  - 实验阶段记录 wall time、in-process engine duration、当前进程 peak working set / peak private memory、输出大小和 rollback manifest 状态。
+  - 1M 执行 full scan、检测指标、`repair_batch write_output=true`、rollback manifest 生成和 repair GT 评价；10M 只执行 labeled full scan 和检测指标，不声称 10M repair accuracy。
+- 相关模块/文件：
+  - `.gitignore`
+  - `README.md`
+  - `THESIS_SUPPORT_MATERIALS.md`
+  - `docs/large_scale_labeled_validation_20260531.md`
+  - `scripts/run_large_labeled_validation.py`
+  - `tests/python_engine/test_large_labeled_validation.py`
+  - `artifacts/experiments/large_labeled_validation/`
+  - `outputs/large_labeled_validation_20260531/`（ignored，大 CSV 与完整 GT 工作区）
+  - `thesis-defense/generate_large_labeled_validation_deck.js`
+  - `thesis-defense/Large_Labeled_Validation_Update_2026-05-31.pptx`
+  - `MEMO.md`
+- 已解决的问题 / 新增功能：
+  - 新增可复现 large labeled validation harness，支持 `--run both|1m|10m`、自定义 row count、tracked artifact dir 和 ignored work dir。
+  - 新增测试覆盖 streaming generator 的 determinism、GT 数量、duplicate row count、summary schema，以及小规模 detection/repair 闭环。
+  - 正式 1M labeled run 通过：`1,000,012` corrupted rows，100 injected anomalies 全部召回；overall detection `precision=0.013021`、`recall=1.000000`、`F1=0.025707`。
+  - 正式 10M labeled scan 通过：`10,000,012` corrupted rows，100 injected anomalies 全部召回；overall detection `precision=0.001318`、`recall=1.000000`、`F1=0.002633`。
+  - 1M repair evaluation 通过：repairable GT `72`，changed `72`，exact `7`，improved-or-exact `31`，exact rate `0.097222`，improved-or-exact rate `0.430556`。
+  - 1M repair 生成 rollback manifest：`outputs/large_labeled_validation_20260531/orders_transactions_1m_labeled/.rollback/rb-1780222699871-b4f91f18.json`。
+  - 明确记录数值离群副作用：1M repair 修改总单元格 `7,652`，其中 `7,580` 个为非 ground truth numeric outlier 修改；文档中已标注为 side effect，不作为修复成功声称。
+  - 记录 runtime / memory：10M full scan + GT matching `147.100s`，peak working set `4931.457 MB`，peak private memory `5598.250 MB`。
+  - 新增 `docs/large_scale_labeled_validation_20260531.md`，给出论文可引用表格、边界声明、复现实验命令和 suggested thesis paragraph。
+  - 新增 5 页答辩补充 PPTX，并通过 Presentations runtime 生成预览与 PPTX；zip integrity 检查通过，slide count 为 5。
+- 验证命令：
+  - `.\.venv-win\Scripts\python.exe -m py_compile .\scripts\run_large_labeled_validation.py`
+  - `.\.venv-win\Scripts\python.exe -m pytest tests\python_engine\test_cross_dataset_validation.py tests\python_engine\test_large_labeled_validation.py -q`
+  - `.\.venv-win\Scripts\python.exe .\scripts\run_large_labeled_validation.py --run both --output-dir .\artifacts\experiments\large_labeled_validation --work-dir .\outputs\large_labeled_validation_20260531`
+  - 使用 bundled Node：`node --check .\thesis-defense\generate_large_labeled_validation_deck.js`
+  - 使用 bundled Node 运行 `thesis-defense/generate_large_labeled_validation_deck.js`
+  - 使用 Python `zipfile.testzip()` 检查 `thesis-defense/Large_Labeled_Validation_Update_2026-05-31.pptx`
+- 验收结果：
+  - 目标 pytest 通过：`4 passed in 3.92s`。
+  - 正式 1M/10M large labeled validation 均成功生成汇总产物。
+  - PPTX 生成成功：`Large_Labeled_Validation_Update_2026-05-31.pptx`，5 slides，OpenXML zip check 通过。
+- 当前问题 / 待处理事项：
+  - 10M labeled run 只评价检测准确性，不评价修复准确性；论文/PPT 中必须保持该边界。
+  - 数值离群默认阈值在大规模 generated orders 数据上 precision 很低，后续应继续做 domain-specific threshold tuning 或把 high-volume numeric outlier 默认降为 review-first。
+  - Peak memory 是当前进程采样指标，不是算法复杂度证明；论文中只能作为实验资源观察值。
+  - 当前 shell 的 `node.exe` 指向 WindowsApps Codex 包且会 Access denied，生成 PPTX 时需要使用 bundled runtime Node：`C:\Users\Administrator\.cache\codex-runtimes\codex-primary-runtime\dependencies\node\bin\node.exe`。
+  - 2026-06-01 同步 GitHub 时已通过 `winget` 安装 Git for Windows，并完成本地提交 `45c0071 Add large-scale labeled validation results`；`git diff --check` / `git diff --cached --check` 均无 whitespace error，仅有 Windows CRLF warning。
+  - GitHub push 尚未成功：直连 HTTPS 到 `github.com:443` 会失败；使用系统代理 `127.0.0.1:7897` 后可以访问远端，但当前机器没有已保存的 GitHub HTTPS 凭据，非交互 push 返回 `could not read Username for 'https://github.com'`。SSH 可连到 GitHub 但当前机器没有可用 public key。完成 GitHub 登录或配置凭据后继续执行带代理的 `git push origin feat/algorithm-risk-hardening`。

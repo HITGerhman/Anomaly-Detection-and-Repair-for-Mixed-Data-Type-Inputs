@@ -1,0 +1,6 @@
+dataset,stage,rows,columns,wall_seconds,engine_duration_ms,peak_working_set_mb,peak_private_memory_mb,output_size_mb,status,notes
+orders_transactions_1m_labeled,generate_labeled_csv,1000000,13,8.288857,8289,80.804688,538.671875,112.055097,ok,streaming deterministic generation and 100-anomaly injection
+orders_transactions_1m_labeled,scan_detect,1000012,13,11.481219,11481,494.695312,966.125000,0.000000,ok,in-process full scan with ground-truth matching
+orders_transactions_1m_labeled,repair_evaluate,1000012,13,17.074468,17074,523.503906,1007.015625,113.006665,ok,repair_batch write_output=true with rollback manifest enabled
+orders_transactions_10m_labeled,generate_labeled_csv,10000000,13,213.853509,213854,203.511719,661.511719,1128.158732,ok,streaming deterministic generation and 100-anomaly injection
+orders_transactions_10m_labeled,scan_detect,10000012,13,147.100454,147100,4931.457031,5598.250000,0.000000,ok,in-process full scan with ground-truth matching

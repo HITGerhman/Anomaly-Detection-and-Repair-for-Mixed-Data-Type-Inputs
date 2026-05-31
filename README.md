@@ -346,3 +346,34 @@ auto-session outputs when any affected column has a higher issue count after
 repair than it had in the baseline scan. The risk flag is
 `affected_column_issue_count_increased`, and the auto path rolls back such
 outputs.
+
+## Large-scale Labeled Validation (2026-05-31)
+
+The supplementary labeled scale run is documented in
+`docs/large_scale_labeled_validation_20260531.md`. It adds ground truth to the
+large-scale story by generating `orders_transactions` CSVs with the same 100
+injected anomalies used by the controlled baseline proportions.
+
+| Dataset | Rows | Injected | Detected injected | Precision | Recall | F1 | Scope |
+|---|---:|---:|---:|---:|---:|---:|---|
+| 1M labeled | 1,000,012 | 100 | 100 | 0.013021 | 1.000000 | 0.025707 | detection + repair |
+| 10M labeled | 10,000,012 | 100 | 100 | 0.001318 | 1.000000 | 0.002633 | detection only |
+
+1M repair metrics:
+
+| Repairable GT | Changed | Exact | Improved/Exact | Exact Rate | Improved/Exact Rate | Non-GT Modified | Rollback |
+|---:|---:|---:|---:|---:|---:|---:|---|
+| 72 | 72 | 7 | 31 | 0.097222 | 0.430556 | 7,580 | generated |
+
+Runtime and memory highlights:
+
+| Dataset | Stage | Runtime | Peak working set | Peak private memory |
+|---|---|---:|---:|---:|
+| 1M | full scan + GT matching | 11.481 s | 494.695 MB | 966.125 MB |
+| 1M | repair + GT evaluation | 17.074 s | 523.504 MB | 1007.016 MB |
+| 10M | full scan + GT matching | 147.100 s | 4931.457 MB | 5598.250 MB |
+
+The result should be read conservatively: recall stayed complete for injected
+anomalies, but default numeric outlier thresholds produced many false positives
+on generated transaction amounts. The 10M labeled run is intentionally
+detection-only; 10M repair accuracy remains future work.

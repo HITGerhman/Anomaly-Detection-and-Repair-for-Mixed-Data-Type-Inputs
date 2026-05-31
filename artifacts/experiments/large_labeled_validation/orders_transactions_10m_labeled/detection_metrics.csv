@@ -1,0 +1,7 @@
+dataset,issue_type,gt,pred,tp,fp,fn,precision,recall,f1
+orders_transactions_10m_labeled,missing_values,30,30,30,0,0,1.000000,1.000000,1.000000
+orders_transactions_10m_labeled,numeric_outlier,24,75788,24,75764,0,0.000317,1.000000,0.000633
+orders_transactions_10m_labeled,rare_category,18,18,18,0,0,1.000000,1.000000,1.000000
+orders_transactions_10m_labeled,duplicate_record,12,12,12,0,0,1.000000,1.000000,1.000000
+orders_transactions_10m_labeled,cross_column_consistency,16,16,16,0,0,1.000000,1.000000,1.000000
+orders_transactions_10m_labeled,Overall,100,75864,100,75764,0,0.001318,1.000000,0.002633

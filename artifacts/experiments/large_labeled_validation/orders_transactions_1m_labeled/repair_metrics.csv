@@ -1,0 +1,5 @@
+dataset,issue_type,repairable_gt,changed,exact,improved_or_exact,exact_rate,improved_or_exact_rate,non_gt_modified,skipped_non_repairable_count
+orders_transactions_1m_labeled,missing_values,30,30,5,5,0.166667,0.166667,0,0
+orders_transactions_1m_labeled,numeric_outlier,24,24,0,24,0.000000,1.000000,7580,0
+orders_transactions_1m_labeled,rare_category,18,18,2,2,0.111111,0.111111,0,0
+orders_transactions_1m_labeled,Overall,72,72,7,31,0.097222,0.430556,7580,28
