@@ -1,6 +1,6 @@
 ﻿# MEMO
 
-Last updated: 2026-05-16 12:29:53 +08:00
+Last updated: 2026-06-01 08:42:45 +08:00
 
 ## 椤圭洰鎬荤洰鏍?
 - 灏嗏€滄贩鍚堟暟鎹被鍨嬪紓甯告娴嬩笌淇鈥濋」鐩粠绠楁硶鍘熷瀷鎺ㄨ繘涓哄彲浜や粯銆佸彲婕旂ず銆佸彲娴嬭瘯鐨勬闈㈠簲鐢ㄣ€?- 浠?`appshell/` 浣滀负浜у搧鍖栦富璺緞锛屽舰鎴?`Python Engine + Go Backend + Wails Frontend` 鐨勭ǔ瀹氭灦鏋勩€?- 淇濈暀 `app.py` 浣滀负鏃х増 Streamlit 婕旂ず鍏ュ彛锛岀敤浜庣畻娉曢獙璇併€佺粨鏋滃鐓у拰绛旇京灞曠ず銆?- 閫愭琛ラ綈鐪熷疄鐢ㄦ埛闂幆锛氬鍏?CSV -> 璁粌/鎵弿 -> 闂绛涢€?-> 鎵归噺淇 -> 鍥炴粴 -> 鍘嗗彶鏌ョ湅銆?- 鍦ㄤ繚鐣欑幇鏈夌畻娉曡祫浜т笌宸ョ▼楠ㄦ灦鐨勫墠鎻愪笅锛岄€愭鍗囩骇涓衡€滃 agent 鍐崇瓥灞?+ 纭畾鎬у伐鍏峰眰鈥濈殑鏅鸿兘鍖栦骇鍝併€?- 鏈€缁堢洰鏍囨槸璁╃敤鎴峰敖閲忓彧闇€閫夋嫨鏂囦欢锛屽嵆鍙嚜鍔ㄨ幏寰楁壂鎻忋€佷慨澶嶃€侀獙璇併€佸洖婊氫繚鎶ゅ拰鍥捐〃鍖栬В閲婄粨鏋溿€?
@@ -2350,3 +2350,26 @@ Last updated: 2026-05-16 12:29:53 +08:00
   - 当前 shell 的 `node.exe` 指向 WindowsApps Codex 包且会 Access denied，生成 PPTX 时需要使用 bundled runtime Node：`C:\Users\Administrator\.cache\codex-runtimes\codex-primary-runtime\dependencies\node\bin\node.exe`。
   - 2026-06-01 同步 GitHub 时已通过 `winget` 安装 Git for Windows，并完成本地提交 `45c0071 Add large-scale labeled validation results`；`git diff --check` / `git diff --cached --check` 均无 whitespace error，仅有 Windows CRLF warning。
   - GitHub push 尚未成功：直连 HTTPS 到 `github.com:443` 会失败；使用系统代理 `127.0.0.1:7897` 后可以访问远端，但当前机器没有已保存的 GitHub HTTPS 凭据，非交互 push 返回 `could not read Username for 'https://github.com'`。SSH 可连到 GitHub 但当前机器没有可用 public key。完成 GitHub 登录或配置凭据后继续执行带代理的 `git push origin feat/algorithm-risk-hardening`。
+
+## Update 2026-06-01 08:42:45 +08:00
+
+- 改动日期：2026-06-01 08:42:45 +08:00
+- 改动内容简述：完成本地最新提交到 GitHub 远端分支的真实推送，并确认此前阻塞点不是代码或分支问题，而是当前 PowerShell `PATH`、直连 GitHub 网络和凭据/代理配置问题。
+- 最终目标：让 `feat/algorithm-risk-hardening` 分支上的大规模带标签验证成果同步到 GitHub，便于后续继续论文、答辩和产品化收尾。
+- 当前采用的方法：
+  - 使用 Git for Windows 的完整路径 `C:\Program Files\Git\cmd\git.exe`，避开当前 shell 中 `git` 未进入 `PATH` 的问题。
+  - 使用系统代理 `http://127.0.0.1:7897` 访问 GitHub，避开直连 `github.com:443` 连接重置/超时问题。
+  - 先用 dry-run 验证推送路径，再执行真实 push。
+- 相关模块/文件：
+  - `MEMO.md`
+- 已解决的问题 / 新增功能：
+  - 已将远端 `origin/feat/algorithm-risk-hardening` 从 `2c73b3f` 推进到 `0b7426b`，包含提交 `Add large-scale labeled validation results`。
+  - 确认真实 push 命令成功返回：`2c73b3f..0b7426b feat/algorithm-risk-hardening -> feat/algorithm-risk-hardening`。
+- 验证命令：
+  - `C:\Program Files\Git\cmd\git.exe -c http.proxy=http://127.0.0.1:7897 push --dry-run origin feat/algorithm-risk-hardening`
+  - `C:\Program Files\Git\cmd\git.exe -c http.proxy=http://127.0.0.1:7897 push origin feat/algorithm-risk-hardening`
+- 验收结果：
+  - 真实 push 成功。
+- 当前问题 / 待处理事项：
+  - 当前 PowerShell 会话的 `PATH` 仍未包含 Git 安装目录，后续直接使用 `git` 仍可能失败；可以把 `C:\Program Files\Git\cmd` 加入系统或用户 `PATH`。
+  - 直连 GitHub HTTPS 仍不稳定，后续 GitHub 操作建议继续显式使用 `http.proxy=http://127.0.0.1:7897`，或修复系统网络代理配置。
