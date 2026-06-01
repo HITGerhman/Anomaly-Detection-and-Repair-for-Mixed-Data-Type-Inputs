@@ -29,7 +29,7 @@ func EnrichTaskResult(req engine.Request, result map[string]any) (string, error)
 			result["presentation_artifact"] = artifactPath
 		}
 		return artifactPath, err
-	case string(engine.ActionRepairBatch), string(engine.ActionRepairWithGower):
+	case string(engine.ActionRepairBatch), string(engine.ActionRepairWithGower), string(engine.ActionRepairWithMissForest):
 		bundle := buildRepairBundle(req.Action, result)
 		if bundle == nil {
 			return "", nil
@@ -148,6 +148,7 @@ func buildRepairSourceSeries(source string, result map[string]any) []map[string]
 		return []map[string]any{
 			{"label": "rule", "value": counts["rule"], "tone": "neutral"},
 			{"label": "gower", "value": counts["gower"], "tone": "attention"},
+			{"label": "missforest", "value": counts["missforest"], "tone": "attention"},
 			{"label": "hybrid", "value": counts["hybrid"], "tone": "positive"},
 		}
 	}
@@ -157,9 +158,17 @@ func buildRepairSourceSeries(source string, result map[string]any) []map[string]
 			{"label": "gower", "value": asInt(result["applied_issue_count"]), "tone": "attention"},
 		}
 	}
+	if source == "missforest" || len(sliceOfMaps(result["model_evidence"])) > 0 {
+		return []map[string]any{
+			{"label": "rule", "value": 0, "tone": "neutral"},
+			{"label": "gower", "value": 0, "tone": "neutral"},
+			{"label": "missforest", "value": asInt(result["applied_issue_count"]), "tone": "attention"},
+		}
+	}
 	return []map[string]any{
 		{"label": "rule", "value": asInt(result["applied_issue_count"]), "tone": "positive"},
 		{"label": "gower", "value": 0, "tone": "neutral"},
+		{"label": "missforest", "value": 0, "tone": "neutral"},
 	}
 }
 

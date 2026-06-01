@@ -11,6 +11,7 @@ func TestKnownActionsAreStableAndUnique(t *testing.T) {
 		ActionScanFile,
 		ActionRepairBatch,
 		ActionRepairWithGower,
+		ActionRepairWithMissForest,
 		ActionRollbackRepairBatch,
 	}
 
@@ -39,6 +40,7 @@ func TestKnownActionStringsMatchStableNames(t *testing.T) {
 		"scan_file",
 		"repair_batch",
 		"repair_with_gower",
+		"repair_with_missforest",
 		"rollback_repair_batch",
 	}
 

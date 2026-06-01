@@ -311,3 +311,69 @@ scale testing.
 
 See `docs/cross_dataset_experiments.md` for the dataset fields, injection rules,
 metric definitions, output files, and thesis-writing guidance.
+
+## Formal Algorithm Path Update (2026-05-16)
+
+- Detection remains centered on deterministic `scan_file` rules. `numeric_outlier` findings are documented as `mild / strong / extreme`, with `auto_repair_eligible` and `scan_summary.numeric_outlier_risk_counts` exposed for agent and presentation use.
+- Repair now has three production tools: `repair_batch` for rule repair, `repair_with_gower` for Gower-KNN mixed-type repair, and `repair_with_missforest` for iterative MissForest repair.
+- `repair_with_missforest` defaults to `algorithm_mode=iterative`, `max_iter=5`, `convergence_tolerance=0.001`, `max_train_rows=5000`, `min_training_rows=8`, `random_state=42`, and `n_estimators=40`.
+- Iterative MissForest treats only selected issue cells as missing, initializes with median/mode values, trains `RandomForestRegressor` or `RandomForestClassifier` by target column, and writes back only cells covered by selected issue ids.
+- The Go Auto Agent planner compares rule, Gower, MissForest, and hybrid previews with `candidate_score_v1`; it stays plan-only and never writes CSV data directly.
+- Real writes still happen in the runtime execution layer and are followed by post-scan Validation Gate checks plus rollback manifest protection.
+
+## Large-scale Stability Validation (2026-05-17)
+
+The latest paper-facing stability run is documented in
+`docs/large_scale_stability_20260517.md`. A short companion presentation deck is
+available at `thesis-defense/Scale_Validation_Update_2026-05-17.pptx`. Together
+they cover real 500k, 1M, and 10M row mixed-type CSV runs through the AppShell
+auto path.
+
+Key results:
+
+| Run | Rows | Output size | Total time | Write strategy | Post validation | Verdict |
+|---|---:|---:|---:|---|---|---|
+| 500k auto | 500,024 | 59,253,174 bytes | 42.761 s | `pandas_full` | scoped precheck + full scan | `warn` accepted |
+| 1M auto | 1,000,024 | 118,500,360 bytes | 62.255 s | `streaming` | scoped precheck + full scan | `warn` accepted |
+| 10M auto | 10,000,024 | 1,192,963,894 bytes | 584.805 s | `streaming` | affected-column incremental estimate | `warn` accepted |
+
+The 10M run produced rollback metadata and a rejected-output-safe execution
+trace. Large-output post validation is explicitly marked as
+`post_scan_incremental_estimate`; it is not presented as a full post scan.
+
+Validation Gate now also records per-column issue counts and rejects written
+auto-session outputs when any affected column has a higher issue count after
+repair than it had in the baseline scan. The risk flag is
+`affected_column_issue_count_increased`, and the auto path rolls back such
+outputs.
+
+## Large-scale Labeled Validation (2026-05-31)
+
+The supplementary labeled scale run is documented in
+`docs/large_scale_labeled_validation_20260531.md`. It adds ground truth to the
+large-scale story by generating `orders_transactions` CSVs with the same 100
+injected anomalies used by the controlled baseline proportions.
+
+| Dataset | Rows | Injected | Detected injected | Precision | Recall | F1 | Scope |
+|---|---:|---:|---:|---:|---:|---:|---|
+| 1M labeled | 1,000,012 | 100 | 100 | 0.013021 | 1.000000 | 0.025707 | detection + repair |
+| 10M labeled | 10,000,012 | 100 | 100 | 0.001318 | 1.000000 | 0.002633 | detection only |
+
+1M repair metrics:
+
+| Repairable GT | Changed | Exact | Improved/Exact | Exact Rate | Improved/Exact Rate | Non-GT Modified | Rollback |
+|---:|---:|---:|---:|---:|---:|---:|---|
+| 72 | 72 | 7 | 31 | 0.097222 | 0.430556 | 7,580 | generated |
+
+Runtime and memory highlights:
+
+| Dataset | Stage | Runtime | Peak working set | Peak private memory |
+|---|---|---:|---:|---:|
+| 1M | full scan + GT matching | 11.481 s | 494.695 MB | 966.125 MB |
+| 1M | repair + GT evaluation | 17.074 s | 523.504 MB | 1007.016 MB |
+| 10M | full scan + GT matching | 147.100 s | 4931.457 MB | 5598.250 MB |
+
+The result should be read conservatively: recall stayed complete for injected
+anomalies, but default numeric outlier thresholds produced many false positives
+on generated transaction amounts. The 10M labeled run is intentionally
+detection-only; 10M repair accuracy remains future work.

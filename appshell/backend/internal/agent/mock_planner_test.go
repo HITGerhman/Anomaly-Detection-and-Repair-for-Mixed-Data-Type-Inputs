@@ -6,7 +6,7 @@ import (
 	"testing"
 )
 
-func TestMockPlannerBuildsThreeCandidatesFromDeterministicPreviews(t *testing.T) {
+func TestMockPlannerBuildsFourCandidatesFromDeterministicPreviews(t *testing.T) {
 	planner := NewMockPlanner()
 
 	plan, err := planner.BuildPlan(t.Context(), PlanningInput{
@@ -82,10 +82,16 @@ func TestMockPlannerBuildsThreeCandidatesFromDeterministicPreviews(t *testing.T)
 	if len(plan.SkippedIssues) != 4 {
 		t.Fatalf("expected 4 skipped issue explanations, got %d", len(plan.SkippedIssues))
 	}
-	if len(plan.Candidates) != 3 {
-		t.Fatalf("expected 3 candidates, got %d", len(plan.Candidates))
+	if len(plan.Candidates) != 4 {
+		t.Fatalf("expected 4 candidates, got %d", len(plan.Candidates))
 	}
-	if plan.ProposedToolID != "engine.repair_batch" {
+	if _, ok := candidateByID(plan, "candidate-missforest"); !ok {
+		t.Fatalf("expected missforest candidate in %#v", plan.Candidates)
+	}
+	if len(plan.Candidates[0].Score) == 0 {
+		t.Fatalf("expected candidate score to be populated")
+	}
+	if plan.ProposedToolID != "engine.repair_with_gower" {
 		t.Fatalf("unexpected tool id: %s", plan.ProposedToolID)
 	}
 	if got := plan.ProposedPayload["plan_only"]; got != false {

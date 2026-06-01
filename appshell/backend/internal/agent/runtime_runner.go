@@ -380,6 +380,25 @@ func withDefaultGowerCandidateLimit(input map[string]any) map[string]any {
 	return strategy
 }
 
+func withDefaultMissForestStrategy(input map[string]any) map[string]any {
+	strategy := cloneMap(input)
+	defaults := map[string]any{
+		"algorithm_mode":        "iterative",
+		"max_iter":              5,
+		"convergence_tolerance": 0.001,
+		"max_train_rows":        5000,
+		"min_training_rows":     8,
+		"random_state":          42,
+		"n_estimators":          40,
+	}
+	for key, value := range defaults {
+		if _, exists := strategy[key]; !exists {
+			strategy[key] = value
+		}
+	}
+	return strategy
+}
+
 func buildGowerPreviewPayload(csvPath string, issueIDs []string, scanOverrides map[string]any, columnDependencies map[string]any, gowerOverrides map[string]any, outputDir string, modelDir string) map[string]any {
 	payload := map[string]any{
 		"csv_path":        csvPath,
@@ -400,6 +419,24 @@ func buildGowerPreviewPayload(csvPath string, issueIDs []string, scanOverrides m
 	}
 	if strings.TrimSpace(modelDir) != "" {
 		payload["model_dir"] = strings.TrimSpace(modelDir)
+	}
+	return payload
+}
+
+func buildMissForestPreviewPayload(csvPath string, issueIDs []string, scanOverrides map[string]any, missForestOverrides map[string]any, outputDir string) map[string]any {
+	payload := map[string]any{
+		"csv_path":        csvPath,
+		"issue_ids":       append([]string{}, issueIDs...),
+		"plan_only":       true,
+		"write_output":    false,
+		"enable_rollback": false,
+	}
+	if len(scanOverrides) > 0 {
+		payload["scan_config"] = cloneMap(scanOverrides)
+	}
+	payload["missforest_strategy"] = withDefaultMissForestStrategy(missForestOverrides)
+	if strings.TrimSpace(outputDir) != "" {
+		payload["output_dir"] = strings.TrimSpace(outputDir)
 	}
 	return payload
 }
@@ -597,10 +634,10 @@ func (r *RuntimeRunner) runCachedValidationPreview(sessionID string, taskID stri
 		TraceType: TraceToolCall,
 		Summary:   "Reusing cached candidate preview for validation",
 		Payload: map[string]any{
-			"tool_id":        toolID,
-			"candidate_id":   candidate.CandidateID,
+			"tool_id":         toolID,
+			"candidate_id":    candidate.CandidateID,
 			"selected_source": candidate.Source,
-			"comparison":     cloneMap(candidate.Comparison),
+			"comparison":      cloneMap(candidate.Comparison),
 		},
 	})
 
@@ -670,6 +707,7 @@ func (r *RuntimeRunner) executeHybridCandidate(ctx context.Context, parentTaskID
 
 	currentCSV := sourceCSV
 	executionSteps := make([]map[string]any, 0, len(candidate.ExecutePayloads))
+	outputSizeBytes := 0
 	for idx, payload := range candidate.ExecutePayloads {
 		if idx >= len(candidate.ToolSequence) {
 			break
@@ -701,13 +739,21 @@ func (r *RuntimeRunner) executeHybridCandidate(ctx context.Context, parentTaskID
 		if stepOutput := asString(resp.Result["output_csv"]); stepOutput != "" {
 			currentCSV = stepOutput
 		}
-		executionSteps = append(executionSteps, map[string]any{
+		if size := intFromAny(resp.Result["output_size_bytes"]); size > outputSizeBytes {
+			outputSizeBytes = size
+		}
+		executionStep := map[string]any{
 			"step":               idx + 1,
 			"tool_id":            toolID,
 			"selected_issue_ids": cloneValue(callPayload["issue_ids"]),
 			"output_csv":         currentCSV,
 			"comparison":         cloneMap(mapFromAny(resp.Result["comparison"])),
-		})
+			"applied_repairs":    cloneValue(resp.Result["applied_repairs"]),
+		}
+		if evidence := mapsFromAny(resp.Result["model_evidence"]); len(evidence) > 0 {
+			executionStep["model_evidence"] = cloneValue(evidence)
+		}
+		executionSteps = append(executionSteps, executionStep)
 	}
 
 	manifestStarted := time.Now()
@@ -745,7 +791,7 @@ func (r *RuntimeRunner) executeHybridCandidate(ctx context.Context, parentTaskID
 	}
 	rollbackManifestDurationMS := int(time.Since(manifestStarted).Milliseconds())
 
-	return map[string]any{
+	result := map[string]any{
 		"status":              "executed",
 		"selected_source":     "hybrid",
 		"output_csv":          finalOutput,
@@ -763,7 +809,11 @@ func (r *RuntimeRunner) executeHybridCandidate(ctx context.Context, parentTaskID
 		"timings_ms": map[string]any{
 			"rollback_manifest_duration_ms": rollbackManifestDurationMS,
 		},
-	}, nil
+	}
+	if outputSizeBytes > 0 {
+		result["output_size_bytes"] = outputSizeBytes
+	}
+	return result, nil
 }
 
 func (r *RuntimeRunner) runExecutePlan(ctx context.Context, req engine.Request) (engine.Response, error) {

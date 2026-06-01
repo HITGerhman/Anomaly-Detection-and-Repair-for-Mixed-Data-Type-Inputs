@@ -96,4 +96,11 @@ Pic/**/*.pdf
 # ------------------------------
 # Thesis defense assets
 # ------------------------------
-thesis-defense/
+thesis-defense/*
+!thesis-defense/Scale_Validation_Update_2026-05-17.pptx
+!thesis-defense/generate_scale_validation_update_deck.js
+!thesis-defense/Large_Labeled_Validation_Update_2026-05-31.pptx
+!thesis-defense/generate_large_labeled_validation_deck.js
+
+# Paper-facing large labeled validation summaries.
+!artifacts/experiments/large_labeled_validation/**/*.csv

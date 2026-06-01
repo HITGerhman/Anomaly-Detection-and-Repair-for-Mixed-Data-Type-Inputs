@@ -130,6 +130,9 @@ func buildRepairBundle(action string, result map[string]any) *Bundle {
 	if strings.TrimSpace(action) == string(engine.ActionRepairWithGower) {
 		source = "gower"
 	}
+	if strings.TrimSpace(action) == string(engine.ActionRepairWithMissForest) {
+		source = "missforest"
+	}
 	if selected := asString(result["selected_source"]); selected != "" {
 		source = selected
 	}
@@ -171,7 +174,7 @@ func buildRepairBundle(action string, result map[string]any) *Bundle {
 					fmt.Sprintf("已修复问题：%d", applied),
 					fmt.Sprintf("跳过问题：%d", skipped),
 				},
-				EvidenceRefs: []string{"applied_repairs", "skipped_issues", "neighbor_evidence"},
+				EvidenceRefs: []string{"applied_repairs", "skipped_issues", "neighbor_evidence", "model_evidence"},
 			},
 			{
 				ID:    "repair_impact",
@@ -283,6 +286,9 @@ func buildScanNextStepText(issueCount int, repairable int) string {
 func buildRepairStrategyText(source string, result map[string]any) string {
 	if source == "gower" {
 		return "本次修复使用 Gower 邻居检索生成候选值，适合混合类型近邻替代场景。"
+	}
+	if source == "missforest" {
+		return "MissForest repair used iterative random-forest imputation over selected issue cells and still waits for validation before data is accepted."
 	}
 	if source == "hybrid" {
 		return "本次修复采用规则与 Gower 双路混合执行，按问题级来源协同落地。"

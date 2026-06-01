@@ -319,3 +319,16 @@
 - Streamlit 答辩端优先读取它
 - 后续导出报告、截图、答辩页和演示页都应围绕它扩展
 - 表达层只负责解释、归纳、聚合和图表组织，不新增业务决策逻辑
+
+## 2026-05-16 MissForest Formal Display Update
+
+- `repair_strategy` should describe four candidate sources: rule, Gower,
+  MissForest, and hybrid.
+- `repair_source_mix` can count `missforest` entries from `issue_source_map`.
+  Hybrid execution order remains rule -> gower -> missforest.
+- MissForest result cards should prefer `model_evidence.algorithm_mode`,
+  `iterations_run`, `converged`, `convergence_delta`, `train_sample_size`,
+  `target_cell_count`, and `candidate_confidence`.
+- Validation timeline should display `missforest_not_converged` as a warning.
+  If post validation also shows no issue-score improvement, display the result
+  as rejected with rollback recommended.

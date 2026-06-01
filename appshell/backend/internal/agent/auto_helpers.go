@@ -27,18 +27,19 @@ type planningProgress struct {
 }
 
 type planningParams struct {
-	SessionID          string
-	WorkspaceID        string
-	CSVPath            string
-	Goal               string
-	OutputDir          string
-	ModelDir           string
-	LLMExplainMode     string
-	ScanOverrides      map[string]any
-	RepairOverrides    map[string]any
-	ColumnDependencies map[string]any
-	GowerOverrides     map[string]any
-	UserPreferences    map[string]any
+	SessionID           string
+	WorkspaceID         string
+	CSVPath             string
+	Goal                string
+	OutputDir           string
+	ModelDir            string
+	LLMExplainMode      string
+	ScanOverrides       map[string]any
+	RepairOverrides     map[string]any
+	ColumnDependencies  map[string]any
+	GowerOverrides      map[string]any
+	MissForestOverrides map[string]any
+	UserPreferences     map[string]any
 }
 
 type planningResult struct {
@@ -246,6 +247,72 @@ func buildScanPayload(csvPath string, scanOverrides map[string]any) map[string]a
 	return payload
 }
 
+const postValidationIncrementalThresholdBytes int64 = 512 * 1024 * 1024
+
+func buildScopedScanPayloadFields(affectedColumns []string) map[string]any {
+	return map[string]any{
+		"scan_scope":       "affected_columns",
+		"affected_columns": append([]string{}, uniqueStrings(affectedColumns)...),
+	}
+}
+
+func outputFileSizeBytes(path string) (int64, bool) {
+	info, err := os.Stat(strings.TrimSpace(path))
+	if err != nil || info.IsDir() {
+		return 0, false
+	}
+	return info.Size(), true
+}
+
+func outputSizeBytesForValidation(execution map[string]any, outputCSV string) (int64, bool) {
+	if size := intFromAny(execution["output_size_bytes"]); size > 0 {
+		return int64(size), true
+	}
+	return outputFileSizeBytes(outputCSV)
+}
+
+func affectedColumnsFromExecution(execution map[string]any) []string {
+	columns := []string{}
+	columns = appendColumnsFromRepairs(columns, mapsFromAny(execution["applied_repairs"]))
+	columns = appendColumnsFromComparison(columns, mapFromAny(execution["comparison"]))
+	for _, step := range mapsFromAny(execution["execution_steps"]) {
+		columns = appendColumnsFromRepairs(columns, mapsFromAny(step["applied_repairs"]))
+		columns = appendColumnsFromComparison(columns, mapFromAny(step["comparison"]))
+	}
+	return uniqueStrings(columns)
+}
+
+func appendColumnsFromRepairs(columns []string, repairs []map[string]any) []string {
+	for _, repair := range repairs {
+		column := strings.TrimSpace(asString(repair["column"]))
+		if column != "" {
+			columns = append(columns, column)
+		}
+	}
+	return columns
+}
+
+func appendColumnsFromComparison(columns []string, comparison map[string]any) []string {
+	for _, change := range mapsFromAny(comparison["changed_cells_preview"]) {
+		column := strings.TrimSpace(asString(change["column"]))
+		if column != "" {
+			columns = append(columns, column)
+		}
+	}
+	return columns
+}
+
+func markIncrementalPostScanEstimate(summary map[string]any, affectedColumns []string, outputSizeBytes int64) map[string]any {
+	out := cloneMap(summary)
+	out["post_scan_incremental_estimate"] = true
+	out["scan_scope"] = "affected_columns"
+	out["affected_columns"] = append([]string{}, uniqueStrings(affectedColumns)...)
+	if outputSizeBytes >= 0 {
+		out["output_size_bytes"] = outputSizeBytes
+	}
+	return out
+}
+
 func scanSummaryFromResult(csvPath string, scanResult map[string]any) map[string]any {
 	issues := listOfMaps(scanResult["issues"])
 	highRiskCount := 0
@@ -257,11 +324,18 @@ func scanSummaryFromResult(csvPath string, scanResult map[string]any) map[string
 		totalIssueScore += floatFromAny(issue["issue_score"])
 	}
 	scanSummary := cloneMap(mapFromAny(scanResult["scan_summary"]))
+	columnIssueCounts := map[string]any{}
+	for column, count := range columnIssueCountsFromScan(scanResult) {
+		columnIssueCounts[column] = count
+	}
 	return map[string]any{
 		"csv_path":               strings.TrimSpace(csvPath),
 		"issue_count":            intFromAny(scanResult["issue_count"]),
 		"high_risk_issue_count":  highRiskCount,
 		"total_issue_score":      totalIssueScore,
+		"scan_scope":             firstNonEmpty(asString(scanResult["scan_scope"]), "full"),
+		"affected_columns":       stringsFromAny(scanResult["affected_columns"]),
+		"column_issue_counts":    columnIssueCounts,
 		"scan_summary":           scanSummary,
 		"data_profile":           cloneMap(mapFromAny(scanResult["data_profile"])),
 		"anomaly_column_count":   intFromAny(scanSummary["anomaly_column_count"]),
@@ -282,35 +356,36 @@ func newPlanningSession(taskID string, mode string, params planningParams) Agent
 		Mode:          mode,
 		UserGoal:      params.Goal,
 		Context: map[string]any{
-			"csv_path":                  params.CSVPath,
-			"workspace_id":              params.WorkspaceID,
-			"user_goal":                 params.Goal,
-			"scan_summary":              map[string]any{},
-			"selected_issue_ids":        []string{},
-			"selected_issue_catalog":    []map[string]any{},
-			"skipped_issue_types":       []string{},
-			"latest_plan_id":            "",
-			"validation_preview":        map[string]any{},
-			"preview_validation":        map[string]any{},
-			"post_scan":                 map[string]any{},
-			"post_validation":           map[string]any{},
-			"rollback_summary":          map[string]any{},
-			"execution_artifacts":       map[string]any{},
-			"scan_config_overrides":     cloneMap(params.ScanOverrides),
-			"repair_strategy_overrides": cloneMap(params.RepairOverrides),
-			"column_dependencies":       cloneMap(params.ColumnDependencies),
-			"gower_strategy_overrides":  cloneMap(params.GowerOverrides),
-			"llm_explain_mode":          params.LLMExplainMode,
-			"user_preferences":          cloneMap(params.UserPreferences),
-			"preference_snapshot":       preferenceProfileToMap(defaultPreferenceProfile()),
-			"approval_state":            defaultApprovalResult(),
-			"risk_assessment":           map[string]any{},
-			"candidate_columns":         []string{},
-			"time_like_columns":         []string{},
-			"model_dir":                 params.ModelDir,
-			"baseline_scan":             map[string]any{},
-			"final_verdict":             "",
-			"rejected_output_snapshot":  "",
+			"csv_path":                      params.CSVPath,
+			"workspace_id":                  params.WorkspaceID,
+			"user_goal":                     params.Goal,
+			"scan_summary":                  map[string]any{},
+			"selected_issue_ids":            []string{},
+			"selected_issue_catalog":        []map[string]any{},
+			"skipped_issue_types":           []string{},
+			"latest_plan_id":                "",
+			"validation_preview":            map[string]any{},
+			"preview_validation":            map[string]any{},
+			"post_scan":                     map[string]any{},
+			"post_validation":               map[string]any{},
+			"rollback_summary":              map[string]any{},
+			"execution_artifacts":           map[string]any{},
+			"scan_config_overrides":         cloneMap(params.ScanOverrides),
+			"repair_strategy_overrides":     cloneMap(params.RepairOverrides),
+			"column_dependencies":           cloneMap(params.ColumnDependencies),
+			"gower_strategy_overrides":      cloneMap(params.GowerOverrides),
+			"missforest_strategy_overrides": cloneMap(params.MissForestOverrides),
+			"llm_explain_mode":              params.LLMExplainMode,
+			"user_preferences":              cloneMap(params.UserPreferences),
+			"preference_snapshot":           preferenceProfileToMap(defaultPreferenceProfile()),
+			"approval_state":                defaultApprovalResult(),
+			"risk_assessment":               map[string]any{},
+			"candidate_columns":             []string{},
+			"time_like_columns":             []string{},
+			"model_dir":                     params.ModelDir,
+			"baseline_scan":                 map[string]any{},
+			"final_verdict":                 "",
+			"rejected_output_snapshot":      "",
 		},
 		CreatedAt: now,
 		UpdatedAt: now,
@@ -364,6 +439,10 @@ func parsePlanningParams(payload map[string]any, action string) (planningParams,
 		return planningParams{}, err
 	}
 	params.GowerOverrides, err = validateObjectField(payload, "gower_strategy_overrides")
+	if err != nil {
+		return planningParams{}, err
+	}
+	params.MissForestOverrides, err = validateObjectField(payload, "missforest_strategy_overrides")
 	if err != nil {
 		return planningParams{}, err
 	}

@@ -19,6 +19,8 @@ const (
 	validationRiskMildNumericOutlierAutoRepaired      = "mild_numeric_outlier_auto_repaired"
 	validationRiskModifiedHighRelativeToResolved      = "modified_cell_count_high_relative_to_resolved"
 	validationRiskNumericOutlierModificationShareHigh = "numeric_outlier_modification_share_high"
+	validationRiskMissForestNotConverged              = "missforest_not_converged"
+	validationRiskAffectedColumnIssueCountIncreased   = "affected_column_issue_count_increased"
 )
 
 type validationGateInput struct {
@@ -76,6 +78,7 @@ func evaluateValidationGate(input validationGateInput) postValidationResult {
 	afterTotalIssueScore := scanTotalIssueScore(input.PostScan)
 	resolvedItems := resolvedIssueItems(beforeIssueCount, afterIssueCount)
 	modifiedCellCount := repairChangedCellCount(input.RepairResult)
+	affectedColumnDeltas := affectedColumnIssueDeltas(input.BaselineScan, input.PostScan)
 
 	riskNotes := append([]string{}, input.ExtraRiskFlags...)
 	if input.RepairError != "" {
@@ -110,6 +113,12 @@ func evaluateValidationGate(input validationGateInput) postValidationResult {
 	if boolValue(numericOutlierSummary["high_share"]) {
 		riskNotes = appendRiskFlag(riskNotes, validationRiskNumericOutlierModificationShareHigh)
 	}
+	if missForestNotConverged(input.RepairResult) {
+		riskNotes = appendRiskFlag(riskNotes, validationRiskMissForestNotConverged)
+	}
+	if len(affectedColumnDeltas) > 0 {
+		riskNotes = appendRiskFlag(riskNotes, validationRiskAffectedColumnIssueCountIncreased)
+	}
 
 	issueCountImproved := afterIssueCount < beforeIssueCount
 	scoreImproved := afterTotalIssueScore < beforeTotalIssueScore
@@ -120,7 +129,7 @@ func evaluateValidationGate(input validationGateInput) postValidationResult {
 	case input.RepairError != "":
 		verdict = validationGateReject
 		rollbackRecommended = true
-	case hasAnyString(riskNotes, []string{"issue_count_increased", "high_risk_issue_count_increased", "manual_review_issue_auto_repaired", validationRiskMildNumericOutlierAutoRepaired, "high_risk_issue_auto_repaired"}):
+	case hasAnyString(riskNotes, []string{"issue_count_increased", "high_risk_issue_count_increased", "manual_review_issue_auto_repaired", validationRiskMildNumericOutlierAutoRepaired, "high_risk_issue_auto_repaired", validationRiskAffectedColumnIssueCountIncreased}):
 		verdict = validationGateReject
 		rollbackRecommended = true
 	case !issueCountImproved && !scoreImproved:
@@ -130,7 +139,7 @@ func evaluateValidationGate(input validationGateInput) postValidationResult {
 	case hasString(riskNotes, "missing_rollback_metadata"):
 		verdict = validationGateRollbackRecommended
 		rollbackRecommended = true
-	case hasAnyString(riskNotes, []string{"changed_cell_count_abnormally_high", validationRiskModifiedHighRelativeToResolved, validationRiskNumericOutlierModificationShareHigh}) || (!issueCountImproved && scoreImproved):
+	case hasAnyString(riskNotes, []string{"changed_cell_count_abnormally_high", validationRiskModifiedHighRelativeToResolved, validationRiskNumericOutlierModificationShareHigh, validationRiskMissForestNotConverged, "post_scan_incremental_estimate"}) || (!issueCountImproved && scoreImproved):
 		verdict = validationGateWarn
 	default:
 		verdict = validationGateAccept
@@ -152,6 +161,7 @@ func evaluateValidationGate(input validationGateInput) postValidationResult {
 		AfterHighRiskCount:    afterHighRiskCount,
 		BeforeTotalIssueScore: beforeTotalIssueScore,
 		AfterTotalIssueScore:  afterTotalIssueScore,
+		AffectedColumnDeltas:  affectedColumnDeltas,
 	})
 }
 
@@ -171,6 +181,7 @@ type validationGateSummaryInput struct {
 	AfterHighRiskCount    int
 	BeforeTotalIssueScore float64
 	AfterTotalIssueScore  float64
+	AffectedColumnDeltas  []map[string]any
 }
 
 func validationGateSummary(input validationGateSummaryInput) postValidationResult {
@@ -207,6 +218,7 @@ func validationGateSummary(input validationGateSummaryInput) postValidationResul
 		"after_high_risk_issue_count":          input.AfterHighRiskCount,
 		"before_total_issue_score":             input.BeforeTotalIssueScore,
 		"after_total_issue_score":              input.AfterTotalIssueScore,
+		"affected_column_issue_deltas":         cloneValue(input.AffectedColumnDeltas),
 		"risk_notes":                           append([]string{}, riskNotes...),
 		"risk_flags":                           append([]string{}, riskNotes...),
 		"rollback_recommended":                 input.RollbackRecommended,
@@ -265,6 +277,7 @@ func validationMetricDefinitions() map[string]any {
 		"numeric_outlier_modification_summary": "Summary of how many repaired cells came from numeric_outlier issues and whether the share is high.",
 		"rollback_availability":                "Whether a rollback manifest path is available for the written output.",
 		"side_effect_notes":                    "Human-readable validation notes for side-effect risks.",
+		"affected_column_issue_deltas":         "Columns touched by repair whose post-repair issue item count is higher than the baseline count.",
 		"acceptance_reason":                    "Short machine-readable reason for the validation verdict.",
 		"rollback_recommended":                 "Whether validation judged the repaired output unsafe enough to recommend or trigger rollback.",
 		"rollback_manifest":                    "A recovery manifest created for written outputs; its existence does not imply rollback is recommended.",
@@ -323,6 +336,75 @@ func resolvedIssueItems(before int, after int) int {
 		return before - after
 	}
 	return 0
+}
+
+func columnIssueCountsFromScan(scan map[string]any) map[string]int {
+	counts := map[string]int{}
+	if scan == nil {
+		return counts
+	}
+	switch raw := scan["column_issue_counts"].(type) {
+	case map[string]any:
+		for column, count := range raw {
+			if text := asString(column); text != "" {
+				counts[text] = intFromAny(count)
+			}
+		}
+		if len(counts) > 0 {
+			return counts
+		}
+	case map[string]int:
+		for column, count := range raw {
+			if text := asString(column); text != "" {
+				counts[text] = count
+			}
+		}
+		if len(counts) > 0 {
+			return counts
+		}
+	}
+	for _, profile := range mapsFromAny(scan["column_profiles"]) {
+		column := asString(profile["column"])
+		if column == "" {
+			continue
+		}
+		counts[column] = intFromAny(profile["issue_count"])
+	}
+	if len(counts) > 0 {
+		return counts
+	}
+	for _, issue := range mapsFromAny(scan["issues"]) {
+		column := asString(issue["column"])
+		if column == "" {
+			continue
+		}
+		counts[column]++
+	}
+	return counts
+}
+
+func affectedColumnIssueDeltas(baseline map[string]any, postScan map[string]any) []map[string]any {
+	affectedColumns := stringsFromAny(postScan["affected_columns"])
+	if len(affectedColumns) == 0 {
+		return []map[string]any{}
+	}
+	beforeCounts := columnIssueCountsFromScan(baseline)
+	afterCounts := columnIssueCountsFromScan(postScan)
+	deltas := []map[string]any{}
+	for _, column := range affectedColumns {
+		before := beforeCounts[column]
+		after := afterCounts[column]
+		if after <= before {
+			continue
+		}
+		deltas = append(deltas, map[string]any{
+			"column":       column,
+			"before_count": before,
+			"after_count":  after,
+			"delta":        after - before,
+		})
+	}
+	return deltas
 }
 
 func repairChangedCellCount(repairResult map[string]any) int {
@@ -539,16 +621,44 @@ func containsNumericOutlierIssue(issueIDs []string, issuesByID map[string]map[st
 	return false
 }
 
+func missForestNotConverged(repairResult map[string]any) bool {
+	if repairResult == nil {
+		return false
+	}
+	for _, item := range mapsFromAny(repairResult["model_evidence"]) {
+		if asString(item["algorithm_mode"]) == "iterative" && !boolValue(item["converged"]) {
+			return true
+		}
+	}
+	for _, step := range mapsFromAny(repairResult["execution_steps"]) {
+		for _, item := range mapsFromAny(step["model_evidence"]) {
+			if asString(item["algorithm_mode"]) == "iterative" && !boolValue(item["converged"]) {
+				return true
+			}
+		}
+	}
+	return false
+}
+
 func validationSideEffectNotes(riskNotes []string) []string {
 	notes := []string{}
 	if hasString(riskNotes, validationRiskNumericOutlierModificationShareHigh) {
 		notes = append(notes, "numeric_outlier repairs changed many cells; manual review is recommended")
+	}
+	if hasString(riskNotes, validationRiskMissForestNotConverged) {
+		notes = append(notes, "MissForest iterative repair did not converge within max_iter; manual review is recommended")
+	}
+	if hasString(riskNotes, "post_scan_incremental_estimate") {
+		notes = append(notes, "post-execute validation used an affected-column incremental estimate instead of a full scan")
 	}
 	if hasString(riskNotes, validationRiskModifiedHighRelativeToResolved) {
 		notes = append(notes, "modified cell count is high relative to resolved issue count; manual review is recommended")
 	}
 	if hasString(riskNotes, validationRiskMildNumericOutlierAutoRepaired) {
 		notes = append(notes, "mild numeric_outlier was repaired automatically; rollback is recommended")
+	}
+	if hasString(riskNotes, validationRiskAffectedColumnIssueCountIncreased) {
+		notes = append(notes, "one or more affected columns have more issue items after repair than in the baseline; rollback is recommended")
 	}
 	if hasString(riskNotes, "missing_rollback_metadata") {
 		notes = append(notes, "rollback manifest is unavailable for the repaired output")

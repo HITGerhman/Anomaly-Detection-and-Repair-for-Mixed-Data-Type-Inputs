@@ -6,13 +6,14 @@ func TestToolRegistryIncludesStableTools(t *testing.T) {
 	registry := NewToolRegistry()
 
 	cases := map[string]string{
-		"engine.health":            "health",
-		"engine.train_model":       "train",
-		"engine.repair_sample":     "repair",
-		"engine.scan_table":        "scan_file",
-		"engine.repair_batch":      "repair_batch",
-		"engine.repair_with_gower": "repair_with_gower",
-		"engine.rollback_batch":    "rollback_repair_batch",
+		"engine.health":                 "health",
+		"engine.train_model":            "train",
+		"engine.repair_sample":          "repair",
+		"engine.scan_table":             "scan_file",
+		"engine.repair_batch":           "repair_batch",
+		"engine.repair_with_gower":      "repair_with_gower",
+		"engine.repair_with_missforest": "repair_with_missforest",
+		"engine.rollback_batch":         "rollback_repair_batch",
 	}
 
 	for toolID, action := range cases {

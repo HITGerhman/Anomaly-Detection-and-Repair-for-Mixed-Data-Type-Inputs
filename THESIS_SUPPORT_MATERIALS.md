@@ -399,3 +399,204 @@ Keep these limitations:
 - More real-domain datasets are future work.
 - Front-end, deployment, and full user workflow validation can still be
   improved.
+
+## Formal Algorithm Upgrade Note (2026-05-16)
+
+This engineering update turns the previous MissForest-style candidate into the
+default iterative MissForest repair path. Thesis and defense wording can now
+describe the system as using rule repair, Gower-KNN repair, and iterative
+MissForest repair under the same validation-first execution boundary.
+
+- Detection layer: `scan_file` remains the deterministic main path. Numeric
+  outliers are split into `mild / strong / extreme`, with
+  `auto_repair_eligible` and `scan_summary.numeric_outlier_risk_counts` used to
+  explain automatic repair boundaries.
+- Repair layer: `repair_batch`, `repair_with_gower`, and
+  `repair_with_missforest` are the three formal tools. MissForest defaults are
+  `algorithm_mode=iterative`, `max_iter=5`, `convergence_tolerance=0.001`,
+  `max_train_rows=5000`, `min_training_rows=8`, `random_state=42`, and
+  `n_estimators=40`.
+- MissForest method: selected issue cells are treated as missing, initialized
+  with median/mode values, then updated column by column with
+  `RandomForestRegressor` or `RandomForestClassifier` until convergence or
+  `max_iter`.
+- Write boundary: intermediate imputations for non-selected cells are feature
+  values only. The final CSV writes back only cells covered by selected issue
+  ids.
+- Decision layer: the Go planner compares rule, Gower, MissForest, and hybrid
+  previews using `candidate_score_v1`, based on resolved issues, remaining
+  issues, changed cells, and improvement ratio.
+- Safety layer: the planner stays plan-only. Runtime execution performs the
+  real CSV write and then runs post-scan Validation Gate checks with rollback
+  metadata. Non-converged MissForest evidence becomes a warning, and is rejected
+  when no issue-score improvement is observed.
+
+## Large-scale Stability and Validation Update (2026-05-17)
+
+Use `docs/large_scale_stability_20260517.md` as the detailed paper reference
+for this section. The note contains thesis-ready tables, commands, safe claims,
+and wording for the 500k / 1M / 10M stability experiment. A compact companion
+deck for defense or progress reporting is available at
+`thesis-defense/Scale_Validation_Update_2026-05-17.pptx`.
+
+### Chapter 5/6 Additional Experiment Material
+
+The 2026-05-17 stability run extends the previous scale check from synthetic
+throughput testing to real AppShell auto-session execution. The experiment
+validated scan, plan-only preview, streaming write, post validation, and rollback
+metadata on mixed-type `orders_transactions` CSV files up to 10,000,024 rows.
+
+End-to-end auto-session results:
+
+| Run | Rows checked after repair | Output size | Total time | Repair time | Validation time | Write strategy | Post validation | Verdict |
+|---|---:|---:|---:|---:|---:|---|---|---|
+| 500k auto | 500,024 | 59,253,174 bytes | 42.761 s | 15.728 s | 7.561 s | `pandas_full` | scoped precheck + full scan | `warn` accepted |
+| 1M auto | 1,000,024 | 118,500,360 bytes | 62.255 s | 24.705 s | 13.652 s | `streaming` | scoped precheck + full scan | `warn` accepted |
+| 10M auto | 10,000,024 | 1,192,963,894 bytes | 584.805 s | 371.740 s | 27.824 s | `streaming` | affected-column incremental estimate | `warn` accepted |
+
+Engine probe results:
+
+| Dataset | Rows | `scan_file` | `repair_batch` plan-only | Gower single issue | MissForest single issue |
+|---|---:|---:|---:|---:|---:|
+| 1M | 1,000,024 | 10.182 s | 2.311 s | 4.461 s | 3.880 s |
+| 10M | 10,000,024 | 129.359 s | 27.674 s | 31.180 s | 29.720 s |
+
+10M optimization comparison:
+
+| Operation | Earlier baseline | 2026-05-17 result | Speedup |
+|---|---:|---:|---:|
+| `repair_batch plan_only` | 146.192 s | 27.674 s | 5.28x |
+| Gower single issue | 93.140 s | 31.180 s | 2.99x |
+| MissForest single issue | 189.083 s | 29.720 s | 6.36x |
+
+Interpretation:
+
+- The 10M auto run completed in 584.805 seconds and wrote a 1.19 GB repaired
+  CSV.
+- Gower used bucket prefiltering on `product_category` and `payment_method`,
+  then sampled 512 candidates.
+- MissForest reduced the encoded feature count to 21 and used a compact working
+  frame of 5,012 rows.
+- The 10M post validation used affected-column incremental validation because
+  the output exceeded the 512 MiB threshold. This is explicitly marked by
+  `post_scan_incremental_estimate`, so it should not be described as a full
+  post scan.
+
+### Validation Gate Update for Chapter 4/6
+
+The system now records `column_issue_counts` in scan summaries and applies a
+fine-grained affected-column safety rule:
+
+```text
+If a repaired column has more issue items after repair than it had in the
+baseline scan, Validation Gate rejects the output and the auto path rolls it
+back.
+```
+
+The machine-readable risk flag is:
+
+```text
+affected_column_issue_count_increased
+```
+
+This rule matters for large outputs. When full post scan is too expensive and
+the system uses affected-column incremental validation, the validation result is
+still guarded by a per-column before/after comparison. A local side effect in a
+touched column is therefore rejected rather than accepted as a warning.
+
+Suggested thesis wording:
+
+> In the large-scale stability experiment, the 10M-row auto run produced a
+> 1.19 GB repaired CSV and completed in 584.805 seconds. Because the output was
+> larger than the post-validation full-scan threshold, the system used
+> affected-column incremental validation and marked the result with
+> `post_scan_incremental_estimate`. To avoid treating this incremental scan as a
+> full safety proof, the Validation Gate compares issue counts for each repaired
+> column against the baseline scan. If any affected column becomes worse, the
+> output is rejected and rolled back.
+
+Safe claims:
+
+- The system completed real 500k, 1M, and 10M row AppShell auto-session runs on
+  the tested Windows development machine.
+- The large-file path can write repaired CSV output with rollback metadata.
+- Incremental validation is explicit and conservative, not hidden as a full scan.
+- The system has evidence for improved preview performance after schema cache,
+  lightweight comparison, Gower prefiltering, and compact MissForest changes.
+
+Avoid these claims:
+
+- Do not claim production readiness.
+- Do not claim affected-column incremental validation is equivalent to full
+  post-scan validation.
+- Do not claim the system can scale to arbitrary billion-row inputs.
+- Do not claim all anomalies are safe for automatic repair.
+
+## 2026-05-31 Large-scale Labeled Validation Update
+
+This update is the bridge between the controlled accuracy baseline and the
+large-scale stability validation. It uses generated `orders_transactions` data
+with the same 100 injected anomalies as the controlled baseline proportions:
+30 missing values, 24 numeric outliers, 18 rare categories, 12 duplicate
+records, and 16 cross-column inconsistencies.
+
+Use these table sources:
+
+| Thesis table | Artifact source |
+|---|---|
+| Large labeled detection metrics | `artifacts/experiments/large_labeled_validation/summary_detection_metrics.csv` |
+| 1M labeled repair metrics | `artifacts/experiments/large_labeled_validation/summary_repair_metrics.csv` |
+| Runtime and peak memory | `artifacts/experiments/large_labeled_validation/summary_runtime_memory.csv` |
+| Detailed note | `docs/large_scale_labeled_validation_20260531.md` |
+
+Detection summary:
+
+| Dataset | Rows | GT | Pred | TP | FP | FN | Precision | Recall | F1 |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|
+| `orders_transactions_1m_labeled` | 1,000,012 | 100 | 7,680 | 100 | 7,580 | 0 | 0.013021 | 1.000000 | 0.025707 |
+| `orders_transactions_10m_labeled` | 10,000,012 | 100 | 75,864 | 100 | 75,764 | 0 | 0.001318 | 1.000000 | 0.002633 |
+
+Issue-level interpretation:
+
+- The system detected all injected anomalies in both labeled scale datasets.
+- Missing values, rare categories, duplicate records, and cross-column
+  inconsistencies reached precision/recall/F1 of `1.000000`.
+- Numeric outlier recall was also `1.000000`, but precision was very low because
+  the default threshold flagged many naturally high generated `total_amount`
+  values. This is an important limitation and should be discussed plainly.
+
+1M repair summary:
+
+| Repairable GT | Changed | Exact | Improved/Exact | Exact Rate | Improved/Exact Rate | Non-GT Modified | Rollback |
+|---:|---:|---:|---:|---:|---:|---:|---|
+| 72 | 72 | 7 | 31 | 0.097222 | 0.430556 | 7,580 | generated |
+
+Runtime and peak memory:
+
+| Dataset | Stage | Runtime | Peak working set | Peak private memory |
+|---|---|---:|---:|---:|
+| 1M | Generate labeled CSV | 8.289 s | 80.805 MB | 538.672 MB |
+| 1M | Full scan + GT matching | 11.481 s | 494.695 MB | 966.125 MB |
+| 1M | Repair + GT evaluation | 17.074 s | 523.504 MB | 1007.016 MB |
+| 10M | Generate labeled CSV | 213.854 s | 203.512 MB | 661.512 MB |
+| 10M | Full scan + GT matching | 147.100 s | 4931.457 MB | 5598.250 MB |
+
+Suggested thesis paragraph:
+
+> To connect the controlled accuracy experiment with the large-scale stability
+> validation, a supplementary labeled scale experiment was conducted on
+> generated `orders_transactions` data. The experiment injected 100 known
+> anomalies using the same type proportions as the controlled baseline. On both
+> the 1M-row and 10M-row labeled datasets, the system recalled all injected
+> anomalies. However, numeric outlier precision decreased sharply because the
+> default threshold also marked many naturally high generated transaction
+> amounts. This result strengthens the evidence for large-scale recall while
+> reinforcing the need for domain-specific numeric threshold tuning.
+
+Boundary statement:
+
+> The 10M labeled experiment evaluates detection only. Repair accuracy at 10M
+> scale is not claimed in this thesis and remains future work. The 1M labeled
+> repair run produced a repaired CSV and rollback manifest, but it also modified
+> 7,580 non-ground-truth cells due to numeric outlier false positives; these are
+> counted as side effects, not repair successes.

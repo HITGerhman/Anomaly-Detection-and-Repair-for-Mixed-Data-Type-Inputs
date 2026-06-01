@@ -283,25 +283,27 @@ func selectRepairableIssues(scanResult map[string]any) ([]string, []AgentSkipped
 
 // buildPlanningInput snapshots the deterministic artifacts produced by the Go
 // control plane before handing them to a Planner implementation.
-func buildPlanningInput(sessionID string, goal string, params planningParams, scanResult map[string]any, selectedIssueIDs []string, skippedIssues []AgentSkippedIssue, rulePreview map[string]any, gowerPreview map[string]any, preferenceSnapshot map[string]any, approvalContext map[string]any) PlanningInput {
+func buildPlanningInput(sessionID string, goal string, params planningParams, scanResult map[string]any, selectedIssueIDs []string, skippedIssues []AgentSkippedIssue, rulePreview map[string]any, gowerPreview map[string]any, missForestPreview map[string]any, preferenceSnapshot map[string]any, approvalContext map[string]any) PlanningInput {
 	return PlanningInput{
-		SessionID:               sessionID,
-		Goal:                    goal,
-		CSVPath:                 params.CSVPath,
-		ScanResult:              cloneMap(scanResult),
-		SelectedIssueIDs:        append([]string{}, selectedIssueIDs...),
-		SkippedIssues:           cloneSkippedIssues(skippedIssues),
-		RulePreview:             cloneMap(rulePreview),
-		GowerPreview:            cloneMap(gowerPreview),
-		ScanConfigOverrides:     cloneMap(params.ScanOverrides),
-		RepairStrategyOverrides: cloneMap(params.RepairOverrides),
-		ColumnDependencies:      cloneMap(params.ColumnDependencies),
-		GowerStrategyOverrides:  cloneMap(params.GowerOverrides),
-		ModelDir:                params.ModelDir,
-		LLMExplainMode:          params.LLMExplainMode,
-		OutputDir:               params.OutputDir,
-		WorkspaceID:             params.WorkspaceID,
-		PreferenceSnapshot:      cloneMap(preferenceSnapshot),
-		ApprovalContext:         cloneMap(approvalContext),
+		SessionID:                   sessionID,
+		Goal:                        goal,
+		CSVPath:                     params.CSVPath,
+		ScanResult:                  cloneMap(scanResult),
+		SelectedIssueIDs:            append([]string{}, selectedIssueIDs...),
+		SkippedIssues:               cloneSkippedIssues(skippedIssues),
+		RulePreview:                 cloneMap(rulePreview),
+		GowerPreview:                cloneMap(gowerPreview),
+		MissForestPreview:           cloneMap(missForestPreview),
+		ScanConfigOverrides:         cloneMap(params.ScanOverrides),
+		RepairStrategyOverrides:     cloneMap(params.RepairOverrides),
+		ColumnDependencies:          cloneMap(params.ColumnDependencies),
+		GowerStrategyOverrides:      cloneMap(params.GowerOverrides),
+		MissForestStrategyOverrides: cloneMap(params.MissForestOverrides),
+		ModelDir:                    params.ModelDir,
+		LLMExplainMode:              params.LLMExplainMode,
+		OutputDir:                   params.OutputDir,
+		WorkspaceID:                 params.WorkspaceID,
+		PreferenceSnapshot:          cloneMap(preferenceSnapshot),
+		ApprovalContext:             cloneMap(approvalContext),
 	}
 }

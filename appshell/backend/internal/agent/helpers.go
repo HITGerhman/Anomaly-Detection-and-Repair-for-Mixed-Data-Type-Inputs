@@ -98,6 +98,7 @@ func clonePlan(plan AgentPlan) AgentPlan {
 			SelectedIssueIDs: selectedIssueIDs,
 			IssueSourceMap:   cloneMap(candidate.IssueSourceMap),
 			Comparison:       cloneMap(candidate.Comparison),
+			Score:            cloneMap(candidate.Score),
 			Summary:          candidate.Summary,
 			Executable:       candidate.Executable,
 		}

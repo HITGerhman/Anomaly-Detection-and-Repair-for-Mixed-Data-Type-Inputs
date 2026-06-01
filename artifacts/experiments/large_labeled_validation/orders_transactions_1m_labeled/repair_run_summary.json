@@ -1,0 +1,228 @@
+{
+  "dataset": "orders_transactions_1m_labeled",
+  "repair_batch": {
+    "applied_issue_count": 11,
+    "comparison": {
+      "after_column_issue_counts": {
+        "discount": 0,
+        "order_status": 0,
+        "order_time": 1,
+        "payment_method": 0,
+        "product_category": 0,
+        "quantity": 0,
+        "source_row_id": 1,
+        "total_amount": 0,
+        "unit_price": 0
+      },
+      "after_issue_count": 2,
+      "after_issue_type_counts": {
+        "cross_column_consistency": 1,
+        "duplicate_record": 1,
+        "missing_values": 0,
+        "numeric_outlier": 0,
+        "rare_category": 0
+      },
+      "before_column_issue_counts": {
+        "discount": 2,
+        "order_status": 1,
+        "order_time": 1,
+        "payment_method": 2,
+        "product_category": 2,
+        "quantity": 1,
+        "source_row_id": 1,
+        "total_amount": 1,
+        "unit_price": 2
+      },
+      "before_issue_count": 13,
+      "before_issue_type_counts": {
+        "cross_column_consistency": 1,
+        "duplicate_record": 1,
+        "missing_values": 4,
+        "numeric_outlier": 4,
+        "rare_category": 3
+      },
+      "changed_cell_count": 7652,
+      "changed_cells_preview": [
+        {
+          "after": 353.1,
+          "before": 367.65,
+          "column": "total_amount",
+          "issue_id": "total_amount::numeric_outlier",
+          "row": 123
+        },
+        {
+          "after": 353.1,
+          "before": 356.72,
+          "column": "total_amount",
+          "issue_id": "total_amount::numeric_outlier",
+          "row": 163
+        },
+        {
+          "after": 353.1,
+          "before": 380.5,
+          "column": "total_amount",
+          "issue_id": "total_amount::numeric_outlier",
+          "row": 328
+        },
+        {
+          "after": 353.1,
+          "before": 368.5,
+          "column": "total_amount",
+          "issue_id": "total_amount::numeric_outlier",
+          "row": 368
+        },
+        {
+          "after": 353.1,
+          "before": 360.0,
+          "column": "total_amount",
+          "issue_id": "total_amount::numeric_outlier",
+          "row": 408
+        },
+        {
+          "after": 353.1,
+          "before": 999999.0,
+          "column": "total_amount",
+          "issue_id": "total_amount::numeric_outlier",
+          "row": 613
+        },
+        {
+          "after": 353.1,
+          "before": 366.22,
+          "column": "total_amount",
+          "issue_id": "total_amount::numeric_outlier",
+          "row": 823
+        },
+        {
+          "after": 353.1,
+          "before": 359.57,
+          "column": "total_amount",
+          "issue_id": "total_amount::numeric_outlier",
+          "row": 863
+        },
+        {
+          "after": 353.1,
+          "before": 381.5,
+          "column": "total_amount",
+          "issue_id": "total_amount::numeric_outlier",
+          "row": 1028
+        },
+        {
+          "after": 353.1,
+          "before": 370.5,
+          "column": "total_amount",
+          "issue_id": "total_amount::numeric_outlier",
+          "row": 1068
+        },
+        {
+          "after": 353.1,
+          "before": 360.5,
+          "column": "total_amount",
+          "issue_id": "total_amount::numeric_outlier",
+          "row": 1108
+        },
+        {
+          "after": 353.1,
+          "before": 369.07,
+          "column": "total_amount",
+          "issue_id": "total_amount::numeric_outlier",
+          "row": 1523
+        },
+        {
+          "after": 353.1,
+          "before": 359.57,
+          "column": "total_amount",
+          "issue_id": "total_amount::numeric_outlier",
+          "row": 1563
+        },
+        {
+          "after": 353.1,
+          "before": 381.5,
+          "column": "total_amount",
+          "issue_id": "total_amount::numeric_outlier",
+          "row": 1728
+        },
+        {
+          "after": 353.1,
+          "before": 369.0,
+          "column": "total_amount",
+          "issue_id": "total_amount::numeric_outlier",
+          "row": 1768
+        },
+        {
+          "after": 353.1,
+          "before": 359.5,
+          "column": "total_amount",
+          "issue_id": "total_amount::numeric_outlier",
+          "row": 1808
+        },
+        {
+          "after": 353.1,
+          "before": 359.57,
+          "column": "total_amount",
+          "issue_id": "total_amount::numeric_outlier",
+          "row": 2263
+        },
+        {
+          "after": 353.1,
+          "before": 379.0,
+          "column": "total_amount",
+          "issue_id": "total_amount::numeric_outlier",
+          "row": 2428
+        },
+        {
+          "after": 353.1,
+          "before": 370.5,
+          "column": "total_amount",
+          "issue_id": "total_amount::numeric_outlier",
+          "row": 2468
+        },
+        {
+          "after": 353.1,
+          "before": 358.0,
+          "column": "total_amount",
+          "issue_id": "total_amount::numeric_outlier",
+          "row": 2508
+        }
+      ],
+      "comparison_exact": false,
+      "post_scan_performed": false,
+      "resolved_issue_count": 11
+    },
+    "selected_issue_count": 11,
+    "skipped_issues": [],
+    "streaming_replaced_cell_count": 7652,
+    "total_cells_modified": 7652,
+    "write_strategy_used": "streaming"
+  },
+  "repaired_csv": "outputs/large_labeled_validation_20260531/orders_transactions_1m_labeled/repaired.csv",
+  "repaired_file_size_bytes": 118496077,
+  "rollback_manifest": "D:\\code\\pythoncode\\Anomaly Detection and Repair for Mixed Data Type Inputs\\outputs\\large_labeled_validation_20260531\\orders_transactions_1m_labeled\\.rollback\\rb-1780222699871-b4f91f18.json",
+  "rollback_manifest_generated": true,
+  "runtime": {
+    "columns": 13,
+    "dataset": "orders_transactions_1m_labeled",
+    "engine_duration_ms": 17074,
+    "notes": "repair_batch write_output=true with rollback manifest enabled",
+    "output_size_mb": 113.006665,
+    "peak_private_memory_mb": 1007.015625,
+    "peak_working_set_mb": 523.503906,
+    "rows": 1000012,
+    "stage": "repair_evaluate",
+    "status": "ok",
+    "wall_seconds": 17.074468
+  },
+  "selected_issue_ids": [
+    "total_amount::numeric_outlier",
+    "payment_method::missing_values",
+    "unit_price::missing_values",
+    "discount::numeric_outlier",
+    "payment_method::rare_category",
+    "quantity::numeric_outlier",
+    "product_category::rare_category",
+    "discount::missing_values",
+    "product_category::missing_values",
+    "unit_price::numeric_outlier",
+    "order_status::rare_category"
+  ],
+  "source_dataset": "orders_transactions"
+}

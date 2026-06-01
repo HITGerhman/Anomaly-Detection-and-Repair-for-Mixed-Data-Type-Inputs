@@ -27,8 +27,10 @@ func toolSummaryForSource(source string) string {
 		return "Deterministic rule-based repair preview."
 	case "gower":
 		return "Gower neighbor retrieval repair preview."
+	case "missforest":
+		return "Iterative MissForest random forest imputation repair preview."
 	case "hybrid":
-		return "Issue-level merged plan from rule and Gower previews."
+		return "Issue-level merged plan from rule, Gower, and MissForest previews."
 	default:
 		return source
 	}
@@ -66,6 +68,20 @@ func issueMetricsFromPreview(preview map[string]any) (map[string]map[string]any,
 		metrics[issueID] = cloneMap(item)
 	}
 	for _, item := range listOfMaps(preview["neighbor_evidence"]) {
+		issueID := asString(item["issue_id"])
+		if issueID == "" {
+			continue
+		}
+		existing := metrics[issueID]
+		if existing == nil {
+			existing = map[string]any{}
+		}
+		for key, value := range item {
+			existing[key] = value
+		}
+		metrics[issueID] = existing
+	}
+	for _, item := range listOfMaps(preview["model_evidence"]) {
 		issueID := asString(item["issue_id"])
 		if issueID == "" {
 			continue
@@ -153,7 +169,96 @@ func chooseIssueSource(ruleIssue map[string]any, hasRule bool, gowerIssue map[st
 	return "rule"
 }
 
+type issueSourceOption struct {
+	Source    string
+	Issue     map[string]any
+	Available bool
+}
+
+func chooseIssueSourceFromOptions(options []issueSourceOption) string {
+	best := issueSourceOption{}
+	for _, option := range options {
+		if !option.Available {
+			continue
+		}
+		if best.Source == "" {
+			best = option
+			continue
+		}
+		if issueSourceOptionBetter(option, best) {
+			best = option
+		}
+	}
+	return best.Source
+}
+
+func issueSourceOptionBetter(left issueSourceOption, right issueSourceOption) bool {
+	leftResolved := intFromAny(left.Issue["resolved_count"])
+	rightResolved := intFromAny(right.Issue["resolved_count"])
+	if leftResolved != rightResolved {
+		return leftResolved > rightResolved
+	}
+	leftConfidence := issueConfidence(left.Issue)
+	rightConfidence := issueConfidence(right.Issue)
+	if leftConfidence != rightConfidence {
+		return leftConfidence > rightConfidence
+	}
+	leftRows := issueRowsTouched(left.Issue)
+	rightRows := issueRowsTouched(right.Issue)
+	if leftRows != rightRows {
+		return leftRows < rightRows
+	}
+	priority := map[string]int{
+		"rule":       0,
+		"gower":      1,
+		"missforest": 2,
+	}
+	return priority[left.Source] < priority[right.Source]
+}
+
+func buildCandidateScore(candidate RepairCandidate) map[string]any {
+	before := intFromAny(candidate.Comparison["before_issue_count"])
+	after := intFromAny(candidate.Comparison["after_issue_count"])
+	resolved := intFromAny(candidate.Comparison["resolved_issue_count"])
+	changed := intFromAny(candidate.Comparison["changed_cell_count"])
+	if before <= 0 {
+		before = after + resolved
+	}
+	improvementRatio := 0.0
+	if before > 0 {
+		improvementRatio = float64(resolved) / float64(before)
+	}
+	overall := float64(resolved)*100.0 + improvementRatio*25.0 - float64(after)*12.0 - float64(changed)*0.5
+	if !candidate.Executable {
+		overall -= 10_000.0
+	}
+	return map[string]any{
+		"score_version":        "candidate_score_v1",
+		"overall":              overall,
+		"resolved_weight":      resolved,
+		"remaining_penalty":    after,
+		"side_effect_penalty":  changed,
+		"improvement_ratio":    improvementRatio,
+		"planner_write_policy": "plan_only_no_data_write",
+	}
+}
+
+func attachCandidateScore(candidate RepairCandidate) RepairCandidate {
+	candidate.Score = buildCandidateScore(candidate)
+	comparison := cloneMap(candidate.Comparison)
+	comparison["candidate_score"] = floatFromAny(candidate.Score["overall"])
+	comparison["score_version"] = asString(candidate.Score["score_version"])
+	candidate.Comparison = comparison
+	return candidate
+}
+
 func candidateBetter(left RepairCandidate, right RepairCandidate) bool {
+	leftScore := floatFromAny(left.Score["overall"])
+	rightScore := floatFromAny(right.Score["overall"])
+	if leftScore != rightScore {
+		return leftScore > rightScore
+	}
+
 	leftAfter := intFromAny(left.Comparison["after_issue_count"])
 	rightAfter := intFromAny(right.Comparison["after_issue_count"])
 	if leftAfter != rightAfter {
@@ -173,9 +278,10 @@ func candidateBetter(left RepairCandidate, right RepairCandidate) bool {
 	}
 
 	priority := map[string]int{
-		"hybrid": 0,
-		"rule":   1,
-		"gower":  2,
+		"hybrid":     0,
+		"rule":       1,
+		"gower":      2,
+		"missforest": 3,
 	}
 	return priority[left.Source] < priority[right.Source]
 }
@@ -241,15 +347,41 @@ func buildGowerPayloads(input PlanningInput) ([]map[string]any, []map[string]any
 	return []map[string]any{planPayload}, []map[string]any{executePayload}
 }
 
-func buildHybridComparison(beforeCount int, issueSourceMap map[string]any, ruleIssues map[string]map[string]any, gowerIssues map[string]map[string]any) map[string]any {
+func buildMissForestPayloads(input PlanningInput) ([]map[string]any, []map[string]any) {
+	planPayload := map[string]any{
+		"csv_path":        input.CSVPath,
+		"issue_ids":       append([]string{}, input.SelectedIssueIDs...),
+		"plan_only":       true,
+		"write_output":    false,
+		"enable_rollback": false,
+	}
+	if len(input.ScanConfigOverrides) > 0 {
+		planPayload["scan_config"] = cloneMap(input.ScanConfigOverrides)
+	}
+	planPayload["missforest_strategy"] = withDefaultMissForestStrategy(input.MissForestStrategyOverrides)
+	if strings.TrimSpace(input.OutputDir) != "" {
+		planPayload["output_dir"] = strings.TrimSpace(input.OutputDir)
+	}
+
+	executePayload := cloneMap(planPayload)
+	executePayload["plan_only"] = false
+	executePayload["write_output"] = true
+	executePayload["enable_rollback"] = true
+	return []map[string]any{planPayload}, []map[string]any{executePayload}
+}
+
+func buildHybridComparison(beforeCount int, issueSourceMap map[string]any, ruleIssues map[string]map[string]any, gowerIssues map[string]map[string]any, missForestIssues map[string]map[string]any) map[string]any {
 	resolved := 0
 	changed := 0
 	for issueID, rawSource := range issueSourceMap {
 		source := asString(rawSource)
 		var item map[string]any
-		if source == "gower" {
+		switch source {
+		case "gower":
 			item = gowerIssues[issueID]
-		} else {
+		case "missforest":
+			item = missForestIssues[issueID]
+		default:
 			item = ruleIssues[issueID]
 		}
 		resolved += intFromAny(item["resolved_count"])
@@ -316,7 +448,7 @@ func deterministicRiskNote(buckets issuePlanBuckets) string {
 func deterministicExplanationBullets(buckets issuePlanBuckets, selectedCandidate RepairCandidate) []string {
 	bullets := []string{
 		fmt.Sprintf("Selected %d auto-repair issue ids for deterministic preview and execution.", len(buckets.AutoRepairIssueIDs)),
-		fmt.Sprintf("Candidate source selected by deterministic comparison: %s.", selectedCandidate.Source),
+		fmt.Sprintf("Candidate source selected by deterministic score: %s.", selectedCandidate.Source),
 	}
 	if len(buckets.CautiousIssueIDs) > 0 {
 		bullets = append(bullets, fmt.Sprintf("%d numeric_outlier issues are marked cautious and excluded from automatic write payloads.", len(buckets.CautiousIssueIDs)))
@@ -344,10 +476,13 @@ func (p *DeterministicPlanner) BuildPlan(_ context.Context, input PlanningInput)
 
 	rulePlanPayloads, ruleExecutePayloads := buildRulePayloads(previewInput)
 	gowerPlanPayloads, gowerExecutePayloads := buildGowerPayloads(previewInput)
+	missForestPlanPayloads, missForestExecutePayloads := buildMissForestPayloads(previewInput)
 	ruleComparison := comparisonFromPreview(input.RulePreview, beforeIssueCount)
 	gowerComparison := comparisonFromPreview(input.GowerPreview, beforeIssueCount)
+	missForestComparison := comparisonFromPreview(input.MissForestPreview, beforeIssueCount)
 	ruleIssues, ruleSkipped := issueMetricsFromPreview(input.RulePreview)
 	gowerIssues, gowerSkipped := issueMetricsFromPreview(input.GowerPreview)
+	missForestIssues, missForestSkipped := issueMetricsFromPreview(input.MissForestPreview)
 
 	ruleCandidate := RepairCandidate{
 		CandidateID:      "candidate-rule",
@@ -374,21 +509,42 @@ func (p *DeterministicPlanner) BuildPlan(_ context.Context, input PlanningInput)
 		Summary:          toolSummaryForSource("gower"),
 		Executable:       intFromAny(gowerComparison["resolved_issue_count"]) > 0,
 	}
+	missForestCandidate := RepairCandidate{
+		CandidateID:      "candidate-missforest",
+		Source:           "missforest",
+		ToolSequence:     []string{"engine.repair_with_missforest"},
+		PlanPayloads:     missForestPlanPayloads,
+		ExecutePayloads:  missForestExecutePayloads,
+		SelectedIssueIDs: append([]string{}, selectedIssueIDs...),
+		IssueSourceMap:   map[string]any{},
+		Comparison:       cloneMap(missForestComparison),
+		Summary:          toolSummaryForSource("missforest"),
+		Executable:       intFromAny(missForestComparison["resolved_issue_count"]) > 0,
+	}
 
 	issueSourceMap := map[string]any{}
 	hybridSelectedIssueIDs := make([]string, 0, len(selectedIssueIDs))
 	for _, issueID := range selectedIssueIDs {
 		_, ruleWasSkipped := ruleSkipped[issueID]
 		_, gowerWasSkipped := gowerSkipped[issueID]
+		_, missForestWasSkipped := missForestSkipped[issueID]
 		ruleIssue, hasRule := ruleIssues[issueID]
 		gowerIssue, hasGower := gowerIssues[issueID]
+		missForestIssue, hasMissForest := missForestIssues[issueID]
 		if ruleWasSkipped {
 			hasRule = false
 		}
 		if gowerWasSkipped {
 			hasGower = false
 		}
-		source := chooseIssueSource(ruleIssue, hasRule, gowerIssue, hasGower)
+		if missForestWasSkipped {
+			hasMissForest = false
+		}
+		source := chooseIssueSourceFromOptions([]issueSourceOption{
+			{Source: "rule", Issue: ruleIssue, Available: hasRule},
+			{Source: "gower", Issue: gowerIssue, Available: hasGower},
+			{Source: "missforest", Issue: missForestIssue, Available: hasMissForest},
+		})
 		if source == "" {
 			continue
 		}
@@ -398,10 +554,14 @@ func (p *DeterministicPlanner) BuildPlan(_ context.Context, input PlanningInput)
 
 	hybridRuleIDs := make([]string, 0, len(issueSourceMap))
 	hybridGowerIDs := make([]string, 0, len(issueSourceMap))
+	hybridMissForestIDs := make([]string, 0, len(issueSourceMap))
 	for _, issueID := range hybridSelectedIssueIDs {
-		if asString(issueSourceMap[issueID]) == "gower" {
+		switch asString(issueSourceMap[issueID]) {
+		case "gower":
 			hybridGowerIDs = append(hybridGowerIDs, issueID)
-		} else {
+		case "missforest":
+			hybridMissForestIDs = append(hybridMissForestIDs, issueID)
+		default:
 			hybridRuleIDs = append(hybridRuleIDs, issueID)
 		}
 	}
@@ -426,12 +586,21 @@ func (p *DeterministicPlanner) BuildPlan(_ context.Context, input PlanningInput)
 		execPayload["issue_ids"] = append([]string{}, hybridGowerIDs...)
 		hybridExecutePayloads = append(hybridExecutePayloads, execPayload)
 	}
+	if len(hybridMissForestIDs) > 0 {
+		payload := cloneMap(missForestPlanPayloads[0])
+		payload["issue_ids"] = append([]string{}, hybridMissForestIDs...)
+		hybridPlanPayloads = append(hybridPlanPayloads, payload)
 
-	hybridComparison := buildHybridComparison(beforeIssueCount, issueSourceMap, ruleIssues, gowerIssues)
+		execPayload := cloneMap(missForestExecutePayloads[0])
+		execPayload["issue_ids"] = append([]string{}, hybridMissForestIDs...)
+		hybridExecutePayloads = append(hybridExecutePayloads, execPayload)
+	}
+
+	hybridComparison := buildHybridComparison(beforeIssueCount, issueSourceMap, ruleIssues, gowerIssues, missForestIssues)
 	hybridCandidate := RepairCandidate{
 		CandidateID:      "candidate-hybrid",
 		Source:           "hybrid",
-		ToolSequence:     []string{"engine.repair_batch", "engine.repair_with_gower"},
+		ToolSequence:     []string{},
 		PlanPayloads:     hybridPlanPayloads,
 		ExecutePayloads:  hybridExecutePayloads,
 		SelectedIssueIDs: hybridSelectedIssueIDs,
@@ -440,8 +609,22 @@ func (p *DeterministicPlanner) BuildPlan(_ context.Context, input PlanningInput)
 		Summary:          toolSummaryForSource("hybrid"),
 		Executable:       intFromAny(hybridComparison["resolved_issue_count"]) > 0,
 	}
+	if len(hybridRuleIDs) > 0 {
+		hybridCandidate.ToolSequence = append(hybridCandidate.ToolSequence, "engine.repair_batch")
+	}
+	if len(hybridGowerIDs) > 0 {
+		hybridCandidate.ToolSequence = append(hybridCandidate.ToolSequence, "engine.repair_with_gower")
+	}
+	if len(hybridMissForestIDs) > 0 {
+		hybridCandidate.ToolSequence = append(hybridCandidate.ToolSequence, "engine.repair_with_missforest")
+	}
 
-	candidates := []RepairCandidate{ruleCandidate, gowerCandidate, hybridCandidate}
+	candidates := []RepairCandidate{
+		attachCandidateScore(ruleCandidate),
+		attachCandidateScore(gowerCandidate),
+		attachCandidateScore(missForestCandidate),
+		attachCandidateScore(hybridCandidate),
+	}
 	sort.SliceStable(candidates, func(i, j int) bool {
 		return candidateBetter(candidates[i], candidates[j])
 	})
@@ -462,13 +645,14 @@ func (p *DeterministicPlanner) BuildPlan(_ context.Context, input PlanningInput)
 	sort.Strings(skippedTypes)
 
 	reasoningSummary := fmt.Sprintf(
-		"Compared rule, Gower, and hybrid candidates for %d supported issues. Selected %s because it produced the best global comparison under deterministic tie-break rules.",
+		"Compared rule, Gower, MissForest, and hybrid candidates for %d supported issues. Selected %s because it produced the best scored preview under deterministic tie-break rules.",
 		len(selectedIssueIDs),
 		selectedCandidate.Source,
 	)
 	userExplanation := fmt.Sprintf(
-		"The agent compared rule-based repair, Gower neighbor repair, and a hybrid issue-level merge. It selected the %s candidate with after_issue_count=%d and changed_cell_count=%d.",
+		"The agent compared rule-based repair, Gower neighbor repair, MissForest repair, and a hybrid issue-level merge. It selected the %s candidate with candidate_score=%.2f, after_issue_count=%d, and changed_cell_count=%d.",
 		selectedCandidate.Source,
+		floatFromAny(selectedCandidate.Score["overall"]),
 		intFromAny(selectedCandidate.Comparison["after_issue_count"]),
 		intFromAny(selectedCandidate.Comparison["changed_cell_count"]),
 	)

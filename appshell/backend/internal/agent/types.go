@@ -37,6 +37,7 @@ type RepairCandidate struct {
 	SelectedIssueIDs []string         `json:"selected_issue_ids"`
 	IssueSourceMap   map[string]any   `json:"issue_source_map"`
 	Comparison       map[string]any   `json:"comparison"`
+	Score            map[string]any   `json:"score,omitempty"`
 	Summary          string           `json:"summary"`
 	Executable       bool             `json:"executable"`
 }

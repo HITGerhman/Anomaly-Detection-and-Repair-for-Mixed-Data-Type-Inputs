@@ -75,6 +75,7 @@ def test_scan_file_returns_issue_catalog(tmp_path: Path) -> None:
     assert result["issue_count"] >= 2
     assert result["scan_config"]["max_bins"] == 24
     assert "scan_summary" in result
+    assert "numeric_outlier_risk_counts" in result["scan_summary"]
     issue_types = {item["issue_type"] for item in result["issues"]}
     assert "missing_values" in issue_types
     assert "numeric_outlier" in issue_types
@@ -84,6 +85,187 @@ def test_scan_file_returns_issue_catalog(tmp_path: Path) -> None:
     assert all("hot_segments" in item for item in result["column_thumbnails"])
     scores = [float(item["issue_score"]) for item in result["issues"]]
     assert scores == sorted(scores, reverse=True)
+
+
+def test_scan_file_scoped_to_affected_columns(tmp_path: Path) -> None:
+    csv_path = tmp_path / "scoped_scan.csv"
+    pd.DataFrame(
+        {
+            "age": [20, 21, 22, 23, 24, 400, np.nan],
+            "bmi": [21.1, 22.3, np.nan, 24.2, 23.9, 25.1, 24.8],
+            "gender": ["M", "F", "F", "M", "Z", "M", None],
+        }
+    ).to_csv(csv_path, index=False)
+
+    resp = _run_engine(
+        json.dumps(
+            {
+                "task_id": "scan-scoped",
+                "action": "scan_file",
+                "payload": {
+                    "csv_path": str(csv_path),
+                    "scan_scope": "affected_columns",
+                    "affected_columns": ["age"],
+                },
+            }
+        )
+    )
+    assert resp["status"] == "ok"
+    result = resp["result"]
+    assert result["scan_scope"] == "affected_columns"
+    assert result["affected_columns"] == ["age"]
+    assert result["data_profile"]["columns"] == 1
+    assert {item["column"] for item in result["column_profiles"]} == {"age"}
+    assert {item["column"] for item in result["issues"]} <= {"age"}
+
+
+def test_repair_with_missforest_plan_only_returns_model_evidence(tmp_path: Path) -> None:
+    csv_path = tmp_path / "repair_with_missforest_plan_only.csv"
+    pd.DataFrame(
+        {
+            "age": [30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, np.nan],
+            "score": [100, 102, 101, 103, 104, 105, 106, 107, 108, 109, 110, 999],
+            "dept": ["A", "A", "A", "A", "A", "B", "B", "B", "B", "B", "C", "X"],
+            "tenure": [1, 2, 2, 3, 3, 4, 4, 5, 5, 6, 6, 7],
+        }
+    ).to_csv(csv_path, index=False)
+
+    scan_resp = _run_engine(
+        json.dumps(
+            {
+                "task_id": "missforest-scan",
+                "action": "scan_file",
+                "payload": {
+                    "csv_path": str(csv_path),
+                    "scan_config": {
+                        "rare_count_floor": 1,
+                        "min_numeric_samples": 4,
+                    },
+                },
+            }
+        )
+    )
+    assert scan_resp["status"] == "ok"
+    issues = scan_resp["result"]["issues"]
+    issue_ids = [
+        item["issue_id"]
+        for item in issues
+        if item["issue_type"] in {"missing_values", "numeric_outlier", "rare_category"}
+    ]
+    assert issue_ids
+
+    output_csv = tmp_path / "should_not_exist.csv"
+    resp = _run_engine(
+        json.dumps(
+            {
+                "task_id": "missforest-plan",
+                "action": "repair_with_missforest",
+                "payload": {
+                    "csv_path": str(csv_path),
+                    "issue_ids": issue_ids,
+                    "plan_only": True,
+                    "write_output": False,
+                    "output_csv": str(output_csv),
+                    "scan_config": {
+                        "rare_count_floor": 1,
+                        "min_numeric_samples": 4,
+                    },
+                    "missforest_strategy": {
+                        "n_estimators": 10,
+                        "min_training_rows": 4,
+                        "random_state": 7,
+                    },
+                },
+            }
+        )
+    )
+
+    assert resp["status"] == "ok"
+    result = resp["result"]
+    assert result["plan_only"] is True
+    assert result["write_output"] is False
+    assert result["output_csv"] is None
+    assert not output_csv.exists()
+    assert result["total_cells_modified"] >= 2
+    assert result["missforest_strategy"]["algorithm_mode"] == "iterative"
+    assert result["model_evidence"]
+    assert all(item["algorithm_mode"] == "iterative" for item in result["model_evidence"])
+    assert all(item["iterations_run"] >= 1 for item in result["model_evidence"])
+    assert all("converged" in item for item in result["model_evidence"])
+    assert all("convergence_delta" in item for item in result["model_evidence"])
+    assert all(item["target_cell_count"] >= 1 for item in result["model_evidence"])
+    model_types = {item["model_type"] for item in result["model_evidence"]}
+    assert "random_forest_regressor" in model_types
+    assert "random_forest_classifier" in model_types
+
+
+def test_repair_with_missforest_writes_only_selected_cells(tmp_path: Path) -> None:
+    csv_path = tmp_path / "repair_with_missforest_selected_only.csv"
+    original = pd.DataFrame(
+        {
+            "age": [30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, np.nan],
+            "score": [100, 102, 101, 103, 104, 105, 106, 107, 108, 109, np.nan, 111],
+            "dept": ["A", "A", "A", "A", "A", "B", "B", "B", "B", "B", "C", "C"],
+            "tenure": [1, 2, 2, 3, 3, 4, 4, 5, 5, 6, 6, 7],
+        }
+    )
+    original.to_csv(csv_path, index=False)
+
+    scan_resp = _run_engine(
+        json.dumps(
+            {
+                "task_id": "missforest-selected-scan",
+                "action": "scan_file",
+                "payload": {
+                    "csv_path": str(csv_path),
+                    "scan_config": {
+                        "min_numeric_samples": 4,
+                    },
+                },
+            }
+        )
+    )
+    assert scan_resp["status"] == "ok"
+    age_issue_id = next(
+        item["issue_id"]
+        for item in scan_resp["result"]["issues"]
+        if item["issue_type"] == "missing_values" and item["column"] == "age"
+    )
+
+    output_csv = tmp_path / "missforest_selected_only_output.csv"
+    resp = _run_engine(
+        json.dumps(
+            {
+                "task_id": "missforest-selected-apply",
+                "action": "repair_with_missforest",
+                "payload": {
+                    "csv_path": str(csv_path),
+                    "issue_ids": [age_issue_id],
+                    "write_output": True,
+                    "output_csv": str(output_csv),
+                    "scan_config": {
+                        "min_numeric_samples": 4,
+                    },
+                    "missforest_strategy": {
+                        "n_estimators": 10,
+                        "min_training_rows": 4,
+                        "max_iter": 3,
+                        "random_state": 11,
+                    },
+                },
+            }
+        )
+    )
+
+    assert resp["status"] == "ok"
+    result = resp["result"]
+    assert result["output_csv"] == str(output_csv)
+    assert output_csv.exists()
+    assert result["total_cells_modified"] == 1
+    repaired = pd.read_csv(output_csv)
+    assert pd.notna(repaired.loc[11, "age"])
+    assert pd.isna(repaired.loc[10, "score"])
+    assert repaired.loc[10, "dept"] == original.loc[10, "dept"]
 
 
 def test_scan_file_honors_custom_scan_thresholds(tmp_path: Path) -> None:
@@ -213,6 +395,130 @@ def test_repair_batch_plan_only_returns_real_comparison(tmp_path: Path) -> None:
     assert result["comparison"]["changed_cell_count"] >= 1
     assert "repair_strategy" in result
     assert "conflict_summary" in result
+
+
+def test_repair_batch_lightweight_comparison_skips_post_scan(tmp_path: Path) -> None:
+    csv_path = tmp_path / "repair_batch_lightweight.csv"
+    pd.DataFrame(
+        {
+            "age": [20, 21, 22, np.nan, 24, 25, 26, 27],
+            "bmi": [20.1, 21.0, 21.5, 22.2, 23.1, 24.2, 25.3, 24.7],
+            "work_type": ["Private", "Private", "Govt", "Private", "Self", "Govt", "Private", "Self"],
+        }
+    ).to_csv(csv_path, index=False)
+
+    scan_resp = _run_engine(
+        json.dumps(
+            {
+                "task_id": "scan-lightweight-comparison",
+                "action": "scan_file",
+                "payload": {"csv_path": str(csv_path)},
+            }
+        )
+    )
+    assert scan_resp["status"] == "ok"
+    selected_ids = [
+        item["issue_id"]
+        for item in scan_resp["result"]["issues"]
+        if item["issue_type"] == "missing_values"
+    ]
+    assert selected_ids
+
+    repair_resp = _run_engine(
+        json.dumps(
+            {
+                "task_id": "repair-lightweight-comparison",
+                "action": "repair_batch",
+                "payload": {
+                    "csv_path": str(csv_path),
+                    "issue_ids": selected_ids,
+                    "plan_only": True,
+                    "write_output": False,
+                    "comparison_mode": "lightweight",
+                },
+            }
+        )
+    )
+    assert repair_resp["status"] == "ok"
+    result = repair_resp["result"]
+    assert result["comparison_mode"] == "lightweight"
+    assert result["comparison_exact"] is False
+    assert result["post_scan_performed"] is False
+    assert result["comparison"]["comparison_exact"] is False
+    assert result["comparison"]["post_scan_performed"] is False
+    assert result["comparison"]["changed_cell_count"] >= 1
+
+
+def test_repair_batch_streaming_write_only_replaces_planned_cells(tmp_path: Path) -> None:
+    csv_path = tmp_path / "repair_batch_streaming.csv"
+    source_df = pd.DataFrame(
+        {
+            "age": [20, 21, 22, np.nan, 24, 25, 26, 27],
+            "bmi": [20.1, 21.0, 21.5, 22.2, 23.1, 24.2, 25.3, 24.7],
+            "work_type": ["Private", "Private", "Govt", "Private", "Self", "Govt", "Private", "Self"],
+        }
+    )
+    source_df.to_csv(csv_path, index=False)
+
+    scan_resp = _run_engine(
+        json.dumps(
+            {
+                "task_id": "scan-streaming-write",
+                "action": "scan_file",
+                "payload": {"csv_path": str(csv_path)},
+            }
+        )
+    )
+    assert scan_resp["status"] == "ok"
+    selected_ids = [
+        item["issue_id"]
+        for item in scan_resp["result"]["issues"]
+        if item["issue_type"] == "missing_values"
+    ]
+    assert selected_ids
+
+    output_csv = tmp_path / "streaming.repaired.csv"
+    rollback_dir = tmp_path / "rollback"
+    repair_resp = _run_engine(
+        json.dumps(
+            {
+                "task_id": "repair-streaming-write",
+                "action": "repair_batch",
+                "payload": {
+                    "csv_path": str(csv_path),
+                    "issue_ids": selected_ids,
+                    "write_output": True,
+                    "write_strategy": "streaming",
+                    "output_csv": str(output_csv),
+                    "enable_rollback": True,
+                    "rollback_dir": str(rollback_dir),
+                    "repair_strategy": {"preview_limit": 20},
+                },
+            }
+        )
+    )
+    assert repair_resp["status"] == "ok"
+    result = repair_resp["result"]
+    assert result["write_strategy_used"] == "streaming"
+    assert result["streaming_replaced_cell_count"] == result["total_cells_modified"]
+    assert result["streaming_chunk_size"] == 100000
+    assert output_csv.exists()
+    assert Path(result["rollback"]["manifest_path"]).exists()
+
+    repaired_df = pd.read_csv(output_csv)
+    changed_cells = {
+        (int(item["row"]), str(item["column"]))
+        for item in result["comparison"]["changed_cells_preview"]
+    }
+    observed_diffs: set[tuple[int, str]] = set()
+    for row_idx in range(len(source_df)):
+        for column in source_df.columns:
+            before = source_df.at[row_idx, column]
+            after = repaired_df.at[row_idx, column]
+            same = (pd.isna(before) and pd.isna(after)) or before == after
+            if not same:
+                observed_diffs.add((row_idx, column))
+    assert observed_diffs == changed_cells
 
 
 def test_repair_with_gower_plan_only_returns_neighbor_evidence(tmp_path: Path) -> None:
@@ -391,7 +697,7 @@ def test_repair_with_gower_limits_candidate_sample_deterministically(tmp_path: P
 
 def test_repair_with_gower_auto_limits_large_candidate_pool(tmp_path: Path) -> None:
     csv_path = tmp_path / "gower_auto_limited.csv"
-    rows = 5205
+    rows = 18000
     df = pd.DataFrame(
         {
             "age": np.arange(rows, dtype=float) + 20.0,
@@ -438,6 +744,76 @@ def test_repair_with_gower_auto_limits_large_candidate_pool(tmp_path: Path) -> N
     assert evidence[0]["candidate_selection_mode"] == "auto_sample"
     assert evidence[0]["candidate_sample_size"] == 512
     assert evidence[0]["candidate_pool_size"] > evidence[0]["candidate_sample_size"]
+    assert evidence[0]["prefilter_mode"] == "auto_bucket"
+    assert evidence[0]["prefilter_columns"] == ["work_type"]
+    assert evidence[0]["prefilter_pool_size"] >= 512
+    assert evidence[0]["feature_policy_mode"] == "auto"
+    assert evidence[0]["feature_count_after"] <= evidence[0]["feature_count_before"]
+
+
+def test_repair_with_missforest_feature_policy_excludes_id_like_and_high_cardinality(tmp_path: Path) -> None:
+    csv_path = tmp_path / "missforest_feature_policy.csv"
+    rows = 90
+    df = pd.DataFrame(
+        {
+            "order_id": [f"ord-{idx:04d}" for idx in range(rows)],
+            "user_id": [f"user-{idx:04d}" for idx in range(rows)],
+            "segment": np.resize(np.array(["A", "B", "C"], dtype=object), rows),
+            "product_category": np.resize(np.array(["book", "food", "tool", "game"], dtype=object), rows),
+            "quantity": (np.arange(rows) % 7) + 1,
+            "amount": 20.0 + (np.arange(rows, dtype=float) % 11.0) * 3.5,
+        }
+    )
+    df.loc[12, "amount"] = np.nan
+    df.to_csv(csv_path, index=False)
+
+    scan_resp = _run_engine(
+        json.dumps(
+            {
+                "task_id": "scan-missforest-feature-policy",
+                "action": "scan_file",
+                "payload": {"csv_path": str(csv_path)},
+            }
+        )
+    )
+    assert scan_resp["status"] == "ok"
+    selected_ids = [
+        item["issue_id"]
+        for item in scan_resp["result"]["issues"]
+        if item["issue_type"] == "missing_values" and item["column"] == "amount"
+    ]
+    assert selected_ids
+
+    repair_resp = _run_engine(
+        json.dumps(
+            {
+                "task_id": "repair-missforest-feature-policy",
+                "action": "repair_with_missforest",
+                "payload": {
+                    "csv_path": str(csv_path),
+                    "issue_ids": selected_ids,
+                    "plan_only": True,
+                    "write_output": False,
+                    "missforest_strategy": {
+                        "algorithm_mode": "single_pass",
+                        "n_estimators": 10,
+                        "max_train_rows": 64,
+                        "feature_column_policy": {"max_encoded_features": 32},
+                    },
+                },
+            }
+        )
+    )
+    assert repair_resp["status"] == "ok"
+    evidence = repair_resp["result"]["model_evidence"]
+    assert evidence
+    excluded = set(evidence[0]["excluded_feature_columns"])
+    assert {"order_id", "user_id"}.issubset(excluded)
+    assert "segment" not in excluded
+    assert "product_category" not in excluded
+    assert evidence[0]["feature_policy_mode"] == "auto"
+    assert evidence[0]["feature_count_after"] < evidence[0]["feature_count_before"]
+    assert evidence[0]["feature_count"] <= 32
 
 
 def test_repair_with_gower_write_output_and_model_importance(tmp_path: Path) -> None:

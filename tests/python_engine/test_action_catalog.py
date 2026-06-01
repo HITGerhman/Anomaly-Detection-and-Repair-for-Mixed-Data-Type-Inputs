@@ -28,6 +28,7 @@ def test_action_catalog_has_unique_actions_and_tool_ids() -> None:
         "scan_file",
         "repair_batch",
         "repair_with_gower",
+        "repair_with_missforest",
         "rollback_repair_batch",
     ]
     assert len({spec.action for spec in specs}) == len(specs)

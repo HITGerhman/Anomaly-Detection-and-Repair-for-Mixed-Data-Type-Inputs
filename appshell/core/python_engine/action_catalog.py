@@ -61,6 +61,12 @@ def _load_action_repair_with_gower() -> ActionHandler:
     return action_repair_with_gower
 
 
+def _load_action_repair_with_missforest() -> ActionHandler:
+    from engine_core import action_repair_with_missforest
+
+    return action_repair_with_missforest
+
+
 def _load_action_rollback_repair_batch() -> ActionHandler:
     from engine_core import action_rollback_repair_batch
 
@@ -133,6 +139,8 @@ _ACTION_SPECS: tuple[ActionSpec, ...] = (
             "duplicate_subset",
             "auto_pair_constraints",
             "scan_config",
+            "scan_scope",
+            "affected_columns",
         ),
         side_effect="reads_input_only",
         artifact_keys=("issues", "column_thumbnails", "scan_summary", "data_profile"),
@@ -155,6 +163,8 @@ _ACTION_SPECS: tuple[ActionSpec, ...] = (
             "repair_strategy",
             "column_dependencies",
             "scan_config",
+            "comparison_mode",
+            "write_strategy",
         ),
         side_effect="writes_repaired_output_and_rollback_metadata",
         artifact_keys=("output_csv", "rollback", "comparison", "applied_repairs", "skipped_issues"),
@@ -178,11 +188,36 @@ _ACTION_SPECS: tuple[ActionSpec, ...] = (
             "column_dependencies",
             "model_dir",
             "gower_strategy",
+            "comparison_mode",
+            "write_strategy",
         ),
         side_effect="writes_repaired_output_and_rollback_metadata",
         artifact_keys=("output_csv", "rollback", "comparison", "applied_repairs", "neighbor_evidence"),
         algorithm_assets=("gower_distance", "src.repair_module.suggest_replacement_from_neighbors", "LightGBM"),
         handler=_load_action_repair_with_gower,
+    ),
+    ActionSpec(
+        action="repair_with_missforest",
+        future_tool_id="engine.repair_with_missforest",
+        summary="Repair selected table issues with iterative MissForest random-forest imputation and rollback metadata.",
+        required_fields=("csv_path",),
+        optional_fields=(
+            "issue_ids",
+            "output_csv",
+            "output_dir",
+            "write_output",
+            "plan_only",
+            "enable_rollback",
+            "rollback_dir",
+            "scan_config",
+            "missforest_strategy",
+            "comparison_mode",
+            "write_strategy",
+        ),
+        side_effect="writes_repaired_output_and_rollback_metadata",
+        artifact_keys=("output_csv", "rollback", "comparison", "applied_repairs", "model_evidence"),
+        algorithm_assets=("MissForest", "RandomForestRegressor", "RandomForestClassifier"),
+        handler=_load_action_repair_with_missforest,
     ),
     ActionSpec(
         action="rollback_repair_batch",

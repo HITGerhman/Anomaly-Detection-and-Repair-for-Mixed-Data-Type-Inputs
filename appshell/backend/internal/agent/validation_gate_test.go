@@ -240,6 +240,51 @@ func TestValidationGateWarnsWhenNumericOutlierModificationShareIsHigh(t *testing
 	}
 }
 
+func TestValidationGateWarnsWhenMissForestDoesNotConverge(t *testing.T) {
+	baseline := validationGateScan(
+		map[string]any{"issue_id": "i-1", "issue_type": "missing_values", "risk_level": "low", "issue_score": 0.5},
+		map[string]any{"issue_id": "i-2", "issue_type": "rare_category", "risk_level": "low", "issue_score": 0.4},
+	)
+	postScan := validationGateScan(
+		map[string]any{"issue_id": "post-1", "issue_type": "rare_category", "risk_level": "low", "issue_score": 0.2},
+	)
+	repair := validationGateRepair(2, true, "i-1")
+	repair["model_evidence"] = []any{
+		map[string]any{"issue_id": "i-1", "algorithm_mode": "iterative", "converged": false},
+	}
+
+	result := buildPostValidation(baseline, repair, postScan, validationGatePlan("i-1"))
+
+	if result.Verdict != validationGateWarn || !result.Accepted {
+		t.Fatalf("expected warn for non-converged MissForest with issue improvement, got %#v", result.Summary)
+	}
+	if !hasString(result.RiskFlags, validationRiskMissForestNotConverged) {
+		t.Fatalf("expected missforest_not_converged risk, got %#v", result.RiskFlags)
+	}
+}
+
+func TestValidationGateRejectsNonConvergedMissForestWithoutImprovement(t *testing.T) {
+	baseline := validationGateScan(
+		map[string]any{"issue_id": "i-1", "issue_type": "missing_values", "risk_level": "low", "issue_score": 0.5},
+	)
+	postScan := validationGateScan(
+		map[string]any{"issue_id": "post-1", "issue_type": "missing_values", "risk_level": "low", "issue_score": 0.5},
+	)
+	repair := validationGateRepair(1, true, "i-1")
+	repair["model_evidence"] = []any{
+		map[string]any{"issue_id": "i-1", "algorithm_mode": "iterative", "converged": false},
+	}
+
+	result := buildPostValidation(baseline, repair, postScan, validationGatePlan("i-1"))
+
+	if result.Verdict != validationGateReject || result.Accepted {
+		t.Fatalf("expected reject for non-converged MissForest without improvement, got %#v", result.Summary)
+	}
+	if !hasString(result.RiskFlags, validationRiskMissForestNotConverged) || !hasString(result.RiskFlags, "issue_score_not_improved") {
+		t.Fatalf("expected convergence and no-improvement risks, got %#v", result.RiskFlags)
+	}
+}
+
 func TestValidationGateRejectsIssueCountIncrease(t *testing.T) {
 	baseline := validationGateScan(
 		map[string]any{"issue_id": "i-1", "issue_type": "missing_values", "risk_level": "medium", "issue_score": 0.3},
@@ -256,6 +301,34 @@ func TestValidationGateRejectsIssueCountIncrease(t *testing.T) {
 	}
 	if !hasString(result.RiskFlags, "issue_count_increased") {
 		t.Fatalf("expected issue_count_increased risk, got %#v", result.RiskFlags)
+	}
+}
+
+func TestValidationGateRejectsAffectedColumnIssueCountIncrease(t *testing.T) {
+	baseline := validationGateScan(
+		map[string]any{"issue_id": "age-1", "issue_type": "missing_values", "column": "age", "risk_level": "low", "issue_score": 0.2},
+		map[string]any{"issue_id": "city-1", "issue_type": "rare_category", "column": "city", "risk_level": "low", "issue_score": 0.2},
+		map[string]any{"issue_id": "city-2", "issue_type": "rare_category", "column": "city", "risk_level": "low", "issue_score": 0.2},
+	)
+	baseline["column_issue_counts"] = map[string]any{"age": 1, "city": 2}
+	postScan := validationGateScan(
+		map[string]any{"issue_id": "age-post-1", "issue_type": "missing_values", "column": "age", "risk_level": "low", "issue_score": 0.05},
+		map[string]any{"issue_id": "age-post-2", "issue_type": "numeric_outlier", "column": "age", "risk_level": "low", "issue_score": 0.05},
+	)
+	postScan["affected_columns"] = []string{"age"}
+	postScan["column_issue_counts"] = map[string]any{"age": 2}
+
+	result := buildPostValidation(baseline, validationGateRepair(1, true, "age-1"), postScan, validationGatePlan("age-1"))
+
+	if result.Verdict != validationGateReject || result.Accepted {
+		t.Fatalf("expected reject for affected column issue increase, got %#v", result.Summary)
+	}
+	if !hasString(result.RiskFlags, validationRiskAffectedColumnIssueCountIncreased) {
+		t.Fatalf("expected affected column issue-count risk, got %#v", result.RiskFlags)
+	}
+	deltas := mapsFromAny(result.Summary["affected_column_issue_deltas"])
+	if len(deltas) != 1 || asString(deltas[0]["column"]) != "age" || intFromAny(deltas[0]["delta"]) != 1 {
+		t.Fatalf("expected age issue-count delta, got %#v", result.Summary["affected_column_issue_deltas"])
 	}
 }
 

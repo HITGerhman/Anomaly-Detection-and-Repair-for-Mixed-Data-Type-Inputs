@@ -3,13 +3,14 @@ package engine
 type ActionName string
 
 const (
-	ActionHealth              ActionName = "health"
-	ActionTrain               ActionName = "train"
-	ActionRepair              ActionName = "repair"
-	ActionScanFile            ActionName = "scan_file"
-	ActionRepairBatch         ActionName = "repair_batch"
-	ActionRepairWithGower     ActionName = "repair_with_gower"
-	ActionRollbackRepairBatch ActionName = "rollback_repair_batch"
+	ActionHealth               ActionName = "health"
+	ActionTrain                ActionName = "train"
+	ActionRepair               ActionName = "repair"
+	ActionScanFile             ActionName = "scan_file"
+	ActionRepairBatch          ActionName = "repair_batch"
+	ActionRepairWithGower      ActionName = "repair_with_gower"
+	ActionRepairWithMissForest ActionName = "repair_with_missforest"
+	ActionRollbackRepairBatch  ActionName = "rollback_repair_batch"
 )
 
 var knownActions = [...]ActionName{
@@ -19,6 +20,7 @@ var knownActions = [...]ActionName{
 	ActionScanFile,
 	ActionRepairBatch,
 	ActionRepairWithGower,
+	ActionRepairWithMissForest,
 	ActionRollbackRepairBatch,
 }
 

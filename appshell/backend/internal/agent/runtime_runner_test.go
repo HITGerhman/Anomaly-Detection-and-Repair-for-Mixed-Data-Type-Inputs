@@ -2,6 +2,7 @@ package agent
 
 import (
 	"context"
+	"fmt"
 	"os"
 	"path/filepath"
 	"reflect"
@@ -295,6 +296,8 @@ type fakeAutoRuntimeBaseRunner struct {
 	postScanMode         string
 	rollbackFails        bool
 	omitRollbackMetadata bool
+	forceLargeOutput     bool
+	repairColumns        []string
 	calls                []engine.Request
 	baselineIssues       []map[string]any
 	highRiskColumns      []string
@@ -413,6 +416,19 @@ func (r *fakeAutoRuntimeBaseRunner) baselineScanResult() map[string]any {
 
 func (r *fakeAutoRuntimeBaseRunner) postScanResult() engine.Response {
 	switch r.postScanMode {
+	case "affected_worse":
+		return engine.Response{
+			Status: "ok",
+			Result: map[string]any{
+				"issue_count": 2,
+				"issues": []any{
+					map[string]any{"issue_id": "post-age-1", "issue_type": "missing_values", "column": "age", "risk_level": "low", "issue_score": 0.05},
+					map[string]any{"issue_id": "post-age-2", "issue_type": "numeric_outlier", "column": "age", "risk_level": "low", "issue_score": 0.05},
+				},
+				"scan_summary": map[string]any{"total_issues": 2},
+				"data_profile": map[string]any{"rows": 10, "columns": 1},
+			},
+		}
 	case "reject":
 		return engine.Response{
 			Status: "ok",
@@ -565,20 +581,39 @@ func (r *fakeAutoRuntimeBaseRunner) repairResponse(req engine.Request, source st
 		}
 	}
 
+	appliedRepairs := []any{}
+	for idx, column := range r.repairColumns {
+		appliedRepairs = append(appliedRepairs, map[string]any{
+			"issue_id":       fmt.Sprintf("issue-%d", idx+1),
+			"column":         column,
+			"issue_type":     "missing_values",
+			"resolved_count": 1,
+			"rows_touched":   1,
+		})
+	}
+	result := map[string]any{
+		"output_csv":          outputCSV,
+		"applied_issue_count": 2,
+		"rollback":            rollback,
+		"comparison": map[string]any{
+			"before_issue_count":   2,
+			"after_issue_count":    0,
+			"resolved_issue_count": 2,
+			"changed_cell_count":   2,
+		},
+	}
+	if len(appliedRepairs) > 0 {
+		result["applied_repairs"] = appliedRepairs
+		result["selected_issue_ids"] = []any{"issue-1", "issue-2"}
+		result["total_cells_modified"] = 2
+	}
+	if r.forceLargeOutput {
+		result["output_size_bytes"] = int(postValidationIncrementalThresholdBytes + 1)
+	}
 	return engine.Response{
 		TaskID: req.TaskID,
 		Status: "ok",
-		Result: map[string]any{
-			"output_csv":          outputCSV,
-			"applied_issue_count": 2,
-			"rollback":            rollback,
-			"comparison": map[string]any{
-				"before_issue_count":   2,
-				"after_issue_count":    0,
-				"resolved_issue_count": 2,
-				"changed_cell_count":   2,
-			},
-		},
+		Result: result,
 	}
 }
 
@@ -648,8 +683,8 @@ func TestRuntimeRunnerBuildsPlanAndPersistsTrace(t *testing.T) {
 	if len(plan.ManualReviewIssueIDs) != 1 || plan.ManualReviewIssueIDs[0] != "i-3" {
 		t.Fatalf("expected duplicate_record to be manual review, got %#v", plan.ManualReviewIssueIDs)
 	}
-	if len(plan.Candidates) != 3 {
-		t.Fatalf("expected 3 candidates, got %d", len(plan.Candidates))
+	if len(plan.Candidates) != 4 {
+		t.Fatalf("expected 4 candidates, got %d", len(plan.Candidates))
 	}
 	if plan.Cognition.Provider != CognitionProviderDeterministic || plan.Cognition.Status != CognitionStatusFallback {
 		t.Fatalf("expected deterministic cognition on mock planner plan, got %+v", plan.Cognition)
@@ -722,6 +757,9 @@ func TestRuntimeRunnerBuildsDeterministicPlanningSnapshotBeforeCallingPlanner(t 
 	if base.callCount(string(engine.ActionRepairWithGower)) != 1 {
 		t.Fatalf("expected exactly one gower preview call before planning")
 	}
+	if base.callCount(string(engine.ActionRepairWithMissForest)) != 1 {
+		t.Fatalf("expected exactly one MissForest preview call before planning")
+	}
 
 	input := planner.lastInput
 	if input.CSVPath != "demo.csv" {
@@ -767,12 +805,22 @@ func TestRuntimeRunnerBuildsDeterministicPlanningSnapshotBeforeCallingPlanner(t 
 	base.mu.Lock()
 	for _, call := range base.calls {
 		planOnly, _ := call.Payload["plan_only"].(bool)
-		if !planOnly || (call.Action != string(engine.ActionRepairBatch) && call.Action != string(engine.ActionRepairWithGower)) {
+		if !planOnly || (call.Action != string(engine.ActionRepairBatch) && call.Action != string(engine.ActionRepairWithGower) && call.Action != string(engine.ActionRepairWithMissForest)) {
 			continue
 		}
 		if !reflect.DeepEqual(stringsFromAny(call.Payload["issue_ids"]), []string{"i-1"}) {
 			base.mu.Unlock()
 			t.Fatalf("preview payload should include only auto issue i-1, got action=%s payload=%#v", call.Action, call.Payload)
+		}
+		if issues := mapsFromAny(call.Payload["precomputed_issues"]); len(issues) == 0 {
+			base.mu.Unlock()
+			t.Fatalf("preview payload should include precomputed issues, got action=%s payload=%#v", call.Action, call.Payload)
+		}
+		meta := mapFromAny(call.Payload["precomputed_issues_meta"])
+		csvPath, _ := meta["csv_path"].(string)
+		if strings.TrimSpace(csvPath) == "" {
+			base.mu.Unlock()
+			t.Fatalf("preview payload should include precomputed issue metadata, got action=%s payload=%#v", call.Action, call.Payload)
 		}
 	}
 	base.mu.Unlock()
@@ -1004,6 +1052,137 @@ func TestRuntimeRunnerAutoSessionAccepted(t *testing.T) {
 	}
 	if !hasCachedPreview {
 		t.Fatalf("expected cached preview validation trace event")
+	}
+}
+
+func TestRuntimeRunnerAutoSessionUsesScopedPostScanEstimateForLargeOutput(t *testing.T) {
+	tempDir := t.TempDir()
+	sourceCSV := filepath.Join(tempDir, "demo.csv")
+	if err := os.WriteFile(sourceCSV, []byte("age,city\n20,a\n"), 0o644); err != nil {
+		t.Fatalf("write source csv failed: %v", err)
+	}
+
+	store, err := NewSQLiteStore(filepath.Join(tempDir, "agent.sqlite"))
+	if err != nil {
+		t.Fatalf("NewSQLiteStore failed: %v", err)
+	}
+	defer store.Close()
+
+	base := &fakeAutoRuntimeBaseRunner{
+		tempDir:           tempDir,
+		sourceCSV:         sourceCSV,
+		previewCanExecute: true,
+		postScanMode:      "accept",
+		forceLargeOutput:  true,
+		repairColumns:     []string{"age"},
+	}
+	runner := NewRuntimeRunner(base, store, NewMockPlanner())
+
+	resp, err := runner.Run(t.Context(), engine.Request{
+		TaskID: "task-auto-incremental",
+		Action: ActionSessionAuto,
+		Payload: map[string]any{
+			"csv_path": sourceCSV,
+		},
+	})
+	if err != nil {
+		t.Fatalf("Run failed: %v", err)
+	}
+	if resp.Status != "ok" {
+		t.Fatalf("expected ok response, got %s", resp.Status)
+	}
+
+	agentBlock := mapFromAny(resp.Result["agent"])
+	validation := mapFromAny(agentBlock["validation"])
+	postValidation := mapFromAny(validation["post_execute"])
+	if asString(postValidation["verdict"]) != validationGateWarn {
+		t.Fatalf("expected warn verdict for incremental estimate, got %#v", postValidation)
+	}
+	if !hasString(stringsFromAny(postValidation["risk_flags"]), "post_scan_incremental_estimate") {
+		t.Fatalf("expected incremental estimate risk flag, got %#v", postValidation)
+	}
+	safety := mapFromAny(resp.Result["safety"])
+	postScan := mapFromAny(safety["post_scan_summary"])
+	if postScan["post_scan_incremental_estimate"] != true {
+		t.Fatalf("expected incremental post scan estimate summary, got %#v", postScan)
+	}
+	if !reflect.DeepEqual(stringsFromAny(postScan["affected_columns"]), []string{"age"}) {
+		t.Fatalf("expected affected age column, got %#v", postScan)
+	}
+
+	base.mu.Lock()
+	defer base.mu.Unlock()
+	scopedPostScans := 0
+	fullPostScans := 0
+	for _, call := range base.calls {
+		if call.Action != string(engine.ActionScanFile) || filepath.Clean(asString(call.Payload["csv_path"])) == filepath.Clean(sourceCSV) {
+			continue
+		}
+		if asString(call.Payload["scan_scope"]) == "affected_columns" {
+			scopedPostScans++
+			if !reflect.DeepEqual(stringsFromAny(call.Payload["affected_columns"]), []string{"age"}) {
+				t.Fatalf("expected scoped affected age payload, got %#v", call.Payload)
+			}
+		} else {
+			fullPostScans++
+		}
+	}
+	if scopedPostScans != 1 || fullPostScans != 0 {
+		t.Fatalf("expected one scoped post scan and no full post scan for large output, got scoped=%d full=%d", scopedPostScans, fullPostScans)
+	}
+}
+
+func TestRuntimeRunnerAutoSessionRejectsLargeOutputWhenAffectedColumnWorsens(t *testing.T) {
+	tempDir := t.TempDir()
+	sourceCSV := filepath.Join(tempDir, "demo.csv")
+	if err := os.WriteFile(sourceCSV, []byte("age,city\n20,a\n"), 0o644); err != nil {
+		t.Fatalf("write source csv failed: %v", err)
+	}
+
+	store, err := NewSQLiteStore(filepath.Join(tempDir, "agent.sqlite"))
+	if err != nil {
+		t.Fatalf("NewSQLiteStore failed: %v", err)
+	}
+	defer store.Close()
+
+	base := &fakeAutoRuntimeBaseRunner{
+		tempDir:           tempDir,
+		sourceCSV:         sourceCSV,
+		previewCanExecute: true,
+		postScanMode:      "affected_worse",
+		forceLargeOutput:  true,
+		repairColumns:     []string{"age"},
+	}
+	runner := NewRuntimeRunner(base, store, NewMockPlanner())
+
+	resp, err := runner.Run(t.Context(), engine.Request{
+		TaskID: "task-auto-incremental-worse",
+		Action: ActionSessionAuto,
+		Payload: map[string]any{
+			"csv_path": sourceCSV,
+		},
+	})
+	if err != nil {
+		t.Fatalf("Run failed: %v", err)
+	}
+	if resp.Status != "error" {
+		t.Fatalf("expected error response after affected-column reject, got %s", resp.Status)
+	}
+	agentBlock := mapFromAny(resp.Result["agent"])
+	validation := mapFromAny(agentBlock["validation"])
+	postValidation := mapFromAny(validation["post_execute"])
+	if asString(postValidation["verdict"]) != validationGateReject {
+		t.Fatalf("expected reject verdict, got %#v", postValidation)
+	}
+	if !hasString(stringsFromAny(postValidation["risk_flags"]), validationRiskAffectedColumnIssueCountIncreased) {
+		t.Fatalf("expected affected-column risk flag, got %#v", postValidation)
+	}
+	if base.callCount(string(engine.ActionRollbackRepairBatch)) != 1 {
+		t.Fatalf("expected rollback after affected-column reject")
+	}
+	deltas := mapsFromAny(postValidation["affected_column_issue_deltas"])
+	if len(deltas) != 1 || asString(deltas[0]["column"]) != "age" {
+		t.Fatalf("expected age affected-column delta, got %#v", deltas)
 	}
 }
 

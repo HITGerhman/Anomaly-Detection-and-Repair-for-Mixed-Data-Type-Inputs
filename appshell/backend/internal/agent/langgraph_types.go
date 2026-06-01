@@ -54,6 +54,7 @@ type LangGraphCandidatePreview struct {
 	CandidateID      string         `json:"candidate_id"`
 	Source           string         `json:"source"`
 	Comparison       map[string]any `json:"comparison"`
+	Score            map[string]any `json:"score,omitempty"`
 	SelectedIssueIDs []string       `json:"selected_issue_ids"`
 	ToolSequence     []string       `json:"tool_sequence"`
 	Summary          string         `json:"summary"`
@@ -172,6 +173,8 @@ func ResolveLangGraphConfig(engineScript string) LangGraphConfig {
 		config.ScriptPath = script
 	}
 	if pythonBin := strings.TrimSpace(os.Getenv("APPSHELL_LANGGRAPH_PYTHON_BIN")); pythonBin != "" {
+		config.PythonBin = pythonBin
+	} else if pythonBin := strings.TrimSpace(os.Getenv("APPSHELL_PYTHON_BIN")); pythonBin != "" {
 		config.PythonBin = pythonBin
 	}
 	config.StartupTimeout = parseEnvDurationMS(os.Getenv("APPSHELL_LANGGRAPH_STARTUP_TIMEOUT_MS"), defaultLangGraphStartupTimeout)
