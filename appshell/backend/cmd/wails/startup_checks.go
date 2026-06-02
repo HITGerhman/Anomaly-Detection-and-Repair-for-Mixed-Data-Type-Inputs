@@ -1,6 +1,7 @@
 package main
 
 import (
+	"appshell/backend/internal/observability"
 	"context"
 	"fmt"
 	"os"
@@ -42,6 +43,7 @@ type StartupCheckReport struct {
 }
 
 func (a *App) RunStartupChecks() (StartupCheckReport, error) {
+	startedAt := time.Now()
 	report := StartupCheckReport{
 		CheckedAt: time.Now().UTC().Format(time.RFC3339Nano),
 		Items:     make([]StartupCheckItem, 0, 7),
@@ -49,6 +51,20 @@ func (a *App) RunStartupChecks() (StartupCheckReport, error) {
 			"paths": map[string]any{},
 		},
 	}
+	observability.Info("startup_checks_started", map[string]any{
+		"engine_script": a.engineScript,
+		"task_db_path":  a.taskDBPath,
+	})
+	defer func() {
+		observability.Info("startup_checks_finished", map[string]any{
+			"overall_status": report.OverallStatus,
+			"can_enter":      report.CanEnter,
+			"passed":         report.Summary.Passed,
+			"warnings":       report.Summary.Warnings,
+			"failed":         report.Summary.Failed,
+			"duration_ms":    time.Since(startedAt).Milliseconds(),
+		})
+	}()
 
 	rawPaths := map[string]any{
 		"engine_script":       a.engineScript,
@@ -161,6 +177,9 @@ func (a *App) RunStartupChecks() (StartupCheckReport, error) {
 	}
 
 	a.lastStartupReport = report
+	observability.Info("startup_checks_service_ready", map[string]any{
+		"task_db_path": a.taskDBPath,
+	})
 	return report, nil
 }
 

@@ -1,3 +1,44 @@
+function reportFrontendBootError(kind, reason) {
+  const message = `${kind}: ${String(reason || "未知前端错误")}`;
+  try {
+    const title = document.getElementById("startup-title");
+    const summary = document.getElementById("startup-summary");
+    const pill = document.getElementById("startup-status-pill");
+    const counts = document.getElementById("startup-counts");
+    const list = document.getElementById("startup-check-list");
+    if (title) title.textContent = "前端启动失败";
+    if (summary) summary.textContent = message;
+    if (pill) {
+      pill.className = "startup-status-pill failed";
+      pill.textContent = "前端错误";
+    }
+    if (counts) counts.textContent = "前端模块在启动自检前停止。";
+    if (list) {
+      list.innerHTML = `<li class="startup-check-item fail"><div><strong>前端运行时</strong><p>${message}</p></div></li>`;
+    }
+  } catch (_) {
+    // Keep the error reporter side-effect-only and non-throwing.
+  }
+  try {
+    if (window?.runtime?.LogError) window.runtime.LogError(`frontend_boot_error:${message}`);
+  } catch (_) {
+    // Runtime logging is optional while the Wails IPC bridge is still starting.
+  }
+  try {
+    console.error("appshell 前端启动错误", message);
+  } catch (_) {
+    // Console logging is optional in packaged desktop runs.
+  }
+}
+
+window.addEventListener("error", (event) => {
+  reportFrontendBootError("错误", event?.message || event?.error || "未知错误");
+});
+
+window.addEventListener("unhandledrejection", (event) => {
+  reportFrontendBootError("未处理的异步错误", event?.reason || "未知异步错误");
+});
+
 const wheelFrame = document.getElementById("wheel-frame");
 const wheelOrbit = document.getElementById("wheel-orbit");
 const wizardCard = document.getElementById("wizard-card");
@@ -198,22 +239,22 @@ const INTENT_TRAIN = "train";
 
 const STEP_META = {
   [STEP_CONFIG]: {
-    kicker: "STEP 1",
+    kicker: "第 1 步",
     title: "检测参数配置",
     subtitle: "选择 CSV 并设置扫描参数，对全列执行异常检测。",
   },
   [STEP_PROGRESS]: {
-    kicker: "STEP 2",
+    kicker: "第 2 步",
     title: "任务执行中",
     subtitle: "任务正在运行，请稍候。",
   },
   [STEP_RESULT]: {
-    kicker: "STEP 3",
+    kicker: "第 3 步",
     title: "检测结果与问题选择",
     subtitle: "在缩略图中查看异常热区，勾选后可批量修复。",
   },
   [STEP_REPAIR]: {
-    kicker: "STEP 4",
+    kicker: "第 4 步",
     title: "批量修复结果",
     subtitle: "查看已应用修复与跳过项明细。",
   },
@@ -221,6 +262,9 @@ const STEP_META = {
 
 const WHEEL_SPIN_DEG = 34;
 const WHEEL_SPIN_DURATION_MS = 720;
+const STARTUP_BINDING_READY_TIMEOUT_MS = 4000;
+const STARTUP_NATIVE_CALL_TIMEOUT_MS = 90000;
+const STARTUP_NATIVE_CALL_GRACE_MS = 8000;
 
 const RUNNING_HINTS = {
   [INTENT_SCAN]: [
@@ -270,6 +314,18 @@ const STATUS_ICON_SYMBOL = {
 };
 
 const TERMINAL_STATUSES = new Set(["succeeded", "failed", "canceled", "timed_out"]);
+
+function taskStatusLabel(status) {
+  const normalized = String(status || "idle").toLowerCase();
+  if (normalized === "idle") return "待命";
+  if (normalized === "pending") return "排队中";
+  if (normalized === "running") return "运行中";
+  if (normalized === "succeeded") return "已完成";
+  if (normalized === "failed") return "失败";
+  if (normalized === "canceled") return "已取消";
+  if (normalized === "timed_out") return "已超时";
+  return normalized || "未知";
+}
 
 const STAGE_LABEL_MAP = {
   validate_input: "参数校验",
@@ -374,19 +430,49 @@ const state = {
 };
 
 function hasBinding(methodName) {
-  return Boolean(window?.go?.main?.App?.[methodName]);
+  return typeof window?.go?.main?.App?.[methodName] === "function";
 }
 
 function hasAnyAppBinding() {
   return Boolean(window?.go?.main?.App);
 }
 
+function hasWailsRuntime() {
+  return Boolean(window?.runtime);
+}
+
+function isLikelyWailsHost() {
+  const protocol = String(window?.location?.protocol || "").toLowerCase();
+  const hostname = String(window?.location?.hostname || "").toLowerCase();
+  return protocol === "wails:" || hostname.includes("wails");
+}
+
 function isPreviewMode() {
-  return !hasAnyAppBinding();
+  return !hasAnyAppBinding() && !hasWailsRuntime() && !isLikelyWailsHost();
 }
 
 function isSmartAutofixAvailable() {
   return hasBinding("RunAgentAutofixSession") || isPreviewMode();
+}
+
+function logFrontendEvent(event, detail = {}) {
+  const payload = { event, ...asObject(detail) };
+  try {
+    if (window?.runtime?.LogInfo) {
+      window.runtime.LogInfo(`frontend:${JSON.stringify(payload)}`);
+    }
+  } catch (_) {
+    // Ignore runtime logging failures; startup diagnostics should not depend on logging.
+  }
+  try {
+    console.info("appshell", payload);
+  } catch (_) {
+    // Console logging is optional in packaged desktop runs.
+  }
+}
+
+function setStartupProgressText(text) {
+  if (startupCounts) startupCounts.textContent = String(text || "");
 }
 
 function asArray(value) {
@@ -1821,7 +1907,7 @@ function buildScanView(scanResult) {
   };
 }
 function setTaskId(taskId) {
-  if (taskIdLabel) taskIdLabel.textContent = `Task: ${taskId || "-"}`;
+  if (taskIdLabel) taskIdLabel.textContent = `任务: ${taskId || "-"}`;
 }
 
 function setStatus(status, message, progressOverride = null) {
@@ -1837,9 +1923,9 @@ function setStatus(status, message, progressOverride = null) {
   }
   if (statusPill) {
     statusPill.className = `status-pill ${normalized}`;
-    statusPill.textContent = normalized;
+    statusPill.textContent = taskStatusLabel(normalized);
   }
-  if (statusMessage) statusMessage.textContent = message || normalized;
+  if (statusMessage) statusMessage.textContent = message || taskStatusLabel(normalized);
   if (progressFill) {
     progressFill.className = `progress-fill ${normalized === "running" ? "running" : normalized}`;
     progressFill.style.width = `${progress}%`;
@@ -2205,20 +2291,20 @@ function startupCountsText(report, loading = false) {
 function startupItemDetailText(item) {
   const detail = asObject(item?.detail);
   const parts = [];
-  if (detail?.provider) parts.push(`Provider: ${String(detail.provider)}`);
-  if (detail?.cognition_status) parts.push(`Cognition: ${String(detail.cognition_status)}`);
-  if (detail?.planner_mode) parts.push(`Planner: ${String(detail.planner_mode)}`);
-  if (detail?.llm_mode) parts.push(`LLM: ${String(detail.llm_mode)}`);
+  if (detail?.provider) parts.push(`提供方: ${String(detail.provider)}`);
+  if (detail?.cognition_status) parts.push(`认知状态: ${String(detail.cognition_status)}`);
+  if (detail?.planner_mode) parts.push(`规划模式: ${String(detail.planner_mode)}`);
+  if (detail?.llm_mode) parts.push(`LLM 模式: ${String(detail.llm_mode)}`);
   if (detail?.graph_id || detail?.version) {
     const graphLabel = [String(detail?.graph_id || "").trim(), String(detail?.version || "").trim()]
       .filter(Boolean)
       .join(" @ ");
-    if (graphLabel) parts.push(`Graph: ${graphLabel}`);
+    if (graphLabel) parts.push(`图谱: ${graphLabel}`);
   }
-  if (detail?.model) parts.push(`Model: ${String(detail.model)}`);
-  if (detail?.fallback_reason_code) parts.push(`Fallback: ${String(detail.fallback_reason_code)}`);
+  if (detail?.model) parts.push(`模型: ${String(detail.model)}`);
+  if (detail?.fallback_reason_code) parts.push(`降级原因: ${String(detail.fallback_reason_code)}`);
   if (detail?.fallback_message) parts.push(String(detail.fallback_message));
-  if (detail?.fallback_active === true) parts.push("Fallback active");
+  if (detail?.fallback_active === true) parts.push("降级路径已启用");
   if (item?.path) parts.push(`路径: ${String(item.path)}`);
   if (detail?.db_path) parts.push(`数据库: ${String(detail.db_path)}`);
   if (detail?.selected_path) parts.push(`模型目录: ${String(detail.selected_path)}`);
@@ -2256,7 +2342,7 @@ function renderStartupGate(report = null, options = {}) {
   if (startupSummary) startupSummary.textContent = startupSummaryText(data, loading);
   if (startupStatusPill) {
     startupStatusPill.className = `startup-status-pill ${status}`;
-    startupStatusPill.textContent = loading ? "checking" : startupStatusLabel(status);
+    startupStatusPill.textContent = loading ? "检查中" : startupStatusLabel(status);
   }
   if (startupCounts) startupCounts.textContent = startupCountsText(data, loading);
 
@@ -2441,6 +2527,14 @@ async function initializeAppShell() {
 async function runStartupChecksFlow(source = "启动") {
   if (state.startupRunning) return;
   state.startupRunning = true;
+  logFrontendEvent("startup_checks_flow_started", {
+    source,
+    has_app_binding: hasAnyAppBinding(),
+    has_startup_binding: hasBinding("RunStartupChecks"),
+    has_wails_runtime: hasWailsRuntime(),
+    location: String(window?.location?.href || ""),
+    preview_mode: isPreviewMode(),
+  });
   renderStartupGate(null, { loading: true });
 
   try {
@@ -2450,6 +2544,11 @@ async function runStartupChecksFlow(source = "启动") {
 
     const overallStatus = String(report?.overall_status || "failed").toLowerCase();
     addEvent(`启动自检(${source})完成: ${startupStatusLabel(overallStatus)}。`);
+    logFrontendEvent("startup_checks_flow_completed", {
+      source,
+      overall_status: overallStatus,
+      can_enter: Boolean(report?.can_enter),
+    });
 
     if (report?.can_enter) {
       await initializeAppShell();
@@ -2478,6 +2577,7 @@ async function runStartupChecksFlow(source = "启动") {
     state.startupReport = fallbackReport;
     renderStartupGate(fallbackReport);
     addEvent(`启动自检失败: ${reason}`);
+    logFrontendEvent("startup_checks_flow_failed", { source, reason });
   } finally {
     state.startupRunning = false;
   }
@@ -3111,7 +3211,7 @@ function extractSuggestion(task) {
 function normalizeReadableErrorText(raw) {
   let text = String(raw ?? "").trim();
   if (!text) {
-    return "unknown error";
+    return "未知错误";
   }
   text = text.replace(/\s+/g, " ");
   text = text.replace(/[;,]?\s*raw=.*$/i, "");
@@ -3122,14 +3222,14 @@ function normalizeReadableErrorText(raw) {
 }
 
 function toReadableError(task, err) {
-  if (err) return normalizeReadableErrorText(`request failed: ${String(err)}`);
-  if (!task) return "task returned empty result";
+  if (err) return normalizeReadableErrorText(`请求失败: ${String(err)}`);
+  if (!task) return "任务返回为空。";
   if (task?.response?.error?.message) {
     const code = String(task?.response?.error?.code || "UNKNOWN");
-    return normalizeReadableErrorText(`Engine error [${code}] ${String(task.response.error.message)}`);
+    return normalizeReadableErrorText(`引擎错误 [${code}] ${String(task.response.error.message)}`);
   }
   if (task?.error) return normalizeReadableErrorText(String(task.error));
-  return `task ended with status: ${String(task?.status || "unknown")}`;
+  return `任务结束状态: ${taskStatusLabel(task?.status || "unknown")}`;
 }
 
 function buildIssueTypeSummary(issues) {
@@ -3329,7 +3429,7 @@ function renderRepairResult(result, taskSnapshot = state.currentTask) {
   const modifiedCells = toInt(repairResult?.total_cells_modified, 0);
   const rollback = asObject(repairResult?.rollback);
   const repairModeLabel = view?.isAgent
-    ? "Agent / Autofix"
+    ? "智能自动修复"
     : state.lastRepairMode === "auto"
     ? "自动修复全部问题列"
     : "手动选择修复";
@@ -3558,8 +3658,8 @@ function smartCognitionFallbackText(cognition) {
   const message = String(cognition?.fallbackMessage || "").trim();
   if (!reason && !message) return "";
   if (!reason) return message;
-  if (!message) return `Fallback: ${reason}`;
-  return `Fallback: ${reason} (${message})`;
+  if (!message) return `降级原因: ${reason}`;
+  return `降级原因: ${reason} (${message})`;
 }
 
 function buildSmartApprovalDetails(view, session = null) {
@@ -3660,32 +3760,32 @@ function buildSmartTrustList(view, task, verdict) {
   const bucketSummary = smartBucketCountText(plan);
   const postVerdict = smartValidationVerdict(postExecute);
   const list = [
-    `最终结论: ${verdict || "unknown"}`,
-    preview?.message ? `Preview: ${preview.message}` : "Preview: -",
+    `最终结论: ${verdict || "未知"}`,
+    preview?.message ? `预演: ${preview.message}` : "预演: -",
   ];
   if (bucketSummary) {
-    list.push(`Plan Buckets: ${bucketSummary}`);
+    list.push(`方案分桶: ${bucketSummary}`);
   }
   if (approval.required || approval.status === "approved" || approval.status === "rejected") {
-    list.push(`Approval: ${approval.status || "required"}`);
+    list.push(`审批: ${approval.status || "required"}`);
   }
   if (smartCognitionLabel(cognition)) {
-    list.push(`Cognition: ${smartCognitionLabel(cognition)}`);
+    list.push(`认知状态: ${smartCognitionLabel(cognition)}`);
   }
   if (cognition?.fallbackReasonCode) {
-    list.push(`Fallback: ${cognition.fallbackReasonCode}`);
+    list.push(`降级原因: ${cognition.fallbackReasonCode}`);
   }
   if (postVerdict) {
-    list.push(`Validation Gate: ${postVerdict}`);
+    list.push(`验证门禁: ${postVerdict}`);
   }
   if (postExecute?.message) {
-    list.push(`Post Validation: ${postExecute.message}`);
+    list.push(`后验验证: ${postExecute.message}`);
   }
   if (Array.isArray(safety?.risk_flags) && safety.risk_flags.length > 0) {
-    list.push(`Risk Flags: ${safety.risk_flags.join(", ")}`);
+    list.push(`风险标记: ${safety.risk_flags.join(", ")}`);
   }
   if (task?.response?.error?.code) {
-    list.push(`Error Code: ${String(task.response.error.code)}`);
+    list.push(`错误码: ${String(task.response.error.code)}`);
   }
   return list;
 }
@@ -3714,18 +3814,18 @@ function renderSmartReasoning(view, task, session = null) {
     reasoningSummary || "系统已根据当前数据与安全策略选择执行路径。",
     userExplanation || "你可以在轨迹与验证中继续查看更细的审计信息。",
     ...shortBullets,
-    smartCognitionLabel(cognition) ? `Cognition: ${smartCognitionLabel(cognition)}` : "",
-    smartCognitionSummaryText(cognition) ? `Cognition Summary: ${smartCognitionSummaryText(cognition)}` : "",
+    smartCognitionLabel(cognition) ? `认知状态: ${smartCognitionLabel(cognition)}` : "",
+    smartCognitionSummaryText(cognition) ? `认知摘要: ${smartCognitionSummaryText(cognition)}` : "",
     smartCognitionFallbackText(cognition),
-    explanationBlock?.risk_note ? `Risk Note: ${String(explanationBlock.risk_note)}` : "",
-    approval?.status && approval.status !== "not_required" ? `Approval: ${approval.status}` : "",
-    preview?.message ? `Preview: ${preview.message}` : "",
-    ...bucketBullets.map((item) => `Plan Bucket: ${item}`),
-    postVerdict ? `Validation Gate: ${postVerdict}` : "",
-    riskNotes.length > 0 ? `Risk Notes: ${riskNotes.join(", ")}` : "",
-    postExecute?.message ? `Post Validation: ${postExecute.message}` : "",
-    postExecute?.explanation ? `Validation Explanation: ${String(postExecute.explanation)}` : "",
-    sessionContext?.final_verdict ? `Session Verdict: ${String(sessionContext.final_verdict)}` : "",
+    explanationBlock?.risk_note ? `风险说明: ${String(explanationBlock.risk_note)}` : "",
+    approval?.status && approval.status !== "not_required" ? `审批: ${approval.status}` : "",
+    preview?.message ? `预演: ${preview.message}` : "",
+    ...bucketBullets.map((item) => `方案分桶: ${item}`),
+    postVerdict ? `验证门禁: ${postVerdict}` : "",
+    riskNotes.length > 0 ? `风险说明: ${riskNotes.join(", ")}` : "",
+    postExecute?.message ? `后验验证: ${postExecute.message}` : "",
+    postExecute?.explanation ? `验证解释: ${String(postExecute.explanation)}` : "",
+    sessionContext?.final_verdict ? `会话结论: ${String(sessionContext.final_verdict)}` : "",
   ].filter(Boolean);
   smartReasoningBody.innerHTML = `
     <article class="insight-section">
@@ -3755,22 +3855,22 @@ function renderSmartTrace(view, task, session = null, traceEvents = []) {
     const traceTypeCounts = asObject(traceSummary?.trace_type_counts);
     const summaryParts = [];
     if (traces.length > 0) {
-      summaryParts.push(`Loaded ${traces.length} trace events.`);
-      summaryParts.push(`Tool calls: ${toInt(traceSummary?.tool_call_count, toInt(traceSummary?.tool_calls, 0))}`);
-      summaryParts.push(`Validation events: ${toInt(traceTypeCounts?.validation, toInt(traceSummary?.validation_events, 0))}`);
+      summaryParts.push(`已加载 ${traces.length} 条轨迹事件。`);
+      summaryParts.push(`工具调用: ${toInt(traceSummary?.tool_call_count, toInt(traceSummary?.tool_calls, 0))}`);
+      summaryParts.push(`验证事件: ${toInt(traceTypeCounts?.validation, toInt(traceSummary?.validation_events, 0))}`);
     } else if (validation?.message) {
       summaryParts.push(validation.message);
     } else {
-      summaryParts.push("No extra session trace is available, so the view is using task-level diagnostics.");
+      summaryParts.push("暂无额外会话轨迹，当前使用任务级诊断信息。");
     }
     if (smartCognitionLabel(cognition)) {
-      summaryParts.push(`LangGraph: ${smartCognitionLabel(cognition)}`);
+      summaryParts.push(`LangGraph 状态: ${smartCognitionLabel(cognition)}`);
     }
     if (smartCognitionSummaryText(cognition)) {
       summaryParts.push(smartCognitionSummaryText(cognition));
     }
     if (cognition?.fallbackReasonCode) {
-      summaryParts.push(`Fallback: ${cognition.fallbackReasonCode}`);
+      summaryParts.push(`降级原因: ${cognition.fallbackReasonCode}`);
     }
     smartTraceSummary.textContent = summaryParts.join(" ");
   }
@@ -3805,9 +3905,9 @@ function renderSmartRun(task) {
   const intent = INTENT_AGENT_AUTO;
   if (smartRunStatusPill) {
     smartRunStatusPill.className = `status-pill ${status || "idle"}`;
-    smartRunStatusPill.textContent = status || "idle";
+    smartRunStatusPill.textContent = taskStatusLabel(status || "idle");
   }
-  if (smartRunTaskId) smartRunTaskId.textContent = `Task: ${String(task?.id || "-")}`;
+  if (smartRunTaskId) smartRunTaskId.textContent = `任务: ${String(task?.id || "-")}`;
   if (smartRunTitle) smartRunTitle.textContent = "智能处理进行中";
   if (smartRunMessage) smartRunMessage.textContent = buildTaskMessage(task, intent);
   if (smartRunProgressFill) {
@@ -3926,13 +4026,13 @@ function renderSmartResult(task, options = {}) {
       ["问题数变化", beforeIssueCount > 0 || afterIssueCount > 0 ? `${beforeIssueCount} -> ${afterIssueCount}` : "-"],
       ["已解决问题", resolvedIssueCount || 0],
       ["修改单元格", totalCellsModified],
-      ["Validation Gate", postVerdict || "-"],
+      ["验证门禁", postVerdict || "-"],
       ["Plan 分桶", bucketSummary || "-"],
       ["风险提示", riskNotes.length > 0 ? riskNotes.join(", ") : "-"],
       ["输出文件", outputCSV || "-"],
     ]);
     if (smartCognitionLabel(cognition)) {
-      smartResultSummary.innerHTML += `<dt>${escapeHtml("Cognition")}</dt><dd>${escapeHtml(smartCognitionLabel(cognition))}</dd>`;
+      smartResultSummary.innerHTML += `<dt>${escapeHtml("认知状态")}</dt><dd>${escapeHtml(smartCognitionLabel(cognition))}</dd>`;
     }
   }
   renderArtifactList(
@@ -3940,8 +4040,8 @@ function renderSmartResult(task, options = {}) {
     [
       outputCSV ? { label: "输出 CSV", path: outputCSV } : null,
       presentationArtifact ? { label: "presentation.json", path: presentationArtifact } : null,
-      rollbackManifest ? { label: "rollback manifest", path: rollbackManifest } : null,
-      rejectedSnapshot ? { label: "rejected snapshot", path: rejectedSnapshot } : null,
+      rollbackManifest ? { label: "回滚清单", path: rollbackManifest } : null,
+      rejectedSnapshot ? { label: "被拒绝快照", path: rejectedSnapshot } : null,
     ],
     "当前结果没有额外产物。"
   );
@@ -4017,8 +4117,53 @@ function delay(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
+async function waitForBinding(methodName, timeoutMS = STARTUP_BINDING_READY_TIMEOUT_MS) {
+  if (hasBinding(methodName)) return true;
+  const deadline = Date.now() + timeoutMS;
+  while (Date.now() < deadline) {
+    await delay(80);
+    if (hasBinding(methodName)) return true;
+  }
+  return hasBinding(methodName);
+}
+
+async function withNativeCallTimeout(value, label, timeoutMS = STARTUP_NATIVE_CALL_TIMEOUT_MS) {
+  let timeoutID = null;
+  const timeout = new Promise((_, reject) => {
+    timeoutID = setTimeout(() => {
+      reject(new Error(`${label} 在 ${timeoutMS} ms 内未返回`));
+    }, timeoutMS);
+  });
+  try {
+    return await Promise.race([Promise.resolve(value), timeout]);
+  } finally {
+    if (timeoutID !== null) clearTimeout(timeoutID);
+  }
+}
+
 async function apiRunStartupChecks() {
-  if (hasBinding("RunStartupChecks")) return window.go.main.App.RunStartupChecks();
+  setStartupProgressText("正在等待 Wails 绑定...");
+  const bindingReady = await waitForBinding("RunStartupChecks");
+  logFrontendEvent("startup_checks_binding_probe", {
+    ready: bindingReady,
+    has_app_binding: hasAnyAppBinding(),
+    has_wails_runtime: hasWailsRuntime(),
+    location: String(window?.location?.href || ""),
+    preview_mode: isPreviewMode(),
+  });
+  if (bindingReady) {
+    const runStartupChecks = window.go.main.App.RunStartupChecks;
+    setStartupProgressText("Wails 绑定已就绪，正在连接 IPC...");
+    await delay(STARTUP_NATIVE_CALL_GRACE_MS);
+    if (typeof runStartupChecks?.setTimeout === "function") {
+      runStartupChecks.setTimeout(STARTUP_NATIVE_CALL_TIMEOUT_MS);
+    }
+    setStartupProgressText("正在执行后端启动自检...");
+    return withNativeCallTimeout(runStartupChecks(), "RunStartupChecks");
+  }
+  if (!isPreviewMode()) {
+    throw new Error("Wails 绑定 RunStartupChecks 尚未就绪");
+  }
   return mockRunStartupChecks();
 }
 
@@ -4359,8 +4504,8 @@ function buildMockApprovalContext(payload, scan) {
     selectedSource,
     message:
       reasonCodes.length > 0
-        ? "Approval is required before writing output because this run touches guarded columns or planner-requested risk gates."
-        : "Deterministic preview passed and no approval gate is required.",
+        ? "本次运行触及受保护列或规划器要求的风险门禁，写出结果前需要审批。"
+        : "确定性预演已通过，当前不需要额外审批。",
   };
 }
 
@@ -4401,7 +4546,7 @@ function buildMockCognitionState(payload, selectedCandidateID, summary, riskNote
     selected_candidate_id: String(selectedCandidateID || "").trim(),
     reason_codes: ["langgraph_summary_available"],
     risk_note: String(riskNote || "").trim(),
-    summary: String(summary || "LangGraph selected a candidate and produced a short explanation.").trim(),
+    summary: String(summary || "LangGraph 已选择候选方案并生成简要解释。").trim(),
     fallback_reason_code: "",
     fallback_message: "",
   };
@@ -4410,9 +4555,9 @@ function buildMockCognitionState(payload, selectedCandidateID, summary, riskNote
     cognition.status = "degraded";
     cognition.reason_codes = ["explain_request_failed"];
     cognition.fallback_reason_code = "explain_request_failed";
-    cognition.fallback_message = "LangGraph selected the candidate, but Go kept a deterministic fallback explanation.";
+    cognition.fallback_message = "LangGraph 已选择候选方案，但 Go 侧保留了确定性降级解释。";
     cognition.summary =
-      String(summary || "").trim() || "LangGraph selected the candidate, but explanation rendering degraded to the Go fallback.";
+      String(summary || "").trim() || "LangGraph 已选择候选方案，但解释渲染已降级为 Go 侧确定性说明。";
     return cognition;
   }
 
@@ -4423,9 +4568,9 @@ function buildMockCognitionState(payload, selectedCandidateID, summary, riskNote
     cognition.llm_mode = "unavailable";
     cognition.reason_codes = ["deterministic_fallback"];
     cognition.fallback_reason_code = "disabled";
-    cognition.fallback_message = "LangGraph sidecar is disabled, so deterministic planning stays active.";
+    cognition.fallback_message = "LangGraph sidecar 已禁用，当前继续使用确定性规划。";
     cognition.summary =
-      String(summary || "").trim() || "Deterministic planning stayed active because LangGraph was disabled.";
+      String(summary || "").trim() || "由于 LangGraph 已禁用，当前继续使用确定性规划。";
     return cognition;
   }
 
@@ -4436,9 +4581,9 @@ function buildMockCognitionState(payload, selectedCandidateID, summary, riskNote
     cognition.llm_mode = "unavailable";
     cognition.reason_codes = ["deterministic_fallback"];
     cognition.fallback_reason_code = "planner_mode_fallback";
-    cognition.fallback_message = "LangGraph fallback is active, so deterministic planning stays in control.";
+    cognition.fallback_message = "LangGraph 降级路径已启用，当前由确定性规划接管。";
     cognition.summary =
-      String(summary || "").trim() || "Deterministic planning stayed active because LangGraph was unavailable.";
+      String(summary || "").trim() || "由于 LangGraph 不可用，当前继续使用确定性规划。";
   }
 
   return cognition;
@@ -4448,8 +4593,8 @@ function buildMockCognitionTraceEvent(taskID, sessionID, seq, cognition, created
   const summary =
     String(cognition?.summary || "").trim() ||
     (String(cognition?.fallback_reason_code || "").trim()
-      ? `Fallback: ${String(cognition.fallback_reason_code).trim()}`
-      : "Cognition state recorded.");
+      ? `降级原因: ${String(cognition.fallback_reason_code).trim()}`
+      : "认知状态已记录。");
   return {
     id: seq,
     session_id: sessionID,
@@ -4529,7 +4674,7 @@ function buildMockApprovalRequiredResult(taskID, payload) {
       seq: 1,
       agent_name: "supervisor",
       trace_type: "session_started",
-      summary: "Agent auto session started",
+      summary: "智能自动会话已启动",
       payload: { goal: base.session.user_goal },
       created_at: now,
     },
@@ -4540,7 +4685,7 @@ function buildMockApprovalRequiredResult(taskID, payload) {
       seq: 2,
       agent_name: "profile_memory",
       trace_type: "memory_updated",
-      summary: "Stored workspace preference snapshot and approval context",
+      summary: "已保存工作区偏好快照与审批上下文",
       payload: {
         workspace_id: context.workspaceID,
         preference_snapshot: cloneSmartPreferenceProfile(context.snapshot),
@@ -4554,7 +4699,7 @@ function buildMockApprovalRequiredResult(taskID, payload) {
       seq: 3,
       agent_name: "repair_planner",
       trace_type: "agent_decision",
-      summary: "Planner selected a candidate and requested approval before writing output",
+      summary: "规划器已选择候选方案，并要求写出前审批",
       payload: { selected_source: context.selectedSource, plan_id: base.result.agent.plan_id },
       created_at: now,
     },
@@ -4565,7 +4710,7 @@ function buildMockApprovalRequiredResult(taskID, payload) {
       seq: 4,
       agent_name: "validator",
       trace_type: "validation",
-      summary: "Preview validation passed, but execution was paused by the approval gate.",
+      summary: "预演验证已通过，但执行被审批门禁暂停。",
       payload: {
         status: "accepted",
         phase: "preview",
@@ -4583,7 +4728,7 @@ function buildMockApprovalRequiredResult(taskID, payload) {
       seq: 5,
       agent_name: "supervisor",
       trace_type: "approval_requested",
-      summary: "Execution paused because approval is required before writing output",
+      summary: "写出结果前需要审批，执行已暂停",
       payload: {
         approval_state: {
           status: "required",
@@ -4631,7 +4776,7 @@ function buildMockApprovalRequiredResult(taskID, payload) {
     can_execute: true,
     preview: {
       status: "accepted",
-      message: "Preview validation passed. Approval is still required before files are written.",
+      message: "预演验证已通过，但写入文件前仍需要审批。",
       before_issue_count: 3,
       after_issue_count: 1,
       resolved_issue_count: 2,
@@ -4657,10 +4802,10 @@ function buildMockApprovalRequiredResult(taskID, payload) {
   base.result.agent.explanation = {
     mode: buildMockExplanationMode(asObject(base.result.agent.plan?.cognition)),
     summary: context.message,
-    final_message: "This run is paused at the approval gate. Continue to write output, or cancel this run with no file changes.",
+    final_message: "本次运行已暂停在审批门禁。继续将写出结果；取消则不会产生文件改动。",
     short_bullets: [
-      `Candidate source: ${context.selectedSource}`,
-      `Reason codes: ${context.reasonCodes.join(", ") || "-"}`,
+      `候选来源: ${context.selectedSource}`,
+      `原因码: ${context.reasonCodes.join(", ") || "-"}`,
     ],
     reason_codes: [...asArray(base.result.agent.plan?.reason_codes)],
     risk_note: base.result.agent.plan?.risk_note || "",
@@ -4720,7 +4865,7 @@ function buildMockApprovalRejectedResult(taskID, payload, existingSession, exist
     seq: trace.length + 1,
     agent_name: "supervisor",
     trace_type: "approval_rejected",
-    summary: "Execution was canceled during the approval gate",
+    summary: "执行已在审批门禁阶段取消",
     payload: {
       approval_state: {
         status: "rejected",
@@ -4757,8 +4902,8 @@ function buildMockApprovalRejectedResult(taskID, payload, existingSession, exist
       approval,
       explanation: {
         mode: buildMockExplanationMode(asObject(existingSession?.latest_plan?.cognition)),
-        summary: "The run was canceled before any files were written.",
-        final_message: "No output CSV was written and no rollback was needed.",
+        summary: "本次运行在写入任何文件前已取消。",
+        final_message: "没有写出输出 CSV，也不需要回滚。",
         short_bullets: Array.from(asArray(existingSession?.latest_plan?.explanation_bullets)),
         reason_codes: Array.from(asArray(existingSession?.latest_plan?.reason_codes)),
         risk_note: String(existingSession?.latest_plan?.risk_note || "").trim(),
@@ -4819,7 +4964,7 @@ function buildMockApprovalApprovedResult(taskID, payload, existingSession, exist
     seq: trace.length + 1,
     agent_name: "supervisor",
     trace_type: "approval_granted",
-    summary: "Approval was granted and the session resumed execution",
+    summary: "审批已通过，会话已恢复执行",
     payload: {
       approval_state: {
         status: "approved",
@@ -4840,7 +4985,7 @@ function buildMockApprovalApprovedResult(taskID, payload, existingSession, exist
   base.result.agent.trace_summary = traceSummary;
   base.result.agent.explanation = {
     ...asObject(base.result.agent.explanation),
-    final_message: "Approval was granted, so the session resumed from the stored preview checkpoint and completed execution.",
+    final_message: "审批已通过，会话已从保存的预演检查点恢复并完成执行。",
   };
   base.session.session_id = existingSession.session_id;
   base.session.root_task_id = existingSession.root_task_id;
@@ -4915,7 +5060,7 @@ function buildMockAgentAutofixResult(taskID, payload) {
     verdict === "rolled_back"
       ? { status: "executed", manifest_path: rollbackManifest, restore_target: outputCSV }
       : verdict === "rollback_failed"
-      ? { status: "failed", manifest_path: rollbackManifest, reason: "mock rollback failure" }
+      ? { status: "failed", manifest_path: rollbackManifest, reason: "模拟回滚失败" }
       : {};
   const safety = {
     final_verdict: verdict,
@@ -4946,14 +5091,14 @@ function buildMockAgentAutofixResult(taskID, payload) {
     status: verdict === "validation_rejected" ? "rejected" : "accepted",
     message:
       verdict === "accepted"
-        ? "Preview validation passed and post-execute validation accepted the result."
+        ? "预演验证已通过，执行后验证也已接纳结果。"
         : verdict === "validation_rejected"
-        ? "Preview validation rejected automatic execution."
-        : "Post-execute validation detected elevated risk and triggered rollback.",
+        ? "预演验证拒绝了自动执行。"
+        : "执行后验证检测到风险升高，并触发回滚。",
     can_execute: verdict !== "validation_rejected",
     preview: {
       status: verdict === "validation_rejected" ? "rejected" : "accepted",
-      message: verdict === "validation_rejected" ? "Resolved issue count is not better than baseline." : "Candidate is safe to execute.",
+      message: verdict === "validation_rejected" ? "已解决问题数未优于基线。" : "候选方案可安全执行。",
       before_issue_count: beforeIssueCount,
       after_issue_count: verdict === "validation_rejected" ? beforeIssueCount : Math.max(1, beforeIssueCount - 1),
       resolved_issue_count: verdict === "validation_rejected" ? 0 : beforeIssueCount - 1,
@@ -4969,8 +5114,8 @@ function buildMockAgentAutofixResult(taskID, payload) {
             phase: "post_execute",
             message:
               verdict === "accepted"
-                ? "Rescan confirms lower issue count and lower total issue score."
-                : "Rescan did not meet the acceptance threshold.",
+                ? "复扫确认问题数与总问题分均已下降。"
+                : "复扫未达到接纳阈值。",
             before_issue_count: beforeIssueCount,
             after_issue_count: afterIssueCount,
             resolved_issue_count: Math.max(0, beforeIssueCount - afterIssueCount),
@@ -4983,8 +5128,8 @@ function buildMockAgentAutofixResult(taskID, payload) {
             rollback_recommended: verdict !== "accepted",
             explanation:
               verdict === "accepted"
-                ? `Issue count changed from ${beforeIssueCount} to ${afterIssueCount} and no validation gate risks were detected.`
-                : `Validation gate verdict=reject because issue_count_increased. Issue count changed from ${beforeIssueCount} to ${afterIssueCount}.`,
+                ? `问题数从 ${beforeIssueCount} 变为 ${afterIssueCount}，验证门禁未发现风险。`
+                : `验证门禁因 issue_count_increased 判定拒绝；问题数从 ${beforeIssueCount} 变为 ${afterIssueCount}。`,
           },
   };
   const execution =
@@ -5029,20 +5174,20 @@ function buildMockAgentAutofixResult(taskID, payload) {
     ],
     reasoning_summary:
       verdict === "accepted"
-        ? "Hybrid candidate reduced issue count most aggressively while keeping change count acceptable."
-        : "Safety policy kept deterministic evidence and blocked or rolled back the less trustworthy path.",
+        ? "Hybrid 候选在保持改动量可接受的同时最大幅降低了问题数。"
+        : "安全策略保留了确定性证据，并阻止或回滚了可信度较低的路径。",
     user_explanation: "系统优先比较 rule、gower 与 hybrid 三个候选，再根据验证结果决定执行与否。",
   };
   const cognition = buildMockCognitionState(
     payload,
     plan.selected_candidate_id,
     plan.reasoning_summary,
-    "Go validation remains authoritative before any writes."
+    "写入前仍以 Go 侧验证为最终准入依据。"
   );
   plan.reason_codes = [...asArray(cognition.reason_codes)];
   plan.risk_note = String(cognition.risk_note || "").trim();
   plan.explanation_bullets = [
-    `Cognition: ${smartCognitionLabel(cognition) || "deterministic"}`,
+    `认知状态: ${smartCognitionLabel(cognition) || "deterministic"}`,
     smartCognitionSummaryText(cognition),
     smartCognitionFallbackText(cognition),
   ].filter(Boolean);
@@ -5095,7 +5240,7 @@ function buildMockAgentAutofixResult(taskID, payload) {
             : verdict === "rolled_back"
             ? "系统在 post-validation 阶段判定结果不安全，并已回滚。"
             : "系统已尝试回滚，但回滚执行失败，需要人工复核。",
-        bullets: [`risk flags: ${safety.risk_flags.join(", ")}`],
+        bullets: [`风险标记: ${safety.risk_flags.join(", ")}`],
         evidence_refs: ["safety", "rollback"],
       },
     ],
@@ -5159,8 +5304,8 @@ function buildMockAgentAutofixResult(taskID, payload) {
           short_bullets: Array.from(asArray(plan.explanation_bullets)),
           final_message:
             verdict === "accepted"
-              ? "The run completed and produced an accepted output."
-              : "The run preserved the safety boundary and returned an auditable reason.",
+              ? "本次运行已完成，并产出被接纳的结果。"
+              : "本次运行保留了安全边界，并给出了可审计的结束原因。",
           reason_codes: Array.from(asArray(plan.reason_codes)),
           risk_note: plan.risk_note,
           cognition,
@@ -5173,7 +5318,7 @@ function buildMockAgentAutofixResult(taskID, payload) {
         risk_columns: [],
         protected_columns: [],
         time_like_columns: [],
-        message: "No approval gate is currently active.",
+        message: "当前没有启用审批门禁。",
       },
       validation,
       execution,
@@ -5216,7 +5361,7 @@ function buildMockAgentAutofixResult(taskID, payload) {
       seq: 1,
       agent_name: "supervisor",
       trace_type: "session_started",
-      summary: "Agent auto session started",
+      summary: "智能自动会话已启动",
       payload: { goal: session.user_goal },
       created_at: new Date().toISOString(),
     },
@@ -5227,7 +5372,7 @@ function buildMockAgentAutofixResult(taskID, payload) {
       seq: 2,
       agent_name: "repair_planner",
       trace_type: "agent_decision",
-      summary: "Planner selected the best candidate",
+      summary: "规划器已选择最佳候选方案",
       payload: { selected_source: selectedSource, plan_id: planID },
       created_at: new Date().toISOString(),
     },
@@ -5269,7 +5414,7 @@ function buildMockAgentAutofixResult(taskID, payload) {
       seq: 5,
       agent_name: "validator",
       trace_type: "rollback_decision",
-      summary: "Unsafe output requires rollback",
+      summary: "不安全输出需要回滚",
       payload: { verdict },
       created_at: new Date().toISOString(),
     });
@@ -5280,7 +5425,7 @@ function buildMockAgentAutofixResult(taskID, payload) {
       seq: 6,
       agent_name: "validator",
       trace_type: "rollback_executed",
-      summary: verdict === "rolled_back" ? "Rollback restored the repaired artifact" : "Rollback attempted but failed",
+      summary: verdict === "rolled_back" ? "回滚已恢复修复产物" : "已尝试回滚但执行失败",
       payload: rollbackExecution,
       created_at: new Date().toISOString(),
     });
@@ -5327,7 +5472,7 @@ async function mockApproveAgentSession(payload) {
   const decision = String(payload?.decision || "").trim().toLowerCase();
   const existingSession = asObject(state.mockAgentSessions.get(sessionID));
   if (!sessionID || Object.keys(existingSession).length === 0) {
-    throw new Error(`mock session not found: ${sessionID}`);
+    throw new Error(`未找到模拟会话: ${sessionID}`);
   }
   const existingTrace = asArray(state.mockAgentTrace.get(sessionID));
   const originalTask = state.mockTasks.get(existingSession.root_task_id);
@@ -5415,7 +5560,7 @@ async function mockListAgentTrace(sessionID) {
 
 async function mockGetTaskStatus(taskId) {
   const mock = state.mockTasks.get(taskId);
-  if (!mock) throw new Error(`mock task not found: ${taskId}`);
+  if (!mock) throw new Error(`未找到模拟任务: ${taskId}`);
 
   const elapsed = Date.now() - mock.createdAt;
   if (mock.canceled) {
@@ -5462,7 +5607,7 @@ async function mockGetTaskStatus(taskId) {
             ? null
             : {
                 code: String(asObject(mock.finalResult?.safety)?.final_verdict || "AGENT_VALIDATION_REJECTED").toUpperCase(),
-                message: "Mock smart autofix completed with a guarded verdict.",
+                message: "模拟智能修复已在安全门禁保护下完成。",
               },
         timestamp: new Date().toISOString(),
         duration_ms: 3200,
@@ -5500,11 +5645,11 @@ async function mockGetTaskStatus(taskId) {
         result: {},
         error: {
           code: "INVALID_INPUT",
-          message: "issue_ids is empty",
-          details: { suggestion: "Select at least one issue before repair." },
+          message: "issue_ids 为空",
+          details: { suggestion: "修复前请至少选择一个问题。" },
         },
       },
-      error: "INVALID_INPUT: issue_ids is empty",
+      error: "INVALID_INPUT: issue_ids 为空",
     };
   }
 
@@ -5918,7 +6063,7 @@ async function chooseDirectory(targetInput, promptText, eventText) {
   }
 }
 
-async function refreshColumnsForCsv(csvPath, source = "path change") {
+async function refreshColumnsForCsv(csvPath, source = "路径变更") {
   const path = String(csvPath || "").trim();
   if (!path) {
     setTargetOptions([]);

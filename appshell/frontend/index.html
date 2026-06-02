@@ -3,14 +3,14 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Anomaly Repair Wizard</title>
+    <title>异常检测与修复向导</title>
     <link rel="stylesheet" href="./src/style.css" />
   </head>
   <body>
     <main class="app-shell">
       <header class="shell-topbar">
         <div class="shell-brand">
-          <p class="shell-kicker">SMART AUTOFIX</p>
+          <p class="shell-kicker">智能自动修复</p>
           <h1>一键上传，静候结果</h1>
           <p class="shell-subtitle">默认模式会自动扫描、修复、验证并在必要时回滚；高级工作台仍保留完整手动链路。</p>
         </div>
@@ -26,7 +26,7 @@
         <div class="smart-grid">
           <article class="result-card smart-home-card">
             <div class="smart-home-copy">
-              <p class="card-kicker">SMART HOME</p>
+              <p class="card-kicker">智能首页</p>
               <h2>选择文件后，先确认摘要，再开始智能处理</h2>
               <p class="core-message">
                 系统会默认走 <code>agent.session.auto</code>，自动完成扫描、修复、复扫、验证与回滚保护。
@@ -140,9 +140,9 @@
           <article class="result-card smart-run-card">
             <div class="status-row">
               <div class="status-main">
-                <span id="smart-run-status-pill" class="status-pill idle">idle</span>
+                <span id="smart-run-status-pill" class="status-pill idle">待命</span>
               </div>
-              <span id="smart-run-task-id">Task: -</span>
+              <span id="smart-run-task-id">任务: -</span>
             </div>
             <h2 id="smart-run-title">智能处理进行中</h2>
             <p id="smart-run-message" class="status-message">等待任务开始。</p>
@@ -282,7 +282,7 @@
             <article id="wizard-card" class="wizard-card">
               <header class="card-head">
                 <div class="card-head-top">
-                  <p id="card-kicker" class="card-kicker">STEP 1</p>
+                  <p id="card-kicker" class="card-kicker">第 1 步</p>
                   <button id="advanced-toggle-btn" class="btn-secondary btn-compact" type="button">高级模式: 关</button>
                 </div>
                 <h1 id="card-title">检测参数配置</h1>
@@ -421,9 +421,9 @@
                     <div class="status-row">
                       <div class="status-main">
                         <span id="status-icon" class="status-icon idle" aria-hidden="true">•</span>
-                        <span id="status-pill" class="status-pill idle">idle</span>
+                        <span id="status-pill" class="status-pill idle">待命</span>
                       </div>
-                      <span id="task-id-label">Task: -</span>
+                      <span id="task-id-label">任务: -</span>
                     </div>
 
                     <p id="status-message" class="status-message">等待任务开始</p>
@@ -686,13 +686,13 @@
     <section id="startup-gate" class="startup-gate">
       <div class="startup-panel">
         <header class="startup-head">
-          <p class="startup-kicker">PRE-FLIGHT</p>
+          <p class="startup-kicker">启动前检查</p>
           <h2 id="startup-title">正在执行启动自检</h2>
           <p id="startup-summary" class="startup-summary">正在检查 Python 引擎、依赖、输出目录和任务历史数据库，请稍候。</p>
         </header>
 
         <div class="startup-status-row">
-          <span id="startup-status-pill" class="startup-status-pill checking">checking</span>
+          <span id="startup-status-pill" class="startup-status-pill checking">检查中</span>
           <span id="startup-counts" class="startup-counts">等待检查结果...</span>
         </div>
 
@@ -720,6 +720,26 @@
       </div>
     </section>
 
-    <script type="module" src="./src/main.js"></script>
+    <script>
+      (() => {
+        const counts = document.getElementById("startup-counts");
+        if (counts) counts.textContent = "正在加载前端模块...";
+        const script = document.createElement("script");
+        script.src = "./src/main.js";
+        script.onerror = () => {
+          const title = document.getElementById("startup-title");
+          const summary = document.getElementById("startup-summary");
+          const pill = document.getElementById("startup-status-pill");
+          if (title) title.textContent = "前端启动失败";
+          if (summary) summary.textContent = "无法加载 ./src/main.js";
+          if (pill) {
+            pill.className = "startup-status-pill failed";
+            pill.textContent = "前端错误";
+          }
+          if (counts) counts.textContent = "前端模块加载失败。";
+        };
+        document.body.appendChild(script);
+      })();
+    </script>
   </body>
 </html>

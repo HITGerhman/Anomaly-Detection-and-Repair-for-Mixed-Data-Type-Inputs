@@ -101,6 +101,9 @@ thesis-defense/*
 !thesis-defense/generate_scale_validation_update_deck.js
 !thesis-defense/Large_Labeled_Validation_Update_2026-05-31.pptx
 !thesis-defense/generate_large_labeled_validation_deck.js
+!thesis-defense/generate_slide10_figures.py
+!thesis-defense/slide10_figures/
+!thesis-defense/slide10_figures/*.png
 
 # Paper-facing large labeled validation summaries.
 !artifacts/experiments/large_labeled_validation/**/*.csv
