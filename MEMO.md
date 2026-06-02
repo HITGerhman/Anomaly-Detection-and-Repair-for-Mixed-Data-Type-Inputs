@@ -1,6 +1,6 @@
 ﻿# MEMO
 
-Last updated: 2026-06-01 08:42:45 +08:00
+Last updated: 2026-06-02 17:19:13 +08:00
 
 ## 椤圭洰鎬荤洰鏍?
 - 灏嗏€滄贩鍚堟暟鎹被鍨嬪紓甯告娴嬩笌淇鈥濋」鐩粠绠楁硶鍘熷瀷鎺ㄨ繘涓哄彲浜や粯銆佸彲婕旂ず銆佸彲娴嬭瘯鐨勬闈㈠簲鐢ㄣ€?- 浠?`appshell/` 浣滀负浜у搧鍖栦富璺緞锛屽舰鎴?`Python Engine + Go Backend + Wails Frontend` 鐨勭ǔ瀹氭灦鏋勩€?- 淇濈暀 `app.py` 浣滀负鏃х増 Streamlit 婕旂ず鍏ュ彛锛岀敤浜庣畻娉曢獙璇併€佺粨鏋滃鐓у拰绛旇京灞曠ず銆?- 閫愭琛ラ綈鐪熷疄鐢ㄦ埛闂幆锛氬鍏?CSV -> 璁粌/鎵弿 -> 闂绛涢€?-> 鎵归噺淇 -> 鍥炴粴 -> 鍘嗗彶鏌ョ湅銆?- 鍦ㄤ繚鐣欑幇鏈夌畻娉曡祫浜т笌宸ョ▼楠ㄦ灦鐨勫墠鎻愪笅锛岄€愭鍗囩骇涓衡€滃 agent 鍐崇瓥灞?+ 纭畾鎬у伐鍏峰眰鈥濈殑鏅鸿兘鍖栦骇鍝併€?- 鏈€缁堢洰鏍囨槸璁╃敤鎴峰敖閲忓彧闇€閫夋嫨鏂囦欢锛屽嵆鍙嚜鍔ㄨ幏寰楁壂鎻忋€佷慨澶嶃€侀獙璇併€佸洖婊氫繚鎶ゅ拰鍥捐〃鍖栬В閲婄粨鏋溿€?
@@ -12,6 +12,103 @@ Last updated: 2026-06-01 08:42:45 +08:00
 ## 褰撳墠闂
 
 - 鍚姩鑷 warning 鎬佺幇鍦ㄤ細鏀捐杩涘叆搴旂敤锛屼絾涓荤晫闈㈤噷杩樻病鏈夆€滈噸鏂版煡鐪嬪惎鍔ㄨ瘖鏂€濈殑鎸佷箙鍏ュ彛銆?- Windows 鎵撳寘閾捐矾浠嶆湭瀹屽叏鏀跺彛锛宍appshell/build/windows/` 杩橀渶瑕佸畬鎴愮湡姝ｅ彲鍒嗗彂鐨勬瀯寤轰笌瀹夎楠岃瘉銆?- 鐙珛鐜宸茬粡鑳戒繚璇佸紑鍙戜笌娴嬭瘯鍦?Windows + Python 3.11 涓嬬殑涓€鑷存€э紝浣嗏€滃垎鍙戝埌涓嶅悓鏈哄櫒鍚庝篃缁濆涓€鑷粹€濅粛鐒堕渶瑕佸畨瑁呭寘闃舵鎶?Python runtime 鍜岄獙璇佽繃鐨勪緷璧栦竴璧锋墦杩涘幓锛屼笉鑳藉彧渚濊禆鐩爣鏈哄櫒鏈湴 Python銆?- 浠撳簱閲岃繕淇濈暀鐫€涓€涓棫鐨?Linux 椋庢牸 `.venv-appshell`锛屽綋鍓嶆病鏈夎閲囩敤锛屽悗缁彲浠ヨ鎯呭喌娓呯悊鎴栧湪鏂囨。涓槑纭爣娉ㄤ负閬楃暀璧勪骇銆?- multi-agent 鐨?Stage 2 铏藉凡瀹屾垚 Gower 宸ュ叿鍖栥€佸弻璺瘮杈冧笌 hybrid 鎵ц锛屼絾鐪熷疄 LLM provider銆侀暱鏈?memory銆佸墠绔竴閿棴鐜帴鍏ヤ笌鍥捐〃鍖栬В閲婁粛鏈紑濮嬨€?- 鈥滅敤鎴峰彧闇€閫夋枃浠堕潤鍊欑粨鏋溾€濈殑闂幆浣撻獙杩樻病鏈夋寮忔帴鍏ュ綋鍓?Wails 涓绘祦绋嬶紝agent 鍏ュ彛鐩墠浠嶅仠鐣欏湪鍚庣 API / demo CLI 灞傘€?- 鍥捐〃鍖栬В閲婁綋绯讳粛鏈繘鍏ユ寮忓疄鐜帮紝寮傚父鐞嗚В鍥俱€佷慨澶嶆敹鐩婂浘涓?agent 杞ㄨ抗鍥惧皻鏈帴鍒版闈㈢椤甸潰銆?
+## Update 2026-06-02 17:19:13 +08:00
+
+- 改动日期：2026-06-02 17:19:13 +08:00
+- 改动内容简述：完成最终桌面启动验收，并修复 Wails dev/WebView2 下前端入口脚本未执行导致启动自检停留在 pre-flight 的问题。本次在不改异常检测/修复业务算法的前提下，补齐 `appshell/backend/cmd/wails` 的 Wails CLI 项目配置，调整前端脚本加载方式，增加启动自检链路日志与前端启动错误可视化，最终确认真实桌面窗口可启动并进入 Smart Home。
+- 最终目标：确认系统现在能作为 AppShell/Wails 桌面应用跑起来，并且可通过真实 Go/Wails 绑定执行 Python engine 健康检查、SQLite 初始化与启动自检，从而具备继续执行异常检测与修复任务的桌面入口基础。
+- 当前采用的方法：
+  - 在 `appshell/backend/cmd/wails` 增加局部 `wails.json`，让 Wails CLI 从真实 Go `main` 入口构建并启动 AppShell，而不补仓库根部或 `appshell/` 级别的 `wails.json`。
+  - 将 `appshell/frontend/index.html` 的末尾入口从静态 `type="module"` script 改为普通 loader 动态加载 `./src/main.js`；本文件没有 `import/export`，普通脚本入口可避开当前 WebView2/Wails dev server 对动态 module 执行的卡滞。
+  - 在 `appshell/frontend/src/main.js` 增加前端 boot error 可视化、Wails 绑定等待、IPC 启动缓冲、原生调用超时和启动流程日志，避免启动门无声停留。
+  - 在 `appshell/backend/cmd/wails/startup_checks.go` 增加 `startup_checks_started`、`startup_checks_service_ready`、`startup_checks_finished` 结构化日志，便于桌面验收直接判断真实后端自检是否执行。
+- 相关模块/文件：
+  - `appshell/backend/cmd/wails/wails.json`
+  - `appshell/backend/cmd/wails/startup_checks.go`
+  - `appshell/frontend/index.html`
+  - `appshell/frontend/src/main.js`
+  - `MEMO.md`
+  - 验收产物：`outputs/appshell/final_desktop_only_acceptance.log`、`outputs/appshell/final_desktop_only_acceptance.sqlite`、`outputs/appshell/final_desktop_only_acceptance.png`（ignored，不进 Git）
+- 已解决的问题 / 新增功能：
+  - 解决 `wails dev` 在没有局部配置时无法从真实 `cmd/wails` 应用入口启动的问题。
+  - 解决 Wails dev/WebView2 页面只显示 pre-flight 静态 HTML、`main.js` 未执行、`RunStartupChecks` 未进入 Go 后端的问题。
+  - 桌面启动自检现在会真实调用 Go 绑定并执行 Python engine `health`，日志中可见 `engine_request_received` / `engine_request_succeeded`。
+  - 启动自检会创建并验证任务历史 SQLite；最终验收中 `final_desktop_only_acceptance.sqlite` 已创建。
+  - 自检结果为 `overall_status=warning`、`can_enter=true`、`passed=5`、`warnings=2`、`failed=0`，warning 来自 LangGraph fallback planner mode 和默认模型产物目录尚未完整，均为非阻塞项。
+  - 最终桌面截图显示应用已进入 `SMART HOME`，不再停留在 pre-flight。
+- 验证命令：
+  - `go version`
+  - `node --version`
+  - `npm --version`
+  - `wails version`
+  - `wails doctor`
+  - 在 `appshell/backend` 下执行：`go test ./...`
+  - 在 `appshell/backend` 下执行：`go run ./cmd/demo -action health`
+  - 从 `appshell/backend/cmd/wails` 执行：`wails dev -s -noreload -v 2`
+  - `node --check appshell/frontend/src/main.js`
+  - `.\.venv-win\Scripts\python.exe -m pytest tests\python_engine -q`
+- 验收结果：
+  - 工具链：Go `1.26.3`、Node `24.16.0`、npm `11.13.0`、Wails `v2.11.0` 均可用；`wails doctor` 返回系统 ready。
+  - Go 后端：`go test ./...` 全包通过。
+  - Go demo health：任务成功，Python engine 返回 `status=ok`，依赖 `pandas/numpy/lightgbm/scikit-learn/joblib` 均为 `ok`。
+  - Python engine：`61 passed, 12 warnings`，warnings 为既有 pandas categorical dtype deprecation。
+  - 前端语法：`node --check appshell/frontend/src/main.js` 通过。
+  - 桌面应用：Wails 桌面窗口 `Anomaly AppShell` 启动成功，`startup_checks_finished` 写入日志，`can_enter=true`，并进入 Smart Home。
+- 当前问题 / 待处理事项：
+  - 当前 `wails dev` 会输出多条 Wails 绑定生成器的 `Not found: time.Time` 诊断，但本轮构建、启动、自检和运行验收均成功；后续可单独清理 Go 结构体中的时间类型暴露或生成器配置。
+  - `overall_status=warning` 中的默认模型产物缺失表示尚未训练/生成默认修复模型目录，不阻塞进入应用；如需端到端修复演示，应先跑一次训练或选择已有模型输出目录。
+  - LangGraph sidecar 当前报告 fallback planner mode，系统会继续使用 deterministic planner；如需真实 LLM planner，需要后续配置 provider/model。
+  - 本轮只确认最终桌面启动和健康自检，不执行真实 CSV 扫描/修复工作流；下一步可用样例 CSV 在 Smart Home 里做完整异常检测与修复闭环验收。
+
+## Update 2026-06-02 16:04:28 +08:00
+
+- 改动日期：2026-06-02 16:04:28 +08:00
+- 改动内容简述：完成重装系统后的 Go / Node / Wails 工具链路修复。本轮按系统级方案安装 Go `1.26.3`、Node.js LTS `24.16.0` 和 Wails CLI `v2.11.0`，修复 PATH 与 PowerShell npm 执行策略，并重新验证 AppShell 真实 Wails 入口、Go 后端、Python engine 和前端语法检查。
+- 最终目标：恢复 `Python Engine + Go Backend + Wails Frontend` 产品化应用路径，让系统不仅能通过命令行执行异常检测与修复，也能重新具备 Wails/AppShell 应用入口的开发与运行基础。
+- 当前采用的方法：
+  - 使用 `winget --source winget` 安装官方 Go 和 Node.js LTS，避开 `msstore` 源搜索失败问题。
+  - 将 `C:\Program Files\Go\bin`、`C:\Program Files\nodejs\`、`C:\Program Files\Git\cmd` 持久化到 Machine PATH，将 `C:\Users\Administrator\go\bin` 持久化到 User PATH。
+  - 将当前用户 PowerShell ExecutionPolicy 设置为 `RemoteSigned`，解决 `npm.ps1` 被默认策略拦截的问题。
+  - 使用本机代理 `http://127.0.0.1:7897` 完成 `go install github.com/wailsapp/wails/v2/cmd/wails@v2.11.0`，绕过 `proxy.golang.org` 直连超时。
+  - 验收重点锁定为真实应用入口 `go run ./cmd/wails -engine ../core/python_engine/engine_main.py`，不补 `appshell/wails.json`，不把 `cd appshell; wails dev` 作为本轮目标。
+- 相关模块/文件：
+  - `MEMO.md`
+  - 系统工具链：Go `1.26.3`、Node.js LTS `24.16.0`、npm `11.13.0`、Wails CLI `v2.11.0`
+  - 系统/用户 PATH 与 PowerShell CurrentUser ExecutionPolicy
+  - `appshell/backend/cmd/wails`
+  - `appshell/frontend/src/main.js`
+  - `tests/python_engine`
+- 已解决的问题 / 新增功能：
+  - `go version` 现在返回 `go version go1.26.3 windows/amd64`。
+  - `node --version` 现在返回 `v24.16.0`，不再命中 Codex/WindowsApps 的错误 `node.exe`。
+  - `npm --version` 现在在 PowerShell 中正常返回 `11.13.0`。
+  - `wails version` 返回 `v2.11.0`，与 `appshell/backend/go.mod` 中的 Wails 依赖版本对齐。
+  - `wails doctor` 通过，并报告 WebView2、Nodejs、npm 均已安装，结论为 `SUCCESS Your system is ready for Wails development!`。
+  - `go test ./...` 在 `appshell/backend` 下全包通过，覆盖 `cmd/wails`、`internal/agent`、`internal/engine`、`internal/presentation` 和 `internal/task`。
+  - `go run ./cmd/demo -action health` 成功通过 Go 后端调用 Python engine，返回 `status=ok` 且 Python 依赖均为 `ok`。
+  - `go run ./cmd/wails -engine ../core/python_engine/engine_main.py` 成功进入运行态，日志写出 `wails_main_start` 与 `wails_runtime_paths_resolved`，并解析到真实 `appshell/frontend` 目录。
+  - `node --check appshell/frontend/src/main.js` 通过。
+  - `.\.venv-win\Scripts\python.exe -m pytest tests\python_engine -q` 通过：`61 passed, 12 warnings`；warnings 仍为既有 pandas categorical dtype deprecation。
+- 验证命令：
+  - `go version`
+  - `node --version`
+  - `npm --version`
+  - `wails version`
+  - `wails doctor`
+  - 在 `appshell/backend` 下设置 `APPSHELL_PYTHON_BIN` 与 `APPSHELL_PROJECT_ROOT` 后执行：`go test ./...`
+  - 在 `appshell/backend` 下执行：`go run ./cmd/demo -action health`
+  - 在 `appshell/backend` 下执行：`go run ./cmd/wails -engine ../core/python_engine/engine_main.py`
+  - `node --check appshell/frontend/src/main.js`
+  - `.\.venv-win\Scripts\python.exe -m pytest tests\python_engine -q`
+- 验收结果：
+  - 工具链已恢复，真实 Wails/AppShell Go 入口可启动。
+  - 本轮验证进程均已主动停止，没有留下匹配的 Wails 验证进程。
+  - 运行过程中生成的验证日志与 SQLite 位于 ignored 的 `outputs/appshell/` 下，不进入 Git 版本控制。
+- 当前问题 / 待处理事项：
+  - `appshell/backend/wails.exe` 旧二进制不接受 `-engine`，探测时输出更像旧 Wails dev/历史构建产物；本轮未将其作为验收目标，后续如需可重新构建并替换为当前 `cmd/wails` 对应的 AppShell 二进制。
+  - 当前 Codex/PowerShell 进程仍可能继承旧 PATH；普通新开的 PowerShell 应能读取已持久化 PATH。如仍遇到旧路径，重启终端或重新登录即可刷新。
+  - `wails dev` 仍不是本轮目标，因为当前仓库没有标准 `appshell/wails.json`；后续如要恢复该命令，需要单独补 Wails CLI 项目配置。
+
 ## Update 2026-03-16 19:58:35
 
 - 鏀瑰姩鏃ユ湡锛?026-03-16 19:58:35
@@ -2373,3 +2470,137 @@ Last updated: 2026-06-01 08:42:45 +08:00
 - 当前问题 / 待处理事项：
   - 当前 PowerShell 会话的 `PATH` 仍未包含 Git 安装目录，后续直接使用 `git` 仍可能失败；可以把 `C:\Program Files\Git\cmd` 加入系统或用户 `PATH`。
   - 直连 GitHub HTTPS 仍不稳定，后续 GitHub 操作建议继续显式使用 `http.proxy=http://127.0.0.1:7897`，或修复系统网络代理配置。
+
+## Update 2026-06-01 09:19:03 +08:00
+
+- 改动日期：2026-06-01 09:19:03 +08:00
+- 改动内容简述：为答辩 PPT 第十页新增一组 Python 生成的英文实验结果分图，采用学术简洁白底风格，覆盖 controlled accuracy baseline、repair effect、large-scale stability、labeled scale validation 和底部 key finding 结论条。
+- 最终目标：让第十页不再复用论文旧图，而是把 2026-05-31 Large-scale Labeled Validation 与既有 controlled accuracy / repair / 500k-10M stability 结果统一放进 PPT 可直接使用的图表资产中，并保持对 numeric outlier false positives 的诚实边界表述。
+- 当前采用的方法：
+  - 新增 `thesis-defense/generate_slide10_figures.py`，使用现有 `matplotlib/pandas/PIL` 环境，不引入新依赖。
+  - 图表数据从仓库已有实验产物读取或核对：`artifacts/experiments/cross_dataset/summary_detection_metrics.csv`、`artifacts/experiments/cross_dataset/summary_repair_metrics.csv`、`artifacts/experiments/large_labeled_validation/summary_detection_metrics.csv`、`outputs/stability_reprobe_20260517/reprobe_summary.json`。
+  - 输出单独 PNG 分图到 `thesis-defense/slide10_figures/`，便于手动放入现有 PPT 模板，而不是生成完整 PPTX 或整页合成图。
+  - 更新 `.gitignore`，放开本次生成脚本与 `slide10_figures/*.png`，避免后续提交时这些答辩资产被 `thesis-defense/*` 规则误忽略。
+- 相关模块/文件：
+  - `.gitignore`
+  - `thesis-defense/generate_slide10_figures.py`
+  - `thesis-defense/slide10_figures/controlled_accuracy_baseline.png`
+  - `thesis-defense/slide10_figures/repair_effect.png`
+  - `thesis-defense/slide10_figures/large_scale_stability.png`
+  - `thesis-defense/slide10_figures/labeled_scale_validation.png`
+  - `thesis-defense/slide10_figures/key_finding_bar.png`
+  - `MEMO.md`
+- 已解决的问题 / 新增功能：
+  - 新增 Controlled Accuracy Baseline 分图，展示三组受控数据集 Precision / Recall / F1，并标注 numeric-outlier false positives 是 precision 下降主因。
+  - 新增 Repair Effect 分图，展示 Exact Rate 与 Improved-or-Exact，并明确 repair 不保证 true-value restoration。
+  - 新增 Large-scale Stability 分图，展示 500k/1M completed 与 10M `584.805 s, 1.19 GB output`，并明确这是 workflow execution evidence，不是 ground-truth repair accuracy。
+  - 新增 Labeled Scale Validation 分图，展示 1M/10M labeled 均 `100/100` recalled、recall `1.000`，并用橙色 limitation 提示 numeric outlier thresholds caused many false positives。
+  - 新增 Key Finding 结论条：系统具备 strong recall 与 complete workflow execution，但 numeric outlier detection 需要 domain-specific threshold tuning。
+- 验证命令：
+  - `.\.venv-win\Scripts\python.exe .\thesis-defense\generate_slide10_figures.py`
+  - `.\.venv-win\Scripts\python.exe -m py_compile .\thesis-defense\generate_slide10_figures.py`
+  - 使用 `PIL.Image.open(...)` 检查 5 张 PNG 均存在、尺寸合理且文件非空。
+- 验收结果：
+  - 5 张 PNG 均生成成功：四张面板图为 `1920x1065`，结论条为 `3840x405`。
+  - 已人工抽看关键图，修正了 controlled accuracy 脚注和 key finding bar 的文本截断问题。
+- 当前问题 / 待处理事项：
+  - 这些资产是 PPT 手动排版用分图，不包含完整第十页 PPTX；后续如果需要可再把它们嵌入现有答辩 deck。
+  - 10M labeled run 仍只评价检测准确性，不评价修复准确性；PPT 讲述中必须继续保持该边界。
+  - numeric outlier 默认阈值导致大规模 generated orders 数据上 precision 很低，后续仍应做 domain-specific threshold tuning 或 review-first 策略。
+
+## Update 2026-06-02 18:06:09 +08:00
+
+- 改动日期：2026-06-02 18:06:09 +08:00
+- 改动内容简述：继续完成 AppShell/Wails 桌面应用级验收，确认真实桌面入口不仅能启动，而且能通过 Wails IPC 正常执行异常检测 `scan_file` 与批量修复 `repair_batch` 任务，并生成修复输出与 rollback manifest。
+- 最终目标：确认系统现在能作为一个桌面应用跑起来，并能正常完成异常检测与修复主流程。
+- 当前采用的方法：
+  - 从 `appshell/backend/cmd/wails` 通过 `wails dev -s -noreload -v 2` 拉起 `AnomalyAppShell-dev.exe`，使用系统 Go/Node/Wails 路径和 `.venv-win` Python 引擎环境。
+  - 通过 Wails IPC `ws://127.0.0.1:34115/wails/ipc` 调用 `main.App.RunStartupChecks`、`main.App.RunTask` 与 `main.App.GetTaskStatus`。
+  - 使用 `outputs/appshell/desktop_e2e_repair/repair_test_case_input.csv` 作为隔离测试输入，不修改 `data/raw/repair_test_case.csv` 原始样本。
+  - 从 Wails 任务 SQLite 与应用日志交叉核验任务状态、检测结果、修复结果和产物存在性。
+- 相关模块/文件：
+  - `MEMO.md`
+  - `outputs/appshell/desktop_e2e_repair/e2e_summary.json`
+  - `outputs/appshell/desktop_e2e_repair/wails_debug_foreground.log`
+  - `outputs/appshell/desktop_e2e_repair/wails_debug_foreground.sqlite`
+  - `outputs/appshell/desktop_e2e_repair/repair_test_case_input.csv`
+  - `outputs/appshell/desktop_e2e_repair/repair_test_case_repaired.csv`
+  - `outputs/appshell/desktop_e2e_repair/.rollback/rb-1780394642268-53409199.json`
+- 已解决的问题 / 新增功能：
+  - 完成真实桌面应用入口验收：启动自检 `can_enter=true`，`passed=5`，`warnings=2`，`failed=0`。
+  - `scan_file` 任务成功：发现 3 个 issue，类型分别为 `missing_values=1`、`numeric_outlier=1`、`rare_category=1`。
+  - `repair_batch` 任务成功：选择 3 个 issue，应用 3 个 issue，修改 7 个单元格，写出修复 CSV，并生成 rollback manifest。
+  - 修复后对比结果为 `before_issue_count=3`、`after_issue_count=0`、`resolved_issue_count=3`。
+  - 验收结束后确认没有残留 `wails`、`AnomalyAppShell` 或 `AnomalyAppShell-dev` 进程。
+- 验证命令：
+  - `wails dev -s -noreload -v 2`（工作目录：`appshell/backend/cmd/wails`）
+  - Wails IPC 调用：`main.App.RunStartupChecks`
+  - Wails IPC 调用：`main.App.RunTask` with `action=scan_file`
+  - Wails IPC 调用：`main.App.RunTask` with `action=repair_batch`
+  - 使用 `.venv-win/Scripts/python.exe` 读取 `wails_debug_foreground.sqlite` 的 `task_history` 表，核验任务状态与响应。
+- 验收结果：
+  - 桌面应用级异常检测与修复链路通过。
+  - 关键产物均存在：修复 CSV、rollback manifest、Wails 日志、任务 SQLite、E2E 摘要 JSON。
+- 当前问题 / 待处理事项：
+  - IPC 采集脚本在修复任务完成后等待最终 `GetTaskStatus` 回调时超时；同期 Wails 日志记录 `task_finished status=succeeded` 且 SQLite `task_history` 中扫描/修复任务均为 `succeeded`，因此判定为采集脚本收尾时序问题，不是检测/修复任务失败。
+  - 后续若要把该验收固化为自动化测试，可让采集脚本在 Wails 进程退出后自动 fallback 读取 `task_history`，或保持应用窗口更久以便完成最终 IPC 拉取。
+
+## Update 2026-06-02 18:31:19 +08:00
+
+- 改动日期：2026-06-02 18:31:19 +08:00
+- 改动内容简述：将 Wails 前端中非必要英文 UI 文案进一步本地化为中文，避免桌面应用窗口、启动自检、状态徽标、智能修复 fallback/mock 视图和静态设计稿页出现英文残留。
+- 最终目标：让应用除必要技术名、协议名、文件格式、路径和字段名外，尽量以中文展示，符合中文用户使用场景。
+- 当前采用的方法：
+  - 保留必要技术标识：`CSV`、`JSON`、`Python`、`SQLite`、`LLM`、`LangGraph`、`agent.session.auto`、`scan_file`、`repair_batch`、`issue_ids`、文件路径和数据列名。
+  - 将真实入口 `appshell/frontend/index.html` 中的标题、顶部标识、步骤状态、启动自检和前端加载兜底文案改为中文。
+  - 在 `appshell/frontend/src/main.js` 中新增统一任务状态中文标签，并翻译启动错误、启动自检详情、智能结果页、审批/验证/回滚说明、mock/静态预览文案。
+  - 同步中文化 `appshell/frontend/figma-home-native.html` 的静态设计稿展示文案。
+- 相关模块/文件：
+  - `appshell/frontend/index.html`
+  - `appshell/frontend/src/main.js`
+  - `appshell/frontend/figma-home-native.html`
+  - `MEMO.md`
+- 已解决的问题 / 新增功能：
+  - `SMART AUTOFIX`、`SMART HOME`、`PRE-FLIGHT`、`STEP`、`Task`、`idle/checking` 等窗口可见英文已改为中文。
+  - 状态徽标现在展示 `待命`、`排队中`、`运行中`、`已完成`、`失败`、`已取消`、`已超时`，后端状态值仍保留为原协议值。
+  - 前端启动失败、Wails binding 等待、智能审批、验证门禁、后验验证、回滚、mock 任务等用户可见说明已改为中文。
+  - 静态设计稿页大部分展示文案已改为中文。
+- 验证命令：
+  - `node --check appshell/frontend/src/main.js`
+  - 使用 Python `html.parser` 扫描 `appshell/frontend/index.html` 与 `appshell/frontend/figma-home-native.html` 的可见英文文本。
+  - 使用 Node 正则扫描 `appshell/frontend/src/main.js` 中剩余英文句子。
+- 验收结果：
+  - `main.js` 语法检查通过。
+  - 真实入口页剩余英文仅为必要技术标识、路径、字段名或时间单位，例如 `agent.session.auto`、`outputs/results/`、`data/raw/...`、`0s`。
+  - `main.js` 剩余英文扫描项仅为 CSS class、日志事件名或截断符号，不属于用户可见文案。
+- 当前问题 / 待处理事项：
+  - 设计稿页仍保留 `AR`、字段名 `bmi`、`avg_glucose_level`、`smoking_status`、路径和时间/数量缩写，属于展示对象或必要技术内容。
+  - 本轮未重新启动 Wails 桌面窗口做截图验收；如后续需要，可复用 `wails dev -s -noreload -v 2` 启动后进行视觉抽查。
+
+## Update 2026-06-02 18:59:45 +08:00
+
+- 改动日期：2026-06-02 18:59:45 +08:00
+- 改动内容简述：准备将当前阶段成果同步到 GitHub，覆盖 Go/Wails/Node 工具链修复记录、真实桌面应用入口验收、Wails 前端中文化以及答辩第十页图表资产更新。
+- 最终目标：把当前可运行、可验收的桌面应用修复成果提交并推送到远端分支，方便后续继续迭代和回溯。
+- 当前采用的方法：
+  - 在当前分支 `feat/algorithm-risk-hardening` 上整理本轮全部相关变更。
+  - 提交前重新执行关键校验，确认前端语法和后端 Go 包仍可通过基础验证。
+  - 使用 Git 本地提交并推送到 `origin/feat/algorithm-risk-hardening`；当前环境未安装 `gh`，因此本轮同步不创建 GitHub PR。
+- 相关模块/文件：
+  - `.gitignore`
+  - `MEMO.md`
+  - `appshell/backend/cmd/wails/startup_checks.go`
+  - `appshell/backend/cmd/wails/wails.json`
+  - `appshell/backend/go.mod`
+  - `appshell/backend/go.sum`
+  - `appshell/frontend/index.html`
+  - `appshell/frontend/src/main.js`
+  - `appshell/frontend/figma-home-native.html`
+  - `thesis-defense/generate_slide10_figures.py`
+  - `thesis-defense/slide10_figures/*.png`
+- 已解决的问题 / 新增功能：
+  - 将系统级 Go/Wails/Node 工具链修复、Wails 启动配置、桌面应用真实入口验收、异常检测与修复 E2E 结果和中文化前端纳入一次同步。
+  - 将答辩第十页可复用图表生成脚本及 PNG 资产纳入版本控制，并通过 `.gitignore` 显式放行。
+- 待处理事项：
+  - 推送完成后需要记录远端分支和提交哈希。
+  - 如后续需要 PR，需要安装或配置 GitHub CLI，或通过 GitHub 网页端从已推送分支创建 PR。
